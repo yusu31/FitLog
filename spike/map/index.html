@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>map spike</title>
+  <link rel="stylesheet" href="./node_modules/maplibre-gl/dist/maplibre-gl.css" />
+  <style>
+    html, body { margin: 0; height: 100%; }
+    #map { height: 100%; }
+    #status { position: absolute; top: 8px; left: 8px; z-index: 2; background: #fff; padding: 4px 8px; font: 14px sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="status">STATUS: init</div>
+  <div id="map"></div>
+  <script type="module">
+    import { Map, NavigationControl, setWorkerUrl } from "./node_modules/maplibre-gl/dist/maplibre-gl.mjs";
+
+    setWorkerUrl(new URL("./node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href);
+
+    const status = document.getElementById("status");
+    const coords = [];
+    for (let i = 0; i <= 40; i++) {
+      const t = (i / 40) * Math.PI * 1.6;
+      coords.push([140.38 + 0.006 * Math.cos(t) + i * 0.00005, 37.4 + 0.004 * Math.sin(t)]);
+    }
+
+    const map = new Map({
+      container: "map",
+      style: "https://tiles.openfreemap.org/styles/liberty",
+      center: coords[0],
+      zoom: 14,
+    });
+    map.addControl(new NavigationControl());
+
+    map.on("error", (e) => { status.textContent = "STATUS: error " + (e.error?.message ?? e); });
+    map.on("load", () => {
+      map.addSource("route", {
+        type: "geojson",
+        data: { type: "Feature", geometry: { type: "LineString", coordinates: coords } },
+      });
+      map.addLayer({
+        id: "route-line",
+        type: "line",
+        source: "route",
+        paint: { "line-color": "#e11d48", "line-width": 5 },
+      });
+      const lons = coords.map((c) => c[0]);
+      const lats = coords.map((c) => c[1]);
+      map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: 60, animate: false });
+      status.textContent = "STATUS: loaded";
+    });
+  </script>
+</body>
+</html>

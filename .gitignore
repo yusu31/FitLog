@@ -1,0 +1,5 @@
+node_modules/
+spike/fit-gpx/sample.fit
+spike/video/*.mp4
+spike/video/*.mov
+spike/video/*.webm
