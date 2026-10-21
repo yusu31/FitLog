@@ -1,0 +1,17 @@
+{
+  "name": "fit-gpx",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@garmin/fitsdk": "^21.218.0",
+    "fast-xml-parser": "^5.11.2"
+  }
+}
