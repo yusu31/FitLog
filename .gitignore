@@ -3,3 +3,7 @@ spike/fit-gpx/sample.fit
 spike/video/*.mp4
 spike/video/*.mov
 spike/video/*.webm
+
+# Claude Code の個人設定（共有しない）
+CLAUDE.local.md
+.claude/settings.local.json
