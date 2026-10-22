@@ -29,8 +29,11 @@
 | 認証 | better-auth（Drizzleアダプター）+ Cookieセッション。`/api/*` を CloudFront の下に置き、画面と同じサイトにする |
 | 画面とAPIの型の共有 | `@nestjs/swagger` で OpenAPI を出力し、画面用の型を生成する（認証は `better-auth/react` を別に使う） |
 | 配信 | S3 + CloudFront（画面）／Lambda（API） |
+| 地図 | MapLibre GL JS + PMTiles。Protomaps の地図から日本全域を切り出したファイルを S3 + CloudFront で配信し、`pmtiles` で直接読む（Lambda不要）。開発中は OpenFreeMap。地図スタイルのURLは1か所で切り替える |
+| GPXの読み取り | @tmcw/togeojson（GeoJSONに変換）。壊れたXML・線0本・サイズ上限の検査は自前 |
+| メニュー説明文 | テンプレート文を必ず生成。Cloudflare Workers AI（無料枠）が使えるときだけ、数値を変えずに言い換える。失敗・タイムアウト時はテンプレートのまま |
 
-> 地図タイル・動画の保存と変換・GPXの読み取り部品・AIは**未決定**。決まったらこの表に足す。
+> 動画の保存と変換は**未決定**。決まったらこの表に足す。
 > 表にない技術を勝手に追加しない。追加・変更は比較してから決める。
 
 ## GitHubワークフロー（厳守）
