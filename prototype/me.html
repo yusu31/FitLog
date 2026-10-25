@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FitLog 自分</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=M+PLUS+Rounded+1c:wght@800&family=Nunito:wght@800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js"></script>
+  <script src="shared.js"></script>
+  <style>
+    [data-part] { cursor: pointer; transition: fill .4s ease, transform .4s var(--spring); transform-box: fill-box; transform-origin: center; }
+    [data-part].is-on { stroke: var(--color-ink); stroke-width: 2.5; }
+  </style>
+</head>
+<body class="bg-[#F3E8D3] font-sans text-ink antialiased" data-tab="me">
+<main class="mx-auto min-h-dvh max-w-[430px] bg-bg pb-28">
+
+  <header class="flex items-end gap-3 px-5 pt-7">
+    <span class="grid size-12 place-items-center rounded-full bg-next text-xl font-black text-card">あ</span>
+    <div>
+      <p class="text-sm font-bold text-mute">朝トレ部</p>
+      <h1 class="text-[32px] leading-tight font-black">自分</h1>
+    </div>
+  </header>
+
+  <!-- 今週鍛えた部位（筋肉ヒートマップ） -->
+  <section class="mx-4 mt-5 rounded-card bg-card p-4 slab" aria-labelledby="heat-title">
+    <div class="flex items-baseline justify-between">
+      <h2 id="heat-title" class="font-black">今週鍛えた部位</h2>
+      <p class="text-xs font-bold text-mute">部位を押すと内訳</p>
+    </div>
+    <div class="mt-3 grid grid-cols-2 gap-2">
+      <figure class="text-center"><svg id="front" viewBox="0 0 120 232" class="mx-auto h-60" role="img" aria-label="体の前側"></svg><figcaption class="text-xs font-bold text-mute">前</figcaption></figure>
+      <figure class="text-center"><svg id="back" viewBox="0 0 120 232" class="mx-auto h-60" role="img" aria-label="体の後ろ側"></svg><figcaption class="text-xs font-bold text-mute">後ろ</figcaption></figure>
+    </div>
+    <p id="detail" class="mt-3 min-h-11 rounded-tile bg-raised px-3 py-2.5 text-sm font-bold" aria-live="polite"></p>
+    <div class="mt-3 flex items-center justify-end gap-1.5 text-[11px] font-bold text-mute" aria-hidden="true">
+      まだ<span class="size-3.5 rounded-[4px]" style="background:var(--lv0)"></span><span class="size-3.5 rounded-[4px]" style="background:var(--lv1)"></span><span class="size-3.5 rounded-[4px]" style="background:var(--lv2)"></span><span class="size-3.5 rounded-[4px]" style="background:var(--lv3)"></span>たくさん
+    </div>
+  </section>
+
+  <!-- 先週は1行だけ（今週の7マスは月曜にまっさらになるので、ここで振り返れる） -->
+  <p class="mx-4 mt-4 rounded-btn bg-card px-4 py-3 text-sm font-bold slab">
+    <span class="text-mute">先週</span>　動いた日 <span class="font-num">4</span>日・筋トレ <span class="font-num">3</span>回・ラン <span class="font-num">1</span>回
+  </p>
+
+  <!-- 記録の一覧 -->
+  <section class="mx-4 mt-4 rounded-card bg-card p-4 slab" aria-labelledby="log-title">
+    <h2 id="log-title" class="font-black">記録</h2>
+    <ul id="log" class="mt-1 divide-y-2 divide-line/60"></ul>
+  </section>
+</main>
+
+<script>
+  const { week, weekParts } = FitLog;
+  const $ = (id) => document.getElementById(id);
+  const root = document.documentElement.style;
+  const LV = ["#F1E4CF", "#FFD6C8", "#FF9C80", "#F55D3E"];
+  LV.forEach((c, i) => root.setProperty(`--lv${i}`, c));
+  const NAME = { chest: "胸", shoulders: "肩", arms: "腕", abs: "お腹", back: "背中", glutes: "お尻", quads: "太もも（前）", hamstrings: "太もも（裏）", calves: "ふくらはぎ" };
+
+  // 体は角を丸めた図形の組み合わせ（[部位, x, y, 幅, 高さ]）。左右は x を折り返して作る
+  const mirror = (list) => list.flatMap(([p, x, y, w, h]) => [[p, x, y, w, h], [p, 120 - x - w, y, w, h]]);
+  const common = [["", 47, 7, 26, 26], ["", 54, 31, 12, 9]];
+  const FRONT = [...common, ...mirror([["shoulders", 23, 41, 20, 17], ["chest", 40, 42, 19, 23], ["arms", 21, 59, 12, 30], ["arms", 18, 91, 11, 27], ["quads", 41, 120, 18, 54], ["calves", 43, 180, 14, 44]]), ["abs", 45, 67, 30, 37], ["", 43, 106, 34, 12]];
+  const BACK = [...common, ["back", 46, 36, 28, 12], ...mirror([["shoulders", 23, 41, 20, 17], ["back", 39, 49, 20, 39], ["arms", 21, 59, 12, 30], ["arms", 18, 91, 11, 27], ["glutes", 42, 106, 17, 22], ["hamstrings", 41, 130, 18, 46], ["calves", 42, 180, 15, 44]]), ["back", 47, 89, 26, 15]];
+
+  const parts = weekParts();
+  const level = (n = 0) => (n === 0 ? 0 : n <= 2 ? 1 : n <= 4 ? 2 : 3);
+
+  function draw(svg, shapes) {
+    svg.innerHTML = shapes.map(([p, x, y, w, h], i) => {
+      const r = Math.min(w, h) / 2.2;
+      if (!p) return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${i === 0 ? 13 : r}" fill="#EADAC0"/>`;
+      return `<rect data-part="${p}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${LV[level(parts[p])]}" stroke="var(--color-card)" stroke-width="2"><title>${NAME[p]}</title></rect>`;
+    }).join("");
+  }
+  draw($("front"), FRONT);
+  draw($("back"), BACK);
+
+  // 部位ごとに「いつ・何セット」を出す
+  function showDetail(p) {
+    document.querySelectorAll("[data-part]").forEach((el) => el.classList.toggle("is-on", el.dataset.part === p));
+    const days = week().filter((d) => d.state === "done" && d.rec.parts[p]);
+    $("detail").innerHTML = days.length
+      ? `${NAME[p]}　今週 <span class="font-num text-next">${parts[p]}</span>セット <span class="text-mute">（${days.map((d) => `${d.date} ${d.rec.title}`).join("・")}）</span>`
+      : `${NAME[p]}　今週はまだ。<span class="text-mute">休めている部位です</span>`;
+  }
+  document.querySelectorAll("[data-part]").forEach((el) => el.addEventListener("click", () => showDetail(el.dataset.part)));
+  const most = Object.entries(parts).sort((a, b) => b[1] - a[1])[0];
+  if (most) showDetail(most[0]);
+  else $("detail").innerHTML = '今週はまだ記録がありません。<span class="text-mute">どの部位もしっかり休めています</span>';
+
+  // 記録の一覧（今週の分＋先週の分）
+  const lastWeek = [["10/23（金）", "ラン", "4.1km・22:10"], ["10/22（木）", "背中の日", "3種目・3,700kg"], ["10/21（水）", "胸の日", "3種目・2,880kg"], ["10/20（火）", "脚の日", "4種目・4,950kg"]];
+  const thisWeek = week().filter((d) => d.state === "done").reverse().map((d) => [`${d.date}（${d.label}）`, d.rec.title, d.isToday ? "4種目・5,460kg" : "3種目"]);
+  $("log").innerHTML = [...thisWeek, ...lastWeek].map(([date, title, detail]) => `
+    <li class="flex items-center justify-between gap-3 py-3">
+      <div class="min-w-0"><p class="text-xs font-bold text-mute">${date}</p><p class="truncate font-bold">${title}</p></div>
+      <span class="font-num shrink-0 text-sm font-extrabold text-mute">${detail}</span>
+    </li>`).join("");
+</script>
+</body>
+</html>
