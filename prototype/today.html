@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FitLog 今日</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=M+PLUS+Rounded+1c:wght@800&family=Nunito:wght@800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js"></script>
+  <script src="shared.js"></script>
+</head>
+<body class="bg-[#0C0D10] font-sans text-ink antialiased" data-tab="today">
+<main class="mx-auto min-h-dvh max-w-[430px] bg-bg pb-36">
+
+  <header class="flex items-end justify-between px-4 pt-6">
+    <div>
+      <p class="text-sm font-bold text-mute">10月25日（日）</p>
+      <h1 class="text-[32px] leading-tight font-black">今日</h1>
+    </div>
+    <p class="mb-1 rounded-full bg-card px-3 py-1.5 text-xs font-bold text-mute">朝トレ部 <span class="font-num text-ink">5</span>人</p>
+  </header>
+
+  <!-- 仲間の顔の列（見守りスタンプ） -->
+  <section class="mt-5" aria-label="仲間の今日">
+    <ul class="flex gap-2 overflow-x-auto px-4 pt-2.5 pb-2 [scrollbar-width:none]">
+      <li class="flex w-[62px] shrink-0 flex-col items-center gap-1.5">
+        <span class="grid size-[52px] place-items-center rounded-full bg-raised text-xl font-black ring-[3px] ring-next ring-offset-2 ring-offset-bg">あ</span>
+        <span class="text-xs font-bold">あなた</span>
+        <span class="text-[11px] font-bold text-next">これから</span>
+      </li>
+      <li class="flex w-[62px] shrink-0 flex-col items-center gap-1.5">
+        <span class="grid size-[52px] place-items-center rounded-full bg-raised text-xl font-black ring-[3px] ring-win ring-offset-2 ring-offset-bg">ケ</span>
+        <span class="text-xs font-bold">ケン</span>
+        <span class="text-[11px] font-bold text-win">記録済み</span>
+      </li>
+      <li class="flex w-[62px] shrink-0 flex-col items-center gap-1.5">
+        <span class="grid size-[52px] place-items-center rounded-full bg-raised text-xl font-black ring-[3px] ring-win ring-offset-2 ring-offset-bg">ミ</span>
+        <span class="text-xs font-bold">ミホ</span>
+        <span class="text-[11px] font-bold text-win">記録済み</span>
+      </li>
+      <li class="flex w-[62px] shrink-0 flex-col items-center gap-1.5">
+        <span class="grid size-[52px] place-items-center rounded-full bg-raised text-xl font-black text-mute ring-[3px] ring-line ring-offset-2 ring-offset-bg">サ</span>
+        <span class="text-xs font-bold">サキ</span>
+        <span class="text-[11px] font-bold text-mute">まだ</span>
+      </li>
+      <li class="flex w-[62px] shrink-0 flex-col items-center gap-1.5">
+        <span class="relative grid size-[52px] place-items-center rounded-full bg-raised outline-[3px] outline-offset-2 outline-dashed outline-mute/50 text-xl font-black text-mute">タ
+          <span class="absolute -top-1 -right-2 rounded-full bg-card px-1.5 py-0.5 text-[10px] font-bold text-mute ring-2 ring-bg"><span class="font-num">3</span>日</span>
+        </span>
+        <span class="text-xs font-bold">タク</span>
+        <button type="button" id="nudge" class="puff rounded-full bg-next px-2.5 py-0.5 text-[11px] font-black text-bg [--puff-c:var(--color-next-deep)]">声かけ</button>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 今週のボス -->
+  <a href="#" class="press mx-4 mt-4 block rounded-card bg-card p-4" aria-label="今週のボスの詳細へ">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="grid size-12 shrink-0 place-items-center rounded-tile bg-hp/15 text-hp" aria-hidden="true">
+          <svg viewBox="0 0 32 32" class="size-8" fill="currentColor"><path d="M6 13c0-5 4.5-9 10-9s10 4 10 9v6c0 1.5-.8 2.5-2 3l-1 5h-3l-.5-3h-1.5l-.5 3h-3l-.5-3H12.5L12 27H9l-1-5c-1.2-.5-2-1.5-2-3z"/><circle cx="11.5" cy="14.5" r="2.6" fill="var(--color-card)"/><circle cx="20.5" cy="14.5" r="2.6" fill="var(--color-card)"/><path d="M5 9 2 4l5.5 3.5M27 9l3-5-5.5 3.5"/></svg>
+        </span>
+        <div>
+          <p class="text-xs font-bold text-mute">今週のボス・あと<span class="font-num text-ink">3</span>日</p>
+          <p class="text-lg leading-snug font-black">鉄壁ゴーレム</p>
+        </div>
+      </div>
+      <span class="shrink-0 rounded-full bg-hp/15 px-2.5 py-1 text-xs font-bold text-hp">弱点 脚</span>
+    </div>
+    <div class="mt-4 flex items-baseline justify-between">
+      <span class="text-xs font-bold text-mute">残りHP</span>
+      <span class="font-num text-sm font-extrabold text-mute"><span class="text-2xl text-hp">38,200</span> / 120,000 kg</span>
+    </div>
+    <div class="mt-1.5 h-5 rounded-full bg-raised p-1" role="progressbar" aria-label="ボスの残りHP" aria-valuemin="0" aria-valuemax="120000" aria-valuenow="38200">
+      <div class="h-full w-[31.8%] rounded-full bg-hp shadow-[inset_0_-3px_0_rgb(0_0_0/.22)]"></div>
+    </div>
+    <ul class="mt-3 flex justify-between gap-1 text-[11px] font-bold text-mute" aria-label="みんなが削った量">
+      <li class="flex items-center gap-1"><span class="grid size-5 place-items-center rounded-full bg-raised text-[10px] text-ink">ケ</span><span class="font-num">24.1t</span></li>
+      <li class="flex items-center gap-1"><span class="grid size-5 place-items-center rounded-full bg-raised text-[10px] text-ink">ミ</span><span class="font-num">19.3t</span></li>
+      <li class="flex items-center gap-1"><span class="grid size-5 place-items-center rounded-full bg-raised text-[10px] text-ink">あ</span><span class="font-num">18.6t</span></li>
+      <li class="flex items-center gap-1"><span class="grid size-5 place-items-center rounded-full bg-raised text-[10px] text-ink">サ</span><span class="font-num">14.2t</span></li>
+      <li class="flex items-center gap-1"><span class="grid size-5 place-items-center rounded-full bg-raised text-[10px] text-ink">タ</span><span class="font-num">5.6t</span></li>
+    </ul>
+  </a>
+
+  <!-- 今日のメニュー（前回の自分と並べる） -->
+  <section class="mx-4 mt-4 rounded-card bg-card p-4 ring-2 ring-next/40" aria-labelledby="menu-title">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <p class="text-xs font-bold text-next">今日のメニュー</p>
+        <h2 id="menu-title" class="mt-0.5 text-[26px] leading-tight font-black">脚の日</h2>
+        <p class="text-sm font-bold text-mute"><span class="font-num">4</span>種目・約<span class="font-num">45</span>分</p>
+      </div>
+      <span class="shrink-0 rounded-full bg-hp/15 px-2.5 py-1 text-xs font-bold text-hp">弱点ボーナス <span class="font-num">×1.5</span></span>
+    </div>
+
+    <div class="mt-4 flex items-center gap-2 rounded-tile bg-raised px-3 py-2 text-xs font-bold text-mute">
+      <svg viewBox="0 0 24 24" class="size-5 shrink-0 text-ink/70" fill="currentColor" aria-hidden="true"><path d="M12 2.5c-4.4 0-7.5 3.4-7.5 7.8v10.4l2.5-1.9 2.5 1.9 2.5-1.9 2.5 1.9 2.5-1.9 2.5 1.9V10.3c0-4.4-3.1-7.8-7.5-7.8zM9 11.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
+      <span>相手は<span class="text-ink">前回の自分</span>（10/18）</span>
+      <span class="ml-auto font-num text-ink">4,950 → <span class="text-next">5,460</span> kg</span>
+    </div>
+
+    <ul class="mt-2 divide-y divide-line/60">
+      <li class="flex items-center justify-between gap-3 py-3">
+        <div class="min-w-0">
+          <p class="truncate font-bold">スクワット</p>
+          <p class="text-xs font-bold text-mute">前回 <span class="font-num">57.5kg × 8</span></p>
+        </div>
+        <div class="shrink-0 text-right">
+          <p class="font-num font-extrabold">60kg × 8 <span class="text-mute">× 3</span></p>
+          <p class="font-num text-xs font-extrabold text-next">+2.5kg</p>
+        </div>
+      </li>
+      <li class="flex items-center justify-between gap-3 py-3">
+        <div class="min-w-0">
+          <p class="truncate font-bold">ルーマニアンデッドリフト</p>
+          <p class="text-xs font-bold text-mute">前回 <span class="font-num">70kg × 9</span></p>
+        </div>
+        <div class="shrink-0 text-right">
+          <p class="font-num font-extrabold">70kg × 10 <span class="text-mute">× 3</span></p>
+          <p class="font-num text-xs font-extrabold text-next">+1回</p>
+        </div>
+      </li>
+      <li class="flex items-center justify-between gap-3 py-3">
+        <div class="min-w-0">
+          <p class="truncate font-bold">ブルガリアンスクワット</p>
+          <p class="text-xs font-bold text-mute">前回 <span class="font-num">16kg × 10</span></p>
+        </div>
+        <div class="shrink-0 text-right">
+          <p class="font-num font-extrabold">16kg × 10 <span class="text-mute">× 3</span></p>
+          <p class="text-xs font-bold text-mute">キープ</p>
+        </div>
+      </li>
+      <li class="flex items-center justify-between gap-3 py-3">
+        <div class="min-w-0">
+          <p class="truncate font-bold">レッグエクステンション</p>
+          <p class="text-xs font-bold text-mute">前回 <span class="font-num">40kg × 10</span></p>
+        </div>
+        <div class="shrink-0 text-right">
+          <p class="font-num font-extrabold">40kg × 12 <span class="text-mute">× 3</span></p>
+          <p class="font-num text-xs font-extrabold text-next">+2回</p>
+        </div>
+      </li>
+    </ul>
+
+    <a href="record-strength.html" class="puff mt-3 flex h-16 items-center justify-center gap-2 rounded-btn bg-next text-xl font-black text-bg [--puff-c:var(--color-next-deep)]">
+      はじめる
+      <svg viewBox="0 0 24 24" class="size-6" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.2-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>
+    </a>
+  </section>
+
+  <!-- 今週のスタンプ帳（全員が記録した日にスタンプ。欠けた日は穴） -->
+  <section class="mx-4 mt-4 rounded-card bg-card p-4" aria-labelledby="stamp-title">
+    <div class="flex items-baseline justify-between">
+      <h2 id="stamp-title" class="font-black">スタンプ帳</h2>
+      <p class="text-xs font-bold text-mute">今週 <span class="font-num text-base text-win">3</span><span class="font-num">/7</span></p>
+    </div>
+    <ol class="mt-3 grid grid-cols-7 gap-1.5 text-center text-[11px] font-bold text-mute">
+      <li class="flex flex-col items-center gap-1.5">月<span class="grid aspect-square w-full -rotate-6 place-items-center rounded-full bg-win text-bg" aria-label="全員記録"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span></li>
+      <li class="flex flex-col items-center gap-1.5">火<span class="grid aspect-square w-full rotate-3 place-items-center rounded-full bg-win text-bg" aria-label="全員記録"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span></li>
+      <li class="flex flex-col items-center gap-1.5">水<span class="font-num grid aspect-square w-full place-items-center rounded-full border-2 border-dashed border-mute/50 text-[11px]" aria-label="5人中4人">4/5</span></li>
+      <li class="flex flex-col items-center gap-1.5">木<span class="grid aspect-square w-full -rotate-3 place-items-center rounded-full bg-win text-bg" aria-label="全員記録"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span></li>
+      <li class="flex flex-col items-center gap-1.5">金<span class="font-num grid aspect-square w-full place-items-center rounded-full border-2 border-dashed border-mute/50 text-[11px]" aria-label="5人中3人">3/5</span></li>
+      <li class="flex flex-col items-center gap-1.5">土<span class="font-num grid aspect-square w-full place-items-center rounded-full border-2 border-dashed border-mute/50 text-[11px]" aria-label="5人中4人">4/5</span></li>
+      <li class="flex flex-col items-center gap-1.5 text-next">日<span class="font-num grid aspect-square w-full place-items-center rounded-full border-2 border-next text-[11px]" aria-label="今日 5人中2人">2/5</span></li>
+    </ol>
+    <p class="mt-3 text-xs leading-relaxed font-bold text-mute">穴の日は、仲間が<span class="text-ink">追加で1セット</span>記録すると埋まります。</p>
+  </section>
+
+</main>
+<script>
+  document.getElementById("nudge").addEventListener("click", (e) => {
+    const b = e.currentTarget;
+    b.textContent = "送った";
+    b.disabled = true;
+    b.className = "pop-in rounded-full bg-raised px-2.5 py-0.5 text-[11px] font-black text-mute";
+    toast("タクに「待ってるよ」スタンプを送りました");
+  });
+</script>
+</body>
+</html>

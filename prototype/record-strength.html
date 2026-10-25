@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FitLog 筋トレの記録</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=M+PLUS+Rounded+1c:wght@800&family=Nunito:wght@800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js"></script>
+  <script src="shared.js"></script>
+</head>
+<body class="bg-[#0C0D10] font-sans text-ink antialiased">
+<main class="mx-auto min-h-dvh max-w-[430px] bg-bg pb-16">
+
+  <!-- 上の帯: 戻る／メニュー名と経過時間／終了 -->
+  <header class="sticky top-0 z-20 flex items-center justify-between gap-2 bg-bg/90 px-4 pt-4 pb-3 backdrop-blur">
+    <a href="today.html" class="press grid size-11 place-items-center rounded-full bg-card" aria-label="今日へ戻る">
+      <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6"/></svg>
+    </a>
+    <div class="text-center">
+      <p class="text-xs font-bold text-mute">脚の日</p>
+      <p id="elapsed" class="font-num text-xl font-extrabold">04:10</p>
+    </div>
+    <button type="button" id="finish" class="press rounded-full bg-card px-4 py-2.5 text-sm font-bold">終了</button>
+  </header>
+
+  <!-- 対戦相手を選ぶ -->
+  <div class="mx-4 mt-1 grid grid-cols-2 gap-1 rounded-full bg-card p-1 text-sm font-bold" role="radiogroup" aria-label="対戦相手">
+    <button type="button" role="radio" data-opp="self" class="press rounded-full py-2">前回の自分</button>
+    <button type="button" role="radio" data-opp="ken" class="press rounded-full py-2">ケン</button>
+  </div>
+
+  <!-- ゴーストとのレース（同じセット数の時点での合計を比べる） -->
+  <section class="mx-4 mt-3 rounded-card bg-card p-4" aria-label="ゴースト対戦">
+    <div class="flex items-baseline justify-between">
+      <p class="text-xs font-bold text-mute">合計の重さ（同じセット数の時点）</p>
+      <p id="lead" class="font-num text-lg font-extrabold"></p>
+    </div>
+    <div class="mt-3 space-y-2.5">
+      <div class="flex items-center gap-2">
+        <span class="w-12 shrink-0 text-xs font-bold">あなた</span>
+        <div class="h-4 flex-1 rounded-full bg-raised p-[3px]"><div id="bar-you" class="h-full rounded-full transition-[width] duration-700 ease-[var(--spring)]"></div></div>
+        <span id="vol-you" class="font-num w-16 shrink-0 text-right text-sm font-extrabold"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="opp-label" class="w-12 shrink-0 truncate text-xs font-bold text-mute"></span>
+        <div class="h-4 flex-1 rounded-full bg-raised p-[3px]"><div id="bar-ghost" class="h-full rounded-full bg-ink/25 transition-[width] duration-700 ease-[var(--spring)]"></div></div>
+        <span id="vol-ghost" class="font-num w-16 shrink-0 text-right text-sm font-extrabold text-mute"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- いまの種目 -->
+  <section class="mx-4 mt-3 rounded-card bg-card p-4" aria-labelledby="ex-name">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-xs font-bold text-mute">種目 <span id="ex-index" class="font-num"></span></p>
+        <h1 id="ex-name" class="truncate text-2xl font-black"></h1>
+      </div>
+      <button type="button" id="video" class="press flex shrink-0 items-center gap-1.5 rounded-full bg-raised px-3 py-2 text-xs font-bold">
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><rect x="3" y="6.5" width="12.5" height="11" rx="3"/><path d="m15.5 10.5 5-3v9l-5-3z"/></svg>
+        <span><span class="font-num">2</span>秒撮る</span>
+      </button>
+    </div>
+
+    <table class="mt-3 w-full text-sm">
+      <thead class="text-xs text-mute">
+        <tr><th class="w-14 pb-2 pl-2 text-left font-bold">セット</th><th id="col-opp" class="pb-2 text-left font-bold"></th><th class="pb-2 text-left font-bold">今回</th><th class="w-16 pb-2 text-right font-bold">勝敗</th></tr>
+      </thead>
+      <tbody id="sets"></tbody>
+    </table>
+
+    <!-- いまのセットの入力 -->
+    <div class="mt-4 grid grid-cols-2 gap-3">
+      <div class="rounded-tile bg-raised p-3 text-center">
+        <p class="text-xs font-bold text-mute">重さ kg</p>
+        <p id="w" class="font-num mt-1 text-[40px] leading-none font-extrabold"></p>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button type="button" data-step="w:-1" class="press h-11 rounded-tile bg-card text-2xl font-black" aria-label="重さを減らす">−</button>
+          <button type="button" data-step="w:1" class="press h-11 rounded-tile bg-card text-2xl font-black" aria-label="重さを増やす">＋</button>
+        </div>
+      </div>
+      <div class="rounded-tile bg-raised p-3 text-center">
+        <p class="text-xs font-bold text-mute">回数</p>
+        <p id="r" class="font-num mt-1 text-[40px] leading-none font-extrabold"></p>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button type="button" data-step="r:-1" class="press h-11 rounded-tile bg-card text-2xl font-black" aria-label="回数を減らす">−</button>
+          <button type="button" data-step="r:1" class="press h-11 rounded-tile bg-card text-2xl font-black" aria-label="回数を増やす">＋</button>
+        </div>
+      </div>
+    </div>
+    <p id="vs-hint" class="mt-3 text-center text-xs font-bold text-mute"></p>
+
+    <button type="button" id="complete" class="puff mt-3 flex h-16 w-full items-center justify-center rounded-btn bg-next text-xl font-black text-bg [--puff-c:var(--color-next-deep)]"></button>
+  </section>
+
+  <!-- 休憩タイマー（セット完了で表示） -->
+  <section id="rest" class="pop-in mx-4 mt-3 hidden items-center justify-between rounded-card bg-raised p-4" aria-live="polite">
+    <div>
+      <p class="text-xs font-bold text-mute">休憩</p>
+      <p id="rest-time" class="font-num text-3xl font-extrabold">1:30</p>
+    </div>
+    <div class="flex gap-2">
+      <button type="button" id="rest-add" class="press rounded-full bg-card px-3 py-2 text-sm font-bold">＋<span class="font-num">30</span>秒</button>
+      <button type="button" id="rest-skip" class="press rounded-full bg-card px-3 py-2 text-sm font-bold">スキップ</button>
+    </div>
+  </section>
+
+  <!-- このあとの種目 -->
+  <section class="mx-4 mt-3 rounded-card bg-card p-4" aria-labelledby="next-title">
+    <h2 id="next-title" class="text-sm font-black text-mute">このあと</h2>
+    <ul id="upcoming" class="mt-1 divide-y divide-line/60"></ul>
+  </section>
+</main>
+
+<!-- 終了したときのまとめ -->
+<div id="summary" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="sum-title">
+  <div class="absolute inset-0 bg-black/70"></div>
+  <div class="pop-in absolute inset-x-4 top-1/2 mx-auto max-w-[398px] -translate-y-1/2 rounded-card bg-card p-6 text-center">
+    <p class="text-sm font-bold text-mute">おつかれさま</p>
+    <h2 id="sum-title" class="mt-1 text-2xl font-black"></h2>
+    <dl class="mt-5 grid grid-cols-2 gap-3 text-left">
+      <div class="rounded-tile bg-raised p-3"><dt class="text-xs font-bold text-mute">合計の重さ</dt><dd id="sum-vol" class="font-num text-2xl font-extrabold"></dd></div>
+      <div class="rounded-tile bg-raised p-3"><dt class="text-xs font-bold text-mute">ボスへのダメージ</dt><dd id="sum-dmg" class="font-num text-2xl font-extrabold text-hp"></dd></div>
+    </dl>
+    <p class="mt-2 text-xs font-bold text-mute">脚はボスの弱点なので <span class="font-num">×1.5</span></p>
+    <a href="today.html" class="puff mt-5 flex h-14 items-center justify-center rounded-btn bg-next text-lg font-black text-bg [--puff-c:var(--color-next-deep)]">今日へ戻る</a>
+    <button type="button" id="sum-close" class="press mt-3 w-full py-2 text-sm font-bold text-mute">記録を続ける</button>
+  </div>
+</div>
+
+<script>
+  // 前回の自分は「今日」画面の数字（合計 4,950kg）と一致させている
+  const plan = [
+    { name: "スクワット", sets: 3, w: 60, r: 8, step: 2.5, ghost: { self: [[57.5, 8], [57.5, 8], [57.5, 8]], ken: [[70, 6], [70, 6], [65, 8]] } },
+    { name: "ルーマニアンデッドリフト", sets: 3, w: 70, r: 10, step: 2.5, ghost: { self: [[70, 9], [70, 9], [70, 9]], ken: [[80, 8], [80, 8], [80, 7]] } },
+    { name: "ブルガリアンスクワット", sets: 3, w: 16, r: 10, step: 2, ghost: { self: [[16, 10], [16, 10], [16, 10]], ken: [[14, 12], [14, 12], [14, 10]] } },
+    { name: "レッグエクステンション", sets: 3, w: 40, r: 12, step: 5, ghost: { self: [[40, 10], [40, 10], [40, 10]], ken: [[45, 12], [45, 12], [45, 10]] } },
+  ];
+  const oppName = { self: "前回", ken: "ケン" };
+  const state = { opp: "self", cur: 0, w: 60, r: 8, done: plan.map(() => []) };
+  state.done[0].push([60, 8]); // 1セット目は済んだ状態から始める
+
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => n.toLocaleString("ja-JP");
+  const kg = (w) => (Number.isInteger(w) ? w : w.toFixed(1));
+  const vol = ([w, r]) => w * r;
+  const youTotal = () => state.done.flat().reduce((a, s) => a + vol(s), 0);
+  const ghostAtSamePoint = () => state.done.reduce((a, sets, i) => a + plan[i].ghost[state.opp].slice(0, sets.length).reduce((b, s) => b + vol(s), 0), 0);
+  const ghostFull = () => plan.reduce((a, p) => a + p.ghost[state.opp].reduce((b, s) => b + vol(s), 0), 0);
+  const result = (mine, theirs) => (vol(mine) > vol(theirs) ? "win" : vol(mine) === vol(theirs) ? "draw" : "lose");
+  const chip = {
+    win: '<span class="rounded-full bg-win px-2 py-0.5 text-xs font-black text-bg">勝ち</span>',
+    draw: '<span class="rounded-full bg-raised px-2 py-0.5 text-xs font-bold text-mute">引分</span>',
+    lose: '<span class="rounded-full bg-raised px-2 py-0.5 text-xs font-bold text-mute">負け</span>',
+  };
+
+  function render() {
+    const p = plan[state.cur];
+    const done = state.done[state.cur];
+    const ghost = p.ghost[state.opp];
+
+    document.querySelectorAll("[data-opp]").forEach((b) => {
+      const on = b.dataset.opp === state.opp;
+      b.setAttribute("aria-checked", on);
+      b.className = `press rounded-full py-2 ${on ? "bg-ink text-bg" : "text-mute"}`;
+    });
+
+    // レース
+    const you = youTotal(), gh = ghostAtSamePoint(), diff = you - gh;
+    const scale = Math.max(ghostFull(), 5460);
+    $("bar-you").style.width = `${Math.max(4, (you / scale) * 100)}%`;
+    $("bar-you").className = `h-full rounded-full transition-[width] duration-700 ease-[var(--spring)] ${diff >= 0 ? "bg-win" : "bg-next"}`;
+    $("bar-ghost").style.width = `${Math.max(4, (gh / scale) * 100)}%`;
+    $("vol-you").textContent = `${fmt(you)}kg`;
+    $("vol-ghost").textContent = `${fmt(gh)}kg`;
+    $("opp-label").textContent = oppName[state.opp];
+    $("lead").innerHTML = diff > 0 ? `<span class="text-win">+${fmt(diff)}kg リード</span>`
+      : diff < 0 ? `<span class="text-next">あと${fmt(-diff)}kg</span>` : '<span class="text-mute">並んでいる</span>';
+
+    // 種目とセットの表
+    $("ex-index").textContent = `${state.cur + 1} / ${plan.length}`;
+    $("ex-name").textContent = p.name;
+    $("col-opp").textContent = oppName[state.opp];
+    $("sets").innerHTML = Array.from({ length: p.sets }, (_, i) => {
+      const g = ghost[i], mine = done[i], isCur = i === done.length;
+      const cell = isCur ? "bg-next/15" : "";
+      const now = mine ? `${kg(mine[0])} × ${mine[1]}` : isCur ? `${kg(state.w)} × ${state.r}` : "—";
+      const res = mine ? chip[result(mine, g)] : isCur ? '<span class="text-xs font-bold text-next">いま</span>' : "";
+      return `<tr>
+        <td class="font-num rounded-l-tile py-2.5 pl-3 font-extrabold ${cell} ${mine ? "text-mute" : ""}">${i + 1}</td>
+        <td class="font-num py-2.5 font-extrabold text-mute ${cell}">${kg(g[0])} × ${g[1]}</td>
+        <td class="font-num py-2.5 font-extrabold ${cell} ${isCur ? "text-ink" : mine ? "" : "text-mute"}">${now}</td>
+        <td class="rounded-r-tile py-2.5 pr-3 text-right ${cell}">${res}</td></tr>`;
+    }).join("");
+
+    // 入力
+    $("w").textContent = kg(state.w);
+    $("r").textContent = state.r;
+    const g = ghost[done.length];
+    const res = result([state.w, state.r], g);
+    $("vs-hint").innerHTML = res === "win" ? `このままなら<span class="text-win">勝ち</span>（${oppName[state.opp]} ${kg(g[0])}kg × ${g[1]}）`
+      : res === "draw" ? `このままなら引き分け（${oppName[state.opp]} ${kg(g[0])}kg × ${g[1]}）`
+      : `${oppName[state.opp]}は ${kg(g[0])}kg × ${g[1]}。<span class="text-next">あと${fmt(vol(g) - vol([state.w, state.r]))}kg分</span>で勝ち`;
+    $("complete").textContent = `セット${done.length + 1}を完了`;
+
+    // このあと
+    $("upcoming").innerHTML = plan.slice(state.cur + 1).map((q) => `
+      <li class="flex items-center justify-between gap-3 py-2.5">
+        <span class="truncate font-bold">${q.name}</span>
+        <span class="font-num shrink-0 text-sm font-extrabold text-mute">${kg(q.w)}kg × ${q.r} × ${q.sets}</span>
+      </li>`).join("") || '<li class="py-2.5 text-sm font-bold text-mute">これで最後の種目</li>';
+  }
+
+  // 経過時間
+  let elapsed = 250;
+  setInterval(() => {
+    elapsed++;
+    $("elapsed").textContent = `${String(Math.floor(elapsed / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
+  }, 1000);
+
+  // 休憩タイマー
+  let rest = 0, restTimer = null;
+  function showRest() {
+    $("rest-time").textContent = `${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, "0")}`;
+  }
+  function startRest(sec) {
+    rest = sec;
+    showRest();
+    $("rest").classList.replace("hidden", "flex");
+    clearInterval(restTimer);
+    restTimer = setInterval(() => {
+      rest--;
+      if (rest <= 0) return stopRest(true);
+      showRest();
+    }, 1000);
+  }
+  function stopRest(finished) {
+    clearInterval(restTimer);
+    $("rest").classList.replace("flex", "hidden");
+    if (finished) toast("休憩おわり。次のセットへ", "next");
+  }
+  $("rest-add").addEventListener("click", () => { rest += 30; showRest(); });
+  $("rest-skip").addEventListener("click", () => stopRest(false));
+
+  // 入力の増減
+  document.querySelectorAll("[data-step]").forEach((b) => b.addEventListener("click", () => {
+    const [key, dir] = b.dataset.step.split(":");
+    if (key === "w") state.w = Math.max(0, state.w + Number(dir) * plan[state.cur].step);
+    else state.r = Math.max(1, state.r + Number(dir));
+    render();
+  }));
+
+  document.querySelectorAll("[data-opp]").forEach((b) => b.addEventListener("click", () => { state.opp = b.dataset.opp; render(); }));
+
+  $("complete").addEventListener("click", () => {
+    const p = plan[state.cur], done = state.done[state.cur];
+    const set = [state.w, state.r];
+    const res = result(set, p.ghost[state.opp][done.length]);
+    done.push(set);
+    const msg = { win: [`${oppName[state.opp]}に勝ち！`, "win"], draw: ["引き分け。次で抜こう", "ink"], lose: ["惜しい。次のセットで取り返そう", "ink"] }[res];
+    toast(msg[0], msg[1]);
+    if (done.length === p.sets) {
+      if (state.cur === plan.length - 1) { render(); return openSummary(); }
+      state.cur++;
+      state.w = plan[state.cur].w;
+      state.r = plan[state.cur].r;
+    }
+    startRest(90);
+    render();
+  });
+
+  $("video").addEventListener("click", () => toast("ここから2秒だけ撮る（プロトタイプでは撮らない）"));
+
+  function openSummary() {
+    stopRest(false);
+    const total = youTotal();
+    let win = 0, lose = 0;
+    state.done.forEach((sets, i) => sets.forEach((s, j) => {
+      const r = result(s, plan[i].ghost[state.opp][j]);
+      if (r === "win") win++;
+      if (r === "lose") lose++;
+    }));
+    $("sum-title").innerHTML = `${oppName[state.opp]}に <span class="font-num text-win">${win}</span>勝 <span class="font-num">${lose}</span>敗`;
+    $("sum-vol").textContent = `${fmt(total)}kg`;
+    $("sum-dmg").textContent = fmt(Math.round(total * 1.5));
+    $("summary").classList.remove("hidden");
+  }
+  $("finish").addEventListener("click", openSummary);
+  $("sum-close").addEventListener("click", () => $("summary").classList.add("hidden"));
+
+  render();
+</script>
+</body>
+</html>
