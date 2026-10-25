@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FitLog 仲間</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=M+PLUS+Rounded+1c:wght@800&family=Nunito:wght@800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js"></script>
+  <script src="shared.js"></script>
+</head>
+<body class="bg-[#F3E8D3] font-sans text-ink antialiased" data-tab="friends">
+<main class="mx-auto min-h-dvh max-w-[430px] bg-bg pb-28">
+
+  <header class="flex items-end justify-between px-5 pt-7">
+    <div>
+      <p class="text-sm font-bold text-mute">朝トレ部・<span class="font-num">5</span>人</p>
+      <h1 class="text-[32px] leading-tight font-black">仲間</h1>
+    </div>
+    <button type="button" id="invite" class="puff mb-1 flex items-center gap-1.5 rounded-full bg-sky px-3.5 py-2 text-xs font-black text-card [--puff-c:var(--color-sky-deep)]">
+      <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>招待
+    </button>
+  </header>
+
+  <!-- 今週のグループ合計（ボス戦の代わりに残した1行） -->
+  <p class="mx-4 mt-4 rounded-btn bg-sky/12 px-4 py-2.5 text-sm font-bold text-sky-deep">
+    今週のみんな: 筋トレ <span id="sum-strength" class="font-num text-base"></span>回・ラン <span class="font-num text-base">3</span>回 <span class="font-num">21.4</span>km
+  </p>
+
+  <!-- 今日の足跡（記録した人・休んだ人だけ色がつく。まだの人に声かけはしない） -->
+  <section class="mt-5" aria-labelledby="foot-title">
+    <h2 id="foot-title" class="px-5 text-sm font-black text-mute">今日の足跡</h2>
+    <ul id="footprints" class="mt-2 flex justify-between px-5"></ul>
+  </section>
+
+  <!-- 今週の記録（スタンプ・コメント） -->
+  <section class="mt-5 space-y-4 px-4" aria-label="今週の記録">
+    <div id="feed" class="space-y-4"></div>
+  </section>
+</main>
+
+<!-- コメントを書く（定型＋自由入力50字） -->
+<div id="sheet" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div data-close class="absolute inset-0 bg-ink/40"></div>
+  <form id="form" class="absolute inset-x-0 bottom-0 mx-auto max-w-[430px] rounded-t-card bg-card p-5 pb-8">
+    <div class="flex items-center justify-between">
+      <p id="sheet-title" class="font-black"></p>
+      <button type="button" data-close class="press rounded-full bg-raised px-3 py-1 text-sm font-bold">閉じる</button>
+    </div>
+    <p class="mt-4 text-xs font-bold text-mute">ひとことで送る</p>
+    <div id="presets" class="mt-2 flex flex-wrap gap-2"></div>
+    <label for="text" class="mt-5 block text-xs font-bold text-mute">自分の言葉で（<span class="font-num">50</span>字まで）</label>
+    <div class="mt-2 flex items-start gap-2">
+      <textarea id="text" rows="2" maxlength="50" class="min-w-0 flex-1 resize-none rounded-tile border-2 border-line bg-bg px-3 py-2 font-bold outline-none focus:border-sky" placeholder="例: 明日いっしょに走ろう"></textarea>
+      <button type="submit" class="puff h-12 shrink-0 rounded-btn bg-sky px-4 font-black text-card [--puff-c:var(--color-sky-deep)]">送る</button>
+    </div>
+    <p class="mt-1 text-right text-xs font-bold text-mute"><span id="count" class="font-num">0</span>/<span class="font-num">50</span></p>
+  </form>
+</div>
+
+<script>
+  const { prefs } = FitLog;
+  const $ = (id) => document.getElementById(id);
+  const ME = "あなた";
+  const people = {
+    あなた: "bg-next", ケン: "bg-win", ミホ: "bg-sky", サキ: "bg-lose", タク: "bg-sun",
+  };
+  const face = (name, size = "size-10 text-base") => `<span class="${people[name]} grid ${size} shrink-0 place-items-center rounded-full font-black text-card">${name[0]}</span>`;
+
+  // 記録用と休み用でスタンプを分ける。mine: 自分が付けたか（同じスタンプは1人1回）
+  const STAMPS = { record: ["ナイス", "前回超え", "いっしょに"], rest: ["いい休み", "ゆっくりね"] };
+  const PRESETS = { record: ["ナイス！", "前回超えすごい", "明日もいっしょに"], rest: ["いい休みを", "ゆっくり休んでね", "また明日"] };
+
+  const feed = [
+    { id: "ken", who: "ケン", when: "今日 7:10", kind: "record", title: "脚の日", detail: "4種目・5,180kg", tag: "前回超え", video: true,
+      stamps: { ナイス: { n: 2, mine: false }, 前回超え: { n: 3, mine: true }, いっしょに: { n: 0, mine: false } },
+      comments: [{ who: "ミホ", text: "スクワット60いったの？すごい" }, { who: ME, text: "負けてられない" }] },
+    { id: "miho", who: "ミホ", when: "今日 6:30", kind: "record", title: "ラン", detail: "5.2km・28:40", tag: "GPX", route: true,
+      stamps: { ナイス: { n: 1, mine: false }, 前回超え: { n: 0, mine: false }, いっしょに: { n: 1, mine: false } }, comments: [] },
+    { id: "saki", who: "サキ", when: "今日", kind: "rest", title: "おやすみ", detail: "",
+      stamps: { いい休み: { n: 2, mine: false }, ゆっくりね: { n: 0, mine: false } }, comments: [{ who: "ケン", text: "いい休みを" }] },
+    { id: "taku", who: "タク", when: "昨日 21:40", kind: "record", title: "背中の日", detail: "3種目・3,920kg",
+      stamps: { ナイス: { n: 3, mine: true }, 前回超え: { n: 0, mine: false }, いっしょに: { n: 0, mine: false } }, comments: [] },
+  ];
+  // 自分の今日（今日タブの状態に合わせて先頭に出す）
+  if (prefs.today === "done") feed.unshift({ id: "me", who: ME, when: "今日 いま", kind: "record", title: "脚の日", detail: "4種目・5,460kg", tag: "前回超え",
+    stamps: { ナイス: { n: 0, mine: false }, 前回超え: { n: 0, mine: false }, いっしょに: { n: 0, mine: false } }, comments: [] });
+  if (prefs.today === "rest") feed.unshift({ id: "me", who: ME, when: "今日", kind: "rest", title: "おやすみ", detail: "",
+    stamps: { いい休み: { n: 0, mine: false }, ゆっくりね: { n: 0, mine: false } }, comments: [] });
+
+  function renderFootprints() {
+    const today = { あなた: prefs.today, ケン: "done", ミホ: "done", サキ: "rest", タク: "none" };
+    $("footprints").innerHTML = Object.entries(today).map(([name, st]) => `
+      <li class="flex w-14 flex-col items-center gap-1">
+        <span class="relative ${st === "none" ? "opacity-35 grayscale" : ""}">${face(name, "size-12 text-lg")}
+          ${st === "rest" ? `<span class="absolute -right-1 -bottom-1 grid size-6 place-items-center rounded-full bg-rest text-rest-ink ring-2 ring-bg">${FitLog.moonSvg.replace("size-5", "size-3.5")}</span>` : ""}
+          ${st === "done" ? `<span class="absolute -right-1 -bottom-1 grid size-6 place-items-center rounded-full bg-sun ring-2 ring-bg"><svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>` : ""}
+        </span>
+        <span class="text-xs font-bold ${st === "none" ? "text-mute" : ""}">${name}</span>
+        <span class="text-[10px] font-bold ${st === "rest" ? "text-rest-ink" : st === "done" ? "text-sun-deep" : "text-mute/70"}">${{ done: "記録", rest: "おやすみ", none: "　" }[st]}</span>
+      </li>`).join("");
+    $("sum-strength").textContent = 9 + (prefs.today === "done" ? 1 : 0);
+  }
+
+  const routeSvg = `<svg viewBox="0 0 120 56" class="h-14 w-full" aria-label="走ったルートの縮小図"><path d="M8 44c10-4 14-20 26-22s14 12 26 10 10-22 24-24 18 14 28 22" fill="none" stroke="var(--color-sky)" stroke-width="4" stroke-linecap="round"/><circle cx="8" cy="44" r="4" fill="var(--color-win)"/><circle cx="112" cy="30" r="4" fill="var(--color-next)"/></svg>`;
+
+  function renderFeed() {
+    $("feed").innerHTML = feed.map((p) => {
+      const rest = p.kind === "rest";
+      return `<article class="rounded-card bg-card p-4 slab ${rest ? "ring-2 ring-rest" : ""}">
+        <header class="flex items-center gap-3">
+          ${face(p.who)}
+          <div class="min-w-0 flex-1">
+            <p class="font-black">${p.who}<span class="ml-2 text-xs font-bold text-mute">${p.when}</span></p>
+            <p class="text-sm font-bold ${rest ? "text-rest-ink" : ""}">${rest ? `${FitLog.moonSvg.replace("size-5", "inline size-4 -mt-0.5")} おやすみ` : `${p.title}<span class="font-num ml-2 text-mute">${p.detail}</span>`}</p>
+          </div>
+          ${p.tag ? `<span class="shrink-0 rounded-full ${p.tag === "前回超え" ? "bg-win/15 text-win-deep" : "bg-sky/15 text-sky-deep"} px-2.5 py-1 text-xs font-black">${p.tag}</span>` : ""}
+        </header>
+        ${p.video ? `<button type="button" data-video class="press mt-3 flex h-24 w-full items-center justify-center gap-2 rounded-tile bg-ink/85 text-sm font-bold text-card">
+          <svg viewBox="0 0 24 24" class="size-7" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.2-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>ラストレップ <span class="font-num">2</span>秒<span class="ml-1 text-xs text-card/70">日曜まで</span></button>` : ""}
+        ${p.route ? `<div class="mt-3 rounded-tile bg-sky/8 px-2">${routeSvg}</div>` : ""}
+        <div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="スタンプ">
+          ${Object.entries(p.stamps).map(([s, v]) => `<button type="button" data-post="${p.id}" data-stamp="${s}" aria-pressed="${v.mine}" class="press rounded-full border-2 px-3 py-1.5 text-xs font-black ${v.mine ? (rest ? "border-rest-ink bg-rest text-rest-ink" : "border-sun-deep bg-sun/25 text-ink") : "border-line text-mute"}">${s}${v.n ? ` <span class="font-num">${v.n}</span>` : ""}</button>`).join("")}
+        </div>
+        ${p.comments.length ? `<ul class="mt-3 space-y-1.5 border-t-2 border-line/60 pt-3">${p.comments.map((c, i) => `
+          <li class="flex items-start gap-2 text-sm">${face(c.who, "size-6 text-[11px]")}<p class="min-w-0 flex-1 font-bold break-words"><span class="text-mute">${c.who}</span>　${escapeHtml(c.text)}</p>
+          ${c.who === ME ? `<button type="button" data-post="${p.id}" data-del="${i}" class="press shrink-0 text-xs font-bold text-mute underline">削除</button>` : ""}</li>`).join("")}</ul>` : ""}
+        ${p.who === ME ? "" : `<button type="button" data-post="${p.id}" data-comment class="press mt-3 text-sm font-bold text-sky-deep">コメントする</button>`}
+      </article>`;
+    }).join("");
+  }
+  // 自由入力をそのまま画面に出すので、HTMLとして解釈させない（本番はReactが自動で行う）
+  function escapeHtml(s) { return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+  let target = null;
+  function openSheet(post) {
+    target = post;
+    $("sheet-title").textContent = `${post.who}へコメント`;
+    $("presets").innerHTML = PRESETS[post.kind].map((t) => `<button type="button" data-preset="${t}" class="puff rounded-full border-2 border-line bg-card px-3.5 py-2 text-sm font-bold">${t}</button>`).join("");
+    $("text").value = "";
+    $("count").textContent = 0;
+    $("sheet").classList.remove("hidden");
+  }
+  function addComment(text) {
+    text = text.trim();
+    if (!text) return;
+    target.comments.push({ who: ME, text: text.slice(0, 50) });
+    $("sheet").classList.add("hidden");
+    renderFeed();
+    toast(`${target.who}にコメントしました`, "sky");
+  }
+
+  $("feed").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.hasAttribute("data-video")) return toast("2秒の動画（プロトタイプでは再生しない）");
+    const post = feed.find((p) => p.id === b.dataset.post);
+    if (b.dataset.stamp) {
+      const s = post.stamps[b.dataset.stamp];
+      s.mine = !s.mine;
+      s.n += s.mine ? 1 : -1;
+      return renderFeed();
+    }
+    if (b.dataset.del) {
+      post.comments.splice(Number(b.dataset.del), 1);
+      return renderFeed();
+    }
+    if (b.hasAttribute("data-comment")) openSheet(post);
+  });
+  $("presets").addEventListener("click", (e) => { const b = e.target.closest("[data-preset]"); if (b) addComment(b.dataset.preset); });
+  $("text").addEventListener("input", (e) => { $("count").textContent = e.target.value.length; });
+  $("form").addEventListener("submit", (e) => { e.preventDefault(); addComment($("text").value); });
+  $("sheet").querySelectorAll("[data-close]").forEach((el) => el.addEventListener("click", () => $("sheet").classList.add("hidden")));
+  $("invite").addEventListener("click", () => toast("このグループは<span class=\"font-num\">5</span>人で満員です。招待リンクは<span class=\"font-num\">5</span>人未満のときに出せます", "sky"));
+
+  renderFootprints();
+  renderFeed();
+</script>
+</body>
+</html>
