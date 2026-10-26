@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitLog v4 E 分析型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:ital,wght@0,500;0,700;1,700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js"></script>
+<script src="https://unpkg.com/lucide@1.61.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  /* VARIANTS.md E の節 + DESIGN.md 2章 */
+  --primary:#FF7A1A;
+  --bg:#F7F7F5;
+  --text:#333333; --text-num:#555555; --text-sub:#888888; --text-note:#666666;
+  --win:#F28C28; --friend:#F27C9B; --rest-bg:#E3F4EF; --rest-text:#3E8E6E;
+  --heat-1:#3B8BF5; --heat-2:#2EC4B6; --heat-3:#F5D33B; --heat-4:#E84B3C;
+  --bar-bg:#E6E6E6; --btn-bg:#EFEFEF;
+  --tab-h:68px; --min-tap:44px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bar-bg);font-family:"Noto Sans JP",sans-serif;color:var(--text);font-variant-numeric:tabular-nums;display:flex;justify-content:center;align-items:center}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+.num{font-family:Roboto,"Noto Sans JP",sans-serif}
+.phone{position:relative;width:min(390px,100vw);height:min(844px,100vh);background:var(--bg);overflow:hidden}
+.screen{display:none;position:absolute;left:0;right:0;top:0;bottom:var(--tab-h);overflow-y:auto;scrollbar-width:none;padding-bottom:14px}
+.screen::-webkit-scrollbar{display:none}
+.screen.full{bottom:0}
+.screen.on{display:block}
+.icon-btn{width:var(--min-tap);height:var(--min-tap);display:flex;align-items:center;justify-content:center;flex:none}
+.icon-btn svg{width:24px;height:24px}
+/* カード */
+.cd{background:#fff;border-radius:14px;border:1.5px solid var(--primary);padding:14px;margin:10px 12px 0}
+.screen>.cd:first-child{margin-top:12px}
+.lb{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--primary)}
+.hh{font-size:15px;font-weight:700;margin-top:2px}
+.note{font-size:9px;color:var(--text-sub);margin-top:8px}
+.nums{font-family:Roboto,sans-serif;font-size:28px;font-weight:700;line-height:1.2}
+.nums small{font-size:11px;font-weight:500;margin-left:2px;color:var(--text-sub)}
+/* 今週カード */
+.wkhead{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+.wkhead .r{font-size:13px;color:var(--text-note)}
+.pbar{height:8px;border-radius:4px;background:var(--bar-bg);margin-top:10px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--primary);border-radius:4px}
+.wksub{font-size:13px;color:var(--text-sub);margin-top:8px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 12px 0}
+.tiles.t3{grid-template-columns:repeat(3,1fr)}
+.tiles .cd{margin:0;padding:12px}
+.tiles .nm{font-size:12px;color:var(--text-sub)}
+.tiles .nums{color:var(--primary);margin-top:2px}
+.tiles.t3 .nums{font-size:24px}
+.ghostbtn{display:flex;align-items:center;justify-content:center;gap:6px;width:calc(100% - 24px);margin:10px 12px 0;height:48px;border-radius:14px;border:1.5px solid var(--primary);background:#fff;color:var(--primary);font-size:15px;font-weight:700}
+.ghostbtn svg{width:18px;height:18px}
+/* ヒートマップ */
+.heat{display:flex;gap:8px;margin-top:8px}
+.bodies{display:flex;gap:0;flex:none}
+.bodies svg{width:92px;height:220px}
+.bars{flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:4px 0 0 8px}
+.bar{display:flex;align-items:flex-end;gap:8px}
+.bar .nm{width:36px;font-size:13px}
+.bar .rt{flex:1}
+.bar .tp{display:flex;justify-content:space-between;font-size:10px;color:var(--text-sub);line-height:14px}
+.bar .tr{height:7px;border-radius:4px;background:var(--bar-bg);overflow:hidden}
+.bar .tr i{display:block;height:100%;border-radius:4px}
+.legend{height:7px;border-radius:4px;background:linear-gradient(90deg,var(--heat-1),var(--heat-2),var(--heat-3),var(--heat-4));margin-top:14px}
+.legend-l{display:flex;justify-content:space-between;font-size:10px;color:var(--text-sub);margin-top:4px}
+/* 休み */
+.restbox{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:8px}
+.restbox p{margin:0;font-size:17px;font-weight:700;color:var(--rest-text)}
+.undo{font-size:13px;color:var(--rest-text);text-decoration:underline;min-height:var(--min-tap);padding:0 14px}
+.pix{shape-rendering:crispEdges;display:block}
+.pix .f0{animation:b0 1.6s steps(1) infinite}
+.pix .f1{animation:b1 1.6s steps(1) infinite}
+@keyframes b0{0%{opacity:1}50%{opacity:0}}
+@keyframes b1{0%{opacity:0}50%{opacity:1}}
+.pix .z{animation:zf 2.4s ease-in-out infinite;opacity:0}
+.pix .z1{animation-delay:0s}.pix .z2{animation-delay:.8s}.pix .z3{animation-delay:1.6s}
+@keyframes zf{0%{transform:translate(0,3px);opacity:0}30%{opacity:1}100%{transform:translate(1px,-3px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.pix .f0,.pix .f1,.pix .z{animation:none}.pix .f1{opacity:0}.pix .z{opacity:1}}
+/* 記録 */
+.offline{display:none;height:28px;line-height:28px;background:var(--rest-bg);color:var(--rest-text);font-size:11px;text-align:center}
+.offline.on{display:block}
+.rec-top{display:flex;align-items:center;height:52px;padding:0 4px}
+.rec-top .t{flex:1;text-align:center;font-size:17px;font-weight:700}
+.rec-top .sp{width:44px}
+.prev{font-size:13px;color:var(--text-sub);text-align:center}
+.big-val{text-align:center;margin-top:12px;font-family:Roboto,sans-serif;font-weight:700;color:var(--text-num);line-height:1.1}
+.big-val b{font-size:48px;position:relative;display:inline-block}
+.big-val small{font-size:17px;font-weight:700;margin:0 6px 0 2px}
+.big-val b.win{color:var(--win)}
+.steps{display:flex;justify-content:center;gap:32px;margin-top:16px}
+.step{display:flex;align-items:center;gap:8px}
+.step .l{font-size:13px;color:var(--text-sub);width:28px;text-align:center}
+.step button{width:var(--min-tap);height:var(--min-tap);border-radius:50%;background:var(--btn-bg);display:flex;align-items:center;justify-content:center;color:var(--text-note)}
+.step button svg{width:24px;height:24px}
+.done-btn{display:block;margin:10px 12px 0;width:calc(100% - 24px);height:56px;border-radius:14px;background:var(--primary);color:#fff;font-size:17px;font-weight:700}
+.done-btn:active{opacity:.85}
+.diffs{font-size:13px;margin-top:4px}
+.diffs .r{display:flex;justify-content:space-between;line-height:32px;border-bottom:1px solid var(--bg)}
+.diffs .r span:last-child{color:var(--text-sub)}
+.diffs .r.win span:last-child{color:var(--win);font-weight:700}
+.float{position:absolute;left:0;top:-4px;font-size:13px;color:var(--win);font-weight:700;animation:fl .6s ease-out forwards;pointer-events:none}
+@keyframes fl{from{transform:translateY(0);opacity:1}to{transform:translateY(-20px);opacity:0}}
+.timer{text-align:center;font-size:13px;color:var(--text-sub);margin-top:10px;min-height:20px;font-family:Roboto,"Noto Sans JP",sans-serif}
+.tiny{display:block;margin:4px auto 0;font-size:10px;color:var(--text-sub);min-height:var(--min-tap)}
+.mini{display:flex;justify-content:center;gap:16px;margin-top:8px}
+.mini svg{width:60px;height:142px}
+/* 仲間 */
+.frow{display:flex;align-items:center;gap:8px;min-height:56px}
+.frow .n{width:52px;font-size:14px;font-weight:700}
+.days7{flex:1;display:flex;gap:2px}
+.days7 i{flex:1;height:8px;border-radius:4px;background:var(--bar-bg)}
+.days7 i.on{background:var(--primary)}
+.days7 i.rest{background:transparent;border:1px dashed var(--primary)}
+.frow .c{width:24px;text-align:right;font-family:Roboto,sans-serif;font-weight:700;font-size:13px}
+.stamp{min-height:var(--min-tap);min-width:88px;padding:0 12px;border-radius:22px;background:var(--btn-bg);font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}
+.stamp b{font-family:Roboto,sans-serif;font-weight:500;font-size:13px}
+.stamp.on{background:rgb(242 124 155 / .15);color:var(--friend);font-weight:500}
+.stamp-sp{width:88px;flex:none}
+/* 下のタブ */
+.tabs{position:absolute;left:0;right:0;bottom:0;height:var(--tab-h);background:#fff;box-shadow:0 -1px 4px rgb(0 0 0 / .08);display:grid;grid-template-columns:1fr 1fr 64px 2fr}
+.tabs.off{display:none}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--text-sub);min-height:var(--min-tap)}
+.tab .ic{width:64px;height:34px;border-radius:17px;display:flex;align-items:center;justify-content:center}
+.tab svg{width:24px;height:24px}
+.tab.on{color:var(--primary)}
+.tab.on .ic{background:rgb(255 122 26 / .1)}
+.fab{width:64px;height:64px;border-radius:50%;background:var(--primary);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:-20px}
+.fab:active{opacity:.85}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+<!-- 今日 -->
+<section class="screen" id="s-today" data-tab="today">
+  <div class="cd">
+    <div class="lb">THIS WEEK</div><div class="hh">今週</div>
+    <div class="wkhead"><div class="nums">2 / 7日</div><div class="r">月曜から <span class="num">4</span>日目</div></div>
+    <div class="pbar"><i style="width:28.6%"></i></div>
+    <div class="wksub">動いた日 <span class="num">2</span>・休んだ日 <span class="num">1</span></div>
+  </div>
+  <div data-slot="body"></div>
+</section>
+
+<!-- 休み -->
+<section class="screen" id="s-rest" data-tab="today">
+  <div class="cd">
+    <div class="lb">RECOVERY</div><div class="hh">回復日</div>
+    <div class="restbox"><div id="pix"></div><p>今日は回復日</p><button class="undo" id="undo">取り消し</button></div>
+  </div>
+  <div data-slot="body"></div>
+</section>
+
+<!-- 記録 -->
+<section class="screen full" id="s-record">
+  <div class="offline" id="offbar">オフライン: 端末に保存しました。つながったら送ります</div>
+  <div class="rec-top">
+    <a class="icon-btn" href="#today" aria-label="戻る"><i data-lucide="chevron-left"></i></a>
+    <div class="t">スクワット</div><div class="sp"></div>
+  </div>
+  <div class="cd" style="margin-top:2px">
+    <div class="prev" id="setno"></div>
+    <div class="big-val" id="bigv"></div>
+    <div class="steps">
+      <div class="step"><button id="wm" aria-label="重さを減らす"><i data-lucide="minus"></i></button><span class="l">kg</span><button id="wp" aria-label="重さを増やす"><i data-lucide="plus"></i></button></div>
+      <div class="step"><button id="rm" aria-label="回数を減らす"><i data-lucide="minus"></i></button><span class="l">回</span><button id="rp" aria-label="回数を増やす"><i data-lucide="plus"></i></button></div>
+    </div>
+  </div>
+  <button class="done-btn" id="done">できた</button>
+  <div class="timer" id="timer"></div>
+  <div class="cd" id="diffcard" hidden><div class="diffs" id="diffs"></div></div>
+  <div class="cd">
+    <div class="lb">TARGET</div><div class="hh">このセットで使う部位</div>
+    <div class="mini" id="mini"></div>
+  </div>
+  <button class="tiny" id="offtoggle">確認用: オフライン表示を切り替え</button>
+</section>
+
+<!-- 仲間 -->
+<section class="screen" id="s-friends" data-tab="friends">
+  <div class="cd">
+    <div class="lb">THIS WEEK</div><div class="hh">今週の動いた日</div>
+    <div id="frows"></div>
+    <div class="note">※ 実線＝動いた日、点線＝休んだ日（月〜日）</div>
+  </div>
+</section>
+
+<!-- 自分 -->
+<section class="screen" id="s-me" data-tab="me">
+  <div class="tiles t3" style="margin-top:12px">
+    <div class="cd"><div class="nm">今月の動いた日</div><div class="nums">13<small>日</small></div></div>
+    <div class="cd"><div class="nm">総重量</div><div class="nums">48,200<small>kg</small></div></div>
+    <div class="cd"><div class="nm">ランの距離</div><div class="nums">15.6<small>km</small></div></div>
+  </div>
+  <div class="cd">
+    <div class="lb">BODY BALANCE</div><div class="hh">部位別ヒートマップ</div>
+    <div class="heat"><div class="bodies"></div><div class="bars"></div></div>
+    <div class="legend"></div>
+    <div class="legend-l"><span>低</span><span>高</span></div>
+    <div class="note">※ 週の目安 10セット を 100% とした割合</div>
+  </div>
+  <div class="cd">
+    <div class="lb">WEEKLY VOLUME</div><div class="hh">総重量</div>
+    <svg id="chart" viewBox="0 0 330 150" width="100%"></svg>
+  </div>
+</section>
+
+<nav class="tabs" id="tabs">
+  <a class="tab" data-t="today" href="#today"><span class="ic"><i data-lucide="dumbbell"></i></span>今日</a>
+  <a class="tab" data-t="friends" href="#friends"><span class="ic"><i data-lucide="users"></i></span>仲間</a>
+  <a class="fab" href="#record" aria-label="記録を入力">入力</a>
+  <a class="tab" data-t="me" href="#me"><span class="ic"><i data-lucide="user"></i></span>自分</a>
+</nav>
+</div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const st={rested:false};
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function icons(){lucide.createIcons();}
+
+/* 今日・休みで共通の下側 */
+$$("[data-slot=body]").forEach(el=>el.innerHTML=`
+  <div class="cd">
+    <div class="lb">BODY BALANCE</div><div class="hh">部位別ヒートマップ</div>
+    <div class="heat"><div class="bodies"></div><div class="bars"></div></div>
+    <div class="legend"></div>
+    <div class="legend-l"><span>低</span><span>高</span></div>
+    <div class="note">※ 週の目安 10セット を 100% とした割合</div>
+  </div>
+  <div class="tiles">
+    <div class="cd"><div class="nm">今週の総重量</div><div class="nums">6,680<small>kg</small></div></div>
+    <div class="cd"><div class="nm">前回超え</div><div class="nums">3<small>回</small></div></div>
+  </div>
+  ${el.closest("#s-today")?'<button class="ghostbtn" id="rest-btn"><i data-lucide="moon"></i>今日は休む</button>':""}`);
+
+/* ドット絵(1マス4px・40x18) */
+(function(){
+  const HAIR="#C2462C",SKIN="#F2B68C",SKIN2="#E39F72",MINT="#8FD3B6",EDGE="#5FB08F",MAT="#3E8E6E",MATTOP="#7CCBA5",PIL="#FFFFFF",PIL2="#D5E3DE",EYE="#5A2E22";
+  const R=(x,y,w,h,c)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
+  const mat=R(0,13,40,5,MAT)+R(0,13,40,1,MATTOP);
+  const pillow=R(0,10,10,3,PIL)+R(0,12,10,1,PIL2)+R(0,10,1,1,PIL2);
+  const head=R(3,7,6,4,SKIN)+R(3,6,6,1,HAIR)+R(2,7,2,3,HAIR)+R(4,10,1,1,HAIR)+R(6,8,2,1,EYE)+R(7,9,1,1,"#E98F7A");
+  const feet=R(34,9,2,4,SKIN)+R(34,9,2,1,SKIN2);
+  const blanket=R(9,9,25,1,EDGE)+R(9,10,25,2,MINT)+R(9,12,25,1,EDGE)+R(33,10,1,2,EDGE)+R(9,10,1,2,EDGE);
+  const base=pillow+head+feet+blanket;
+  const up=R(14,8,8,1,EDGE)+R(14,9,8,1,MINT);
+  const zN=(n)=>(x,y,c)=>{let o=R(x,y,n,1,c)+R(x,y+n-1,n,1,c);for(let i=1;i<n-1;i++)o+=R(x+n-1-i,y+i,1,1,c);return o};
+  const z3=zN(4),z4=zN(5),z5=zN(6);
+  $("#pix").innerHTML=`<svg class="pix" viewBox="0 0 40 18" width="280" height="126" role="img" aria-label="マットの上で布団をかけて仰向けに寝ている人">${mat}<g class="f0">${base}</g><g class="f1">${base}${up}</g><g class="z z1">${z3(10,4,MAT)}</g><g class="z z2">${z4(15,2,MAT)}</g><g class="z z3">${z5(21,0,MAT)}</g></svg>`;
+})();
+
+/* 自分: ヒートマップ */
+const HP={chest:3,shoulder:3,back:3,arm:4,abs:0,leg:0};
+function heat(p){
+    const s=[css("--heat-1"),css("--heat-2"),css("--heat-3"),css("--heat-4")].map(h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)));
+  const x=Math.max(0,Math.min(p,1))*3, i=Math.min(Math.floor(x),2), t=x-i;
+  return "rgb("+s[i].map((v,k)=>Math.round(v+(s[i+1][k]-v)*t)).join(",")+")";
+}
+(function(){
+  const SIL={ // シルエット（右半身）
+    torso:'M100,56 L112,58 C128,62 142,64 147,70 C149,84 147,100 141,116 C139,136 135,160 131,176 C129,186 118,192 100,192 Z',
+    arm:'M141,66 C155,66 164,76 164,92 L162,136 L148,136 C148,112 146,88 139,72 Z',
+    fore:'M148,134 L162,136 C166,156 170,176 174,196 L166,199 C158,184 150,160 148,134 Z',
+    hand:'M164,196 L176,196 C179,208 177,218 172,221 C166,219 164,208 164,196 Z',
+    leg:'M102,188 C118,188 133,185 135,198 C137,232 133,258 127,276 C129,302 129,332 125,368 L129,384 C135,392 135,399 131,404 L107,404 C105,397 108,390 112,386 C110,350 108,310 106,282 C102,250 102,216 102,188 Z'
+  };
+  const MUSC={
+   front:[
+    ['chest','M102,66 C114,64 128,66 138,72 C142,84 138,96 130,102 C120,106 108,104 102,100 Z'],
+    ['delt','M138,70 C150,66 162,74 163,88 C163,98 160,104 155,104 C150,96 146,84 138,70 Z'],
+    ['arm','M148,106 C154,104 160,108 160,120 C160,128 158,132 156,132 L150,132 C147,124 146,114 148,106 Z'],
+    ['abs','M102,108 L117,108 L118,121 L102,121 Z M102,124 L118,124 L118,137 L102,137 Z M102,140 L117,140 L116,153 L102,153 Z M102,156 L115,156 L113,172 L102,172 Z'],
+    ['quad','M104,196 C116,192 130,196 134,208 C135,232 131,252 125,266 C116,271 108,267 106,258 C102,240 102,216 104,196 Z'],
+    ['calf','M108,288 C116,284 124,286 126,294 C127,320 123,346 120,370 L112,370 C108,346 106,316 108,288 Z']
+   ],
+   back:[
+    ['back','M104,120 C112,104 126,92 139,86 C143,104 139,128 131,146 C123,157 112,159 104,159 Z M100,56 L112,58 C126,62 138,66 144,70 C135,79 122,89 112,101 L100,118 Z'],
+    ['delt','M138,70 C150,66 162,74 163,88 C163,98 160,104 155,104 C150,96 146,84 138,70 Z'],
+    ['arm','M148,100 C154,98 160,102 161,114 C161,126 159,132 156,132 L150,132 C146,122 146,110 148,100 Z'],
+    ['glute','M101,162 C112,160 128,164 134,178 C136,190 129,200 116,202 C108,202 102,198 101,192 Z'],
+    ['ham','M104,206 C116,204 130,206 133,216 C134,238 130,254 125,266 C116,271 108,267 106,258 C102,240 102,222 104,206 Z'],
+    ['calf','M108,284 C116,278 126,282 127,296 C127,318 123,340 120,362 L113,362 C108,340 106,312 108,284 Z']
+   ]
+  };
+  const LINES={
+   front:'M118,66 C121,80 120,92 118,104 M126,196 C124,216 120,238 114,262 M118,288 L117,330 M104,176 L116,172',
+   back:'M100,160 L100,192 M110,208 L112,262 M110,282 L114,330'
+  };
+  const MARK={front:[[1,'chest',118,84],[2,'delt',153,86],[3,'arm',154,118],[4,'abs',108,140],[5,'quad',118,230],[6,'calf',116,330]],
+              back:[[7,'back',122,112],[8,'glute',116,182],[9,'ham',118,236],[6,'calf',116,326]]};
+  const KEY={chest:"chest",delt:"shoulder",arm:"arm",abs:"abs",quad:"leg",calf:"leg",ham:"leg",glute:"leg",back:"back"};
+  const MI='transform="translate(200,0) scale(-1,1)"';
+  // 右半身のパスと、左右反転したパスを両方出す
+  const both=(d,attr)=>`<path d="${d}" ${attr}/><path d="${d}" ${MI} ${attr}/>`;
+  const fig=(view,hp=HP,uid="")=>{
+    const id=view+uid;
+    const sil=Object.values(SIL).map(d=>both(d,"")).join("")+'<ellipse cx="100" cy="27" rx="14" ry="18"/><path d="M92,40 L108,40 L109,60 L91,60 Z"/>';
+    const heatL=MUSC[view].filter(([k])=>hp[KEY[k]]!==undefined).map(([k,d])=>{const c=heat(hp[KEY[k]]/10);return both(d,`fill="${c}" stroke="${c}" stroke-width="6" stroke-linejoin="round"`);}).join("");
+    const line=MUSC[view].map(([k,d])=>both(d,'fill="none" stroke="#fff" stroke-opacity=".4" stroke-width=".8"')).join("")+both(LINES[view],'fill="none" stroke="#fff" stroke-opacity=".4" stroke-width=".8"');
+    return `<svg viewBox="12 -6 176 424" role="img" aria-label="${view==="front"?"人体 前面":"人体 後面"}"><defs><clipPath id="cp-${id}">${sil}</clipPath><filter id="bl-${id}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter></defs><g fill="${css("--bar-bg")}">${sil}</g><g clip-path="url(#cp-${id})"><g filter="url(#bl-${id})">${heatL}</g>${line}</g></svg>`;
+  };
+  $$(".bodies").forEach((el,i)=>el.innerHTML=fig("front",HP,"h"+i)+fig("back",HP,"h"+i));if($("#mini"))$("#mini").innerHTML=fig("front",{leg:10},"m")+fig("back",{leg:10},"m");
+  const names=[["胸","chest"],["肩","shoulder"],["背中","back"],["腕","arm"],["腹筋","abs"],["脚","leg"]];
+  const BARS=names.map(([n,k])=>{const s=HP[k],p=s*10;
+    return `<div class="bar"><div class="nm">${n}</div><div class="rt"><div class="tp"><span>${s}セット</span><span>${p}%</span></div><div class="tr"><i style="width:${p}%;background:${heat(s/10)}"></i></div></div></div>`;}).join("");
+  $$(".bars").forEach(el=>el.innerHTML=BARS);
+})();
+
+/* 自分: 棒グラフ */
+(function(){
+  const v=[4200,0,3800,0,0,0,0], lb=["月","火","水","木","金","土","日"];
+  let g=`<line x1="0" y1="110" x2="330" y2="110" stroke="${css("--bar-bg")}"/>`;
+  v.forEach((x,i)=>{const cx=i*47+23.5, h=x/4200*80;
+    if(x>0)g+=`<path d="M${cx-13} 110 V${110-h+4} Q${cx-13} ${110-h} ${cx-9} ${110-h} H${cx+9} Q${cx+13} ${110-h} ${cx+13} ${110-h+4} V110 Z" fill="${css("--primary")}"/><text x="${cx}" y="${110-h-5}" font-size="9" fill="${css("--text-sub")}" text-anchor="middle" font-family="Roboto">${x.toLocaleString()}</text>`;
+    g+=`<text x="${cx}" y="128" font-size="10" fill="${css("--text-sub")}" text-anchor="middle">${lb[i]}</text>`;});
+  $("#chart").innerHTML=g;
+})();
+
+/* 仲間: 今週の動いた日 */
+(function(){
+  const F=[["ケン","on on on on".split(" "),4],["ユウタ",["on","on","on"],3],["あなた",["on","rest","on"],2],["ミホ",["on","","on"],2],["サキ",["on","rest"],1]];
+  $("#frows").innerHTML=F.map(([n,k,c])=>{
+    const cells=Array.from({length:7},(_,i)=>`<i class="${k[i]||""}"></i>`).join("");
+    const stamp=n==="あなた"?'<span class="stamp-sp"></span>':'<button class="stamp" data-n="'+(n==="ケン"?3:1)+'"><span>ナイス</span><b>'+(n==="ケン"?3:1)+'</b></button>';
+    return `<div class="frow"><div class="n">${n}</div><div class="days7" aria-label="${n} 今週 ${c}日">${cells}</div><div class="c">${c}</div>${stamp}</div>`;
+  }).join("");
+  $$(".stamp").forEach(b=>{let base=+b.dataset.n;b.onclick=()=>{const on=b.classList.toggle("on");$("b",b).textContent=base+(on?1:0);};});
+})();
+
+/* 記録 */
+const PREV={w:60,r:10};
+const S={cur:0,sets:[{w:60,r:10},{w:60,r:10},{w:60,r:10}],log:[],timer:null};
+function render(float){
+  const fin=S.cur>=S.sets.length;
+  $("#setno").innerHTML=fin?"3/3セット　おわり":`${S.cur+1}/3セット目　前回 ${PREV.w}kg×${PREV.r}回`;
+  if(!fin){const s=S.sets[S.cur];$("#bigv").innerHTML=`<b>${s.w}</b><small>kg ×</small><b class="${s.r>PREV.r?"win":""}">${s.r}</b><small>回</small>`;}
+  else $("#bigv").innerHTML="";
+  $(".steps").hidden=fin;$("#done").textContent=fin?"次の種目へ":"できた";
+  $("#diffcard").hidden=!S.log.length;
+  $("#diffs").innerHTML=S.log.map((l,i)=>{const d=l.r-PREV.r;const t=d>0?`前回 +${d}回`:d===0?"前回と同じ":`前回 −${-d}回`;return `<div class="r ${d>0?"win":""}"><span>${i+1}セット目　${l.w}kg×<span id="lr${i}" style="position:relative">${l.r}</span>回</span><span>${t}</span></div>`}).join("");
+  if(float!=null){const el=$("#lr"+float);if(el){const f=document.createElement("span");f.className="float";f.textContent="+"+(S.log[float].r-PREV.r);el.appendChild(f);setTimeout(()=>f.remove(),700);}}
+  icons();
+}
+function startTimer(){
+  clearInterval(S.timer);let t=90;const show=()=>$("#timer").textContent=`休憩 ${Math.floor(t/60)}:${String(t%60).padStart(2,"0")}`;show();
+  S.timer=setInterval(()=>{t--;if(t<=0){clearInterval(S.timer);$("#timer").textContent="休憩おわり";}else show();},1000);
+}
+$("#wm").onclick=()=>{S.sets[S.cur].w-=2.5;render();};
+$("#wp").onclick=()=>{S.sets[S.cur].w+=2.5;render();};
+$("#rm").onclick=()=>{S.sets[S.cur].r=Math.max(1,S.sets[S.cur].r-1);render();};
+$("#rp").onclick=()=>{S.sets[S.cur].r++;render();};
+$("#done").onclick=()=>{
+  if(S.cur>=S.sets.length){location.hash="#today";return;}
+  const s=S.sets[S.cur];S.log.push({w:s.w,r:s.r});S.cur++;
+  render(s.r>PREV.r?S.log.length-1:null);startTimer();
+};
+$("#offtoggle").onclick=()=>$("#offbar").classList.toggle("on");
+
+/* 休む */
+$("#rest-btn").onclick=()=>{st.rested=true;location.hash="#rest";};
+$("#undo").onclick=()=>{st.rested=false;location.hash="#today";};
+
+/* ルーティング */
+function route(){
+  let h=(location.hash||"#today").slice(1);
+  if(h==="today"&&st.rested)h="rest";
+  if(!$("#s-"+h))h="today";
+  $$(".screen").forEach(s=>s.classList.toggle("on",s.id==="s-"+h));
+  const scr=$("#s-"+h);
+  $("#tabs").classList.toggle("off",scr.classList.contains("full"));
+  $$(".tab").forEach(t=>t.classList.toggle("on",t.dataset.t===scr.dataset.tab));
+  scr.scrollTop=0;
+}
+window.addEventListener("hashchange",route);
+render();route();icons();
+</script>
+</body>
+</html>
