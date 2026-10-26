@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FitLog 記録をくわしく</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=M+PLUS+Rounded+1c:wght@800&family=Nunito:wght@800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js"></script>
+  <script src="shared.js"></script>
+</head>
+<body class="bg-[#F3E8D3] font-sans text-ink antialiased" data-tab="me">
+<main class="mx-auto min-h-dvh max-w-[430px] bg-bg pb-28">
+
+  <header class="px-5 pt-6">
+    <a href="me.html" class="press inline-flex items-center gap-1 rounded-full bg-card px-3 py-1.5 text-xs font-bold text-mute slab">
+      <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>自分
+    </a>
+    <h1 class="mt-3 text-[30px] leading-tight font-black">記録をくわしく</h1>
+  </header>
+
+  <!-- 週・月・年の切替。「休」の色はどの期間でも同じ -->
+  <div class="mx-4 mt-4 grid grid-cols-3 gap-1 rounded-btn bg-raised p-1" role="tablist" aria-label="期間">
+    <button type="button" role="tab" data-p="week" class="press rounded-tile py-2.5 text-sm font-black">週</button>
+    <button type="button" role="tab" data-p="month" class="press rounded-tile py-2.5 text-sm font-black">月</button>
+    <button type="button" role="tab" data-p="year" class="press rounded-tile py-2.5 text-sm font-black">年</button>
+  </div>
+
+  <section class="mx-4 mt-3 rounded-card bg-card p-4 slab" aria-labelledby="cal-title">
+    <div class="flex items-baseline justify-between">
+      <h2 id="cal-title" class="font-black"></h2>
+      <p id="cal-sub" class="text-xs font-bold text-mute"></p>
+    </div>
+    <div id="cal" class="mt-3"></div>
+    <div class="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[11px] font-bold text-mute" aria-hidden="true">
+      <span class="flex items-center gap-1"><span class="size-3.5 rounded-[4px] bg-sun"></span>動いた日</span>
+      <span class="flex items-center gap-1"><span class="size-3.5 rounded-[4px] bg-rest"></span>休んだ日</span>
+    </div>
+  </section>
+
+  <!-- 今月の数字: 動いた日と休んだ日の足し算＋重さの換算 -->
+  <section class="mx-4 mt-4 rounded-card bg-card p-4 slab" aria-labelledby="num-title">
+    <h2 id="num-title" class="font-black">今月の数字</h2>
+    <p class="mt-3 flex flex-wrap items-baseline gap-x-2 text-sm font-bold text-mute">
+      動いた日 <span id="n-done" class="font-num text-3xl text-ink"></span>日
+      ＋ 休んだ日 <span id="n-rest" class="font-num text-3xl text-ink"></span>日
+      ＝ <span id="n-all" class="font-num text-xl text-ink"></span>日
+    </p>
+    <p class="mt-3 rounded-tile bg-raised px-3 py-2.5 text-sm font-bold">筋トレで持ち上げた重さ <span id="n-kg" class="font-num text-next"></span>kg <span class="text-mute">＝ 軽自動車 <span id="n-car" class="font-num text-ink"></span>台ぶん</span></p>
+  </section>
+
+  <!-- グラフ: 棒だけ。目標線は引かない -->
+  <section class="mx-4 mt-4 rounded-card bg-card p-4 slab" aria-labelledby="g-title">
+    <h2 id="g-title" class="font-black">この8週間</h2>
+    <p class="mt-3 text-xs font-bold text-mute">筋トレ　週の総重量（t＝1,000kg）</p>
+    <div id="g-kg" class="mt-2 flex h-28 items-end gap-1.5"></div>
+    <p class="mt-5 text-xs font-bold text-mute">ラン　週の距離（km）</p>
+    <div id="g-km" class="mt-2 flex h-28 items-end gap-1.5"></div>
+  </section>
+
+  <!-- 日本縦断: 走った距離の累計で、地図の上の点が進む。「あと◯km」は出さない -->
+  <section class="mx-4 mt-4 rounded-card bg-card p-4 slab" aria-labelledby="jp-title">
+    <h2 id="jp-title" class="font-black">日本縦断</h2>
+    <p id="jp-text" class="mt-1 text-sm font-bold text-mute"></p>
+    <svg id="jp" viewBox="0 0 220 300" class="mx-auto mt-2 h-72" role="img" aria-label="走った距離ぶん、鹿児島から北へ進んだ位置"></svg>
+    <p class="mt-1 text-center text-[11px] font-bold text-mute">形と距離は目安です（プロトタイプ用の略図）</p>
+  </section>
+
+  <!-- スタンプ帳: 「初めて」と「累計」だけ -->
+  <section class="mx-4 mt-4 rounded-card bg-card p-4 slab" aria-labelledby="st-title">
+    <h2 id="st-title" class="font-black">スタンプ帳</h2>
+    <ul id="stamps" class="mt-3 grid grid-cols-3 gap-2.5"></ul>
+  </section>
+</main>
+
+<script>
+  // プロトタイプの「今日」は 10/29（木）に固定。10/26〜29 は他の画面と同じ週のデータ、それ以前は固定の擬似乱数で作る
+  const { week, renderWeek } = FitLog;
+  const $ = (id) => document.getElementById(id);
+  const TODAY = new Date(2026, 9, 29);
+  const Y0 = new Date(2026, 0, 1);
+  const DAY = 86400000;
+  const idx = (d) => Math.round((d - Y0) / DAY);
+  const rnd = (i) => { const x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); };
+  const WEEK_START = idx(new Date(2026, 9, 26));
+
+  // 1日分: { state: done/rest/off/future, kind: strength/run, kg, km }
+  function day(i) {
+    const d = new Date(Y0.getTime() + i * DAY);
+    if (d > TODAY) return { state: "future" };
+    let state;
+    if (i >= WEEK_START) { const w = week()[i - WEEK_START]; state = w.state === "today" ? "off" : w.state; }
+    else { const r = rnd(i); state = r < 0.5 ? "done" : r < 0.62 ? "rest" : "off"; }
+    const run = rnd(i + 500) < 0.3;
+    return { state, kind: run ? "run" : "strength", kg: Math.round((2500 + rnd(i + 900) * 2800) / 10) * 10, km: +(3 + rnd(i + 700) * 6).toFixed(1) };
+  }
+  const days = Array.from({ length: idx(TODAY) + 1 }, (_, i) => day(i));
+  const cls = { done: "bg-sun", rest: "bg-rest", off: "bg-rest/70", future: "border-2 border-line" };
+  const monthStr = (d) => `${d.getMonth() + 1}月`;
+
+  // ---- 週・月・年 ----
+  function viewWeek() {
+    $("cal-title").textContent = "今週（10/26〜11/1）";
+    $("cal-sub").textContent = "月曜にまっさらになります";
+    $("cal").innerHTML = '<ol id="wk" class="grid grid-cols-7 gap-2"></ol>';
+    renderWeek($("wk"));
+  }
+  function viewMonth() {
+    $("cal-title").textContent = "10月";
+    $("cal-sub").textContent = "";
+    const lead = 3; // 10/1 は木曜（月曜はじまりで3マス空く）
+    const head = FitLog.DAYS.map((l) => `<span class="text-center text-[11px] font-bold text-mute">${l}</span>`).join("");
+    const blanks = '<span></span>'.repeat(lead);
+    const cells = Array.from({ length: 31 }, (_, n) => {
+      const d = days[idx(new Date(2026, 9, n + 1))] || { state: "future" };
+      const ink = d.state === "done" ? "text-ink" : d.state === "future" ? "text-mute" : "text-rest-ink";
+      return `<span class="grid aspect-square place-items-center rounded-tile text-[11px] font-black ${cls[d.state]} ${ink}"><span class="font-num">${n + 1}</span></span>`;
+    }).join("");
+    $("cal").innerHTML = `<div class="grid grid-cols-7 gap-1.5">${head}${blanks}${cells}</div>`;
+  }
+  function viewYear() {
+    $("cal-title").textContent = "今年";
+    const done = days.filter((d) => d.state === "done").length;
+    $("cal-sub").textContent = `動いた日 ${done}日`;
+    const lead = (Y0.getDay() + 6) % 7; // 1/1 は木曜
+    const total = Math.ceil((lead + 365) / 7) * 7;
+    const cells = Array.from({ length: total }, (_, n) => {
+      const i = n - lead;
+      const d = i < 0 || i >= 365 ? null : days[i] || { state: "future" };
+      return d ? `<span class="aspect-square rounded-[2px] ${cls[d.state]}"></span>` : "<span></span>";
+    }).join("");
+    $("cal").innerHTML = `<div class="grid grid-flow-col grid-rows-7 gap-[2px]" style="grid-template-columns:repeat(${total / 7},minmax(0,1fr))" role="img" aria-label="今年の記録。動いた日が黄色、休んだ日が淡い色">${cells}</div>
+      <div class="mt-1 flex justify-between text-[10px] font-bold text-mute" aria-hidden="true"><span>1月</span><span>4月</span><span>7月</span><span>10月</span></div>`;
+  }
+  const views = { week: viewWeek, month: viewMonth, year: viewYear };
+  const tabs = document.querySelectorAll("[data-p]");
+  function show(p) {
+    tabs.forEach((b) => {
+      const on = b.dataset.p === p;
+      b.setAttribute("aria-selected", on);
+      b.classList.toggle("bg-card", on);
+      b.classList.toggle("text-ink", on);
+      b.classList.toggle("text-mute", !on);
+    });
+    views[p]();
+  }
+  tabs.forEach((b) => b.addEventListener("click", () => show(b.dataset.p)));
+  show("week");
+
+  // ---- 今月の数字 ----
+  const monthDays = days.slice(idx(new Date(2026, 9, 1)));
+  const mDone = monthDays.filter((d) => d.state === "done");
+  const kg = mDone.filter((d) => d.kind === "strength").reduce((s, d) => s + d.kg, 0);
+  $("n-done").textContent = mDone.length;
+  $("n-rest").textContent = monthDays.length - mDone.length;
+  $("n-all").textContent = monthDays.length;
+  $("n-kg").textContent = kg.toLocaleString();
+  $("n-car").textContent = Math.floor(kg / 850); // 軽自動車 約850kg
+
+  // ---- グラフ（直近8週） ----
+  const weekly = Array.from({ length: 8 }, (_, w) => {
+    const start = WEEK_START - (7 - w) * 7;
+    const ds = days.slice(start, start + 7).filter((d) => d.state === "done");
+    return { label: new Date(Y0.getTime() + start * DAY), kg: ds.filter((d) => d.kind === "strength").reduce((s, d) => s + d.kg, 0), km: +ds.filter((d) => d.kind === "run").reduce((s, d) => s + d.km, 0).toFixed(1) };
+  });
+  const bars = (el, key, color, unit, fmt) => {
+    const max = Math.max(...weekly.map((w) => w[key]), 1);
+    el.innerHTML = weekly.map((w, i) => `<div class="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+      <span class="font-num text-[10px] font-extrabold text-mute">${w[key] ? fmt(w[key]) : ""}</span>
+      <span class="block w-full rounded-t-tile ${color} ${i === 7 ? "" : "opacity-70"}" style="height:${Math.max(w[key] / max * 70, w[key] ? 4 : 2)}%"></span>
+      <span class="text-[10px] font-bold text-mute">${w.label.getMonth() + 1}/${w.label.getDate()}</span>
+    </div>`).join("");
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", `直近8週の${unit}`);
+  };
+  bars($("g-kg"), "kg", "bg-sun", "総重量", (v) => (v / 1000).toFixed(1));
+  bars($("g-km"), "km", "bg-win", "ランの距離", (v) => v);
+
+  // ---- 日本縦断 ----
+  const route = [["鹿児島", 0, 40, 280], ["福岡", 270, 48, 258], ["広島", 560, 72, 244], ["大阪", 880, 102, 230], ["名古屋", 1000, 124, 220], ["東京", 1330, 150, 208], ["仙台", 1650, 160, 166], ["青森", 2000, 158, 126], ["札幌", 2400, 166, 76], ["稚内", 3000, 174, 26]];
+  const runKm = days.filter((d) => d.state === "done" && d.kind === "run").reduce((s, d) => s + d.km, 0);
+  let k = 0;
+  while (k < route.length - 2 && runKm >= route[k + 1][1]) k++;
+  const [a, b] = [route[k], route[k + 1]];
+  const t = Math.min((runKm - a[1]) / (b[1] - a[1]), 1);
+  const me = [a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t];
+  $("jp-text").innerHTML = `今年走った <span class="font-num text-ink">${runKm.toFixed(1)}</span>km。鹿児島から北へ進んで、いまは<span class="text-ink">${a[0]}</span>のあたり。`;
+  const pts = route.map((r) => `${r[2]},${r[3]}`).join(" ");
+  const upto = [...route.slice(0, k + 1).map((r) => `${r[2]},${r[3]}`), `${me[0]},${me[1]}`].join(" ");
+  $("jp").innerHTML = `
+    <polyline points="${pts}" fill="none" stroke="var(--color-line)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="${upto}" fill="none" stroke="var(--color-win)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    ${route.map((r) => `<circle cx="${r[2]}" cy="${r[3]}" r="3.5" fill="var(--color-card)" stroke="var(--color-mute)" stroke-width="1.5"/><text x="${r[2] + 10}" y="${r[3] + 4}" font-size="11" font-weight="700" fill="var(--color-mute)">${r[0]}</text>`).join("")}
+    <circle cx="${me[0]}" cy="${me[1]}" r="8" fill="var(--color-next)" stroke="var(--color-card)" stroke-width="3"/>`;
+
+  // ---- スタンプ帳（初めて／累計だけ） ----
+  const total = days.filter((d) => d.state === "done").length;
+  const stamps = [
+    ["初めての筋トレ", true], ["初めてのラン", true], ["初めての休み", true],
+    ["初めての仲間スタンプ", true], ["累計10日", total >= 10], ["累計30日", total >= 30],
+    ["累計50日", total >= 50], ["累計100日", total >= 100], ["累計200日", total >= 200],
+  ];
+  $("stamps").innerHTML = stamps.map(([name, on]) => `<li class="stamp flex aspect-square flex-col items-center justify-center gap-1 rounded-card p-2 text-center text-[11px] leading-tight font-black ${on ? "bg-sun text-ink" : "border-2 border-dashed border-line text-mute"}">
+    <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${on ? '<path d="m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/>' : '<circle cx="12" cy="12" r="8" stroke-dasharray="3 3"/>'}</svg>
+    ${name}<span class="sr-only">${on ? "（ゲット済み）" : "（まだ）"}</span></li>`).join("");
+</script>
+</body>
+</html>

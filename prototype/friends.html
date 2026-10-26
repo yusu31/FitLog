@@ -121,7 +121,7 @@
           <svg viewBox="0 0 24 24" class="size-7" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.2-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>ラストレップ <span class="font-num">2</span>秒<span class="ml-1 text-xs text-card/70">日曜まで</span></button>` : ""}
         ${p.route ? `<div class="mt-3 rounded-tile bg-sky/8 px-2">${routeSvg}</div>` : ""}
         <div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="スタンプ">
-          ${Object.entries(p.stamps).map(([s, v]) => `<button type="button" data-post="${p.id}" data-stamp="${s}" aria-pressed="${v.mine}" class="press rounded-full border-2 px-3 py-1.5 text-xs font-black ${v.mine ? (rest ? "border-rest-ink bg-rest text-rest-ink" : "border-sun-deep bg-sun/25 text-ink") : "border-line text-mute"}">${s}${v.n ? ` <span class="font-num">${v.n}</span>` : ""}</button>`).join("")}
+          ${Object.entries(p.stamps).map(([s, v]) => `<button type="button" data-post="${p.id}" data-stamp="${s}" aria-pressed="${v.mine}" class="stamp press rounded-full border-2 px-3 py-1.5 text-xs font-black ${v.mine ? (rest ? "border-rest-ink bg-rest text-rest-ink" : "border-sun-deep bg-sun/25 text-ink") : "border-line text-mute"}">${s}${v.n ? ` <span class="font-num">${v.n}</span>` : ""}</button>`).join("")}
         </div>
         ${p.comments.length ? `<ul class="mt-3 space-y-1.5 border-t-2 border-line/60 pt-3">${p.comments.map((c, i) => `
           <li class="flex items-start gap-2 text-sm">${face(c.who, "size-6 text-[11px]")}<p class="min-w-0 flex-1 font-bold break-words"><span class="text-mute">${c.who}</span>　${escapeHtml(c.text)}</p>
