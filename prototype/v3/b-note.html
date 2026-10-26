@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitLog 案B 保健体育ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Space+Grotesk:wght@500;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@1.61.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --paper:#EAF3FA; --grid:#BBD3E6; --ink:#0F2A43; --blue:#2F80ED; --pink:#F25C7A; --mint:#8FD3B6; --pencil:#7b8a99;
+  --f-head:'Shippori Mincho B1','Zen Kaku Gothic New',serif;
+  --f-num:'Space Grotesk','Zen Kaku Gothic New',sans-serif;
+  --f-body:'Zen Kaku Gothic New',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#cfdfeb;color:var(--ink);font-family:var(--f-body);font-weight:500;line-height:1.6;min-height:100vh;
+  background-image:linear-gradient(rgba(15,42,67,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(15,42,67,.05) 1px,transparent 1px);background-size:28px 28px}
+.page{max-width:1300px;margin:0 auto;padding:28px 16px 60px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:28px;align-items:end;margin-bottom:28px;padding-bottom:20px;border-bottom:1.5px solid var(--ink)}
+.hero h1{font-family:var(--f-head);font-weight:800;font-size:clamp(30px,5vw,52px);line-height:1.15}
+.hero h1 small{display:block;font-family:var(--f-num);font-size:14px;font-weight:500;color:var(--blue);margin-bottom:4px}
+.hero p.one{margin-top:8px;font-size:15px}
+.hero ul{list-style:none;font-size:13.5px;display:grid;gap:4px}
+.hero li{padding-left:22px;position:relative}
+.hero li::before{content:"";position:absolute;left:0;top:.6em;width:10px;height:10px;border:1.5px solid var(--ink);transform:rotate(45deg);background:var(--pink)}
+@media(max-width:820px){.hero{grid-template-columns:1fr}}
+.row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center}
+.cap{font-family:var(--f-num);font-size:14px;font-weight:700;color:var(--ink);margin-bottom:8px}
+
+/* ノート1ページ = スマホ枠。角は丸めず、とじ穴だけ丸 */
+.phone{position:relative;width:390px;height:844px;overflow:hidden;border:2px solid var(--ink);border-radius:6px 28px 28px 6px;
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:20px 20px;background-position:6px 12px;
+  box-shadow:6px 8px 0 rgba(15,42,67,.18)}
+.phone::after{content:"";position:absolute;left:0;top:0;bottom:0;width:30px;border-right:1.5px solid #e88aa0;background:rgba(234,243,250,.7);z-index:0;pointer-events:none}
+.holes{position:absolute;left:8px;top:0;bottom:0;width:14px;z-index:1;display:flex;flex-direction:column;justify-content:space-around;padding:70px 0}
+.holes i{display:block;width:14px;height:14px;border-radius:50%;background:#cfdfeb;border:1.5px solid var(--ink)}
+.in{position:absolute;left:30px;right:0;top:0;bottom:0;z-index:2}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-weight:700}
+.hd{font-family:var(--f-head);font-weight:800}
+
+/* 上のインデックス見出し */
+.idx{display:flex;align-items:flex-end;gap:2px;padding:12px 12px 0 8px;height:50px;border-bottom:1.5px solid var(--ink);background:rgba(234,243,250,.55)}
+.idx a{display:flex;align-items:center;gap:5px;height:34px;padding:0 13px;border:1.5px solid var(--ink);border-bottom:0;border-radius:10px 10px 0 0;font-size:13px;font-weight:900;background:#d4e4f2;color:#46627d;text-decoration:none;position:relative}
+.idx a:nth-child(2){height:30px;background:#e5e8f7}.idx a:nth-child(3){height:26px;background:#dff0ea}
+.idx a svg{width:15px;height:15px;stroke-width:2.6}
+.idx a.on{height:42px;background:var(--paper);color:var(--ink);margin-bottom:-1.5px;padding-bottom:1px}
+.idx .sp{flex:1}
+.idx .pg{font-family:var(--f-num);font-size:11px;color:#46627d;padding-bottom:3px}
+
+/* 日付欄 */
+.dates{display:flex;align-items:stretch;border:1.5px solid var(--ink);margin:10px 12px 0 10px;background:rgba(255,255,255,.65);height:52px}
+.dates .t{writing-mode:vertical-rl;font-size:10px;font-weight:900;background:var(--ink);color:#fff;display:grid;place-items:center;width:18px;letter-spacing:.1em}
+.dates .d{flex:1;border-left:1px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:900;line-height:1.1;gap:3px}
+.dates .d .num{font-size:11px;font-weight:500;color:#46627d}
+.dates .d i{display:block;width:16px;height:16px;position:relative}
+.dates .d.k i{background:var(--pink);clip-path:polygon(14% 52%,0 66%,38% 100%,100% 22%,84% 8%,38% 70%)}
+.dates .d.m i{border-radius:50%;background:var(--mint)}
+.dates .d.t0 i{border:2px solid var(--blue);border-radius:50%;animation:bl 1.4s infinite}
+.dates .d.f i{border:1.5px dashed #9bb3c8;border-radius:50%}
+.dates .d.t0{background:rgba(47,128,237,.12)}
+@keyframes bl{50%{background:rgba(47,128,237,.3)}}
+
+/* 人体 */
+.fig{position:relative}
+.fig svg{display:block;overflow:visible}
+.fig .musc{stroke:var(--ink);stroke-width:1;stroke-linejoin:round;transition:fill .9s ease}
+.fig .sil{fill:#f7fbff;stroke:var(--ink);stroke-width:3.4;stroke-linejoin:round}
+.fig .sil2{fill:#f7fbff}
+.fig .ln{fill:none;stroke:var(--ink);stroke-width:.8;stroke-opacity:.7}
+.fig .mk circle{fill:#fff;stroke:var(--ink);stroke-width:.9}
+.fig .mk text{font-family:var(--f-num);font-size:8.5px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.lab{font-family:var(--f-head);font-weight:800;font-size:12px;text-align:center}
+.lab small{font-family:var(--f-num);font-weight:500;color:#46627d;margin-left:4px}
+
+/* 画面1 */
+.s1 .hdr{padding:10px 18px 0 12px;display:flex;justify-content:space-between;align-items:baseline}
+.s1 .hdr h2{font-family:var(--f-head);font-weight:800;font-size:25px}
+.s1 .hdr h2 small{font-family:var(--f-num);font-size:12px;font-weight:500;color:#46627d;margin-left:6px}
+.s1 .hdr span{font-size:11px;font-weight:700;color:#46627d}
+.s1 .figs{display:flex;justify-content:center;gap:2px;margin-top:6px}
+.s1 .figs .fig{width:178px}
+.bubble{position:absolute;left:4px;top:392px;z-index:4;background:#fff;border:1.5px solid var(--ink);padding:4px 8px;font-size:11px;font-weight:900;line-height:1.3;transform:rotate(-4deg);box-shadow:2px 3px 0 rgba(15,42,67,.2);width:84px}
+.bubble::after{content:"";position:absolute;right:-26px;top:50%;width:28px;border-top:1.5px solid var(--ink);transform:rotate(-8deg);transform-origin:left}
+.s1 .fig:first-child path[data-p=quad]{stroke:var(--blue);stroke-width:2;stroke-dasharray:4 3;animation:mq 1.4s linear infinite}
+@keyframes mq{to{stroke-dashoffset:-14}}
+.bubble b{color:var(--pink)}
+.s1 .menu{position:absolute;left:12px;right:14px;top:624px}
+.s1 .menu .l{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid var(--ink);padding-bottom:2px;font-size:13px;font-weight:900}
+.s1 .menu .l span.num{font-size:12px;font-weight:500;color:#46627d}
+.s1 .menu ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:0 12px;margin-top:2px}
+.s1 .menu li{font-size:12px;font-weight:700;border-bottom:1px dotted #86a3bd;padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s1 .menu li i{font-style:normal;font-family:var(--f-num);color:var(--blue);margin-right:5px}
+.write{position:absolute;left:12px;right:14px;bottom:18px;display:flex;align-items:center;justify-content:center;gap:10px;height:54px;background:var(--ink);color:#fff;border:0;font-family:var(--f-head);font-weight:800;font-size:18px;cursor:pointer;
+  clip-path:polygon(0 0,100% 0,100% 100%,0 100%);border-radius:2px 14px 2px 14px;box-shadow:4px 4px 0 var(--blue)}
+.write:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--blue)}
+.write svg{width:22px;height:22px;stroke-width:2.4}
+
+/* 画面2 */
+.s2 .page-h{padding:12px 16px 0 12px}
+.s2 .page-h small{font-family:var(--f-num);font-size:11px;color:#46627d}
+.s2 .page-h h2{font-family:var(--f-head);font-weight:800;font-size:25px;line-height:1.2}
+.s2 .page-h h2 em{font-style:normal;background:linear-gradient(transparent 60%,rgba(242,92,122,.35) 60%)}
+.s2 .exs{display:flex;gap:0;margin:8px 14px 0 12px;border:1.5px solid var(--ink);background:#fff}
+.s2 .exs div{flex:1;text-align:center;font-size:10.5px;font-weight:900;padding:3px 0;border-right:1px solid var(--ink);color:#8aa0b5;line-height:1.3}
+.s2 .exs div:last-child{border:0}
+.s2 .exs div.on{background:var(--ink);color:#fff}
+.sheet{margin:10px 14px 0 12px;background:rgba(255,255,255,.78);border:1.5px solid var(--ink);position:relative}
+.sheet .th{display:grid;grid-template-columns:40px 1fr 70px;white-space:nowrap;font-size:11px;font-weight:900;background:var(--ink);color:#fff}
+.sheet .th span{padding:3px 6px}
+.ln1{display:grid;grid-template-columns:40px 1fr 70px;align-items:center;height:62px;border-bottom:1px solid #86a3bd;position:relative}
+.ln1 .n{font-family:var(--f-head);font-weight:800;font-size:20px;text-align:center}
+.ln1 .v{display:flex;align-items:baseline;gap:6px;padding-left:4px;font-weight:900}
+.ln1 .v .num{font-size:38px;line-height:1}
+.ln1 .v small{font-size:13px}
+.ln1 .r{font-size:11px;font-weight:900;text-align:center}
+.ink .v{color:var(--ink)}
+.ink .r b{color:var(--pink);font-family:var(--f-num);font-size:15px}
+.pen .v{color:var(--pencil);font-family:var(--f-num)}
+.pen .v .num{font-weight:500;text-shadow:.5px .5px 0 rgba(120,138,153,.6)}
+.pen .r{color:var(--pencil)}
+.pen .v::after{content:"";position:absolute;left:44px;right:76px;bottom:12px;border-bottom:2px dashed #b6c4d1}
+.cur .v{color:var(--pencil)}
+.cur{background:repeating-linear-gradient(135deg,rgba(47,128,237,.08) 0 6px,transparent 6px 12px);outline:2px solid var(--blue);outline-offset:-2px}
+.cur .tagp{position:absolute;right:6px;top:3px;font-size:10px;font-weight:900;color:var(--blue)}
+.stamp{animation:inkin .7s ease-out}
+@keyframes inkin{0%{color:var(--pencil);letter-spacing:.2em;opacity:.5}60%{color:var(--ink);opacity:1}100%{letter-spacing:0}}
+.tune{display:flex;gap:6px;margin:10px 14px 0 12px}
+.tune button{flex:1;height:44px;border:1.5px solid var(--ink);background:#fff;font-family:var(--f-num);font-weight:700;font-size:15px;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:2px;border-radius:2px}
+.tune button small{font-family:var(--f-body);font-size:11px;font-weight:900}
+.tune button:active{background:#d4e4f2}
+.tune svg{width:14px;height:14px;stroke-width:3}
+.s2 .go{margin:14px 14px 0 12px;display:flex;gap:10px}
+.memo{margin:16px 14px 0 12px}
+.memo h6{font-size:11px;font-weight:900;border-bottom:1.5px solid var(--ink);padding-bottom:1px}
+.memo p{height:26px;border-bottom:1px dotted #86a3bd;font-size:12px;font-weight:700;color:var(--pencil);padding-top:3px}
+.s2 .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:60px;background:var(--blue);color:#fff;border:1.5px solid var(--ink);font-family:var(--f-head);font-weight:800;font-size:21px;cursor:pointer;box-shadow:4px 4px 0 var(--ink);border-radius:2px}
+.s2 .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.s2 .btn svg{width:24px;height:24px;stroke-width:2.6}
+.s2 .btn.sub{flex:0 0 96px;background:#fff;color:var(--ink);font-size:14px;font-family:var(--f-body);font-weight:900;box-shadow:none;height:60px}
+.note-box{position:absolute;left:12px;right:14px;bottom:18px;border:1.5px solid var(--ink);background:#fff;padding:8px 12px;font-size:12px;line-height:1.55;display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center}
+.note-box h5{font-family:var(--f-head);font-weight:800;font-size:13px;margin-bottom:1px}
+.note-box .mini{width:56px;height:96px;overflow:hidden;display:grid;place-items:start center}
+.note-box b{color:var(--pink)}
+.fx{position:absolute;pointer-events:none;font-family:var(--f-head);font-weight:800;color:var(--pink);font-size:22px;animation:rise 1.1s ease-out forwards;z-index:9}
+@keyframes rise{from{opacity:1;transform:translateY(0) rotate(-6deg)}to{opacity:0;transform:translateY(-44px) rotate(-6deg)}}
+
+/* 画面3 */
+.s3 .figs3{display:flex;justify-content:center;gap:0;margin-top:8px}
+.s3 .figs3 .fig{width:150px}
+.s3 .ttl3{padding:8px 16px 0 12px;display:flex;justify-content:space-between;align-items:baseline}
+.s3 .ttl3 h2{font-family:var(--f-head);font-weight:800;font-size:22px}
+.s3 .play{display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;background:var(--ink);color:#fff;border:0;font-family:var(--f-body);font-weight:900;font-size:13px;cursor:pointer;border-radius:2px 10px 2px 10px}
+.s3 .play svg{width:16px;height:16px;stroke-width:2.8}
+.bars{position:absolute;left:12px;right:14px;top:468px;display:grid;gap:0}
+.bar{display:grid;grid-template-columns:18px 1fr 98px 34px;align-items:center;gap:6px;height:30px;border-bottom:1px dotted #86a3bd}
+.bar .no{width:16px;height:16px;border-radius:50%;border:1px solid var(--ink);background:#fff;font-family:var(--f-num);font-size:9.5px;font-weight:700;display:grid;place-items:center}
+.bar .nm{font-size:12px;font-weight:900;line-height:1.15;white-space:nowrap}
+.bar .nm small{display:block;font-size:9.5px;font-weight:700;color:#46627d}
+.bar .tr{height:11px;border:1px solid var(--ink);background:#fff;position:relative}
+.bar .tr i{position:absolute;left:0;top:0;bottom:0;background:var(--pink);width:0;transition:width .9s ease}
+.bar .tr::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),rgba(15,42,67,.35) calc(10% - 1px) 10%)}
+.bar .pc{font-family:var(--f-num);font-weight:700;font-size:13px;text-align:right}
+.foot3{position:absolute;left:12px;right:14px;bottom:10px;font-size:10.5px;color:#46627d;line-height:1.45;border-top:1.5px solid var(--ink);padding-top:4px}
+.foot3 b{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="hero">
+    <div>
+      <h1><small>FitLog プロトタイプ v3 ／ 案B</small>保健体育ノート</h1>
+      <p class="one">方眼ノートに、人体図を塗っていく。部位は正式名と、ふつうの言葉の両方で。</p>
+    </div>
+    <ul>
+      <li>ボタン配置: タブは<b>画面の上</b>（ノートのインデックス見出し）。主ボタンは文章の流れの<b>すぐ下</b>に置き、下には固定しない。</li>
+      <li>ホームの主役は<b>人体図（前・後ろ）</b>。7マスは日付欄として上に小さく。ゴースト対戦より「どこを鍛えたか」を先に見せる仕様。</li>
+      <li>記録中は<b>ノートの1行</b>。前回の値が<b>鉛筆の下書き</b>で入っていて、「できた」で上からインクで清書される。</li>
+      <li>見せ場は<b>塗られていく人体図</b>＋部位ごとの%バー。「週10セット」は目安で、<b>出典のない推論</b>の数字（仮置き）。</li>
+      <li>色は青=次にやること／桃赤=鍛えた（達成）／ミント=休み／紺=文字。休みを責める色は使わない。</li>
+    </ul>
+  </header>
+
+  <div class="row">
+  <!-- ============ 1 今日 ============ -->
+  <section>
+    <div class="cap">① 今日（ホーム）</div>
+    <div class="phone s1">
+      <div class="holes"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="in">
+        <nav class="idx">
+          <a href="#" class="on"><i data-lucide="notebook-pen"></i>今日</a>
+          <a href="#"><i data-lucide="users"></i>仲間</a>
+          <a href="#"><i data-lucide="user"></i>自分</a>
+          <span class="sp"></span><span class="pg">p.43</span>
+        </nav>
+        <div class="hdr"><h2>10月29日（木）<small>脚の日</small></h2><span>先週は4日動いた</span></div>
+        <div class="dates">
+          <div class="t">今週</div>
+          <div class="d k">月<i></i><span class="num">胸</span></div>
+          <div class="d m">火<i></i><span class="num">休</span></div>
+          <div class="d k">水<i></i><span class="num">背</span></div>
+          <div class="d t0">木<i></i><span class="num">今日</span></div>
+          <div class="d f">金<i></i><span class="num">&nbsp;</span></div>
+          <div class="d f">土<i></i><span class="num">&nbsp;</span></div>
+          <div class="d f">日<i></i><span class="num">&nbsp;</span></div>
+        </div>
+        <div class="figs" id="figs1"></div>
+        <div class="figs" style="margin-top:0"><div class="lab" style="width:178px">前から<small>anterior</small></div><div class="lab" style="width:178px">後ろから<small>posterior</small></div></div>
+        <div class="bubble">今日は<br>ここ！<br><b>大腿四頭筋</b></div>
+        <div class="menu">
+          <div class="l"><span>今日のメニュー ― 4種目</span><span class="num">12 sets</span></div>
+          <ol>
+            <li><i>1</i>スクワット</li><li><i>3</i>レッグプレス</li>
+            <li><i>2</i>ルーマニアンデッドリフト</li><li><i>4</i>カーフレイズ</li>
+          </ol>
+        </div>
+        <button class="write" type="button"><i data-lucide="pencil-line"></i>脚の日を書きはじめる</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2 記録中 ============ -->
+  <section>
+    <div class="cap">② 記録中（スクワット 2セット目）</div>
+    <div class="phone s2" id="p2">
+      <div class="holes"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="in">
+        <nav class="idx">
+          <a href="#" class="on"><i data-lucide="notebook-pen"></i>今日</a>
+          <a href="#"><i data-lucide="users"></i>仲間</a>
+          <a href="#"><i data-lucide="user"></i>自分</a>
+          <span class="sp"></span><span class="pg">p.44</span>
+        </nav>
+        <div class="page-h"><small>10/29 木 ／ 脚の日 ／ 1種目め</small><h2><em>スクワット</em>を書く</h2></div>
+        <div class="exs"><div class="on">1 スクワット</div><div>2 RDL</div><div>3 レッグプレス</div><div>4 カーフ</div></div>
+        <div class="sheet" id="sheet">
+          <div class="th"><span>組</span><span>重さ × 回数</span><span style="text-align:center">前回比</span></div>
+          <div id="lines"></div>
+        </div>
+        <div class="tune">
+          <button type="button" data-d="w-2.5"><i data-lucide="minus"></i>2.5<small>kg</small></button>
+          <button type="button" data-d="w2.5"><i data-lucide="plus"></i>2.5<small>kg</small></button>
+          <button type="button" data-d="r-1"><i data-lucide="minus"></i>1<small>回</small></button>
+          <button type="button" data-d="r1"><i data-lucide="plus"></i>1<small>回</small></button>
+        </div>
+        <div class="go"><button class="btn sub" type="button" id="same"><i data-lucide="eraser" style="width:16px;height:16px"></i>書き直す</button><button class="btn" type="button" id="done"><i data-lucide="check"></i>できた（清書）</button></div>
+        <div class="memo"><h6>ひとこと（からだの調子・気づき）</h6><p>前回よりひざが軽い。深さは同じ。</p><p></p></div>
+        <div class="note-box">
+          <div class="mini" id="mini"></div>
+          <div><h5>このセットで使う筋肉</h5>主に<b>大腿四頭筋</b>（太ももの前）と<b>大殿筋</b>（おしり）。ひざと股関節を同時に曲げ伸ばしする、脚の基本種目。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3 見せ場 ============ -->
+  <section>
+    <div class="cap">③ 見せ場: 塗られていく人体図</div>
+    <div class="phone s3">
+      <div class="holes"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="in">
+        <nav class="idx">
+          <a href="#" class="on"><i data-lucide="notebook-pen"></i>今日</a>
+          <a href="#"><i data-lucide="users"></i>仲間</a>
+          <a href="#"><i data-lucide="user"></i>自分</a>
+          <span class="sp"></span><span class="pg">p.45</span>
+        </nav>
+        <div class="ttl3"><h2>今週の図解</h2><button class="play" type="button" id="play"><i data-lucide="play"></i>記録を再生</button></div>
+        <div class="figs3" id="figs3"></div>
+        <div class="bars" id="bars"></div>
+        <div class="foot3"><b>週の目安 10セット</b> は、筋肥大の研究でよく言われる「部位ごとに週10セット前後」を目安にした<b>推論の仮置き</b>です。正解の数字ではありません。</div>
+      </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+<script>
+// ---- 人体図（右半身のパスを左右反転して使う。SVG path で筋肉の形を描く） ----
+const SIL={ // シルエット（右半身）
+  torso:'M100,56 L112,58 C128,62 142,64 147,70 C149,84 147,100 141,116 C139,136 135,160 131,176 C129,186 118,192 100,192 Z',
+  arm:'M141,66 C155,66 164,76 164,92 L162,136 L148,136 C148,112 146,88 139,72 Z',
+  fore:'M148,134 L162,136 C166,156 170,176 174,196 L166,199 C158,184 150,160 148,134 Z',
+  hand:'M164,196 L176,196 C179,208 177,218 172,221 C166,219 164,208 164,196 Z',
+  leg:'M102,188 C118,188 133,185 135,198 C137,232 133,258 127,276 C129,302 129,332 125,368 L129,384 C135,392 135,399 131,404 L107,404 C105,397 108,390 112,386 C110,350 108,310 106,282 C102,250 102,216 102,188 Z'
+};
+const MUSC={
+ front:[
+  ['chest','M102,66 C114,64 128,66 138,72 C142,84 138,96 130,102 C120,106 108,104 102,100 Z'],
+  ['delt','M138,70 C150,66 162,74 163,88 C163,98 160,104 155,104 C150,96 146,84 138,70 Z'],
+  ['arm','M148,106 C154,104 160,108 160,120 C160,128 158,132 156,132 L150,132 C147,124 146,114 148,106 Z'],
+  ['abs','M102,108 L117,108 L118,121 L102,121 Z M102,124 L118,124 L118,137 L102,137 Z M102,140 L117,140 L116,153 L102,153 Z M102,156 L115,156 L113,172 L102,172 Z'],
+  ['quad','M104,196 C116,192 130,196 134,208 C135,232 131,252 125,266 C116,271 108,267 106,258 C102,240 102,216 104,196 Z'],
+  ['calf','M108,288 C116,284 124,286 126,294 C127,320 123,346 120,370 L112,370 C108,346 106,316 108,288 Z']
+ ],
+ back:[
+  ['back','M104,120 C112,104 126,92 139,86 C143,104 139,128 131,146 C123,157 112,159 104,159 Z M100,56 L112,58 C126,62 138,66 144,70 C135,79 122,89 112,101 L100,118 Z'],
+  ['delt','M138,70 C150,66 162,74 163,88 C163,98 160,104 155,104 C150,96 146,84 138,70 Z'],
+  ['arm','M148,100 C154,98 160,102 161,114 C161,126 159,132 156,132 L150,132 C146,122 146,110 148,100 Z'],
+  ['glute','M101,162 C112,160 128,164 134,178 C136,190 129,200 116,202 C108,202 102,198 101,192 Z'],
+  ['ham','M104,206 C116,204 130,206 133,216 C134,238 130,254 125,266 C116,271 108,267 106,258 C102,240 102,222 104,206 Z'],
+  ['calf','M108,284 C116,278 126,282 127,296 C127,318 123,340 120,362 L113,362 C108,340 106,312 108,284 Z']
+ ]
+};
+const LINES={
+ front:'M118,66 C121,80 120,92 118,104 M126,196 C124,216 120,238 114,262 M118,288 L117,330 M104,176 L116,172',
+ back:'M100,160 L100,192 M110,208 L112,262 M110,282 L114,330'
+};
+const MARK={front:[[1,'chest',118,84],[2,'delt',153,86],[3,'arm',154,118],[4,'abs',108,140],[5,'quad',118,230],[6,'calf',116,330]],
+            back:[[7,'back',122,112],[8,'glute',116,182],[9,'ham',118,236],[6,'calf',116,326]]};
+function mirror(inner){return `<g transform="translate(200,0) scale(-1,1)">${inner}</g>`}
+function figure(view,opt={}){
+  const half=()=>Object.values(SIL).map(d=>`<path d="${d}"/>`).join('');
+  const musc=mirror(MUSC[view].map(([k,d])=>`<path class="musc" data-p="${k}" d="${d}" fill="#f7fbff"/>`).join(''))
+    +MUSC[view].map(([k,d])=>`<path class="musc" data-p="${k}" d="${d}" fill="#f7fbff"/>`).join('');
+  const lines=mirror(`<path class="ln" d="${LINES[view]}"/>`)+`<path class="ln" d="${LINES[view]}"/>`;
+  const mk=opt.marks?`<g class="mk">${MARK[view].map(([n,,x,y])=>`<circle cx="${x}" cy="${y}" r="6.5"/><text x="${x}" y="${y}">${n}</text>`).join('')}</g>`:'';
+  const w=opt.w||178;
+  return `<div class="fig"><svg viewBox="12 -6 176 424" width="${w}" height="${Math.round(w*424/176)}" role="img" aria-label="${view==='front'?'人体 前面':'人体 後面'}">
+   <g class="sil"><ellipse cx="100" cy="27" rx="14" ry="18"/><path d="M92,40 L108,40 L109,60 L91,60 Z"/>${half()}${mirror(half())}</g>
+   <g class="sil2"><ellipse cx="100" cy="27" rx="14" ry="18"/><path d="M92,40 L108,40 L109,60 L91,60 Z"/>${half()}${mirror(half())}</g>
+   ${musc}${lines}${mk}</svg></div>`;
+}
+// 部位ごとの週のセット数（胸3・肩3・腕4・背中3。脚と腹は0）
+const PARTS=[ // key, 正式名, 平易名, 番号
+ ['chest','大胸筋','胸',1],['delt','三角筋','肩',2],['arm','上腕二頭筋・三頭筋','力こぶ・二の腕',3],['abs','腹直筋','お腹の前',4],
+ ['quad','大腿四頭筋','太ももの前',5],['calf','下腿三頭筋など','ふくらはぎ・すね',6],['back','広背筋・僧帽筋','背中',7],['glute','大殿筋','おしり',8],['ham','ハムストリングス','太ももの裏',9]];
+const BASE={chest:3,delt:3,arm:4,back:3,abs:0,quad:0,calf:0,glute:0,ham:0};
+const TARGET=10;
+const MIX=(p)=>{ // 0%=紙色, 100%=桃赤
+  const a=[247,251,255],b=[242,92,122],t=Math.min(1,p);
+  return `rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')})`};
+function paint(root,sets){
+  root.querySelectorAll('[data-p]').forEach(e=>{const s=sets[e.dataset.p]||0;e.style.fill=s?MIX(.22+.78*Math.min(1,s/TARGET)):'#f7fbff'});
+}
+document.getElementById('figs1').innerHTML=figure('front')+figure('back');
+document.getElementById('figs3').innerHTML=figure('front',{marks:1,w:150})+figure('back',{marks:1,w:150});
+document.getElementById('mini').innerHTML=figure('front',{w:38});
+const s1=document.querySelector('.s1'),s3=document.querySelector('.s3'),mini=document.getElementById('mini');
+paint(s1,BASE);paint(s3,BASE);
+// 画面2のミニ図: 大腿四頭筋と殿筋を強調
+mini.querySelectorAll('[data-p]').forEach(e=>{e.style.fill=e.dataset.p==='quad'?'rgb(242,92,122)':'#f7fbff'});
+
+// ---- %バー ----
+const bars=document.getElementById('bars');
+bars.innerHTML=PARTS.map(([k,n,p,no])=>`<div class="bar" data-k="${k}"><span class="no">${no}</span><span class="nm">${n}<small>${p}</small></span><span class="tr"><i></i></span><span class="pc num">0%</span></div>`).join('');
+function setBars(sets){
+  bars.querySelectorAll('.bar').forEach(b=>{const s=sets[b.dataset.k]||0,p=Math.min(100,Math.round(s/TARGET*100));
+    b.querySelector('i').style.width=p+'%';b.querySelector('.pc').textContent=p+'%'});
+}
+setBars(BASE);
+// 記録を再生: 今日の4種目12セットを順に足す
+let timer;
+const STEPS=[ // 種目ごとに鍛える部位
+ {n:'スクワット',p:['quad','glute']},{n:'RDL',p:['ham','glute']},{n:'レッグプレス',p:['quad','glute']},{n:'カーフレイズ',p:['calf']}];
+document.getElementById('play').addEventListener('click',()=>{
+  clearInterval(timer);
+  const cur={...BASE};paint(s3,cur);setBars(cur);
+  const seq=[];STEPS.forEach(s=>{for(let i=0;i<3;i++)seq.push(s)});
+  let i=0;
+  timer=setInterval(()=>{
+    if(i>=seq.length){clearInterval(timer);return}
+    seq[i].p.forEach(k=>{cur[k]=(cur[k]||0)+1});
+    paint(s3,cur);setBars(cur);i++;
+  },700);
+});
+
+// ---- 記録中（ノートの行） ----
+const prev=[10,10,10];
+const st={set:2,w:60,r:10,log:[{w:60,r:11}]};
+const L=document.getElementById('lines');
+function lines(){
+  let h='';
+  for(let i=1;i<=3;i++){
+    if(i<st.set){const l=st.log[i-1],d=l.r-prev[i-1];
+      h+=`<div class="ln1 ink"><span class="n">${i}</span><span class="v ${st.fresh===i?'stamp':''}"><span class="num">${l.w}</span><small>kg ×</small><span class="num">${l.r}</span><small>回</small></span><span class="r">${d>0?`<b>+${d}</b>`:d<0?d:'±0'}</span></div>`}
+    else if(i===st.set){
+      h+=`<div class="ln1 cur"><span class="n">${i}</span><span class="v"><span class="num">${st.w}</span><small>kg ×</small><span class="num">${st.r}</span><small>回</small></span><span class="r">下書き<br>前回 ${prev[i-1]}</span><span class="tagp">いまここ</span></div>`}
+    else{h+=`<div class="ln1 pen"><span class="n">${i}</span><span class="v"><span class="num">60</span><small>kg ×</small><span class="num">${prev[i-1]}</span><small>回</small></span><span class="r">下書き</span></div>`}
+  }
+  L.innerHTML=h;lucide.createIcons();
+}
+function fx(txt){const f=document.createElement('div');f.className='fx';f.textContent=txt;f.style.left='190px';f.style.top='260px';document.getElementById('p2').appendChild(f);setTimeout(()=>f.remove(),1150)}
+document.getElementById('p2').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.d){const k=b.dataset.d;if(k[0]==='w')st.w=Math.max(0,st.w+parseFloat(k.slice(1)));else st.r=Math.max(1,st.r+parseInt(k.slice(1)));lines();return}
+  if(b.id==='same'){st.set=2;st.w=60;st.r=10;st.log=[{w:60,r:11}];st.fresh=0;lines();return}
+  if(b.id==='done'){
+    if(st.set>3)return;
+    st.log[st.set-1]={w:st.w,r:st.r};st.fresh=st.set;
+    const d=st.r-prev[st.set-1];fx(d>0?`前回 +${d}！`:'清書した');
+    st.set++;if(st.set<=3)st.r=prev[st.set-1];
+    lines();
+  }
+});
+lines();
+lucide.createIcons();
+</script>
+</body>
+</html>

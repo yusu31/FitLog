@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FitLog 刷新案5つの比較</title>
+  <style>
+    body { margin: 0; font-family: system-ui, "Yu Gothic UI", sans-serif; background: #1E2230; color: #fff; }
+    header { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 20px; background: #1E2230ee; }
+    h1 { font-size: 16px; margin: 0 12px 0 0; }
+    button { font: inherit; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 2px solid #5B6075; background: transparent; color: #fff; cursor: pointer; }
+    button[aria-pressed="true"] { background: #fff; color: #1E2230; border-color: #fff; }
+    a { color: #9FB4FF; font-size: 13px; margin-left: auto; }
+    iframe { display: block; width: 100%; height: calc(100dvh - 64px); border: 0; background: #fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>刷新案5つを比べる</h1>
+    <span id="bar"></span>
+    <a id="open" href="a-gym.html" target="_blank" rel="noopener">この案を別タブで開く</a>
+  </header>
+  <iframe id="view" src="a-gym.html" title="刷新案"></iframe>
+  <script>
+    // 案ごとに1ファイル。押すと下の枠の中身を差し替える
+    const plans = [["a-gym.html", "A 体育館"], ["b-note.html", "B 保健体育ノート"], ["c-buddy.html", "C 育成"], ["d-sportsday.html", "D 運動会"], ["e-neon.html", "E 黒背景のジム"]];
+    const bar = document.getElementById("bar");
+    bar.innerHTML = plans.map(([f, label], i) => `<button type="button" data-f="${f}" aria-pressed="${i === 0}">${label}</button>`).join(" ");
+    bar.addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      bar.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      document.getElementById("view").src = b.dataset.f;
+      document.getElementById("open").href = b.dataset.f;
+    });
+  </script>
+</body>
+</html>

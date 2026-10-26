@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FitLog v3 案D 運動会</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Reggae+One&family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@1.61.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --red:#E03A3E; --red-d:#B92A2E; --navy:#14213D; --navy2:#0B1426; --gold:#F2B705; --gold-d:#B98A00;
+  --green:#2A9D8F; --rest:#8FA3B5; --rest-bg:#E6EDF3; --line:#D5DBE6; --ink2:#5C6780; --white:#fff;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:"Zen Kaku Gothic New",sans-serif;color:var(--navy);background:#EDEFF4;min-height:100vh;padding:0 16px 60px;overflow-x:hidden;
+  background-image:repeating-linear-gradient(90deg,transparent 0 59px,rgba(20,33,61,.045) 59px 60px)}
+.page{max-width:1260px;margin:0 auto}
+.topflags{height:54px;margin:0 -16px;overflow:hidden}
+.topflags svg{display:block;width:100%;height:54px}
+.head{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-end;margin:10px 0 28px}
+.head h1{font-family:"Reggae One";font-weight:400;font-size:38px;line-height:1.15;color:var(--navy)}
+.head h1 small{display:block;font:900 13px "Zen Kaku Gothic New";color:var(--red);letter-spacing:.14em;margin-bottom:4px}
+.head p.one{font-weight:700;font-size:15px;margin-top:6px}
+.memo{background:#fff;border:2px solid var(--navy);outline:2px solid var(--gold);outline-offset:3px;padding:14px 18px;max-width:640px;font-size:13px;line-height:1.75}
+.memo b{font-family:"Reggae One";font-weight:400;color:var(--red)}
+.memo ul{padding-left:1.1em}
+.stage{display:flex;flex-wrap:wrap;gap:30px;justify-content:center}
+figure{width:390px;max-width:100%}
+figcaption{font-family:"Reggae One";font-size:16px;margin:0 0 8px 2px;display:flex;align-items:center;gap:8px}
+figcaption i{font-style:normal;background:var(--red);color:#fff;width:26px;height:26px;display:grid;place-items:center;font-family:"DotGothic16";font-size:15px;clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%);padding-bottom:4px}
+
+.phone{width:390px;height:844px;max-width:100%;background:#fff;border:6px solid var(--navy);border-radius:40px;position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 40px -20px rgba(20,33,61,.45)}
+.phone::before{content:"";position:absolute;left:50%;top:9px;width:92px;height:22px;background:var(--navy);border-radius:20px;transform:translateX(-50%);z-index:20}
+.status{height:44px;flex:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 28px 4px;font:700 13px "DotGothic16"}
+.bunting{flex:none;height:34px}
+.bunting svg{display:block;width:100%;height:34px}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;padding:6px 16px 0;position:relative}
+.tabs{flex:none;display:grid;grid-template-columns:repeat(4,1fr);border-top:3px solid var(--navy);background:#fff}
+.tabs button{border:0;background:none;font:900 11px "Zen Kaku Gothic New";color:var(--ink2);padding:9px 2px 20px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border-right:1px solid var(--line)}
+.tabs button:last-child{border-right:0}
+.tabs svg{width:21px;height:21px}
+.tabs button.on{color:#fff;background:var(--navy)}
+
+.sec{display:flex;align-items:baseline;justify-content:space-between;margin:12px 0 6px}
+.sec h2{font-family:"Reggae One";font-weight:400;font-size:17px;display:flex;align-items:center;gap:6px}
+.sec h2::before{content:"";width:6px;height:18px;background:var(--red)}
+.sec small{font-size:11px;color:var(--ink2);font-weight:700}
+
+/* 得点板 */
+.board{background:var(--navy);border:3px solid var(--navy);border-radius:6px;padding:10px 12px 12px;color:#fff;position:relative;box-shadow:inset 0 0 0 2px var(--gold),0 5px 0 var(--navy2)}
+.board::before,.board::after{content:"";position:absolute;top:6px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.board::before{left:6px}.board::after{right:6px}
+.board .t{display:flex;justify-content:space-between;align-items:flex-end;font-weight:900;font-size:12px;letter-spacing:.08em;padding:0 8px}
+.board .t b{font-family:"Reggae One";font-weight:400;font-size:15px;letter-spacing:.14em}
+.flip{display:flex;gap:5px;align-items:center;justify-content:center;margin:6px 0 6px}
+.flip .dg{width:46px;height:64px;background:var(--navy2);border-radius:5px;display:grid;place-items:center;font:400 52px/1 "DotGothic16";color:var(--gold);position:relative;text-shadow:0 0 12px rgba(242,183,5,.55);border:1px solid #2A3A5E}
+.flip .dg::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:var(--navy);box-shadow:0 1px 0 rgba(255,255,255,.08)}
+.flip .un{font:900 18px "Zen Kaku Gothic New";color:#fff;align-self:flex-end;margin:0 0 6px 4px}
+.tape{display:grid;grid-template-columns:repeat(20,1fr);gap:2px;padding:0 4px}
+.tape i{height:10px;background:#26365C;border-radius:1px}
+.tape i.on{background:var(--gold)}
+.board .goal{display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-top:6px;padding:0 4px;color:#C8D1E6}
+.board .goal b{color:var(--gold);font-family:"DotGothic16";font-size:14px;font-weight:400}
+
+/* 名簿と旗 */
+.roster{border:2px solid var(--navy)}
+.rr{display:grid;grid-template-columns:78px 1fr 46px;align-items:center;padding:0 8px;height:40px;border-bottom:1px solid var(--line);gap:6px}
+.rr:last-child{border-bottom:0}
+.rr.me{background:#FFF1F1;box-shadow:inset 4px 0 0 var(--red)}
+.rr .nm{font-weight:900;font-size:14px;display:flex;align-items:center;gap:5px}
+.rr .nm i{width:10px;height:10px;border-radius:50%;background:var(--green);flex:none}
+.rr.me .nm i{background:var(--red)}
+.rr .cells{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.rr .cells b{height:30px;display:grid;place-items:center;border:1.5px solid var(--line);border-radius:2px;font-size:0}
+.rr .cells b svg{width:16px;height:16px}
+.cells b.done{background:#FFF6D6;border-color:var(--gold)}
+.cells b.done svg{color:var(--gold-d);fill:var(--gold)}
+.cells b.rest{background:var(--rest-bg);border-color:var(--rest);border-style:dashed}
+.cells b.rest svg{color:#5E7488}
+.cells b.today{border:2px solid var(--red)}
+.cells b.today.done{background:#FFF6D6}
+.cells b.future{background:#fafbfc}
+.rr .pt{font:400 17px "DotGothic16";text-align:right}
+.rr .pt small{font-size:10px}
+.hd{display:grid;grid-template-columns:78px 1fr 46px;gap:6px;padding:4px 8px;font-size:10px;font-weight:900;color:var(--ink2);background:#F4F6FA;border-bottom:2px solid var(--navy)}
+.hd .c{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.hd .c span.t{color:var(--red)}
+.hd :last-child{text-align:right}
+
+/* 凡例 */
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;font-weight:700;color:var(--ink2);margin-top:8px;align-items:center}
+.legend span{display:flex;align-items:center;gap:4px}.legend svg{width:15px;height:15px}
+.legend .t b{width:14px;height:14px;border:2px solid var(--red);display:inline-block}
+.ann{margin-top:12px;border:2px solid var(--navy);background:#F4F6FA}
+.ann h3{font:400 13px "Reggae One";background:var(--navy);color:#fff;padding:3px 10px;display:flex;align-items:center;gap:6px}
+.ann h3 svg{width:15px;height:15px}
+.ann p{font-size:12px;font-weight:700;padding:5px 10px;border-bottom:1px solid var(--line);line-height:1.5;display:flex;gap:6px;align-items:center}
+.ann p:last-child{border:0}.ann p svg{width:15px;height:15px;color:var(--green);flex:none}
+/* 出場票 */
+.ticket{margin-top:auto;margin-bottom:12px;display:grid;grid-template-columns:1fr 112px;background:#fff;border:2.5px solid var(--navy);position:relative;filter:drop-shadow(0 4px 0 rgba(20,33,61,.18))}
+.ticket .l{padding:10px 14px 12px}
+.ticket .l small{font-size:10px;font-weight:900;color:var(--red);letter-spacing:.12em}
+.ticket .l h3{font-family:"Reggae One";font-weight:400;font-size:25px;line-height:1.15;margin:2px 0 4px}
+.ticket .l p{font-size:11px;color:var(--ink2);font-weight:700;line-height:1.5}
+.ticket .l p b{color:var(--navy);font-family:"DotGothic16";font-weight:400;font-size:14px}
+.ticket .r{border-left:2.5px dashed var(--navy);padding:8px;display:grid}
+.btn{font:900 16px "Zen Kaku Gothic New";border:2.5px solid var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;color:var(--navy);background:#fff}
+.btn.main{background:var(--red);color:#fff;border-color:var(--red-d);box-shadow:0 4px 0 var(--red-d);flex-direction:column;line-height:1.2;font-size:17px;font-family:"Reggae One";font-weight:400;transition:transform .08s,box-shadow .08s}
+.btn.main:active{transform:translateY(3px);box-shadow:0 1px 0 var(--red-d)}
+.btn.main svg{width:26px;height:26px;stroke-width:2.5}
+.btn.sub{height:44px;font-size:14px}
+.btn.txt{border:0;height:30px;font-size:12px;text-decoration:underline;color:var(--ink2);background:none}
+
+/* 画面2 記録会 */
+.mini{display:flex;align-items:center;justify-content:space-between;background:var(--navy);color:#fff;padding:6px 16px;font-size:11px;font-weight:900;margin:0}
+.mini b{font:400 18px "DotGothic16";color:var(--gold);margin-left:6px}
+.mini .need{color:#C8D1E6}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px}
+.chips button{border:2px solid var(--navy);background:#fff;font:900 11px/1.25 "Zen Kaku Gothic New";padding:4px 2px;cursor:pointer;color:var(--navy);position:relative}
+.chips button b{display:block;font:400 15px "DotGothic16"}
+.chips button.on{background:var(--navy);color:#fff}
+.chips button.ok::after{content:"済";position:absolute;right:2px;top:2px;font-size:9px;color:#fff;background:var(--red);border-radius:50%;width:15px;height:15px;display:grid;place-items:center}
+.paper{border:2px solid var(--navy);margin-top:10px;background:#fff;position:relative}
+.paper .hdr{display:flex;justify-content:space-between;align-items:flex-end;padding:8px 12px 6px;border-bottom:2px solid var(--navy)}
+.paper .hdr small{font-size:10px;font-weight:900;color:var(--red);letter-spacing:.1em;display:block}
+.paper .hdr h2{white-space:nowrap;font-family:"Shippori Mincho B1";font-weight:800;font-size:22px;line-height:1.2}
+.record{display:flex;align-items:center;gap:6px;border:2px solid var(--gold);background:#FFFAE6;padding:3px 8px;font-size:10px;font-weight:900;text-align:right;line-height:1.3}
+.record svg{width:22px;height:22px;color:var(--gold-d);flex:none}
+.record b{font:400 14px "DotGothic16";display:block;color:var(--navy)}
+.tr{display:grid;grid-template-columns:repeat(3,1fr)}
+.tr .cell{border-right:1px solid var(--line);padding:6px 6px 8px;min-height:104px;position:relative;text-align:center}
+.tr .cell:last-child{border-right:0}
+.tr .cell .lb{font:900 11px "Zen Kaku Gothic New";background:#F4F6FA;margin:-6px -6px 6px;padding:3px;border-bottom:1px solid var(--line);color:var(--ink2)}
+.tr .cell .v{font:400 12px "DotGothic16";color:var(--ink2)}
+.tr .cell .big{font:400 44px/1.05 "DotGothic16";color:var(--navy)}
+.tr .cell.empty .big{color:#D5DBE6}
+.tr .cell.now{background:#FFF1F1;box-shadow:inset 0 0 0 3px var(--red)}
+.tr .cell.now .lb{background:var(--red);color:#fff}
+.tr .cell .tag{font-size:10px;font-weight:900;padding:1px 6px;display:inline-block;margin-top:2px;background:var(--gold);border-radius:2px}
+.tr .cell .tag.same{background:#fff;border:1px solid var(--navy)}
+.tr .cell .tag.down{background:var(--rest-bg)}
+.stamp{position:absolute;right:3px;top:22px;width:34px;height:34px;border-radius:50%;border:2.5px solid var(--red);color:var(--red);font:800 15px "Shippori Mincho B1";display:grid;place-items:center;transform:rotate(-14deg);background:rgba(255,255,255,.7);animation:stamp .35s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes stamp{from{transform:rotate(-14deg) scale(2.6);opacity:0}to{transform:rotate(-14deg) scale(1);opacity:1}}
+.adj{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px}
+.adj button{width:36px;height:36px;border:2px solid var(--navy);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--navy)}
+.adj button svg{width:18px;height:18px;stroke-width:3.2}
+.adj .kg{font:700 13px "Zen Kaku Gothic New";min-width:56px;text-align:center}
+.adj .kg b{font:400 15px "DotGothic16"}
+.act2{margin-top:auto;padding:10px 0 16px;display:flex;flex-direction:column;gap:7px}
+.act2 .main{height:62px;flex-direction:row;font-size:20px}
+.act2 .row{display:flex;gap:8px}.act2 .row .sub{flex:1}
+.pop{position:absolute;left:50%;top:164px;transform:translateX(-50%);background:var(--gold);color:var(--navy);border:2.5px solid var(--navy);padding:6px 16px;font-family:"Reggae One";font-size:17px;opacity:0;pointer-events:none;z-index:10;white-space:nowrap}
+.pop.show{animation:pop 1.4s forwards}
+@keyframes pop{0%{opacity:0;transform:translateX(-50%) translateY(10px)}15%{opacity:1;transform:translateX(-50%)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+
+/* 画面3 表彰 */
+.who{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:6px}
+.who button{border:2px solid var(--line);background:#fff;font:900 12px "Zen Kaku Gothic New";padding:6px 0 5px;cursor:pointer;color:var(--navy);display:flex;flex-direction:column;align-items:center;gap:2px}
+.who button svg{width:20px;height:20px;color:var(--green)}
+.who button.on{border-color:var(--navy);background:var(--navy);color:#fff}
+.who button.on svg{color:var(--gold);fill:var(--gold)}
+.cert{margin-top:12px;border:3px solid var(--navy);outline:2px solid var(--gold);outline-offset:-9px;padding:18px 20px 16px;text-align:center;background:#FFFEFA;position:relative;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center}
+.cert .corner{position:absolute;width:26px;height:26px;border:3px solid var(--red)}
+.cert .c1{left:5px;top:5px;border-right:0;border-bottom:0}.cert .c2{right:5px;top:5px;border-left:0;border-bottom:0}
+.cert .c3{left:5px;bottom:5px;border-right:0;border-top:0}.cert .c4{right:5px;bottom:5px;border-left:0;border-top:0}
+.cert .tt{font:800 36px "Shippori Mincho B1";letter-spacing:.7em;margin-right:-.7em;line-height:1}
+.cert .nm{font:800 25px "Shippori Mincho B1";margin-top:12px;border-bottom:2px solid var(--navy);padding:0 18px 2px}
+.cert .nm small{font-size:15px;margin-left:6px}
+.cert .aw{font:400 25px/1.3 "Reggae One";color:var(--red);margin:12px 0 4px}
+.cert .why{font:600 14px/1.9 "Shippori Mincho B1";color:var(--navy);margin-top:4px}
+.cert .medal{margin-top:8px}
+.cert .foot{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;width:100%;font:600 11px/1.5 "Shippori Mincho B1";text-align:left;padding:0 6px}
+.seal{width:50px;height:50px;border-radius:50%;border:3px solid var(--red);color:var(--red);font:800 13px/1.1 "Shippori Mincho B1";display:grid;place-items:center;transform:rotate(8deg);text-align:center}
+.cert.flash{animation:flash .55s}
+@keyframes flash{0%{opacity:.2;transform:scale(.97)}100%{opacity:1;transform:none}}
+.together{margin-top:10px;border:2px solid var(--navy);background:var(--navy);color:#fff;display:flex;align-items:center;gap:10px;padding:8px 12px;font-size:12px;font-weight:700;line-height:1.5}
+.together b{font:400 22px "DotGothic16";color:var(--gold)}
+.together svg{width:26px;height:26px;color:var(--gold);flex:none}
+.act3{padding:10px 0 14px}
+.act3 .main{width:100%;height:56px;flex-direction:row;font-size:18px}
+</style>
+</head>
+<body>
+<div class="topflags"><svg id="topflags" preserveAspectRatio="none" viewBox="0 0 1300 54"></svg></div>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1><small>FitLog プロトタイプ v3 ／ 案D</small>運動会（みんなで得点）</h1>
+      <p class="one">勝ち負けではなく、5人の合計で得点板が積み上がる。休んだ日は「休憩テント」。</p>
+    </div>
+    <div class="memo">
+      <b>仕様メモ</b>
+      <ul>
+        <li>ボタン配置: 主ボタンは<b>「出場票」の右の半券</b>に置く（画面下の固定ではなく、チケットを切り取る形）。タブは4分割の下帯</li>
+        <li>この案だけの仕様: 順位を作らない。<b>動いた日=10点をチーム全員で足す協力型</b>。休んだ日は減点なしで「休憩テント」マーク</li>
+        <li>記録は<b>用紙（試技1・2・3の欄）</b>。前回が「大会記録」欄に入り、種目はチップで自由に行き来できる。1種目でも3試技そろえば当日の出場成立（+10点）</li>
+        <li>週末に<b>全員へ賞状</b>（「よく休んだで賞」も）。日曜24時に確定</li>
+        <li>弱点: 紅白＋金は祝祭色が強く、毎日見ると疲れる可能性。5人だと点が小さく見える</li>
+        <li>押せるもの: 「記録する」「±」「大会記録と同じ」「種目チップ」「出場する」「受賞者の旗」</li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="stage">
+    <!-- ① 今日 -->
+    <figure>
+      <figcaption><i>1</i>今日（本部テント）</figcaption>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>10/29 木</span></div>
+        <div class="bunting"><svg preserveAspectRatio="none" viewBox="0 0 378 34"></svg></div>
+        <div class="body">
+          <div class="board">
+            <div class="t"><span>朝トレ部　今週の合計得点</span><b>第1競技週</b></div>
+            <div class="flip" id="flip1"></div>
+            <div class="tape" id="tape"></div>
+            <div class="goal"><span>みんなで目標 200点まで あと <b id="rest">80</b> 点</span><span>10/26〜11/1</span></div>
+          </div>
+          <div class="sec"><h2>5人の旗</h2><small>動いた日 ＝ 10点</small></div>
+          <div class="roster">
+            <div class="hd"><span></span><div class="c"><span>月</span><span>火</span><span>水</span><span class="t">木</span><span>金</span><span>土</span><span>日</span></div><span>得点</span></div>
+            <div id="rows"></div>
+          </div>
+          <div class="legend"><span><i data-lucide="flag-triangle-right"></i>動いた日</span><span><i data-lucide="tent"></i>休憩テント（減点なし）</span><span class="t"><b></b>今日</span></div>
+          <div class="ticket">
+            <div class="l"><small>本日の出場種目</small><h3>脚の日</h3><p>全4種目（スクワットほか）<br>出場すると チームに <b>+10</b> 点</p></div>
+            <div class="r"><button class="btn main" id="enter"><i data-lucide="flag-triangle-right"></i>出場<br>する</button></div>
+          </div>
+        </div>
+        <nav class="tabs">
+          <button class="on"><i data-lucide="flag"></i>本部</button>
+          <button><i data-lucide="clipboard-pen-line"></i>記録会</button>
+          <button><i data-lucide="award"></i>表彰</button>
+          <button><i data-lucide="users"></i>仲間</button>
+        </nav>
+      </div>
+    </figure>
+
+    <!-- ② 記録中 -->
+    <figure>
+      <figcaption><i>2</i>記録中（記録会の用紙）</figcaption>
+      <div class="phone">
+        <div class="status"><span>9:58</span><span>記録会</span></div>
+        <div class="bunting"><svg preserveAspectRatio="none" viewBox="0 0 378 34"></svg></div>
+        <div class="mini"><span>朝トレ部 合計 <b id="mt">120</b> 点</span><span class="need" id="need">3試技で +10点</span></div>
+        <div class="body" style="padding-top:0">
+          <div class="chips" id="chips"></div>
+          <div class="paper">
+            <div class="hdr">
+              <div><small>第<span id="exn">1</span>種目</small><h2 id="exname">スクワット</h2></div>
+              <div class="record"><i data-lucide="medal"></i><span>大会記録<b id="rec">60kg×10回</b></span></div>
+            </div>
+            <div class="tr" id="tr"></div>
+          </div>
+          <div class="adj">
+            <button id="rm" aria-label="1回減らす"><i data-lucide="minus"></i></button>
+            <div class="kg"><b id="kg">60</b> kg ×</div>
+            <button id="rp" aria-label="1回増やす"><i data-lucide="plus"></i></button>
+            <span style="font-size:11px;font-weight:700;color:var(--ink2)">回を変える</span>
+          </div>
+          <div class="pop" id="pop">自己ベスト！</div>
+          <div class="ann"><h3><i data-lucide="megaphone"></i>場内アナウンス</h3>
+            <p><i data-lucide="flag-triangle-right"></i>ケンさんが 出場しました。チーム +10点！</p>
+            <p><i data-lucide="tent"></i>サキさんは 休憩テントで 回復中です。</p>
+            <p><i data-lucide="users"></i>目標200点まで、みんなで あと80点。</p></div>
+          <div class="act2">
+            <button class="btn main" id="rec_btn"><i data-lucide="stamp"></i>記録する</button>
+            <div class="row">
+              <button class="btn sub" id="same">大会記録と同じ</button>
+              <button class="btn sub" id="pass">この試技はパス</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ③ 見せ場 -->
+    <figure>
+      <figcaption><i>3</i>見せ場（週末の表彰式）</figcaption>
+      <div class="phone">
+        <div class="status"><span>日 23:40</span><span>暫定</span></div>
+        <div class="bunting"><svg preserveAspectRatio="none" viewBox="0 0 378 34"></svg></div>
+        <div class="body">
+          <div class="sec" style="margin-top:2px"><h2>表彰式</h2><small>日曜24時に確定／全員に賞があります</small></div>
+          <div class="who" id="who"></div>
+          <div class="cert" id="cert">
+            <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span>
+            <div class="tt">賞状</div>
+            <div class="nm"><span id="cn">あなた</span><small>殿</small></div>
+            <div class="aw" id="aw"></div>
+            <svg class="medal" width="64" height="76" viewBox="0 0 64 76"><path d="M14 0h14l8 22H22z" fill="#E03A3E"/><path d="M50 0H36l-8 22h14z" fill="#14213D"/><circle cx="32" cy="48" r="23" fill="#F2B705" stroke="#B98A00" stroke-width="3"/><circle cx="32" cy="48" r="16" fill="none" stroke="#B98A00" stroke-width="2" stroke-dasharray="3 3"/><path id="mstar" d="M32 36l3.5 7.5 8 1-6 5.5 1.7 8L32 54l-7.2 4 1.7-8-6-5.5 8-1z" fill="#fff" stroke="#B98A00" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <div class="why" id="why"></div>
+            <div class="foot"><span>令和8年11月1日<br>朝トレ部 実行委員会</span><div class="seal">朝ト<br>レ部<br>之印</div></div>
+          </div>
+          <div class="together"><i data-lucide="party-popper"></i><div>朝トレ部 全員で <b>120</b> 点。<br>目標までは あと80点、来週も みんなで。</div></div>
+          <div class="act3"><button class="btn main" id="save"><i data-lucide="download"></i>この賞状を保存</button></div>
+        </div>
+      </div>
+    </figure>
+  </main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+/* 万国旗（上の帯と各画面の上） */
+const cols=['#E03A3E','#fff','#14213D','#F2B705','#2A9D8F'];
+function bunting(w,h,n,sag){let s=`<path d="M0 3Q${w/2} ${3+sag} ${w} 3" fill="none" stroke="#14213D" stroke-width="2"/>`;
+  for(let i=0;i<n;i++){const t=(i+.5)/n,x=t*w,y=3+sag*2*t*(1-t)*1,fw=w/n*.78;const c=cols[i%5];
+    s+=`<path d="M${x-fw/2} ${y} L${x+fw/2} ${y} L${x} ${y+h*.5}z" fill="${c}" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/>`}
+  return s}
+document.querySelectorAll('.bunting svg').forEach(s=>s.innerHTML=bunting(378,34,15,12));
+$('#topflags').innerHTML=bunting(1300,54,50,18);
+
+/* 得点板 */
+const TEAM=120;
+function flip(el,n,unit){const s=String(n).padStart(3,'0');el.innerHTML=[...s].map(c=>`<div class="dg">${c}</div>`).join('')+(unit?`<span class="un">点</span>`:'')}
+flip($('#flip1'),0,true);
+(function count(){const t0=performance.now();(function f(now){const p=Math.min(1,(now-t0)/1200),v=Math.round(TEAM*(1-Math.pow(1-p,3)));flip($('#flip1'),v,true);if(p<1)requestAnimationFrame(f)})(t0)})();
+$('#tape').innerHTML=Array.from({length:20},(_,i)=>`<i class="${i<TEAM/10?'on':''}"></i>`).join('');
+
+/* 名簿 */
+const ppl=[
+ {n:'あなた',me:1,c:'DRDTFFF'.split('').map(x=>x),d:['done','rest','done','today','future','future','future']},
+ {n:'ケン',d:['done','done','done','done','future','future','future'],t:1},
+ {n:'ミホ',d:['done','future0','done','today','future','future','future']},
+ {n:'ユウタ',d:['done','done','done','today','future','future','future']},
+ {n:'サキ',d:['done','rest','rest','today','future','future','future']}
+];
+// ケンは今日すでに出場済み。ほかは今日これから
+ppl[1].d[3]='done today';
+ppl[2].d[1]='future2';
+function cell(s){
+  if(s.startsWith('done'))return `<b class="${s}"><i data-lucide="flag-triangle-right"></i></b>`;
+  if(s==='rest')return `<b class="rest"><i data-lucide="tent"></i></b>`;
+  if(s==='today')return `<b class="today"></b>`;
+  return `<b class="future"></b>`}
+function normal(arr){return arr.map(s=>s==='future0'||s==='future2'?'future':s)}
+$('#rows').innerHTML=ppl.map(p=>{const d=normal(p.d);const days=d.filter(s=>s.startsWith('done')).length;
+  return `<div class="rr ${p.me?'me':''}"><div class="nm"><i></i>${p.n}</div><div class="cells">${d.map(cell).join('')}</div><div class="pt">${days*10}<small>点</small></div></div>`}).join('');
+/* 合計の整合: あなた2+ケン4+ミホ2+ユウタ3+サキ1 = 12日 = 120点。ミホは火が休みでも練習日でもない「お休み」扱いのため空欄 */
+
+/* 画面1のボタン */
+$('#enter').onclick=()=>{document.getElementById('exname').scrollIntoView({behavior:'smooth',block:'center'})};
+
+/* 記録中 */
+const EX=[
+ {n:'スクワット',kg:60,reps:10,max:3},
+ {n:'ルーマニアン デッドリフト',kg:50,reps:12},
+ {n:'レッグプレス',kg:100,reps:12},
+ {n:'カーフレイズ',kg:40,reps:15}
+];
+EX.forEach((e,i)=>{e.t=[];e.cur=e.reps});
+EX[0].t=[{r:11}]; // 試技1は 60kg×11回（前回+1）
+let ex=0,counted=false,total=TEAM;
+function tag(r,g){const d=r-g;return d>0?`<span class="tag">前回 +${d}</span>`:d===0?`<span class="tag same">前回と同じ</span>`:`<span class="tag down">前回 −${-d}</span>`}
+function draw(){const e=EX[ex];
+  $('#exn').textContent=ex+1;$('#exname').textContent=e.n;$('#exname').style.fontSize=e.n.length>9?'14px':'22px';
+  $('#rec').textContent=`${e.kg}kg×${e.reps}回`;$('#kg').textContent=e.kg;
+  $('#tr').innerHTML=[0,1,2].map(i=>{
+    if(i<e.t.length){const r=e.t[i].r;return `<div class="cell"><div class="lb">試技${i+1}</div><div class="big">${r}</div><div class="v">${e.kg}kg ×回</div>${r===null?'':tag(r,e.reps)}<div class="stamp">済</div></div>`}
+    if(i===e.t.length&&e.t.length<3)return `<div class="cell now"><div class="lb">試技${i+1}　記入中</div><div class="big">${e.cur}</div><div class="v">${e.kg}kg ×回</div>${tag(e.cur,e.reps)}</div>`;
+    return `<div class="cell empty"><div class="lb">試技${i+1}</div><div class="big">--</div><div class="v">${e.kg}kg ×回</div></div>`}).join('');
+  $('#chips').innerHTML=EX.map((x,i)=>`<button class="${i===ex?'on':''} ${x.t.length>=3?'ok':''}" data-i="${i}">第${i+1}種目<b>${x.t.length}/3</b></button>`).join('');
+  document.querySelectorAll('#chips button').forEach(b=>b.onclick=()=>{ex=+b.dataset.i;draw()});
+  const full=e.t.length>=3;
+  $('#rec_btn').innerHTML=full?'<i data-lucide="check-check"></i>この種目は完了':'<i data-lucide="stamp"></i>記録する';
+  $('#rec_btn').disabled=full;$('#rec_btn').style.opacity=full?.55:1;
+  $('#same').style.visibility=$('#pass').style.visibility=$('#rm').style.visibility=$('#rp').style.visibility=full?'hidden':'visible';
+  $('#need').textContent=counted?'出場成立！ +10点':`3試技で +10点`;
+  $('#mt').textContent=total;
+  lucide.createIcons()}
+function pop(t){const p=$('#pop');p.textContent=t;p.classList.remove('show');void p.offsetWidth;p.classList.add('show')}
+function put(r){const e=EX[ex];if(e.t.length>=3)return;e.t.push({r});
+  if(r>e.reps)pop('自己ベスト！ 前回 +'+(r-e.reps));else if(r===null)pop('パスもOK');else pop('記録しました');
+  e.cur=e.reps;
+  if(e.t.length>=3&&!counted){counted=true;total+=10;pop('出場成立！ チーム +10点')}
+  draw()}
+$('#rec_btn').onclick=()=>put(EX[ex].cur);
+$('#same').onclick=()=>put(EX[ex].reps);
+$('#pass').onclick=()=>{const e=EX[ex];if(e.t.length>=3)return;e.t.push({r:e.reps});pop('パスしてもOK（前回と同じ扱い）');e.cur=e.reps;draw()};
+$('#rm').onclick=()=>{EX[ex].cur=Math.max(0,EX[ex].cur-1);draw()};
+$('#rp').onclick=()=>{EX[ex].cur++;draw()};
+draw();
+
+/* 表彰 */
+const AW=[
+ {n:'あなた',a:'自己ベスト更新で賞',w:'スクワットで前回より<br>1回多く挙げました。<br>前の自分に勝つ、一番えらい勝ち方です。'},
+ {n:'ケン',a:'いちばん動いたで賞',w:'今週は4日、体を動かしました。<br>その姿が、みんなの目印になりました。'},
+ {n:'ミホ',a:'自分のペースで賞',w:'2日、しっかり出場しました。<br>続けられるリズムが、いちばんの力です。'},
+ {n:'ユウタ',a:'三日間よくがんばったで賞',w:'3日分の旗を立てました。<br>チームの得点を30点押し上げました。'},
+ {n:'サキ',a:'よく休んだで賞',w:'2日、しっかり休みました。<br>休むのも立派な種目です。<br>休憩テントは、いつでも あいています。'}
+];
+$('#who').innerHTML=AW.map((a,i)=>`<button data-i="${i}" class="${i===0?'on':''}"><i data-lucide="flag-triangle-right"></i>${a.n}</button>`).join('');
+function show(i){const a=AW[i];$('#cn').textContent=a.n;$('#aw').textContent=a.a;$('#aw').style.fontSize=a.a.length>11?'20px':'25px';$('#why').innerHTML=a.w;
+  document.querySelectorAll('#who button').forEach((b,j)=>b.classList.toggle('on',i===j));
+  const c=$('#cert');c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash')}
+document.querySelectorAll('#who button').forEach(b=>b.onclick=()=>show(+b.dataset.i));
+$('#save').onclick=()=>{const t=$('#save');t.innerHTML='<i data-lucide="check"></i>保存しました（見た目だけ）';lucide.createIcons();setTimeout(()=>{t.innerHTML='<i data-lucide="download"></i>この賞状を保存';lucide.createIcons()},1600)};
+show(0);
+lucide.createIcons();
+</script>
+</body>
+</html>

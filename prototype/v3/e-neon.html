@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FitLog v3 案E 黒背景のジム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@1.61.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --bg:#101114; --p1:#1A1C21; --p2:#23262D; --line:#2E323B; --or:#FF6A1A; --lime:#C6FF3D; --blue:#4DA3FF; --tx:#F3F3F0; --dim:#8B8F99; --rest:#6F83A0;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:"Zen Kaku Gothic New",sans-serif;background:#07080A;color:var(--tx);min-height:100vh;padding:28px 16px 60px;overflow-x:hidden}
+.page{max-width:1260px;margin:0 auto}
+.head{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-end;margin-bottom:28px}
+.head h1{font:800 44px/1 "Barlow Condensed";letter-spacing:.02em;text-transform:uppercase}
+.head h1 small{display:block;font:700 12px "Zen Kaku Gothic New";color:var(--or);letter-spacing:.16em;margin-bottom:8px}
+.head h1 em{font-style:normal;color:var(--or)}
+.head p.one{font-weight:700;font-size:14px;margin-top:8px;color:#C9CCD3}
+.memo{background:var(--p1);border:1px solid var(--line);border-left:4px solid var(--or);padding:14px 18px;max-width:660px;font-size:13px;line-height:1.75;color:#C9CCD3}
+.memo b{color:var(--or)}
+.memo ul{padding-left:1.1em}
+.memo .warn{color:var(--lime)}
+.stage{display:flex;flex-wrap:wrap;gap:30px;justify-content:center}
+figure{width:390px;max-width:100%}
+figcaption{font:700 14px "Barlow Condensed";letter-spacing:.14em;color:var(--dim);margin:0 0 8px 2px;text-transform:uppercase}
+figcaption i{font-style:normal;color:var(--or);margin-right:8px}
+
+.phone{width:390px;height:844px;max-width:100%;background:var(--bg);border:6px solid #2A2D35;border-radius:40px;position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 1px #000,0 24px 60px -20px rgba(255,106,26,.22)}
+.phone::before{content:"";position:absolute;left:50%;top:9px;width:92px;height:22px;background:#000;border-radius:20px;transform:translateX(-50%);z-index:20}
+.status{height:44px;flex:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 28px 4px;font:700 13px "Barlow Condensed";letter-spacing:.06em;color:var(--dim)}
+.seg{flex:none;display:grid;grid-template-columns:repeat(4,1fr);margin:2px 14px 0;border-bottom:1px solid var(--line)}
+.seg button{background:none;border:0;color:var(--dim);font:700 12px "Zen Kaku Gothic New";padding:8px 0 9px;cursor:pointer;display:flex;gap:5px;justify-content:center;align-items:center;border-bottom:3px solid transparent;margin-bottom:-1px}
+.seg button svg{width:15px;height:15px}
+.seg button.on{color:var(--tx);border-bottom-color:var(--or)}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 14px 0;position:relative}
+.num{font-family:"Barlow Condensed";font-variant-numeric:tabular-nums}
+.lb{font:700 11px "Zen Kaku Gothic New";letter-spacing:.1em;color:var(--dim);display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.lb b{font:700 11px "Zen Kaku Gothic New";color:var(--dim)}
+
+/* 画面1 */
+.dayrow{display:flex;justify-content:space-between;align-items:flex-end}
+.dayrow h2{font:800 40px/.95 "Barlow Condensed";letter-spacing:.02em}
+.dayrow h2 small{font:700 14px "Barlow Condensed";color:var(--or);display:block;letter-spacing:.2em}
+.dayrow .wk{font:700 12px "Zen Kaku Gothic New";color:var(--dim);text-align:right;line-height:1.5}
+.dayrow .wk b{font:800 22px "Barlow Condensed";color:var(--tx)}
+.w7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.w7 div{background:var(--p1);border:1px solid var(--line);height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:700 11px "Barlow Condensed";letter-spacing:.08em;color:var(--dim);position:relative}
+.w7 div svg{width:17px;height:17px}
+.w7 .done{background:rgba(198,255,61,.1);border-color:var(--lime);color:var(--lime)}
+.w7 .rest{background:rgba(111,131,160,.14);border-color:var(--rest);border-style:dashed;color:#9DB0C9}
+.w7 .today{border-color:var(--or);color:var(--or);box-shadow:inset 0 0 0 1px var(--or)}
+.w7 .today::after{content:"TODAY";position:absolute;bottom:-1px;left:0;right:0;font:800 8px "Barlow Condensed";background:var(--or);color:#000;text-align:center;letter-spacing:.1em}
+.w7 .fut{opacity:.4}
+.grp{margin-top:14px;background:var(--p1);border:1px solid var(--line);padding:10px 12px 8px}
+.gr{display:grid;grid-template-columns:48px 1fr 56px;gap:8px;align-items:center;height:24px;font-size:12px;font-weight:700}
+.gr .bar{height:12px;display:flex;gap:2px}
+.gr .bar i{flex:1;max-width:30px;background:var(--p2)}
+.gr .bar i.m{background:var(--blue)}
+.gr .bar i.me{background:var(--or)}
+.gr .bar i.r{background:transparent;border:1px dashed var(--rest)}
+.gr .d{font:800 18px "Barlow Condensed";text-align:right}
+.gr .d small{font:700 10px "Zen Kaku Gothic New";color:var(--dim);margin-left:2px}
+.gr.me{color:var(--or)}
+.grp .tip{font-size:10px;color:var(--dim);margin-top:5px;line-height:1.5;border-top:1px solid var(--line);padding-top:5px}
+.menu{margin-top:14px;flex:1;min-height:0}
+.mr{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.mr .i{font:800 15px "Barlow Condensed";color:var(--or)}
+.mr .n{font-weight:900;font-size:14px;line-height:1.3}
+.mr .n small{display:block;font:500 10px "Zen Kaku Gothic New";color:var(--dim)}
+.mr .g{font:700 18px "Barlow Condensed";text-align:right;color:#C9CCD3}
+.mr .g small{font:500 10px "Zen Kaku Gothic New";color:var(--dim);display:block;line-height:1}
+.bottom{flex:none;display:grid;grid-template-columns:1fr 168px;border-top:1px solid var(--line);margin:0 -14px;background:var(--p1)}
+.bottom .info{padding:10px 16px 24px;font:500 11px/1.5 "Zen Kaku Gothic New";color:var(--dim)}
+.bottom .info b{font:800 22px "Barlow Condensed";color:var(--tx);display:block;line-height:1.1}
+.btn{border:0;cursor:pointer;font:800 17px "Zen Kaku Gothic New";display:flex;align-items:center;justify-content:center;gap:8px;color:#000;background:var(--or);letter-spacing:.04em}
+.btn svg{width:20px;height:20px;stroke-width:3}
+.btn.main{box-shadow:0 0 22px rgba(255,106,26,.45)}
+.btn.main:active{filter:brightness(.85)}
+.btn.sub{background:transparent;color:var(--tx);border:1px solid var(--line);font-size:13px;font-weight:700}
+.btn.txt{background:none;color:var(--dim);font-size:12px;font-weight:700;text-decoration:underline}
+
+/* 画面2 */
+.exh{display:flex;justify-content:space-between;align-items:flex-end}
+.exh h2{font:800 28px/1.05 "Zen Kaku Gothic New";letter-spacing:.01em}
+.exh .sc{font:800 36px/.9 "Barlow Condensed";color:var(--or)}
+.exh .sc small{font-size:16px;color:var(--dim)}
+details{margin-top:8px;background:var(--p1);border:1px solid var(--line)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;font-size:12px;font-weight:700;color:#C9CCD3}
+summary::-webkit-details-marker{display:none}
+summary svg{width:16px;height:16px;transition:transform .2s}
+details[open] summary svg{transform:rotate(180deg)}
+details .pv{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+details .pv div{padding:6px 12px;font:700 18px "Barlow Condensed";color:var(--dim)}
+details .pv div small{display:block;font:500 10px "Zen Kaku Gothic New"}
+.ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.ctl.w{grid-template-columns:1fr}
+.pan{background:var(--p1);border:1px solid var(--line);padding:8px 10px 10px}
+.pan .v{font:800 56px/1 "Barlow Condensed";letter-spacing:.01em;display:flex;align-items:baseline;gap:6px}
+.pan .v small{font:700 16px "Barlow Condensed";color:var(--dim);letter-spacing:.1em}
+.pan .v .df{margin-left:auto;font:700 12px "Zen Kaku Gothic New";color:var(--lime)}
+.pan .v .df.dn{color:#9DB0C9}
+.pan .pm{display:grid;gap:5px;margin-top:6px}
+.pan .pm.k4{grid-template-columns:repeat(4,1fr)}
+.pan .pm.k2{grid-template-columns:repeat(2,1fr)}
+.pan .pm button{background:var(--p2);border:1px solid var(--line);color:var(--tx);height:36px;font:800 15px "Barlow Condensed";cursor:pointer;letter-spacing:.04em}
+.pan .pm button:active{background:var(--or);color:#000}
+.setlog{margin-top:8px;display:grid;gap:3px}
+.sl{display:grid;grid-template-columns:30px 1fr auto;align-items:center;font:700 14px "Barlow Condensed";padding:4px 10px;background:var(--p1);border-left:3px solid var(--lime);letter-spacing:.04em}
+.sl .no{color:var(--lime)}
+.sl .dd{font:700 11px "Zen Kaku Gothic New";color:var(--lime)}
+.sl.pend{border-left-color:var(--line);color:var(--dim)}
+.sl.pend .no{color:var(--dim)}
+.rtm{margin-top:8px;background:var(--p1);border:1px solid var(--line);padding:8px 10px;display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center}
+.ring{position:relative;width:96px;height:96px}
+.ring svg{width:96px;height:96px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:7}
+.ring .tr{stroke:var(--p2)}
+.ring .pg{stroke:var(--blue);stroke-linecap:butt;transition:stroke-dashoffset .95s linear}
+.ring .t{position:absolute;inset:0;display:grid;place-items:center;font:800 30px "Barlow Condensed";letter-spacing:.02em}
+.ring .t small{display:block;font:700 9px "Zen Kaku Gothic New";color:var(--dim);letter-spacing:.1em;margin-top:-4px;text-align:center}
+.rtm.go .pg{stroke:var(--blue)}
+.rtm.end .pg{stroke:var(--lime)}
+.rtm.end{border-color:var(--lime);box-shadow:0 0 20px rgba(198,255,61,.25)}
+.rtm.end .ring .t{color:var(--lime)}
+.pre{display:flex;gap:3px}
+.pre button{flex:1;min-width:34px;height:30px;background:var(--p2);border:1px solid var(--line);color:var(--dim);font:700 14px "Barlow Condensed";cursor:pointer}
+.pre button.on{border-color:var(--blue);color:var(--blue);background:rgba(77,163,255,.1)}
+.rc{display:flex;gap:5px;margin-top:6px}
+.rc button{flex:1;height:34px;background:transparent;border:1px solid var(--line);color:var(--tx);font:700 12px "Zen Kaku Gothic New";cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px}
+.rc button svg{width:14px;height:14px}
+.dobar{flex:none;margin:auto -14px 0;display:grid;grid-template-columns:112px 1fr;border-top:1px solid var(--line)}
+.dobar .btn{height:70px;padding-bottom:12px}
+.dobar .btn.sub{border:0;border-right:1px solid var(--line);flex-direction:column;gap:2px;font-size:11px;background:var(--p1)}
+.dobar .btn.main{font-size:22px}
+.dobar .btn svg{width:22px}
+
+/* 画面3 */
+.s3 h2{font:800 28px/1 "Barlow Condensed";letter-spacing:.04em;text-transform:uppercase}
+.s3 h2 small{font:700 12px "Zen Kaku Gothic New";color:var(--dim);letter-spacing:.06em;margin-left:8px;text-transform:none}
+.bodies{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--p1);border:1px solid var(--line);margin-top:10px;padding:8px 8px 4px;position:relative}
+.bodies figure{width:auto;text-align:center}
+.bodies svg{height:238px;width:auto;max-width:100%}
+.bodies .cap{font:700 11px "Barlow Condensed";letter-spacing:.2em;color:var(--dim)}
+.bodies path,.bodies ellipse,.bodies rect,.bodies circle{stroke:#0A0B0D;stroke-width:1.4;transition:fill .7s}
+.bodies .neutral{fill:#262A32}
+.scale{display:flex;align-items:center;gap:8px;margin-top:6px;font:700 10px "Zen Kaku Gothic New";color:var(--dim)}
+.scale i{flex:1;height:8px;background:linear-gradient(90deg,hsl(215,88%,58%),hsl(285,88%,58%),hsl(355,88%,58%))}
+.pb{margin-top:10px;display:grid;gap:7px}
+.pr{display:grid;grid-template-columns:96px 1fr 44px;gap:8px;align-items:center}
+.pr .n{font-weight:900;font-size:13px;line-height:1.2}
+.pr .n small{display:block;font:500 9px "Zen Kaku Gothic New";color:var(--dim)}
+.pr .b{height:14px;background:var(--p2);position:relative;overflow:hidden}
+.pr .b i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .7s,background .7s}
+.pr .p{font:800 20px "Barlow Condensed";text-align:right}
+.pr .p small{font-size:11px}
+.pr.new{outline:1px solid var(--or);outline-offset:3px}
+.note{font-size:10px;color:var(--dim);line-height:1.5;margin-top:8px}
+.s3 .dobar{grid-template-columns:1fr}
+.s3 .dobar .btn{font-size:16px}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1><small>FitLog プロトタイプ v3 ／ 案E</small>Night <em>Gym</em> <span style="font-size:.6em;color:var(--dim)">黒背景のジム</span></h1>
+      <p class="one">情報を詰めた、道具としてのジムアプリ。休憩タイマーが実際に数える。</p>
+    </div>
+    <div class="memo">
+      <b>仕様メモ</b>
+      <ul>
+        <li class="warn">本人は黒背景を嫌った（10/25）。この案は好みの対極にある<b style="color:var(--lime)">比較のための対照案</b>。屋外や昼のジムでは見にくい弱点もある</li>
+        <li>ボタン配置: タブは画面<b>上</b>（4分割の下線タブ）。主ボタンは画面<b>下の右3/4</b>、左に副ボタンを並べる「操作帯」。親指が右に来る前提</li>
+        <li>この案だけの仕様: <b>休憩タイマー</b>（30秒〜3分・実際に数える・「できた」で自動スタート）、重さ ±2.5/±5、回数 ±1、前回の折りたたみ</li>
+        <li>グループは順位ではなく<b>動いた日数の並び</b>。休みは点線の枠で表し、日数に数えず責めない</li>
+        <li>部位別は<b>ヒートマップ＋%バー</b>（目安は週10セット。推論）。「脚の日を終えたら」で変化を先取りできる</li>
+        <li>押せるもの: 「できた」「±ボタン」「プリセット」「▶⏸」「+30秒」「前回の折りたたみ」「前/後ろ」</li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="stage">
+    <!-- ① 今日 -->
+    <figure>
+      <figcaption><i>01</i>Today</figcaption>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>LTE 87%</span></div>
+        <nav class="seg"><button class="on"><i data-lucide="calendar-check"></i>今日</button><button><i data-lucide="history"></i>履歴</button><button><i data-lucide="scan-line"></i>部位</button><button><i data-lucide="users"></i>仲間</button></nav>
+        <div class="body">
+          <div class="dayrow">
+            <h2><small>THURSDAY</small>10/29</h2>
+            <div class="wk">今週 <b>2</b>日 ／ 先週 <b>4</b>日<br>のこり4日で 先週に並べる</div>
+          </div>
+          <div class="w7" id="w7"></div>
+          <div class="grp">
+            <div class="lb"><span>グループ「朝トレ部」今週の動いた日数</span></div>
+            <div id="grp"></div>
+            <div class="tip">並びは日数の多い順。休みは数に入れず、点線で表示。</div>
+          </div>
+          <div class="menu">
+            <div class="lb"><span>今日のメニュー ・ 脚の日</span><b>前回の値 ▸ 右</b></div>
+            <div id="menu"></div>
+          </div>
+          <div class="bottom">
+            <div class="info"><b class="num">12セット</b>約50分 ・ 予定の総挙上量 9,000kg</div>
+            <button class="btn main" id="start"><i data-lucide="play"></i>はじめる</button>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ② 記録中 -->
+    <figure>
+      <figcaption><i>02</i>Logging</figcaption>
+      <div class="phone">
+        <div class="status"><span>9:58</span><span>LTE 86%</span></div>
+        <nav class="seg"><button><i data-lucide="chevron-left"></i>戻る</button><button class="on"><i data-lucide="dumbbell"></i><span id="exi">1/4</span></button><button><i data-lucide="list"></i>一覧</button><button><i data-lucide="notebook-pen"></i>メモ</button></nav>
+        <div class="body">
+          <div class="exh"><h2>スクワット</h2><div class="sc num" id="scount">2<small> / 3 SET</small></div></div>
+          <details id="prev"><summary><span>前回の記録　60kg × 10 ・ 10 ・ 10</span><i data-lucide="chevron-down"></i></summary>
+            <div class="pv"><div>60 × 10<small>1セット</small></div><div>60 × 10<small>2セット</small></div><div>60 × 10<small>3セット</small></div></div></details>
+          <div class="ctl">
+            <div class="pan"><div class="lb" style="margin:0">重さ</div><div class="v num"><span id="kg">60.0</span><small>KG</small></div>
+              <div class="pm k4"><button data-k="-5">−5</button><button data-k="-2.5">−2.5</button><button data-k="2.5">+2.5</button><button data-k="5">+5</button></div></div>
+            <div class="pan"><div class="lb" style="margin:0">回数</div><div class="v num"><span id="reps">10</span><small>REP</small><span class="df" id="df">前回と同じ</span></div>
+              <div class="pm k2"><button data-r="-1">−1</button><button data-r="1">+1</button></div></div>
+          </div>
+          <div class="setlog" id="slog"></div>
+          <div class="rtm" id="rest">
+            <div class="ring"><svg viewBox="0 0 96 96"><circle class="tr" cx="48" cy="48" r="42"/><circle class="pg" id="pg" cx="48" cy="48" r="42" stroke-dasharray="263.9" stroke-dashoffset="0"/></svg><div class="t"><div><span id="tm">1:30</span><small id="tmsg">REST</small></div></div></div>
+            <div>
+              <div class="lb" style="margin-bottom:4px"><span>休憩タイマー</span></div>
+              <div class="pre" id="pre"></div>
+              <div class="rc"><button id="tgl"><i data-lucide="play"></i><span>開始</span></button><button id="p30"><i data-lucide="plus"></i>30秒</button><button id="sk"><i data-lucide="skip-forward"></i>とばす</button></div>
+            </div>
+          </div>
+          <div class="dobar">
+            <button class="btn sub" id="same"><i data-lucide="copy"></i>前回と同じ</button>
+            <button class="btn main" id="done"><i data-lucide="check"></i>できた</button>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ③ 見せ場 -->
+    <figure>
+      <figcaption><i>03</i>Muscle Heatmap</figcaption>
+      <div class="phone s3">
+        <div class="status"><span>21:10</span><span>LTE 80%</span></div>
+        <nav class="seg"><button><i data-lucide="calendar-check"></i>今日</button><button><i data-lucide="history"></i>履歴</button><button class="on"><i data-lucide="scan-line"></i>部位</button><button><i data-lucide="users"></i>仲間</button></nav>
+        <div class="body">
+          <h2>今週の部位 <small>10/26〜11/1</small></h2>
+          <div class="bodies">
+            <figure><svg id="front" viewBox="0 0 120 260"></svg><div class="cap">FRONT</div></figure>
+            <figure><svg id="back" viewBox="0 0 120 260"></svg><div class="cap">BACK</div></figure>
+          </div>
+          <div class="scale"><span>0%</span><i></i><span>100%＝週の目安</span></div>
+          <div class="pb" id="pb"></div>
+          <p class="note">目安は「1部位あたり週10セット」と仮置き（推論。実際の推奨は部位・目的で異なる）。セット数は種目と部位の対応表から数える想定。</p>
+          <div class="dobar" style="margin-top:auto">
+            <button class="btn main" id="legs"><i data-lucide="eye"></i><span>脚の日を終えたら…</span></button>
+          </div>
+        </div>
+      </div>
+    </figure>
+  </main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+
+/* ① 今日 */
+const W=[['月','done','check'],['火','rest','moon'],['水','done','check'],['木','today',''],['金','fut',''],['土','fut',''],['日','fut','']];
+$('#w7').innerHTML=W.map(([d,c,i])=>`<div class="${c}">${i?`<i data-lucide="${i}"></i>`:'<span style="height:17px"></span>'}${d}</div>`).join('');
+const G=[['ケン',4,0,0],['ユウタ',3,0,0],['あなた',2,1,1],['ミホ',2,0,0],['サキ',1,2,0]];
+$('#grp').innerHTML=G.map(([n,d,r,me])=>`<div class="gr ${me?'me':''}"><span>${n}</span><div class="bar">${Array.from({length:7},(_,i)=>i<d?`<i class="${me?'me':'m'}"></i>`:i<d+r?'<i class="r"></i>':'<i></i>').join('')}</div><div class="d">${d}<small>日${r?` ・休${r}`:''}</small></div></div>`).join('');
+const MENU=[['スクワット',60,10,3],['ルーマニアンデッドリフト',50,12,3],['レッグプレス',100,12,3],['カーフレイズ',40,15,3]];
+$('#menu').innerHTML=MENU.map((m,i)=>`<div class="mr"><span class="i">${i+1}</span><div class="n">${m[0]}<small>前回 ${m[1]}kg × ${m[2]}回 × ${m[3]}セット</small></div><div class="g">${m[1]}×${m[2]}<small>kg × 回</small></div></div>`).join('');
+$('#start').onclick=()=>$('#done').scrollIntoView({behavior:'smooth',block:'center'});
+
+/* ② 記録中: 休憩タイマーは実際に数える */
+const E={kg:60,reps:10,base:10,log:[{kg:60,reps:11}]};
+let preset=90,left=90,run=false,timer=null;
+const C=263.9;
+function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function renderRest(){
+  $('#tm').textContent=fmt(Math.max(0,left));
+  const tot=Math.max(preset,left);
+  $('#pg').style.strokeDashoffset=C*(1-Math.max(0,left)/tot);
+  $('#rest').classList.toggle('end',left<=0);
+  $('#tmsg').textContent=left<=0?'次のセット！':run?'REST':'READY';
+  $('#tgl').innerHTML=`<i data-lucide="${run?'pause':'play'}"></i><span>${run?'止める':left<=0?'もう一度':'開始'}</span>`;
+  lucide.createIcons()}
+function tick(){left--;if(left<=0){left=0;run=false;clearInterval(timer);if(navigator.vibrate)navigator.vibrate(200)}renderRest()}
+function start(){clearInterval(timer);run=true;if(left<=0)left=preset;timer=setInterval(tick,1000);renderRest()}
+function stop(){run=false;clearInterval(timer);renderRest()}
+$('#pre').innerHTML=[30,60,90,120,180].map(s=>`<button data-s="${s}" class="${s===preset?'on':''}">${fmt(s)}</button>`).join('');
+document.querySelectorAll('#pre button').forEach(b=>b.onclick=()=>{preset=+b.dataset.s;left=preset;document.querySelectorAll('#pre button').forEach(x=>x.classList.toggle('on',x===b));if(run)start();else renderRest()});
+$('#tgl').onclick=()=>run?stop():start();
+$('#p30').onclick=()=>{left+=30;if(left>0&&!run&&false)start();renderRest()};
+$('#sk').onclick=()=>{stop();left=preset;renderRest()};
+
+function renderLog(){
+  const n=E.log.length;
+  $('#scount').innerHTML=`${Math.min(n+1,3)}<small> / 3 SET</small>`;
+  let h=E.log.map((l,i)=>{const d=l.reps-MENU[0][2];return `<div class="sl"><span class="no">${i+1}</span><span>${l.kg} × ${l.reps}</span><span class="dd">${d>0?'▲ 前回 +'+d:d===0?'前回と同じ':'前回 −'+(-d)}</span></div>`}).join('');
+  for(let i=n;i<3;i++)h+=`<div class="sl pend"><span class="no">${i+1}</span><span>${i===n?'記録待ち':'—'}</span><span></span></div>`;
+  $('#slog').innerHTML=h;
+  $('#kg').textContent=E.kg.toFixed(1);$('#reps').textContent=E.reps;
+  const d=E.reps-E.base;const df=$('#df');df.textContent=d>0?`▲ 前回 +${d}`:d===0?'前回と同じ':`前回 −${-d}`;df.className='df'+(d<0?' dn':'');
+  $('#done').innerHTML=n>=3?'<i data-lucide="check-check"></i>完了':'<i data-lucide="check"></i>できた';
+  lucide.createIcons()}
+document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{E.kg=Math.max(0,E.kg+Number(b.dataset.k));renderLog()});
+document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{E.reps=Math.max(0,E.reps+Number(b.dataset.r));renderLog()});
+function commit(){if(E.log.length>=3)return;E.log.push({kg:E.kg,reps:E.reps});E.reps=E.base;
+  if(E.log.length<3){left=preset;start()}else{stop()}
+  renderLog()}
+$('#done').onclick=commit;
+$('#same').onclick=()=>{E.kg=60;E.reps=E.base;commit()};
+renderLog();renderRest();
+
+/* ③ ヒートマップ */
+const SETS={chest:3,shoulder:3,arm:4,back:3,legs:0},GOAL=10;
+const NAMES=[['chest','胸','大胸筋'],['shoulder','肩','三角筋'],['arm','腕','上腕二頭筋・三頭筋'],['back','背中','広背筋・僧帽筋'],['legs','脚','大腿四頭筋・ハムストリングス']];
+const heat=p=>p<=0?null:`hsl(${Math.round(215+140*Math.min(1,p/100))},88%,58%)`;
+function ell(p,cx,cy,rx,ry,rot){return `<ellipse data-p="${p}" class="${p==='x'?'neutral':''}" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" ${rot?`transform="rotate(${rot} ${cx} ${cy})"`:''}/>`}
+const m=(f)=>[f,f].map((_,i)=>i);
+function human(back){
+  let s=`<circle class="neutral" cx="60" cy="20" r="13"/><rect class="neutral" x="54" y="31" width="12" height="9" rx="3"/>`;
+  s+=ell('shoulder',29,54,11,12)+ell('shoulder',91,54,11,12);
+  if(!back){s+=ell('chest',47,70,14,13)+ell('chest',73,70,14,13)+`<rect class="neutral" x="44" y="84" width="32" height="42" rx="9"/>`}
+  else{s+=`<path data-p="back" d="M42 46 L78 46 L86 66 L74 112 L46 112 L34 66 Z"/>`+ell('x',48,128,13,12)+ell('x',72,128,13,12)}
+  s+=ell('arm',20,86,7,18,8)+ell('arm',100,86,7,18,-8)+ell('arm',15,121,6,16,6)+ell('arm',105,121,6,16,-6);
+  s+=ell('x',60,134,24,10);
+  s+=ell('legs',47,174,13,32,-3)+ell('legs',73,174,13,32,3)+ell('legs',46,228,8,24)+ell('legs',74,228,8,24);
+  return s}
+$('#front').innerHTML=human(false);$('#back').innerHTML=human(true);
+let showLegs=false;
+function paint(){
+  const sets={...SETS};if(showLegs)sets.legs=12;
+  document.querySelectorAll('[data-p]').forEach(el=>{const k=el.dataset.p;if(k==='x')return;const p=Math.min(100,sets[k]/GOAL*100);const c=heat(p);el.style.fill=c||'#2E323B'});
+  $('#pb').innerHTML=NAMES.map(([k,n,s])=>{const p=Math.min(100,Math.round(sets[k]/GOAL*100));const c=heat(p)||'#2E323B';
+    return `<div class="pr ${showLegs&&k==='legs'?'new':''}"><div class="n">${n}<small>${s}</small></div><div class="b"><i style="width:${p}%;background:${c}"></i></div><div class="p num">${p}<small>%</small></div></div>`}).join('');
+  $('#legs').innerHTML=showLegs?'<i data-lucide="eye-off"></i><span>いまの状態にもどす</span>':'<i data-lucide="eye"></i><span>脚の日を終えたら…</span>';
+  lucide.createIcons()}
+$('#legs').onclick=()=>{showLegs=!showLegs;paint()};
+paint();
+lucide.createIcons();
+</script>
+</body>
+</html>

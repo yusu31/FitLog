@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitLog 案A 体育館</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@1.61.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --floor:#EBD3A5; --ink:#1E2A3A; --blue:#2457C5; --gold:#F2B705; --red:#D9432F; --rest:#9DB0B5;
+  --tape:#FBF8EF; --bib:#FBF8EF;
+  --f-head:'Dela Gothic One','Zen Kaku Gothic New',sans-serif;
+  --f-num:'Barlow Condensed','Zen Kaku Gothic New',sans-serif;
+  --f-body:'Zen Kaku Gothic New',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#17202c;color:#f3ead6;font-family:var(--f-body);font-weight:500;line-height:1.55;min-height:100vh}
+.page{max-width:1300px;margin:0 auto;padding:28px 16px 60px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:28px;align-items:end;margin-bottom:28px;padding-bottom:22px;border-bottom:4px solid var(--tape)}
+.hero h1{font-family:var(--f-head);font-size:clamp(34px,6vw,60px);line-height:1.05;font-weight:400}
+.hero h1 small{display:block;font-family:var(--f-num);font-size:18px;font-weight:700;color:var(--gold);margin-bottom:6px}
+.hero p.one{margin-top:10px;font-size:15px;color:#d8ccb0}
+.hero ul{list-style:none;font-size:13.5px;display:grid;gap:4px}
+.hero li{padding-left:22px;position:relative}
+.hero li::before{content:"";position:absolute;left:0;top:.65em;width:14px;height:4px;background:var(--gold)}
+@media(max-width:820px){.hero{grid-template-columns:1fr}}
+.row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center}
+.cap{font-family:var(--f-num);font-size:15px;font-weight:700;color:var(--gold);margin-bottom:8px;letter-spacing:.02em}
+
+/* ---------- スマホ枠 ---------- */
+.phone{position:relative;width:390px;height:844px;overflow:hidden;border-radius:34px;border:6px solid #0c121a;
+  color:var(--ink);isolation:isolate;
+  background-color:var(--floor);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='156' height='360'><g stroke='%23785019' stroke-opacity='.22' stroke-width='1.5'><path d='M0 0V360M78 0V360'/><path d='M0 130H78M78 290H156'/></g><g stroke='%23785019' stroke-opacity='.07' stroke-width='1'><path d='M20 0V360M36 0V360M98 0V360M121 0V360'/></g></svg>");
+}
+.phone::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(120% 70% at 50% 0%,rgba(255,255,255,.28),transparent 60%),linear-gradient(180deg,transparent 60%,rgba(120,80,30,.16))}
+.court{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-weight:800;line-height:.9}
+.hd{font-family:var(--f-head);font-weight:400}
+
+/* 角丸の使い分け: カード=4px / ボタン=10px / チップ=ピル */
+.tape{border:4px solid var(--tape);background:rgba(255,255,255,.14)}
+
+/* 下固定エリア */
+.dock{position:absolute;left:0;right:0;bottom:0;z-index:5}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:62px;border-radius:10px;border:0;cursor:pointer;
+  font-family:var(--f-head);font-size:22px;color:#fff;background:var(--blue);box-shadow:0 5px 0 #14397f;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #14397f}
+.btn svg{width:26px;height:26px;stroke-width:2.8}
+.btn2{display:flex;align-items:center;justify-content:center;gap:6px;height:44px;min-width:44px;padding:0 10px;border-radius:10px;cursor:pointer;
+  background:rgba(251,248,239,.85);border:2.5px solid var(--ink);color:var(--ink);font-family:var(--f-body);font-weight:900;font-size:14px}
+.btn2:active{background:var(--gold)}
+.btn2 svg{width:16px;height:16px;stroke-width:3}
+.btn2 .num{font-size:20px}
+.tabs{display:flex;background:var(--ink);padding:6px 10px 12px;border-top:4px solid var(--tape);gap:4px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:#9fb0c4;font-size:12px;font-weight:900;border-radius:6px}
+.tab svg{width:24px;height:24px;stroke-width:2.6}
+.tab.on{color:#fff;background:var(--blue)}
+
+/* ---------- 画面1 今日 ---------- */
+.s1 .top{position:absolute;left:18px;right:18px;top:20px;display:flex;justify-content:space-between;align-items:flex-end}
+.date{display:flex;align-items:flex-end;gap:8px}
+.date .num{font-size:78px;color:var(--ink)}
+.date .y{font-family:var(--f-head);font-size:20px;line-height:1.1;padding-bottom:6px}
+.date .y small{display:block;font-family:var(--f-body);font-weight:900;font-size:12px;color:#5a4a2e}
+.grp{display:flex;align-items:center;gap:6px;background:var(--ink);color:#fff;padding:6px 12px;border-radius:99px;font-weight:900;font-size:12px}
+.grp svg{width:15px;height:15px;stroke-width:2.8}
+.week{position:absolute;left:14px;right:14px;top:112px;height:94px}
+.week svg.frame{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.week svg.frame rect.line{fill:none;stroke:var(--tape);stroke-width:5;stroke-dasharray:900;stroke-dashoffset:900;animation:draw 1.1s ease-out forwards}
+.week svg.frame line{stroke:var(--tape);stroke-width:3;stroke-dasharray:100;stroke-dashoffset:100;animation:draw .6s ease-out .5s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.cells{position:absolute;inset:5px;display:grid;grid-template-columns:repeat(7,1fr)}
+.cell{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:6px 0 7px}
+.cell b{font-family:var(--f-head);font-weight:400;font-size:15px}
+.cell i{display:grid;place-items:center;width:34px;height:34px;border-radius:6px}
+.cell i svg{width:19px;height:19px;stroke-width:3.4}
+.cell small{font-size:11px;font-weight:900;line-height:1}
+.c-done i{background:var(--gold);color:var(--ink)}
+.c-rest i{background:var(--rest);color:#fff}
+.c-today i{background:var(--blue);color:#fff;animation:pulse 1.6s infinite}
+.c-future i{border:2.5px dashed rgba(30,42,58,.35)}
+.c-future{opacity:.65}
+@keyframes pulse{50%{box-shadow:0 0 0 5px rgba(36,87,197,.28)}}
+
+/* ゼッケン */
+.bib{position:absolute;left:22px;right:22px;top:228px;height:318px;background:var(--bib);border:4px solid var(--ink);border-radius:4px;
+  box-shadow:6px 7px 0 rgba(30,42,58,.28);transform:rotate(-1.2deg)}
+.bib::before,.bib::after{content:"";position:absolute;top:50px;width:12px;height:12px;border-radius:50%;background:var(--floor);border:3px solid var(--ink)}
+.bib::before{left:10px}.bib::after{right:10px}
+.bib .band{background:var(--ink);color:#fff;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 38px;font-weight:900;font-size:13px}
+.bib .band .num{font-size:30px;color:var(--gold)}
+.bib .nm{padding:14px 18px 0 38px;display:flex;align-items:center;justify-content:space-between}
+.bib .nm h2{font-family:var(--f-head);font-weight:400;font-size:38px;line-height:1.1}
+.ghost{margin:10px 18px 0 38px;display:flex;align-items:flex-end;gap:10px}
+.ghost .big{font-size:112px;color:var(--blue)}
+.ghost .u{font-weight:900;font-size:15px;padding-bottom:12px;line-height:1.35}
+.ghost .u small{display:block;font-size:12px;color:#556;font-weight:700}
+.goal{margin:6px 18px 0 38px;display:inline-flex;align-items:center;gap:6px;background:var(--gold);padding:4px 12px;border-radius:99px;font-weight:900;font-size:13px}
+.goal svg{width:15px;height:15px;stroke-width:3}
+.next{position:absolute;left:0;right:0;bottom:0;display:flex;border-top:3px dashed rgba(30,42,58,.4);font-size:12px;font-weight:700}
+.next div{flex:1;padding:7px 8px 8px 10px;border-right:2px solid rgba(30,42,58,.15);line-height:1.3}
+.next div:last-child{border:0}
+.next b{display:block;font-family:var(--f-num);font-size:15px;color:#667}
+/* 仲間 */
+.mates{position:absolute;left:14px;right:14px;top:566px;height:116px;padding:10px 6px 0;background:rgba(251,248,239,.5)}
+.mates h3{font-size:12px;font-weight:900;display:flex;gap:6px;align-items:center;padding:0 6px}
+.mates h3 svg{width:14px;height:14px;stroke-width:3}
+.mates .l{display:grid;grid-template-columns:repeat(5,1fr);margin-top:4px}
+.mate{display:flex;flex-direction:column;align-items:center;gap:1px}
+.av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:14px;color:#fff;background:var(--red);border:3px solid var(--ink)}
+.av.me{background:var(--blue)}
+.mate .num{font-size:24px}
+.mate .num small{font-family:var(--f-body);font-size:11px;font-weight:900}
+.pips{display:flex;gap:2px}
+.pips s{width:6px;height:6px;border-radius:1px;background:rgba(30,42,58,.2);text-decoration:none}
+.pips s.on{background:var(--red)}.pips s.me{background:var(--blue)}.pips s.r{background:var(--rest)}
+
+/* ---------- 画面2 記録中 ---------- */
+.s2 .hd2{position:absolute;left:18px;right:18px;top:18px}
+.s2 .hd2 .t{display:flex;align-items:flex-end;justify-content:space-between}
+.s2 .hd2 h2{font-family:var(--f-head);font-weight:400;font-size:28px;line-height:1.1}
+.s2 .hd2 .cnt{font-size:34px}
+.prog{display:flex;gap:5px;margin-top:8px}
+.prog span{flex:1;height:10px;background:rgba(30,42,58,.18);border:2px solid var(--ink)}
+.prog span.on{background:var(--gold)}
+.prog span.cur{background:var(--blue)}
+.tiles{position:absolute;left:14px;right:14px;top:84px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{position:relative;background:var(--bib);border:3.5px solid var(--ink);border-radius:4px;padding:10px 10px 8px;min-height:92px;box-shadow:4px 5px 0 rgba(30,42,58,.25)}
+.tile h4{font-family:var(--f-head);font-weight:400;font-size:15px;line-height:1.25}
+.tile .pv{font-size:12px;font-weight:700;color:#556;margin-top:3px}
+.tile .st{position:absolute;right:8px;top:8px;font-size:11px;font-weight:900;background:var(--ink);color:#fff;padding:1px 7px;border-radius:99px}
+.tile.dash{border-style:dashed;background:transparent;box-shadow:none;display:grid;place-items:center;color:#5a4a2e;font-weight:900;font-size:13px}
+.tile.dash svg{width:20px;height:20px;stroke-width:3}
+.tile.dash span{display:flex;flex-direction:column;align-items:center;gap:2px}
+.tile.big{grid-column:1 / -1;border-color:var(--blue);padding:12px 14px 12px;box-shadow:5px 6px 0 rgba(36,87,197,.35)}
+.tile.big h4{font-size:24px;padding-left:2px}
+.sets{display:grid;gap:6px;margin-top:10px}
+.setrow{display:flex;align-items:center;gap:10px;height:46px;padding:0 10px;border:2.5px solid var(--ink);border-radius:4px;font-weight:900;background:#fff}
+.setrow .n{font-family:var(--f-head);font-size:16px;width:24px}
+.setrow .v{flex:1;font-size:15px}
+.setrow .v b{font-family:var(--f-num);font-size:30px;font-weight:800}
+.setrow .tag{font-size:12px;background:var(--gold);padding:1px 8px;border-radius:99px}
+.setrow svg{width:22px;height:22px;stroke-width:3.4}
+.setrow.done{background:#fff7d6}
+.setrow.cur{height:104px;border-color:var(--blue);border-width:4px;flex-wrap:wrap;align-content:center;padding:6px 12px;background:#fff;box-shadow:0 0 0 4px rgba(36,87,197,.2)}
+.setrow.cur .big{display:flex;align-items:flex-end;gap:8px;width:100%}
+.setrow.cur .big .num{font-size:74px;color:var(--blue)}
+.setrow.cur .n{font-size:15px;white-space:nowrap}
+.setrow.cur .big .kg{font-size:19px;padding-bottom:8px;font-weight:900}
+.setrow.cur .big .vs{margin-left:auto;font-size:12px;color:#556;font-weight:700;text-align:right;padding-bottom:8px;line-height:1.35}
+.setrow.cur .big .vs b{display:block;font-family:var(--f-num);font-size:22px;color:var(--ink)}
+.setrow.wait{opacity:.55;border-style:dashed;background:transparent}
+.s2 .dock{padding:10px 14px 18px;background:linear-gradient(180deg,transparent,rgba(235,211,165,.96) 22px)}
+.stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.stepper .btn2{flex-direction:column;gap:0;height:50px}
+.stepper .btn2 small{font-size:11px}
+.stepper .btn2 span{display:flex;align-items:center;gap:2px}
+.whistle{position:absolute;left:-10px;right:-10px;top:-80px;z-index:9;background:var(--ink);color:#fff;padding:12px 28px;display:flex;align-items:center;gap:12px;
+  transform:rotate(-2deg) translateY(-130px);opacity:0;transition:.3s cubic-bezier(.2,1.4,.4,1)}
+.whistle.show{transform:rotate(-2deg) translateY(150px);opacity:1}
+.whistle .hd{font-size:22px;color:var(--gold)}
+.whistle small{font-weight:700;font-size:13px}
+.whistle svg{width:30px;height:30px;stroke-width:2.8;color:var(--gold)}
+
+/* ---------- 画面3 共有カード ---------- */
+.s3 .ttl{position:absolute;left:18px;right:18px;top:16px;display:flex;justify-content:space-between;align-items:flex-end}
+.s3 .ttl h2{font-family:var(--f-head);font-weight:400;font-size:24px;line-height:1.15}
+.s3 .ttl p{font-size:12px;font-weight:700;color:#5a4a2e;text-align:right;line-height:1.3}
+.card{position:absolute;left:30px;right:30px;top:78px;height:560px;background:var(--bib);border:5px solid var(--ink);border-radius:4px;transform:rotate(1.3deg);
+  box-shadow:7px 9px 0 rgba(30,42,58,.3);animation:drop .7s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes drop{from{transform:rotate(-6deg) translateY(-40px);opacity:0}}
+.card::before,.card::after{content:"";position:absolute;top:14px;width:13px;height:13px;border-radius:50%;background:var(--floor);border:3px solid var(--ink);z-index:2}
+.card::before{left:12px}.card::after{right:12px}
+.card .band{height:70px;background:var(--ink);color:#fff;padding:18px 18px 0 38px;display:flex;justify-content:space-between;align-items:flex-start}
+.card .band small{font-size:12px;font-weight:900;color:#c5d0de;display:block;line-height:1.2}
+.card .band b{font-family:var(--f-head);font-weight:400;font-size:22px;line-height:1.1}
+.card .band .num{font-size:50px;color:var(--gold);margin-top:-6px}
+.card .tot{padding:12px 18px 0}
+.card .tot small{font-weight:900;font-size:13px}
+.card .tot .num{font-size:104px;color:var(--blue);display:flex;align-items:flex-end;gap:6px}
+.card .tot .num span{font-size:26px;font-weight:700;color:var(--ink);padding-bottom:14px}
+.beat{margin:2px 18px 0;display:flex;align-items:center;gap:10px;background:var(--gold);border:3px solid var(--ink);padding:6px 12px;font-weight:900;font-size:14px}
+.beat .num{font-size:44px}
+.beat svg{width:22px;height:22px;stroke-width:3}
+.lines{margin:12px 18px 0;border-top:3px solid var(--ink)}
+.lines li{list-style:none;display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:2px solid rgba(30,42,58,.25);font-weight:900;font-size:14px}
+.lines li span.num{font-size:20px;font-weight:700;white-space:nowrap}
+.lines li em{font-style:normal;font-size:11px;background:var(--gold);padding:0 6px;border-radius:99px;margin-left:6px}
+.cardweek{position:absolute;left:18px;right:18px;bottom:16px;display:grid;grid-template-columns:repeat(7,1fr);gap:0;border:3px solid var(--ink)}
+.cardweek div{height:44px;display:grid;place-items:center;border-right:3px solid var(--ink);font-family:var(--f-head);font-size:13px}
+.cardweek div:last-child{border:0}
+.cardweek .d{background:var(--gold)}.cardweek .r{background:var(--rest);color:#fff}.cardweek .t{background:var(--blue);color:#fff}.cardweek .f{opacity:.5}
+.s3 .dock .pad{padding:10px 14px 10px;background:linear-gradient(180deg,transparent,rgba(235,211,165,.96) 18px);display:grid;grid-template-columns:1fr;gap:8px}
+.s3 .dock .btn{height:58px}
+.toast{position:absolute;left:50%;top:640px;transform:translateX(-50%) scale(.8);background:var(--ink);color:#fff;padding:8px 16px;border-radius:99px;font-weight:900;font-size:13px;opacity:0;transition:.25s;z-index:6;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) scale(1)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.week svg.frame rect.line,.week svg.frame line{stroke-dashoffset:0}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="hero">
+    <div>
+      <h1><small>FitLog プロトタイプ v3 ／ 案A</small>体育館</h1>
+      <p class="one">体育館の床にラインテープを引くように記録する。ゼッケンの数字と、コートの線。</p>
+    </div>
+    <ul>
+      <li>ボタン配置: タブは<b>画面の下</b>、主ボタン（はじめる／できた）は<b>タブの上に固定の横長1本</b>。親指だけで進められる。</li>
+      <li>記録中は<b>種目を2列タイル</b>で並べ、今の種目だけ大きく開く。重さ・回数の±は主ボタンのすぐ上に4つ（副）。</li>
+      <li>見せ場は<b>共有カード</b>（ゼッケン型1枚）。総重量・前回超えの数・7マスを1枚にまとめ、仲間に渡す。</li>
+      <li>ホームは「次の1種目」だけを大きく出す。種目の一覧は見せず、迷わせない仕様。</li>
+      <li>色は1色1役割: 青=次にやること／黄=達成／赤=仲間／灰青=休み（赤は使わない）。アイコンは Lucide を太線で統一。</li>
+    </ul>
+  </header>
+
+  <div class="row">
+  <!-- ================= 1 今日 ================= -->
+  <section>
+    <div class="cap">① 今日（ホーム）</div>
+    <div class="phone s1">
+      <svg class="court" viewBox="0 0 378 832" fill="none" stroke="#FBF8EF" stroke-width="5" stroke-opacity=".75" aria-hidden="true">
+        <path d="M-40 700 A260 260 0 0 1 420 700"/><rect x="110" y="610" width="160" height="260"/><circle cx="190" cy="610" r="60"/><path d="M0 560 H378" stroke-opacity=".0"/>
+      </svg>
+      <div class="top">
+        <div class="date"><span class="num">29</span><span class="y">10月<br>木曜日<small>脚の日</small></span></div>
+        <div class="grp"><i data-lucide="users"></i>朝トレ部 5人</div>
+      </div>
+
+      <div class="week">
+        <svg class="frame" viewBox="0 0 362 94" preserveAspectRatio="none" aria-hidden="true">
+          <rect class="line" x="2.5" y="2.5" width="357" height="89"/>
+          <line x1="51.7" y1="4" x2="51.7" y2="90"/><line x1="103.4" y1="4" x2="103.4" y2="90"/><line x1="155.1" y1="4" x2="155.1" y2="90"/>
+          <line x1="206.8" y1="4" x2="206.8" y2="90"/><line x1="258.5" y1="4" x2="258.5" y2="90"/><line x1="310.2" y1="4" x2="310.2" y2="90"/>
+        </svg>
+        <div class="cells">
+          <div class="cell c-done"><b>月</b><i><i data-lucide="check"></i></i><small>胸</small></div>
+          <div class="cell c-rest"><b>火</b><i><i data-lucide="moon"></i></i><small>休み</small></div>
+          <div class="cell c-done"><b>水</b><i><i data-lucide="check"></i></i><small>背中</small></div>
+          <div class="cell c-today"><b>木</b><i><i data-lucide="flag"></i></i><small>今日</small></div>
+          <div class="cell c-future"><b>金</b><i></i><small>&nbsp;</small></div>
+          <div class="cell c-future"><b>土</b><i></i><small>&nbsp;</small></div>
+          <div class="cell c-future"><b>日</b><i></i><small>&nbsp;</small></div>
+        </div>
+      </div>
+
+      <div class="bib">
+        <div class="band"><span>脚の日 ／ 全4種目</span><span class="num">1<span style="font-size:18px;color:#fff"> / 4</span></span></div>
+        <div class="nm"><h2>スクワット</h2><i data-lucide="dumbbell" style="width:34px;height:34px;stroke-width:2.6"></i></div>
+        <div class="ghost"><span class="num big">10</span><span class="u">回 × 3セット<small>前回 60kg ／ 10月22日</small></span></div>
+        <div class="goal"><i data-lucide="target"></i>前回超えは 11回</div>
+        <div class="next">
+          <div><b>2</b>ルーマニアン<br>デッドリフト</div><div><b>3</b>レッグプレス</div><div><b>4</b>カーフレイズ</div>
+        </div>
+      </div>
+
+      <div class="mates tape">
+        <h3><i data-lucide="footprints"></i>朝トレ部の今週（動いた日）</h3>
+        <div class="l">
+          <div class="mate"><span class="av me">あ</span><span class="num">2<small>日</small></span><span class="pips"><s class="me"></s><s class="r"></s><s class="me"></s><s></s><s></s><s></s><s></s></span></div>
+          <div class="mate"><span class="av">ケ</span><span class="num">4<small>日</small></span><span class="pips"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s></s><s></s><s></s></span></div>
+          <div class="mate"><span class="av">ミ</span><span class="num">2<small>日</small></span><span class="pips"><s class="on"></s><s class="r"></s><s class="on"></s><s class="r"></s><s></s><s></s><s></s></span></div>
+          <div class="mate"><span class="av">ユ</span><span class="num">3<small>日</small></span><span class="pips"><s class="on"></s><s class="on"></s><s class="r"></s><s class="on"></s><s></s><s></s><s></s></span></div>
+          <div class="mate"><span class="av">サ</span><span class="num">1<small>日</small></span><span class="pips"><s class="r"></s><s class="r"></s><s class="on"></s><s></s><s></s><s></s><s></s></span></div>
+        </div>
+      </div>
+
+      <div class="dock">
+        <div style="padding:0 14px 12px"><button class="btn" type="button"><i data-lucide="play"></i>はじめる</button></div>
+        <nav class="tabs">
+          <div class="tab on"><i data-lucide="flag"></i>今日</div>
+          <div class="tab"><i data-lucide="users"></i>仲間</div>
+          <div class="tab"><i data-lucide="user"></i>自分</div>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2 記録中 ================= -->
+  <section>
+    <div class="cap">② 記録中（スクワット 2セット目）</div>
+    <div class="phone s2" id="p2">
+      <div class="whistle" id="whistle"><i data-lucide="bell-ring"></i><div><div class="hd" id="wt">ピッ！</div><small id="ws"></small></div></div>
+      <div class="hd2">
+        <div class="t"><h2>脚の日</h2><span class="num cnt"><span id="doneEx">0</span><span style="font-size:20px"> / 4種目</span></span></div>
+        <div class="prog" id="prog"><span class="cur"></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="tiles">
+        <div class="tile big">
+          <h4>スクワット</h4><span class="st" id="stTag">2 / 3セット</span>
+          <div class="sets" id="sets"></div>
+        </div>
+        <div class="tile"><h4>ルーマニアン<br>デッドリフト</h4><div class="pv">前回 50kg × 12回</div></div>
+        <div class="tile"><h4>レッグプレス</h4><div class="pv">前回 100kg × 12回</div></div>
+        <div class="tile"><h4>カーフレイズ</h4><div class="pv">前回 40kg × 15回</div></div>
+        <div class="tile dash"><span><i data-lucide="plus"></i>種目を足す</span></div>
+      </div>
+      <div class="dock">
+        <div style="padding:10px 14px 18px;background:linear-gradient(180deg,transparent,rgba(235,211,165,.97) 22px)">
+          <div class="stepper">
+            <button class="btn2" type="button" data-d="w-2.5"><span><i data-lucide="minus"></i><b class="num">2.5</b></span><small>kg</small></button>
+            <button class="btn2" type="button" data-d="w2.5"><span><i data-lucide="plus"></i><b class="num">2.5</b></span><small>kg</small></button>
+            <button class="btn2" type="button" data-d="r-1"><span><i data-lucide="minus"></i><b class="num">1</b></span><small>回</small></button>
+            <button class="btn2" type="button" data-d="r1"><span><i data-lucide="plus"></i><b class="num">1</b></span><small>回</small></button>
+          </div>
+          <button class="btn" type="button" id="done"><i data-lucide="check"></i>できた</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3 共有カード ================= -->
+  <section>
+    <div class="cap">③ 見せ場: 共有カード</div>
+    <div class="phone s3">
+      <div class="ttl"><h2>今日の1枚</h2><p>仲間に渡すカード<br>（見た目だけ）</p></div>
+      <div class="card">
+        <div class="band"><div><small>朝トレ部 ／ あなた</small><b>脚の日</b></div><span class="num">10/29</span></div>
+        <div class="tot"><small>今日、持ち上げた総重量</small><span class="num">9,120<span>kg</span></span></div>
+        <div class="beat"><i data-lucide="trophy"></i><span class="num">3</span>種目で前回超え</div>
+        <ul class="lines">
+          <li><span>スクワット<em>+1回</em></span><span class="num">60kg × 11·11·10</span></li>
+          <li><span>ルーマニアンデッドリフト</span><span class="num">50kg × 12×3</span></li>
+          <li><span>レッグプレス<em>+2回</em></span><span class="num">100kg × 12×3</span></li>
+          <li><span>カーフレイズ<em>+1回</em></span><span class="num">40kg × 15×3</span></li>
+        </ul>
+        <div class="cardweek">
+          <div class="d">月</div><div class="r">火</div><div class="d">水</div><div class="t">木</div><div class="f">金</div><div class="f">土</div><div class="f">日</div>
+        </div>
+      </div>
+      <div class="toast" id="toast">保存しました（プロトタイプでは見た目だけ）</div>
+      <div class="dock">
+        <div class="pad">
+          <button class="btn" type="button" id="save"><i data-lucide="download"></i>画像で保存</button>
+        </div>
+        <nav class="tabs">
+          <div class="tab on"><i data-lucide="flag"></i>今日</div>
+          <div class="tab"><i data-lucide="users"></i>仲間</div>
+          <div class="tab"><i data-lucide="user"></i>自分</div>
+        </nav>
+      </div>
+    </div>
+  </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  const st={set:2,w:60,r:10,prev:[10,10,10],log:[{w:60,r:11}],ex:0};
+  const el=id=>document.getElementById(id);
+  function render(){
+    const rows=[];
+    for(let i=1;i<=3;i++){
+      if(i<st.set){
+        const l=st.log[i-1],d=l.r-st.prev[i-1];
+        rows.push(`<div class="setrow done"><span class="n">${i}</span><span class="v"><b>${l.w}</b>kg × <b>${l.r}</b>回</span>${d>0?`<span class="tag">前回+${d}</span>`:''}<i data-lucide="check"></i></div>`);
+      }else if(i===st.set){
+        const d=st.r-st.prev[i-1];
+        rows.push(`<div class="setrow cur"><span class="n" style="width:auto">${i}セット目</span><div class="big"><span class="num">${st.r}</span><span class="kg">回 ／ ${st.w}kg</span><span class="vs">前回<b>${st.prev[i-1]}回</b>${d>0?'+'+d+' 超え':d<0?d:'同じ'}</span></div></div>`);
+      }else{
+        rows.push(`<div class="setrow wait"><span class="n">${i}</span><span class="v">前回 ${st.prev[i-1]}回 ／ 60kg</span></div>`);
+      }
+    }
+    el('sets').innerHTML=rows.join('');
+    el('stTag').textContent=st.set>3?'完了':`${Math.min(st.set,3)} / 3セット`;
+    el('doneEx').textContent=st.ex;
+    el('prog').innerHTML=[0,1,2,3].map(i=>`<span class="${i<st.ex?'on':i===st.ex?'cur':''}"></span>`).join('');
+    if(window.lucide)lucide.createIcons();
+  }
+  let tm;
+  function whistle(a,b){el('wt').textContent=a;el('ws').textContent=b;const w=el('whistle');w.classList.add('show');clearTimeout(tm);tm=setTimeout(()=>w.classList.remove('show'),1700)}
+  document.getElementById('p2').addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.d){const k=b.dataset.d;
+      if(k[0]==='w')st.w=Math.max(0,st.w+parseFloat(k.slice(1)));else st.r=Math.max(1,st.r+parseInt(k.slice(1)));
+      render();return}
+    if(b.id==='done'){
+      if(st.set>3){st.set=2;st.w=60;st.r=10;st.log=[{w:60,r:11}];st.ex=0;render();return}
+      const d=st.r-st.prev[st.set-1];
+      st.log[st.set-1]={w:st.w,r:st.r};
+      const msg=d>0?`前回より ${d}回 多い！`:'前回と同じ、ナイス';
+      if(st.set===3){st.set=4;st.ex=1;render();whistle('ピッ！ 1種目クリア','スクワット 3セット　'+msg)}
+      else{st.set++;st.r=st.prev[st.set-1];render();whistle(`ピッ！ ${st.set-1}セット目 クリア`,msg)}
+      el('done').innerHTML='<i data-lucide="'+(st.set>3?'rotate-ccw':'check')+'"></i>'+(st.set>3?'もう一度ためす':'できた');
+      lucide.createIcons();
+    }
+  });
+  document.getElementById('save').addEventListener('click',()=>{const t=el('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)});
+  render();
+  if(window.lucide)lucide.createIcons();
+})();
+</script>
+</body>
+</html>

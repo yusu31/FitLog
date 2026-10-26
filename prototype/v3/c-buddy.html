@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FitLog v3 案C 育成</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@1.61.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --peach:#FFE7DA; --peach2:#FFD3BF; --pink:#FF8FA3; --pink-d:#E8607B;
+  --mint:#7BC6A4; --mint-d:#3E9C78; --blue:#6C8EF5; --ink:#4A3B47; --ink2:#8C7A86; --paper:#FFF8F3;
+  --gold:#F5B83D;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:"Zen Maru Gothic",sans-serif;color:var(--ink);background:#F6CDB9;
+  background-image:radial-gradient(circle at 12% 8%,#FFE7DA 0 140px,transparent 141px),radial-gradient(circle at 90% 30%,#FFDCCB 0 200px,transparent 201px);
+  min-height:100vh;padding:28px 16px 60px;overflow-x:hidden}
+.page{max-width:1260px;margin:0 auto}
+.head{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end;margin-bottom:26px}
+.head h1{font-family:"Mochiy Pop One";font-size:34px;line-height:1.2}
+.head h1 small{display:block;font-family:"Zen Maru Gothic";font-weight:700;font-size:13px;color:var(--pink-d);letter-spacing:.12em;margin-bottom:6px}
+.head p.one{font-weight:700;font-size:15px;margin-top:6px}
+.memo{background:var(--paper);border:3px solid var(--ink);border-radius:18px 18px 18px 4px;padding:14px 18px;max-width:640px;font-size:13px;line-height:1.75;box-shadow:5px 5px 0 var(--ink)}
+.memo b{font-family:"Mochiy Pop One";font-weight:400;color:var(--pink-d)}
+.memo ul{padding-left:1.1em}
+.stage{display:flex;flex-wrap:wrap;gap:30px;justify-content:center}
+figure{width:390px;max-width:100%}
+figcaption{font-family:"Mochiy Pop One";font-size:15px;margin:0 0 8px 6px}
+figcaption i{font-style:normal;background:var(--ink);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-grid;place-items:center;font-family:Fredoka;font-size:13px;margin-right:6px}
+
+/* スマホ枠 */
+.phone{width:390px;height:844px;max-width:100%;background:var(--peach);border:6px solid var(--ink);border-radius:44px;position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 0 -6px rgba(74,59,71,.15)}
+.phone::before{content:"";position:absolute;left:50%;top:9px;width:92px;height:22px;background:var(--ink);border-radius:20px;transform:translateX(-50%);z-index:20}
+.status{height:44px;flex:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 28px 4px;font-family:Fredoka;font-weight:600;font-size:13px}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 18px;position:relative}
+.tabs{flex:none;display:flex;background:var(--paper);border-top:3px solid var(--ink);padding:8px 10px 18px}
+.tabs button{flex:1;border:0;background:none;font:700 11px "Zen Maru Gothic";color:var(--ink2);display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;cursor:pointer}
+.tabs button svg{width:22px;height:22px}
+.tabs button.on{color:var(--ink)}
+.tabs button.on span{background:var(--pink);border-radius:12px;padding:2px 10px;color:var(--ink)}
+.tabs button span{padding:2px 10px}
+
+/* 週の7マス */
+.week{display:flex;gap:5px}
+.week .d{flex:1;text-align:center;font-size:10px;font-weight:700;color:var(--ink2)}
+.week .d b{display:grid;place-items:center;height:30px;border-radius:50%;margin-top:3px;border:2.5px solid var(--ink);background:var(--paper);font-family:Fredoka;font-size:12px}
+.week .d.done b{background:var(--gold)}
+.week .d.rest b{background:#D7E4EC;border-style:dashed;border-color:#7A93A3}
+.week .d.today b{border-color:var(--pink-d);box-shadow:0 0 0 3px #fff,0 0 0 5px var(--pink-d)}
+.week .d.future b{border-color:#E1C7BA;color:#C9AFA3}
+.week svg{width:16px;height:16px;stroke-width:3}
+
+/* 相棒 */
+.buddy{display:block;overflow:visible}
+.buddy .e-happy,.buddy .e-effort,.buddy .m-happy,.buddy .m-effort,.buddy .brow{display:none}
+.buddy[data-mood=happy] .e-idle,.buddy[data-mood=effort] .e-idle,.buddy[data-mood=happy] .m-idle,.buddy[data-mood=effort] .m-idle{display:none}
+.buddy[data-mood=happy] .e-happy,.buddy[data-mood=happy] .m-happy{display:block}
+.buddy[data-mood=effort] .e-effort,.buddy[data-mood=effort] .m-effort,.buddy[data-mood=effort] .brow{display:block}
+.buddy .bell{transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+.buddy[data-mood=happy] .bell{transform:translateY(-34px)}
+.buddy[data-mood=effort] .bell{transform:translateY(-14px)}
+.buddy .arms{transition:transform .25s cubic-bezier(.3,1.6,.5,1);transform-origin:100px 120px}
+.hop{animation:hop .6s cubic-bezier(.3,1.6,.5,1)}
+@keyframes hop{0%{transform:translateY(0) scale(1,1)}25%{transform:translateY(0) scale(1.1,.88)}55%{transform:translateY(-22px) scale(.94,1.08)}100%{transform:translateY(0) scale(1,1)}}
+.idle{animation:breathe 3.2s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes breathe{50%{transform:scale(1.025,.975)}}
+
+.bubble{position:relative;background:var(--paper);border:3px solid var(--ink);border-radius:18px;padding:8px 14px;font-weight:700;font-size:14px;text-align:center}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-11px;width:16px;height:16px;background:var(--paper);border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:translateX(-50%) rotate(45deg)}
+
+/* 能力値バー */
+.stat{display:grid;grid-template-columns:76px 1fr 34px;align-items:center;gap:8px;position:relative}
+.stat .n{font-weight:900;font-size:13px;line-height:1.1}
+.stat .n small{display:block;font-size:9px;font-weight:700;color:var(--ink2)}
+.stat .bar{height:15px;border-radius:9px;background:#fff;border:2.5px solid var(--ink);overflow:hidden}
+.stat .bar i{display:block;height:100%;background:var(--mint);width:0;transition:width .6s cubic-bezier(.3,1.4,.5,1);border-right:2.5px solid var(--ink)}
+.stat .v{font-family:Fredoka;font-weight:700;font-size:17px;text-align:right}
+.plus{position:absolute;right:2px;top:-6px;font-family:Fredoka;font-weight:700;font-size:20px;color:var(--mint-d);text-shadow:0 2px 0 #fff,0 -2px 0 #fff,2px 0 0 #fff,-2px 0 0 #fff;pointer-events:none;animation:fly 1s ease-out forwards}
+@keyframes fly{0%{transform:translateY(8px) scale(.6);opacity:0}25%{opacity:1;transform:translateY(-6px) scale(1.2)}100%{transform:translateY(-34px) scale(1);opacity:0}}
+
+/* ボタン3段階 */
+.btn{font:900 18px "Zen Maru Gothic";border:3px solid var(--ink);border-radius:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--ink)}
+.btn.main{background:var(--pink);height:64px;box-shadow:0 6px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.btn.main:active{transform:translateY(5px);box-shadow:0 1px 0 var(--ink)}
+.btn.sub{background:transparent;height:46px;font-size:14px;border-width:2.5px}
+.btn.txt{border:0;background:none;height:34px;font-size:13px;text-decoration:underline;color:var(--ink2)}
+.btn small{font-size:12px;font-weight:700;display:block}
+.btn svg{width:22px;height:22px;stroke-width:3}
+
+/* 画面1 */
+.s1 .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:0;padding-top:4px}
+.s1 .hero .ground{width:150px;height:18px;border-radius:50%;background:rgba(74,59,71,.15);margin-top:-30px;filter:blur(1px)}
+.s1 .lv{display:flex;align-items:center;gap:8px;font-weight:900;font-size:14px;margin-top:-6px}
+.s1 .lv b{font-family:Fredoka;background:var(--ink);color:#fff;border-radius:12px;padding:1px 10px}
+.s1 .stats{display:flex;flex-direction:column;gap:9px;background:var(--paper);border:3px solid var(--ink);border-radius:20px;padding:12px 14px;margin-bottom:14px}
+.s1 .stats h3{font-family:"Mochiy Pop One";font-weight:400;font-size:14px;display:flex;justify-content:space-between;align-items:baseline}
+.s1 .stats h3 small{font:700 10px "Zen Maru Gothic";color:var(--ink2)}
+.s1 .cta{margin-bottom:12px}
+.s1 .cta .btn{width:100%;justify-content:space-between;padding:0 22px}
+.s1 .cta .btn span{text-align:left}
+
+/* 画面2 */
+.top2{display:flex;align-items:center;justify-content:space-between;height:40px}
+.top2 b{font-family:"Mochiy Pop One";font-weight:400;font-size:17px}
+.top2 .back{width:36px;height:36px;border-radius:50%;border:2.5px solid var(--ink);background:var(--paper);display:grid;place-items:center}
+.top2 .cnt{font-family:Fredoka;font-weight:700;background:var(--ink);color:#fff;border-radius:14px;padding:2px 12px;font-size:14px}
+.dojo{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:center;background:var(--paper);border:3px solid var(--ink);border-radius:22px;padding:8px 14px 8px 4px;margin-top:6px}
+.dojo .stats{display:flex;flex-direction:column;gap:9px}
+.dojo .stat{grid-template-columns:50px 1fr 28px;gap:6px}
+.dojo .stat .n{font-size:12px}.dojo .stat .v{font-size:15px}
+.ex{margin-top:12px;display:flex;justify-content:space-between;align-items:flex-end}
+.ex h2{font-family:"Mochiy Pop One";font-weight:400;font-size:24px;line-height:1.2}
+.ex .ghost{font-size:12px;font-weight:700;color:var(--ink2);text-align:right;line-height:1.4}
+.ex .ghost b{font-family:Fredoka;color:var(--ink);font-size:14px}
+.sets{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.set{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;border-radius:16px;padding:7px 12px;border:2.5px solid var(--ink);background:var(--paper);min-height:48px}
+.set .no{font-family:Fredoka;font-weight:700;width:30px;height:30px;border-radius:50%;background:var(--peach2);display:grid;place-items:center;border:2px solid var(--ink)}
+.set .val{font-family:Fredoka;font-weight:600;font-size:15px;color:var(--ink2)}
+.set .val b{font-size:26px;color:var(--ink);font-weight:700;margin:0 2px}
+.set.done{background:#E3F4EC}
+.set.done .no{background:var(--mint)}
+.set.todo{opacity:.55;border-style:dashed}
+.set .diff{font-size:12px;font-weight:900;border-radius:10px;padding:2px 8px;background:var(--gold);border:2px solid var(--ink)}
+.set .diff.same{background:#fff}.set .diff.down{background:#D7E4EC}
+.set.now{background:#fff;border-width:3.5px;border-color:var(--pink-d);box-shadow:0 0 0 4px rgba(255,143,163,.35);padding:8px 12px}
+.set.now .no{background:var(--pink)}
+.step{display:flex;align-items:center;gap:8px}
+.step button{width:38px;height:38px;border-radius:50%;border:2.5px solid var(--ink);background:var(--peach);display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+.step button svg{width:20px;height:20px;stroke-width:3.5}
+.step .val b{font-size:34px;min-width:42px;display:inline-block;text-align:center}
+.act{margin-top:auto;padding:8px 0 14px;display:flex;flex-direction:column;gap:8px}
+.act .row{display:flex;gap:10px}.act .row .sub{flex:1}
+.toast{position:absolute;left:50%;top:128px;transform:translateX(-50%) scale(.6);background:var(--gold);border:3px solid var(--ink);border-radius:20px;padding:6px 16px;font-family:"Mochiy Pop One";font-size:16px;opacity:0;pointer-events:none;z-index:10;white-space:nowrap}
+.toast.show{animation:toast 1.3s cubic-bezier(.3,1.5,.5,1) forwards}
+@keyframes toast{0%{opacity:0;transform:translateX(-50%) scale(.6)}20%{opacity:1;transform:translateX(-50%) scale(1.08)}80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-12px) scale(1)}}
+
+/* 画面3 */
+.s3 h2{font-family:"Mochiy Pop One";font-weight:400;font-size:21px;margin-top:6px}
+.s3 .sub2{font-size:12px;color:var(--ink2);font-weight:700}
+.radarbox{background:var(--paper);border:3px solid var(--ink);border-radius:24px;margin-top:10px;padding:6px 0 8px;position:relative}
+.radarbox svg{display:block;margin:0 auto;width:100%;max-width:340px;overflow:visible}
+.radarbox .lg{display:flex;gap:14px;justify-content:center;font-size:11px;font-weight:700}
+.radarbox .lg i{display:inline-block;width:22px;height:0;border-top:3px dashed var(--ink2);vertical-align:middle;margin-right:4px}
+.radarbox .lg i.now{border-top:6px solid var(--pink)}
+.radarbox svg.mini{position:absolute;right:8px;top:6px;width:64px;max-width:64px;margin:0}
+.grow{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.grow h3{font-family:"Mochiy Pop One";font-weight:400;font-size:15px}
+.gr{display:grid;grid-template-columns:1fr auto;align-items:center;background:var(--paper);border:2.5px solid var(--ink);border-radius:14px;padding:5px 12px;font-weight:900;font-size:14px}
+.gr small{font-weight:700;color:var(--ink2);font-size:10px;margin-left:6px}
+.gr b{font-family:Fredoka;font-size:19px;color:var(--mint-d)}
+.gr.top{background:var(--gold)}.gr.top b{color:var(--ink)}
+.note{font-size:10px;color:var(--ink2);line-height:1.5;margin:8px 0 6px}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1><small>FitLog プロトタイプ v3 ／ 案C</small>育成（相棒と能力値）</h1>
+      <p class="one">記録するたびに相棒が喜んで、能力値が伸びる。体力テストがそのままゲームになる。</p>
+    </div>
+    <div class="memo">
+      <b>仕様メモ</b>
+      <ul>
+        <li>ボタン配置: 主ボタンは各画面の<b>下寄り・全幅の立体ボタン</b>1つ。相棒は画面の主役（中央／上段）</li>
+        <li>この案だけの仕様: 記録のたびに<b>能力値バーが伸び「+1」が飛ぶ</b>。相棒の表情が変わる（ふつう／がんばり／喜び）</li>
+        <li>能力値は新体力テストの項目名を借用（握力→筋力、20mシャトルラン→持久力、長座体前屈→柔軟性、反復横とび→敏しょう性、立ち幅とび→瞬発力）。<b>筋トレ記録との対応は推論</b></li>
+        <li>弱点: 相棒の絵が命。ここは丸と線の単純な図形で描いたが、本番で愛着を出すには絵の工数が大きい。大人には幼く見える恐れ</li>
+        <li>押せるもの: 「できた」「±」「前回と同じ」「特訓へ」「もう一度見る」</li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="stage">
+    <!-- ① 今日 -->
+    <figure>
+      <figcaption><i>1</i>今日（ホーム）</figcaption>
+      <div class="phone s1">
+        <div class="status"><span>9:41</span><span>10/29 木</span></div>
+        <div class="body">
+          <div class="week" id="week1"></div>
+          <div class="hero">
+            <div class="bubble">今日は脚の日だね！いっしょにがんばろう</div>
+            <svg class="buddy idle" id="buddy1" data-mood="idle" width="190" height="190" viewBox="0 0 200 200"></svg>
+            <div class="ground"></div>
+            <div class="lv"><b>Lv.7</b> ダンベルくん<span style="font-weight:700;color:var(--ink2);font-size:12px">／ 今週4日あそんだ</span></div>
+          </div>
+          <div class="stats">
+            <h3>のうりょく <small>新体力テスト風（対応は推論）</small></h3>
+            <div id="stats1" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+          <div class="cta">
+            <button class="btn main" id="go"><span><small>今日のメニュー・4種目</small>きょうの特訓（脚の日）</span><i data-lucide="chevron-right"></i></button>
+          </div>
+        </div>
+        <nav class="tabs">
+          <button class="on"><i data-lucide="paw-print"></i><span>相棒</span></button>
+          <button><i data-lucide="dumbbell"></i><span>特訓</span></button>
+          <button><i data-lucide="users"></i><span>仲間</span></button>
+          <button><i data-lucide="chart-no-axes-column"></i><span>成長</span></button>
+        </nav>
+      </div>
+    </figure>
+
+    <!-- ② 記録中 -->
+    <figure>
+      <figcaption><i>2</i>記録中（特訓）</figcaption>
+      <div class="phone">
+        <div class="status"><span>9:58</span><span>特訓中</span></div>
+        <div class="body">
+          <div class="top2">
+            <div class="back"><i data-lucide="chevron-left" style="width:20px;height:20px;stroke-width:3.5"></i></div>
+            <b>脚の日の特訓</b>
+            <div class="cnt" id="exno">1/4</div>
+          </div>
+          <div class="dojo">
+            <svg class="buddy" id="buddy2" data-mood="effort" width="132" height="132" viewBox="0 0 200 200"></svg>
+            <div class="stats" id="stats2"></div>
+          </div>
+          <div class="toast" id="toast">ナイス！</div>
+          <div class="ex">
+            <h2 id="exname">スクワット</h2>
+            <div class="ghost">前回の自分<br><b id="exghost">60kg × 10回 × 3</b></div>
+          </div>
+          <div class="sets" id="sets"></div>
+          <div class="act">
+            <button class="btn main" id="done"><i data-lucide="check"></i><span>できた</span></button>
+            <div class="row">
+              <button class="btn sub" id="same"><i data-lucide="copy" style="width:18px;height:18px"></i>前回と同じ</button>
+              <button class="btn sub" id="skip">1セット休む</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <!-- ③ 見せ場 -->
+    <figure>
+      <figcaption><i>3</i>見せ場（今週の成長）</figcaption>
+      <div class="phone s3">
+        <div class="status"><span>21:10</span><span>10/26〜11/1</span></div>
+        <div class="body">
+          <h2>今週の成長レポート</h2>
+          <div class="sub2">先週のきみ（点線）と、今週のきみ（ピンク）</div>
+          <div class="radarbox">
+            <svg class="buddy mini" id="buddy3" data-mood="happy" width="64" height="64" viewBox="0 0 200 200"></svg>
+            <svg id="radar" viewBox="0 0 340 300" height="276"></svg>
+            <div class="lg"><span><i></i>先週</span><span><i class="now"></i>今週</span></div>
+          </div>
+          <div class="grow">
+            <h3>この週に のびた のうりょく</h3>
+            <div id="grow"></div>
+          </div>
+          <p class="note">※ 能力値は筋トレのセット数・重さの伸びから計算する想定。体力テスト項目との対応と点数は仮の置き方（推論）。</p>
+          <div class="act" style="margin-top:auto">
+            <button class="btn main" id="replay"><i data-lucide="rotate-ccw"></i><span>もう一度見る</span></button>
+          </div>
+        </div>
+      </div>
+    </figure>
+  </main>
+</div>
+
+<script>
+const STATS=[
+  {k:'str',n:'筋力',s:'握力',v:62,prev:55},
+  {k:'end',n:'持久力',s:'シャトルラン',v:48,prev:44},
+  {k:'flex',n:'柔軟性',s:'長座体前屈',v:35,prev:33},
+  {k:'agi',n:'敏しょう性',s:'反復横とび',v:41,prev:38},
+  {k:'pow',n:'瞬発力',s:'立ち幅とび',v:55,prev:50}
+];
+const $=s=>document.querySelector(s);
+
+/* 相棒（SVGの単純な図形）。moodで目・口・ダンベルの高さが変わる */
+function buddySVG(){return `
+<ellipse cx="100" cy="186" rx="52" ry="8" fill="#4A3B47" opacity=".12"/>
+<ellipse cx="72" cy="176" rx="17" ry="10" fill="#FF8FA3" stroke="#4A3B47" stroke-width="4"/>
+<ellipse cx="128" cy="176" rx="17" ry="10" fill="#FF8FA3" stroke="#4A3B47" stroke-width="4"/>
+<path d="M100 52c36 0 62 26 62 60 0 34-26 62-62 62S38 146 38 112c0-34 26-60 62-60z" fill="#FFB4C0" stroke="#4A3B47" stroke-width="5"/>
+<path d="M62 80c8-10 20-14 30-14" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".7"/>
+<g class="arms">
+ <path d="M42 118c-16 6-22 14-22 14" stroke="#4A3B47" stroke-width="5" fill="none" stroke-linecap="round"/>
+ <path d="M158 118c16 6 22 14 22 14" stroke="#4A3B47" stroke-width="5" fill="none" stroke-linecap="round"/>
+</g>
+<g class="bell">
+ <line x1="26" y1="132" x2="174" y2="132" stroke="#4A3B47" stroke-width="9" stroke-linecap="round"/>
+ <rect x="10" y="108" width="20" height="48" rx="8" fill="#6C8EF5" stroke="#4A3B47" stroke-width="4.5"/>
+ <rect x="170" y="108" width="20" height="48" rx="8" fill="#6C8EF5" stroke="#4A3B47" stroke-width="4.5"/>
+ <rect x="1" y="118" width="12" height="28" rx="5" fill="#8EA9FA" stroke="#4A3B47" stroke-width="4"/>
+ <rect x="187" y="118" width="12" height="28" rx="5" fill="#8EA9FA" stroke="#4A3B47" stroke-width="4"/>
+ <ellipse cx="46" cy="132" rx="9" ry="9" fill="#FFB4C0" stroke="#4A3B47" stroke-width="4"/>
+ <ellipse cx="154" cy="132" rx="9" ry="9" fill="#FFB4C0" stroke="#4A3B47" stroke-width="4"/>
+</g>
+<circle cx="64" cy="118" r="9" fill="#FF8FA3" opacity=".75"/><circle cx="136" cy="118" r="9" fill="#FF8FA3" opacity=".75"/>
+<g class="e-idle"><circle cx="78" cy="102" r="8" fill="#4A3B47"/><circle cx="122" cy="102" r="8" fill="#4A3B47"/><circle cx="81" cy="99" r="2.8" fill="#fff"/><circle cx="125" cy="99" r="2.8" fill="#fff"/></g>
+<g class="e-happy"><path d="M68 106q10-16 20 0M112 106q10-16 20 0" fill="none" stroke="#4A3B47" stroke-width="5.5" stroke-linecap="round"/></g>
+<g class="e-effort"><path d="M70 96l16 6-16 6M130 96l-16 6 16 6" fill="none" stroke="#4A3B47" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+<path class="m-idle" d="M88 124q12 10 24 0" fill="none" stroke="#4A3B47" stroke-width="5" stroke-linecap="round"/>
+<g class="m-happy"><path d="M84 120q16 26 32 0z" fill="#4A3B47" stroke="#4A3B47" stroke-width="4" stroke-linejoin="round"/><path d="M92 131q8-7 16 0q-8 5-16 0z" fill="#FF8FA3"/></g>
+<path class="m-effort" d="M88 126h24" stroke="#4A3B47" stroke-width="5.5" stroke-linecap="round"/>
+<g class="brow"><path d="M66 86l22 6M134 86l-22 6" stroke="#4A3B47" stroke-width="5" stroke-linecap="round"/></g>`}
+['buddy1','buddy2','buddy3'].forEach(id=>{document.getElementById(id).innerHTML=buddySVG()});
+function mood(el,m,ms){el.dataset.mood=m;el.classList.remove('hop');void el.getBoundingClientRect();if(m==='happy')el.classList.add('hop');
+  clearTimeout(el._t);if(ms)el._t=setTimeout(()=>{el.dataset.mood=el.dataset.base||'idle'},ms)}
+$('#buddy2').dataset.base='effort';
+
+/* 今週の7マス */
+const days=[['月','done'],['火','rest'],['水','done'],['木','today'],['金','future'],['土','future'],['日','future']];
+$('#week1').innerHTML=days.map(([d,s],i)=>`<div class="d ${s}">${d}<b>${s==='done'?'<i data-lucide="check"></i>':s==='rest'?'<i data-lucide="moon"></i>':i+26>31?i-5:i+26}</b></div>`).join('');
+
+/* 能力値バー */
+function statRows(list,compact){return list.map(s=>`<div class="stat" data-k="${s.k}"><div class="n">${s.n}${compact?'':`<small>${s.s}</small>`}</div><div class="bar"><i style="width:0"></i></div><div class="v">${s.v}</div></div>`).join('')}
+$('#stats1').innerHTML=statRows(STATS);
+$('#stats2').innerHTML=statRows(STATS.filter(s=>s.k==='str'||s.k==='pow'||s.k==='agi'),true);
+function paint(){document.querySelectorAll('.stat').forEach(el=>{const s=STATS.find(x=>x.k===el.dataset.k);el.querySelector('i').style.width=s.v+'%';el.querySelector('.v').textContent=s.v})}
+setTimeout(paint,100);
+function gain(k,n){const s=STATS.find(x=>x.k===k);s.v+=n;paint();
+  document.querySelectorAll(`.stat[data-k=${k}]`).forEach(el=>{const p=document.createElement('div');p.className='plus';p.textContent='+'+n;el.appendChild(p);setTimeout(()=>p.remove(),1000)})}
+
+/* 記録中 */
+const EX=[
+ {n:'スクワット',kg:60,reps:10,sets:3},
+ {n:'ルーマニアンデッドリフト',kg:50,reps:12,sets:3},
+ {n:'レッグプレス',kg:100,reps:12,sets:3},
+ {n:'カーフレイズ',kg:40,reps:15,sets:3}
+];
+let ei=0,logs=[{kg:60,reps:11}],cur=10,finished=false;
+function diffTag(r,g){const d=r-g;return d>0?`<span class="diff">前回 +${d}</span>`:d===0?`<span class="diff same">前回と同じ</span>`:`<span class="diff down">前回 −${-d}</span>`}
+function render(){const e=EX[ei];
+  $('#exname').textContent=e.n;$('#exname').style.fontSize=e.n.length>9?'17px':'24px';
+  $('#exghost').textContent=`${e.kg}kg × ${e.reps}回 × ${e.sets}`;
+  $('#exno').textContent=`${ei+1}/${EX.length}`;
+  let h='';
+  for(let i=0;i<e.sets;i++){
+    if(i<logs.length){const l=logs[i];h+=`<div class="set done"><div class="no"><i data-lucide="check" style="width:16px;height:16px;stroke-width:4"></i></div><div class="val">${l.kg}kg ×<b>${l.reps}</b>回</div>${diffTag(l.reps,e.reps)}</div>`}
+    else if(i===logs.length&&!finished){h+=`<div class="set now"><div class="no">${i+1}</div><div class="step"><button data-d="-1" aria-label="1回減らす"><i data-lucide="minus"></i></button><div class="val">${e.kg}kg ×<b>${cur}</b>回</div><button data-d="1" aria-label="1回増やす"><i data-lucide="plus"></i></button></div><span class="diff same" style="visibility:hidden">.</span></div>`}
+    else h+=`<div class="set todo"><div class="no">${i+1}</div><div class="val">${e.kg}kg × <b>${e.reps}</b>回</div><span></span></div>`}
+  $('#sets').innerHTML=h;
+  const last=logs.length>=e.sets;
+  const lastEx=ei===EX.length-1;
+  $('#done').innerHTML=last?(lastEx?'<i data-lucide="party-popper"></i><span>今日の特訓おわり！</span>':`<i data-lucide="arrow-right"></i><span>つぎは ${EX[ei+1].n.length>8?'次の種目':EX[ei+1].n}</span>`):'<i data-lucide="check"></i><span>できた</span>';
+  $('#same').style.visibility=$('#skip').style.visibility=last?'hidden':'visible';
+  lucide.createIcons();
+  document.querySelectorAll('.step button').forEach(b=>b.onclick=()=>{cur=Math.max(0,cur+Number(b.dataset.d));render()})}
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.remove('show');void el.offsetWidth;el.classList.add('show')}
+function record(reps){const e=EX[ei];logs.push({kg:e.kg,reps});
+  gain('str',1);if(reps>e.reps)gain('pow',1);
+  const d=reps-e.reps;toast(d>0?`前回超え！ +${d}`:'ナイス！');
+  const b=$('#buddy2');mood(b,'happy',1100);
+  if(logs.length>=e.sets){finished=true;gain('agi',1)}
+  else cur=e.reps;
+  render()}
+$('#done').onclick=()=>{const e=EX[ei];
+  if(logs.length>=e.sets){
+    if(ei<EX.length-1){ei++;logs=[];finished=false;cur=EX[ei].reps;render()}
+    else{toast('特訓クリア！');mood($('#buddy2'),'happy',2200);mood($('#buddy1'),'happy',2200)}
+    return}
+  record(cur)};
+$('#same').onclick=()=>{cur=EX[ei].reps;record(cur)};
+$('#skip').onclick=()=>{toast('休むのも特訓');mood($('#buddy2'),'idle',1500)};
+render();
+
+$('#go').onclick=()=>{mood($('#buddy1'),'happy',1400);$('#buddy1').classList.remove('idle');setTimeout(()=>$('#buddy1').classList.add('idle'),700);
+  document.getElementById('buddy2').scrollIntoView({behavior:'smooth',block:'center'})};
+
+/* レーダー（見せ場） */
+const cx=170,cy=146,R=104,N=5;
+function pt(i,v){const a=-Math.PI/2+i*2*Math.PI/N;return [cx+Math.cos(a)*R*v/100,cy+Math.sin(a)*R*v/100]}
+function poly(vals,t){return vals.map((v,i)=>pt(i,v*t).join(',')).join(' ')}
+function buildRadar(){
+  let g='';
+  [25,50,75,100].forEach(l=>g+=`<polygon points="${poly(Array(N).fill(l),1)}" fill="${l===100?'#fff':'none'}" stroke="#4A3B47" stroke-opacity="${l===100?1:.25}" stroke-width="${l===100?3:1.5}"/>`);
+  STATS.forEach((s,i)=>{const [x,y]=pt(i,100);g+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#4A3B47" stroke-opacity=".25" stroke-width="1.5"/>`;
+    const [lx,ly]=pt(i,128);g+=`<text x="${lx}" y="${ly-2}" text-anchor="middle" font-family="Zen Maru Gothic" font-weight="900" font-size="15" fill="#4A3B47">${s.n}</text><text x="${lx}" y="${ly+12}" text-anchor="middle" font-family="Zen Maru Gothic" font-weight="700" font-size="10" fill="#8C7A86">${s.s}</text>`});
+  g+=`<polygon id="pPrev" fill="none" stroke="#8C7A86" stroke-width="3" stroke-dasharray="7 6" stroke-linejoin="round"/>`;
+  g+=`<polygon id="pNow" fill="#FF8FA3" fill-opacity=".55" stroke="#4A3B47" stroke-width="4" stroke-linejoin="round"/>`;
+  g+=`<g id="dots"></g>`;
+  $('#radar').innerHTML=g}
+function drawRadar(t){const prev=STATS.map(s=>s.prev),now=BASE.map(v=>v);
+  $('#pPrev').setAttribute('points',poly(prev,1));
+  $('#pNow').setAttribute('points',poly(now,t));
+  $('#dots').innerHTML=now.map((v,i)=>{const [x,y]=pt(i,v*t);return `<circle cx="${x}" cy="${y}" r="6.5" fill="#F5B83D" stroke="#4A3B47" stroke-width="3"/>`}).join('')}
+const BASE=[62,48,35,41,55]; // 今週の週末値（記録で伸びる前の表示用に固定）
+buildRadar();
+function play(){const t0=performance.now();(function f(now){let t=Math.min(1,(now-t0)/1100);t=1-Math.pow(1-t,3)*Math.cos(t*5)*(1-t)*0+0;const e=1-Math.pow(1-Math.min(1,(now-t0)/1100),3);drawRadar(e);if(e<1)requestAnimationFrame(f)})(t0);
+  mood($('#buddy3'),'happy',1400);
+  $('#grow').innerHTML=STATS.map((s,i)=>({n:s.n,s:s.s,d:BASE[i]-s.prev})).sort((a,b)=>b.d-a.d).map((o,i)=>`<div class="gr ${i===0?'top':''}" style="animation:fade .4s ${i*.12}s both"><span>${i===0?'★ ':''}${o.n}<small>${o.s}</small></span><b>+${o.d}</b></div>`).join('')}
+const st=document.createElement('style');st.textContent='@keyframes fade{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}';document.head.appendChild(st);
+$('#replay').onclick=play;
+play();
+lucide.createIcons();
+</script>
+</body>
+</html>
