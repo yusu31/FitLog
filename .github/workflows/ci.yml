@@ -1,0 +1,26 @@
+name: CI
+
+# push と PR のたびに自動で走る。ここに書いた検査が全部緑になるまでマージしない運用にする。
+# lint・型チェック・テスト・ビルドのジョブは、アプリのコードができる 02-1 で追加する。
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: 秘密情報の検査（gitleaks）
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリを取得する（履歴ぜんぶ）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 秘密情報が含まれていないか検査する
+        uses: gitleaks/gitleaks-action@v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
