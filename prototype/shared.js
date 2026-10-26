@@ -82,6 +82,37 @@ html[data-num="baloo"] { --num-family: "Baloo 2"; }
 /* 祝福の紙吹雪 */
 @keyframes burst { 0% { transform: translate(0, 0) scale(.3); opacity: 1 } 100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0 } }
 
+/* ---- 見た目4案（調整パネルで切替）。now は何も足さない ---- */
+/* 炎の大きさ・休の色（v2の未決） */
+.fl { height: calc(24px * var(--flame-s, 1)); width: calc(20px * var(--flame-s, 1)); }
+html[data-restc="gray"] { --color-rest: #ECEAE6; --color-rest-ink: #9A9690; }
+html[data-restc="lav"] { --color-rest: #EDE7FB; --color-rest-ink: #8E7BC8; }
+
+/* mid＝一部だけふざける: 7マス・スタンプ・祝福だけ太線＋傾き＋ずれ影 */
+html:is([data-look="mid"], [data-look="bold"]) :is(.cell, .celeb, .stamp) { border: 3px solid var(--color-ink); box-shadow: 3px 3px 0 var(--color-ink) !important; }
+html:is([data-look="mid"], [data-look="bold"]) li:nth-child(odd) .cell { rotate: -3deg; }
+html:is([data-look="mid"], [data-look="bold"]) li:nth-child(even) .cell { rotate: 2deg; }
+html:is([data-look="mid"], [data-look="bold"]) .stamp:nth-child(odd) { rotate: -2deg; }
+html:is([data-look="mid"], [data-look="bold"]) .stamp:nth-child(even) { rotate: 1.5deg; }
+
+/* bold＝全部ふざける（neobrutalism型）: 太い枠・ずれた影・押すと影が消える・見出しが傾く */
+html[data-look="bold"] { --soft: .3; --color-line: #2B2D42; }
+html[data-look="bold"] .slab { border: 3px solid var(--color-ink); box-shadow: 4px 4px 0 var(--color-ink); }
+html[data-look="bold"] .puff { border: 3px solid var(--color-ink); --depth: 4px; box-shadow: 4px 4px 0 var(--color-ink); transition: transform .12s ease-out, box-shadow .12s ease-out; }
+html[data-look="bold"] .puff:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--color-ink); }
+html[data-look="bold"] h1 { display: inline-block; rotate: -2deg; }
+html[data-look="bold"] nav[aria-label="メイン"] { border-top-width: 3px; border-color: var(--color-ink); }
+
+/* calm＝整える（Gentler Streak型）: 線なし・拡散した薄い影・余白広く・数字大きく・色はコーラル1色 */
+html[data-look="calm"] { --color-bg: #FFFBF5; --color-line: #F6EEE0; --color-sun: #FF8F7A; --color-sun-deep: #FF8F7A; --color-sky: #7C8BA6; --color-sky-deep: #7C8BA6; --color-lose: #9AA3B5; --soft: 1.3; }
+html[data-look="calm"] .slab { box-shadow: 0 10px 32px rgb(43 45 66 / .07); }
+html[data-look="calm"] .puff { box-shadow: 0 10px 22px rgb(245 93 62 / .25); }
+html[data-look="calm"] .puff:active { box-shadow: 0 2px 6px rgb(245 93 62 / .2); }
+html[data-look="calm"] .cell { box-shadow: none !important; }
+html[data-look="calm"] .font-num { font-size: 1.18em; }
+html[data-look="calm"] main { letter-spacing: .01em; }
+html[data-look="calm"] main > section, html[data-look="calm"] main > article { padding: 1.4rem; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }
 }
@@ -95,10 +126,13 @@ html[data-num="baloo"] { --num-family: "Baloo 2"; }
   const KEY = "fitlog-proto-v2";
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
   const save = (v) => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {} };
-  const prefs = { num: "nunito", soft: "mid", rest: "on", gap: "yday", today: "none", ...load() };
+  const prefs = { look: "now", flame: "1", restc: "blue", num: "nunito", soft: "mid", rest: "on", gap: "yday", today: "none", ...load() };
   const apply = () => {
     document.documentElement.dataset.num = prefs.num;
     document.documentElement.dataset.soft = prefs.soft;
+    document.documentElement.dataset.look = prefs.look;
+    document.documentElement.dataset.restc = prefs.restc;
+    document.documentElement.style.setProperty("--flame-s", prefs.flame);
   };
   apply();
 
@@ -132,7 +166,7 @@ html[data-num="baloo"] { --num-family: "Baloo 2"; }
     });
   }
 
-  const flameSvg = (cls = "flame") => `<svg viewBox="0 0 24 30" class="${cls} absolute -top-2.5 -right-1.5 h-6 w-5 drop-shadow-[0_1px_0_var(--color-card)]" aria-hidden="true"><path d="M12 1.5c1.2 4.2 6.8 7.6 6.8 15.2A6.8 6.8 0 0 1 12 23.6a6.8 6.8 0 0 1-6.8-6.9c0-3.3 1.6-5.5 3.3-7.1.4 2 1.4 3.2 2.6 3.7C10.4 9.6 10.9 5.2 12 1.5z" fill="var(--color-next)"/><path d="M12 11.5c.6 2.2 3.3 3.6 3.3 7a3.3 3.3 0 0 1-6.6 0c0-1.5.7-2.6 1.6-3.4.3 1 .8 1.5 1.3 1.7-.3-1.8 0-3.6.4-5.3z" fill="var(--color-sun)"/></svg>`;
+  const flameSvg = (cls = "flame") => `<svg viewBox="0 0 24 30" class="${cls} fl absolute -top-2.5 -right-1.5 drop-shadow-[0_1px_0_var(--color-card)]" aria-hidden="true"><path d="M12 1.5c1.2 4.2 6.8 7.6 6.8 15.2A6.8 6.8 0 0 1 12 23.6a6.8 6.8 0 0 1-6.8-6.9c0-3.3 1.6-5.5 3.3-7.1.4 2 1.4 3.2 2.6 3.7C10.4 9.6 10.9 5.2 12 1.5z" fill="var(--color-next)"/><path d="M12 11.5c.6 2.2 3.3 3.6 3.3 7a3.3 3.3 0 0 1-6.6 0c0-1.5.7-2.6 1.6-3.4.3 1 .8 1.5 1.3 1.7-.3-1.8 0-3.6.4-5.3z" fill="var(--color-sun)"/></svg>`;
   const moonSvg = `<svg viewBox="0 0 24 24" class="size-5" fill="currentColor" aria-hidden="true"><path d="M20 14.6A8 8 0 1 1 9.4 4a6.5 6.5 0 0 0 10.6 10.6z"/></svg>`;
   const checkSvg = `<svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>`;
 
@@ -140,10 +174,10 @@ html[data-num="baloo"] { --num-family: "Baloo 2"; }
   function renderWeek(el, { animateToday = false } = {}) {
     el.innerHTML = week().map((d) => {
       const inner = {
-        done: `<span class="${d.isToday && animateToday ? "fill-in" : ""} grid size-full place-items-center rounded-tile bg-sun text-ink shadow-[inset_0_-4px_0_var(--color-sun-deep)]">${checkSvg}</span>${flameSvg(d.isToday && animateToday ? "flame-in" : "flame")}`,
-        rest: `<span class="fill-in grid size-full place-items-center rounded-tile bg-rest text-rest-ink">${moonSvg}</span>`,
-        off: `<span class="grid size-full place-items-center rounded-tile bg-rest/70 text-[11px] font-bold text-rest-ink">休</span>`,
-        today: `<span class="grid size-full place-items-center rounded-tile border-[3px] border-dashed border-next/70 text-[11px] font-black text-next">今日</span>`,
+        done: `<span class="cell ${d.isToday && animateToday ? "fill-in" : ""} grid size-full place-items-center rounded-tile bg-sun text-ink shadow-[inset_0_-4px_0_var(--color-sun-deep)]">${checkSvg}</span>${flameSvg(d.isToday && animateToday ? "flame-in" : "flame")}`,
+        rest: `<span class="cell fill-in grid size-full place-items-center rounded-tile bg-rest text-rest-ink">${moonSvg}</span>`,
+        off: `<span class="cell grid size-full place-items-center rounded-tile bg-rest/70 text-[11px] font-bold text-rest-ink">休</span>`,
+        today: `<span class="cell grid size-full place-items-center rounded-tile border-[3px] border-dashed border-next/70 text-[11px] font-black text-next">今日</span>`,
         future: `<span class="block size-full rounded-tile border-2 border-line"></span>`,
       }[d.state];
       const sr = { done: "記録した", rest: "休むと決めた", off: "記録なし（休み）", today: "今日。まだ記録していない", future: "これから" }[d.state];
@@ -163,7 +197,7 @@ html[data-num="baloo"] { --num-family: "Baloo 2"; }
 
   const setPref = (k, v) => { prefs[k] = v; save(prefs); apply(); };
 
-  window.FitLog = { prefs, setPref, scenarios, week, renderWeek, weekParts, TODAY_LABEL: "10月29日（木）", flameSvg, moonSvg };
+  window.FitLog = { DAYS, prefs, setPref, scenarios, week, renderWeek, weekParts, TODAY_LABEL: "10月29日（木）", flameSvg, moonSvg };
 
   // ---- 下の3タブ ----
   const icons = {
@@ -202,12 +236,15 @@ html[data-num="baloo"] { --num-family: "Baloo 2"; }
             <p class="font-black">プロトタイプの調整</p>
             <button type="button" data-close class="press rounded-full bg-raised px-3 py-1 text-sm font-bold">閉じる</button>
           </div>
+          ${group("look", "見た目4案（いま／中間＋一部ふざける／全部ふざける／整える）", [["now", "いま"], ["mid", "中間（一部だけ）"], ["bold", "全部ふざける"], ["calm", "整える"]], 2)}
+          ${group("flame", "炎の大きさ", [["0.8", "小さめ"], ["1", "いま"], ["1.5", "大きめ"]])}
+          ${group("restc", "「休」の色（全期間共通）", [["blue", "淡い青"], ["gray", "淡いグレー"], ["lav", "淡い紫"]])}
           ${group("gap", "状況（前回の記録からの空き）", [["yday", "昨日も記録"], ["d3", "3日ぶり"], ["d8", "8日ぶり"]])}
           ${group("rest", "「今日は休む」ボタン（最終確認用）", [["on", "あり"], ["off", "なし"]], 2)}
           ${group("num", "数字の書体（桁の幅はどれもそろう）", [["nunito", "Nunito 0123", "font-['Nunito']"], ["mplus", "M PLUS 0123", "font-['M_PLUS_Rounded_1c']"], ["baloo", "Baloo 2 0123", "font-['Baloo_2']"]])}
           ${group("soft", "ふにゃっと（角丸・ボタンの厚み）", [["low", "控えめ"], ["mid", "標準"], ["high", "強め"]])}
           <button type="button" id="proto-reset" class="press mb-3 w-full rounded-tile border-2 border-line py-2.5 text-sm font-bold">今日の記録・休みを取り消す</button>
-          <p class="text-xs leading-relaxed text-mute">この調整ボタンは確認用で、本番には入りません。プロトタイプの「今日」は 10/29（木）に固定しています。</p>
+          <p class="text-xs leading-relaxed text-mute">「全部ふざける」「整える」を選ぶと角丸は各案の値になります（ふにゃっとの調整は「いま」「中間」で効きます）。この調整ボタンは確認用で、本番には入りません。プロトタイプの「今日」は 10/29（木）に固定しています。</p>
         </div>
       </div>`;
     document.body.appendChild(wrap);
@@ -257,7 +294,7 @@ html[data-num="baloo"] { --num-family: "Baloo 2"; }
     o.setAttribute("role", "alert");
     o.innerHTML = `<div class="relative text-center">
       ${dots}
-      <div class="pop-in mx-auto grid size-28 place-items-center rounded-full text-card shadow-[inset_0_-8px_0_rgb(0_0_0/.15)]" style="background:${color}">
+      <div class="celeb pop-in mx-auto grid size-28 place-items-center rounded-full text-card shadow-[inset_0_-8px_0_rgb(0_0_0/.15)]" style="background:${color}">
         <svg viewBox="0 0 24 24" class="size-16" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
       </div>
       ${badge ? `<span class="pop-in absolute top-0 -right-6 rotate-12 rounded-full bg-sun px-3 py-1 text-sm font-black text-ink shadow-[0_3px_0_var(--color-sun-deep)]" style="animation-delay:.15s">${badge}</span>` : ""}
