@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitLog v5 P4 ふにゃふにゃ型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=RocknRoll+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js"></script>
+<style>
+:root{--ink:#2B2D42;--blue:#3D7BFF;--yel:#FFD84D;--mint:#6EDCB4;--pink:#FF8FB1;--paper:#FFF6E0}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;color:var(--ink);background:var(--paper);-webkit-tap-highlight-color:transparent}
+h1,h2,.rr{font-family:"RocknRoll One","Zen Maru Gothic",sans-serif;font-weight:400;margin:0}
+button,a{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0;text-decoration:none}
+.app{position:relative;width:390px;max-width:100%;height:844px;max-height:100dvh;margin:0 auto;overflow:hidden;background:var(--paper)}
+@media (min-width:500px){.app{margin-top:max(0px,calc((100dvh - 844px)/2));border-radius:36px 30px 40px 28px;box-shadow:0 0 0 3px var(--ink),0 8px 0 3px var(--ink)}}
+.view{position:absolute;inset:0;display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;padding:0 14px 14px}
+/* ---- 手描きのかたまり ---- */
+.bl{position:relative;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+.bl>.bg{position:absolute;left:0;top:0;z-index:-1;overflow:visible;pointer-events:none}
+.jl{transform:rotate(var(--r,0deg));transition:transform .15s}
+.jl:active{transform:rotate(var(--r,0deg)) scale(.9)}
+.jl.sq{animation:jelly .6s cubic-bezier(.3,1.4,.5,1)}
+@keyframes jelly{0%{transform:rotate(var(--r,0deg)) scale(.88,.9)}28%{transform:rotate(var(--r,0deg)) scale(1.12,.94)}52%{transform:rotate(var(--r,0deg)) scale(.96,1.07)}76%{transform:rotate(var(--r,0deg)) scale(1.03,.99)}100%{transform:rotate(var(--r,0deg)) scale(1)}}
+.breath{animation:breath 3.2s ease-in-out infinite;display:inline-block}
+@keyframes breath{50%{transform:scale(1.03)}}
+.wig{animation:wig 2.6s ease-in-out infinite}
+@keyframes wig{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.2deg)}}
+.puff{animation:puff .55s cubic-bezier(.3,1.5,.5,1)}
+@keyframes puff{0%{transform:scale(1)}35%{transform:scale(1.045)}65%{transform:scale(.99)}100%{transform:scale(1)}}
+/* ---- ホーム ---- */
+.week{display:flex;justify-content:space-between;padding:18px 2px 0;flex:none}
+.day{display:flex;flex-direction:column;align-items:center;gap:4px;width:46px}
+.day .bl{width:42px;height:42px;font-family:"RocknRoll One";font-size:16px}
+.day small{font-size:11px;height:14px}
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:0}
+.hint{margin:0;font-size:16px;transform:rotate(-1.5deg)}
+.jelly{width:244px;height:232px;color:#fff;font-family:"RocknRoll One";font-size:27px;line-height:1.3;--r:-2deg}
+.jelly span{position:relative}
+.link{min-height:44px;padding:0 14px;font-size:15px;text-decoration:underline wavy var(--ink);text-underline-offset:5px;text-decoration-thickness:1.5px}
+.bar{display:flex;justify-content:center;gap:14px;padding:6px 0 4px;flex:none}
+.bar .bl{height:56px;font-family:"RocknRoll One";font-size:16px}
+/* ---- シート ---- */
+.sheet{position:absolute;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;padding:0 12px 14px}
+.sheet .back{position:absolute;inset:0;background:rgba(43,45,66,.35);animation:fade .25s}
+@keyframes fade{from{opacity:0}}
+.panel{position:relative;width:100%;padding:24px 22px 22px;flex-direction:column;gap:9px;animation:up .65s cubic-bezier(.25,1.6,.4,1)}
+@keyframes up{from{transform:translateY(110%) scaleY(1.2)}}
+.panel h2{font-size:22px;margin-bottom:4px}
+.mrow{width:100%;min-height:48px;padding:0 16px;justify-content:space-between;gap:8px;font-size:14px;white-space:nowrap}
+.mrow b{font-family:"RocknRoll One";font-weight:400;font-size:15px}
+.mrow.ok b:before{content:"✓ "}
+.panel .start{width:100%;height:64px;font-family:"RocknRoll One";font-size:22px;margin-top:6px;color:var(--ink)}
+/* ---- 記録 ---- */
+.top{display:flex;justify-content:space-between;align-items:center;padding:14px 0 6px;flex:none}
+.top .round{width:48px;height:48px;font-family:"RocknRoll One";font-size:22px}
+.prog{display:flex;gap:10px}
+.prog .bl{width:22px;height:22px}
+.rec{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:6px}
+.exl{min-height:48px;padding:0 20px;font-family:"RocknRoll One";font-size:21px;--r:-2deg}
+.ghost{margin:0;font-size:14px;transform:rotate(1.5deg);text-align:center}
+.ghost b{font-family:"RocknRoll One";font-weight:400;font-size:16px}
+.pair{display:flex;gap:10px;align-items:flex-start;justify-content:center;width:100%;margin-top:8px}
+.col{display:flex;flex-direction:column;align-items:center;gap:12px}
+.numj{flex-direction:column;font-family:"RocknRoll One";line-height:1}
+.numj b{font-weight:400;font-size:62px}
+.numj small{font-size:20px;margin-top:2px}
+.pmrow{display:flex;gap:12px}
+.pm{width:50px;height:50px;font-family:"RocknRoll One";font-size:28px;padding-bottom:3px}
+.burst{height:62px;display:flex;align-items:center;justify-content:center;font-family:"RocknRoll One";font-size:36px;color:var(--pink);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;filter:url(#roughS);opacity:0;transform:rotate(-3deg);margin-top:4px}
+.burst.go{animation:burst .8s cubic-bezier(.3,1.7,.5,1) forwards}
+@keyframes burst{0%{opacity:0;transform:scale(.3) rotate(8deg)}40%{opacity:1;transform:scale(1.2) rotate(-4deg)}100%{opacity:1;transform:scale(1) rotate(-3deg)}}
+.doneW{margin-top:auto;padding:10px 0 6px}
+.done{width:290px;height:88px;color:#fff;font-family:"RocknRoll One";font-size:28px}
+/* ---- おやすみ ---- */
+.restwrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px}
+.restwrap svg{width:100%;height:auto;flex:none}
+.say{font-size:24px;line-height:1.35;text-align:center;font-family:"RocknRoll One";font-weight:400;transform:rotate(-1.5deg);margin-top:2px}
+.say small{display:block;font-family:"Zen Maru Gothic";font-weight:700;font-size:14px;margin-top:8px}
+.row2{display:flex;gap:14px;margin-top:auto;padding-top:14px}
+.row2 .bl{height:52px;padding:0 24px;font-family:"RocknRoll One";font-size:16px}
+/* ---- なかま ---- */
+.h2{font-size:26px;margin:10px 4px 6px;transform:rotate(-2deg);align-self:flex-start}
+.notes{display:flex;flex-direction:column;gap:20px;padding:6px 4px 14px}
+.note{width:100%;padding:16px 16px 14px;flex-direction:column;align-items:stretch;gap:8px;text-align:left;transform:rotate(var(--r,0deg))}
+.note .hd{display:flex;gap:12px;align-items:center}
+.note .nm{font-family:"RocknRoll One";font-size:22px;line-height:1.1}
+.note .dd{font-size:14px}
+.note .dd b{font-family:"RocknRoll One";font-weight:400;font-size:20px}
+.mini{display:flex;gap:5px;margin-top:5px}
+.mini .bl{width:15px;height:15px}
+.cm{font-size:15px;margin:0;line-height:1.4}
+.stamps{display:flex;gap:10px;align-items:center}
+.stamps .st{position:relative;width:50px;height:50px}
+.stamps .st svg.ic{position:relative;width:30px;height:30px;overflow:visible}
+.cnt{position:absolute;right:-6px;top:-8px;width:24px;height:24px;font-size:12px;font-family:"RocknRoll One";opacity:0;transform:scale(.3);transition:.25s cubic-bezier(.3,1.8,.5,1);--r:0deg}
+.cnt.on{opacity:1;transform:scale(1)}
+/* ---- じぶん ---- */
+.bodies{display:flex;gap:6px;justify-content:center;padding:18px 10px 12px;margin-top:8px;flex-direction:row;align-items:flex-start;width:100%}
+.bodies figure{margin:0;flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.bodies svg:not(.bg){width:100%;max-width:150px;height:auto;overflow:visible}
+.bodies figcaption{font-family:"RocknRoll One";font-size:15px}
+.legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:18px 0 6px;font-size:13px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend .bl{width:24px;height:24px}
+.plist{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 4px}
+.pi{min-height:52px;padding:0 16px;justify-content:space-between;font-size:15px}
+.pi b{font-family:"RocknRoll One";font-weight:400;font-size:20px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs>
+  <!-- 手描きのゆがみ -->
+  <filter id="rough" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+  <filter id="roughS" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G"/></filter>
+  <!-- クレヨンのかすれ塗り -->
+  <filter id="crayon" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="0.85 0.5" numOctaves="2" seed="11" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  3 0 0 0 -0.55" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
+  <filter id="crayonS" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="0.9 0.55" numOctaves="2" seed="11" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  3 0 0 0 -0.55" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
+ </defs>
+</svg>
+<main class="app">
+
+<!-- ====== today ====== -->
+<section id="v-today" class="view" hidden>
+ <div class="week" id="week"></div>
+ <div class="hero">
+  <p class="hint" id="hint">今週 2日 やったよ〜</p>
+  <div class="breath"><button class="bl jl jelly" id="jelly" data-fill="#3D7BFF" data-p="2.3" data-j=".07"><span id="jTxt">きょうも<br>ちょっとだけ<br>やる？</span></button></div>
+  <button class="link" id="menuLink">メニューを見る</button>
+ </div>
+ <nav class="bar">
+  <a class="bl jl" href="#friends" data-fill="#6EDCB4" data-p="2.6" style="width:106px;--r:-2deg">なかま</a>
+  <button class="bl jl" id="restBtn" data-fill="#FF8FB1" data-p="2.6" style="width:112px;--r:1.5deg">やすむ〜</button>
+  <a class="bl jl" href="#me" data-fill="#FFD84D" data-p="2.6" style="width:106px;--r:-1.5deg">じぶん</a>
+ </nav>
+</section>
+
+<!-- ====== record ====== -->
+<section id="v-record" class="view" hidden>
+ <div class="top">
+  <a class="bl jl round" href="#today" data-fill="#fff" data-p="2.2" aria-label="もどる">×</a>
+  <div class="prog" id="prog" aria-label="進み具合"></div>
+ </div>
+ <div class="rec">
+  <div class="bl jl exl" id="exLabel" data-fill="#6EDCB4" data-p="3.4"><span id="exName">スクワット</span></div>
+  <p class="ghost">前回の じぶん　<b id="ghost">60kg × 10回</b> × 3セット</p>
+  <div class="pair">
+   <div class="col">
+    <div class="bl jl numj" id="nw" data-fill="#6EDCB4" data-p="2.6" data-j=".07" style="width:150px;height:150px;--r:2deg"><b id="wv">60</b><small>kg</small></div>
+    <div class="pmrow"><button class="bl jl pm" id="wm" data-fill="#fff" data-p="2" aria-label="重さを5kg減らす">−</button><button class="bl jl pm" id="wp" data-fill="#FFD84D" data-p="2" aria-label="重さを5kg増やす">+</button></div>
+   </div>
+   <div class="col">
+    <div class="bl jl numj" id="nr" data-fill="#FFD84D" data-p="2.6" data-j=".07" style="width:178px;height:178px;--r:-2deg"><b id="rv" style="font-size:78px">10</b><small>回</small></div>
+    <div class="pmrow"><button class="bl jl pm" id="rm" data-fill="#fff" data-p="2" aria-label="回数を1回減らす">−</button><button class="bl jl pm" id="rp" data-fill="#FF8FB1" data-p="2" aria-label="回数を1回増やす">+</button></div>
+   </div>
+  </div>
+  <div class="burst" id="burst" aria-live="polite"></div>
+  <div class="doneW breath"><button class="bl jl done" id="doneBtn" data-fill="#3D7BFF" data-p="2.8" data-j=".05"><span id="doneTxt">できた〜</span></button></div>
+ </div>
+</section>
+
+<!-- ====== rest ====== -->
+<section id="v-rest" class="view" hidden>
+ <div class="top"><a class="bl jl round" href="#today" data-fill="#fff" data-p="2.2" aria-label="もどる">×</a></div>
+ <div class="restwrap">
+  <svg viewBox="0 0 360 300" id="restSvg" role="img" aria-label="ソファでだらっと寝る人"></svg>
+  <div class="say">休むのも<br>筋トレのうち〜<small>今日は ぐでっとして OK。休んだ日も ちゃんと 1マス</small></div>
+  <div class="row2">
+   <button class="bl jl" id="undoRest" data-fill="#fff" data-p="3" style="--r:-2deg">やっぱりやる</button>
+   <a class="bl jl" href="#today" data-fill="#FFD84D" data-p="3" style="--r:2deg">ホームへ</a>
+  </div>
+ </div>
+</section>
+
+<!-- ====== friends ====== -->
+<section id="v-friends" class="view" hidden>
+ <div class="top"><a class="bl jl round" href="#today" data-fill="#fff" data-p="2.2" aria-label="もどる">×</a><span class="rr" style="font-size:15px">5にんの ふせん</span></div>
+ <h2 class="h2">みんなの ふにゃログ</h2>
+ <div class="notes" id="notes"></div>
+</section>
+
+<!-- ====== me ====== -->
+<section id="v-me" class="view" hidden>
+ <div class="top"><a class="bl jl round" href="#today" data-fill="#fff" data-p="2.2" aria-label="もどる">×</a><span class="rr" style="font-size:15px">こんしゅうの からだ</span></div>
+ <div class="bl bodies" data-fill="#FFFDF3" data-p="3.6" data-j=".02">
+  <figure><svg id="bodyF" viewBox="0 0 120 240" aria-label="前から見た人体"></svg><figcaption>まえ</figcaption></figure>
+  <figure><svg id="bodyB" viewBox="0 0 120 240" aria-label="後ろから見た人体"></svg><figcaption>うしろ</figcaption></figure>
+ </div>
+ <div class="legend">
+  <span><i class="bl" data-fill="#FFFBEF" data-p="2"></i>まだ</span>
+  <span><i class="bl" data-fill="#6EDCB4" data-p="2"></i>1〜2セット</span>
+  <span><i class="bl" data-fill="#FFD84D" data-p="2"></i>3セット</span>
+  <span><i class="bl" data-fill="#FF8FB1" data-p="2"></i>4〜</span>
+ </div>
+ <div class="plist" id="plist"></div>
+</section>
+
+<!-- ====== menu sheet ====== -->
+<div class="sheet" id="sheet" hidden>
+ <div class="back" id="sheetBack"></div>
+ <div class="bl panel" id="panel" data-fill="#FFF0B8" data-p="3.2" data-j=".03" role="dialog" aria-label="きょうのメニュー">
+  <h2 class="rr">きょうの メニュー（脚の日）</h2>
+  <div id="mrows" style="width:100%;display:flex;flex-direction:column;gap:9px"></div>
+  <button class="bl jl start" id="startBtn" data-fill="#6EDCB4" data-p="3" style="--r:-1deg">ぷるっと はじめる</button>
+ </div>
+</div>
+
+</main>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+const INK='#2B2D42',BLUE='#3D7BFF',YEL='#FFD84D',MINT='#6EDCB4',PINK='#FF8FB1',CREAM='#FFFBEF';
+
+/* ---------- ゆがんだ塗り形（スーパー楕円＋ゆらぎ） ---------- */
+let sd=7;const rnd=()=>{sd=(sd*16807)%2147483647;return(sd-1)/2147483646};
+function bp(cx,cy,rx,ry,p=2.6,j=.05,n=16,rot=0){
+  const pts=[],e=2/p;
+  for(let i=0;i<n;i++){
+    const t=(i+(rnd()-.5)*.25)/n*2*Math.PI,c=Math.cos(t),s=Math.sin(t),k=1+(rnd()-.5)*2*j;
+    let x=Math.sign(c)*Math.pow(Math.abs(c),e)*rx*k,y=Math.sign(s)*Math.pow(Math.abs(s),e)*ry*k;
+    if(rot){const a=rot*Math.PI/180;[x,y]=[x*Math.cos(a)-y*Math.sin(a),x*Math.sin(a)+y*Math.cos(a)]}
+    pts.push([cx+x,cy+y]);
+  }
+  const f=v=>v.toFixed(1);let d=`M${f(pts[0][0])} ${f(pts[0][1])}`;
+  for(let i=0;i<n;i++){
+    const a=pts[(i-1+n)%n],b=pts[i],c=pts[(i+1)%n],e2=pts[(i+2)%n];
+    d+=`C${f(b[0]+(c[0]-a[0])/6)} ${f(b[1]+(c[1]-a[1])/6)} ${f(c[0]-(e2[0]-b[0])/6)} ${f(c[1]-(e2[1]-b[1])/6)} ${f(c[0])} ${f(c[1])}`;
+  }
+  return d+'Z';
+}
+/* 小さな絵用：塗り＋線を重ねる */
+function sh(cx,cy,rx,ry,fill,o={}){
+  const d=bp(cx,cy,rx,ry,o.p||2.6,o.j??.04,o.n||14,o.rot||0);
+  return `<path d="${d}" fill="${fill}" filter="url(#crayonS)"/><path d="${d}" fill="none" stroke="${INK}" stroke-width="${o.sw||2.3}" stroke-linejoin="round" filter="url(#roughS)"/>`;
+}
+const ln=(d,sw=2.3)=>`<path d="${d}" fill="none" stroke="${INK}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" filter="url(#roughS)"/>`;
+
+/* ---------- HTML要素の背景を手描きの形にする ---------- */
+function blobify(root=document){
+  root.querySelectorAll('.bl:not([data-b])').forEach(el=>{
+    const w=el.offsetWidth,h=el.offsetHeight;if(!w||!h)return;el.dataset.b=1;
+    const d=bp(w/2,h/2,w/2-4,h/2-4,+el.dataset.p||3,+(el.dataset.j??.05),18);
+    el.insertAdjacentHTML('afterbegin',`<svg class="bg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}" fill="${el.dataset.fill||'#fff'}" filter="url(#crayon)"/><path d="${d}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round" filter="url(#rough)"/></svg>`);
+  });
+}
+function reblob(el){const g=el.querySelector(':scope>.bg');if(g)g.remove();delete el.dataset.b;blobify(el)}
+/* ゼリー：押すとぷるん */
+document.addEventListener('click',e=>{const t=e.target.closest('.jl');if(!t)return;t.classList.remove('sq');void t.offsetWidth;t.classList.add('sq')});
+document.addEventListener('animationend',e=>{if(e.target.classList&&e.target.classList.contains('sq'))e.target.classList.remove('sq')});
+
+/* ---------- 状態 ---------- */
+const BASE={chest:3,shoulder:3,arm:4,back:3,leg:0,abs:0};
+const NAMES={chest:'胸',shoulder:'肩',arm:'腕',back:'背中',leg:'脚',abs:'お腹'};
+const EX=[{n:'スクワット',w:60,r:10},{n:'ルーマニアンデッドリフト',w:50,r:12},{n:'レッグプレス',w:100,r:12},{n:'カーフレイズ',w:40,r:15}];
+const S={rest:false,idx:0,cur:EX.map(e=>({w:e.w,r:e.r})),logged:false,legDone:false,stamps:{},fin:[]};
+const sets=k=>k==='leg'&&S.legDone?12:BASE[k];
+const lvl=n=>n<=0?0:n<=2?1:n===3?2:3;
+const LC=[CREAM,MINT,YEL,PINK];
+
+/* ---------- ホーム ---------- */
+function renderToday(){
+  const lab=S.legDone?'脚':S.rest?'休':'今';
+  const fills=['#6EDCB4','#FF8FB1','#6EDCB4',S.legDone?'#6EDCB4':S.rest?'#FF8FB1':'#FFD84D','#FFFBEF','#FFFBEF','#FFFBEF'];
+  const ch=['月','火','水','木','金','土','日'],sm=['胸','休','背',lab,'','',''];
+  $('#week').innerHTML=ch.map((c,i)=>`<div class="day" role="img" aria-label="${c}曜日 ${sm[i]||'まだ'}"><div class="bl ${i===3&&!S.legDone&&!S.rest?'wig':''}" data-fill="${fills[i]}" data-p="2" data-j=".08">${c}</div><small>${sm[i]}</small></div>`).join('');
+  const n=2+(S.legDone?1:0);
+  $('#hint').textContent=S.legDone?`今週 ${n}日 やったよ〜 えらい！`:S.rest?'今日は ごろごろの日〜':`今週 ${n}日 やったよ〜`;
+  $('#jTxt').innerHTML=S.legDone?'ばっちり！<br>また あした〜':S.rest?'おやすみ中〜<br>ぐでぐで':'きょうも<br>ちょっとだけ<br>やる？';
+  $('#restBtn').hidden=S.legDone||S.rest;
+  blobify($('#v-today'));
+}
+$('#jelly').onclick=()=>{
+  if(S.rest){go('rest');return}
+  if(S.legDone){openSheet();return}
+  setTimeout(openSheet,380);
+};
+$('#menuLink').onclick=openSheet;
+function openSheet(){
+  $('#mrows').innerHTML=EX.map((e,i)=>`<div class="bl mrow ${S.legDone?'ok':''}" data-fill="#fff" data-p="4.5" data-j=".025" style="transform:rotate(${[-1,1,-.6,.8][i]}deg)"><span>${e.n}</span><b>${e.w}kg×${e.r}×3</b></div>`).join('');
+  $('#startBtn').textContent=S.legDone?'とじる':'ぷるっと はじめる';
+  const sh=$('#sheet');sh.hidden=false;
+  const pn=$('#panel');reblob(pn);blobify(sh);
+}
+function closeSheet(){$('#sheet').hidden=true}
+$('#sheetBack').onclick=closeSheet;
+$('#startBtn').onclick=()=>{setTimeout(()=>{closeSheet();if(!S.legDone)go('record')},260)};
+$('#restBtn').onclick=()=>{setTimeout(()=>{S.rest=true;go('rest')},300)};
+
+/* ---------- 記録 ---------- */
+function renderRec(){
+  const e=EX[S.idx];
+  $('#exName').textContent=e.n;reblob($('#exLabel'));
+  $('#ghost').textContent=`${e.w}kg × ${e.r}回`;
+  $('#prog').innerHTML=EX.map((_,i)=>`<div class="bl" data-fill="${i<S.idx?MINT:i===S.idx?YEL:CREAM}" data-p="2" data-j=".1"></div>`).join('');
+  nums();
+  const b=$('#burst');b.className='burst';b.textContent='';
+  S.logged=false;$('#doneTxt').textContent='できた〜';
+  blobify($('#v-record'));
+}
+function nums(){const c=S.cur[S.idx];$('#wv').textContent=c.w;$('#rv').textContent=c.r}
+function adj(k,d){
+  if(S.logged)return;const c=S.cur[S.idx];
+  if(k==='w')c.w=Math.max(0,c.w+d);else c.r=Math.max(1,c.r+d);
+  nums();const el=$(k==='w'?'#nw':'#nr');el.classList.remove('sq');void el.offsetWidth;el.classList.add('sq');
+}
+$('#wm').onclick=()=>adj('w',-5);$('#wp').onclick=()=>adj('w',5);
+$('#rm').onclick=()=>adj('r',-1);$('#rp').onclick=()=>adj('r',1);
+$('#doneBtn').onclick=()=>{
+  const e=EX[S.idx],c=S.cur[S.idx];
+  if(!S.logged){
+    S.logged=true;
+    const dv=c.w*c.r-e.w*e.r,bu=$('#burst');
+    bu.textContent=dv>0?`やるじゃん！ +${c.r>e.r?c.r-e.r:'UP'}`:dv===0?'いつもどおり〜 えらい':'ゆるっと OK〜';
+    bu.className='burst';void bu.offsetWidth;bu.className='burst go';
+    const v=$('#v-record');v.classList.remove('puff');void v.offsetWidth;v.classList.add('puff');
+    $('#doneTxt').textContent=S.idx===EX.length-1?'おわり〜':'つぎ〜';
+  }else{
+    if(S.idx===EX.length-1){S.legDone=true;S.idx=0;go('today')}
+    else{S.idx++;renderRec()}
+  }
+};
+
+/* ---------- おやすみ ---------- */
+function renderRest(){
+  let s='';
+  s+=sh(180,262,150,10,'#EFE3C2',{p:2,sw:1.8,j:.08});
+  // ソファ（背もたれ→座面→ひじかけ）
+  s+=sh(180,150,142,70,BLUE,{p:3.2,rot:-1});
+  s+=sh(180,222,150,40,'#2F63D6',{p:3.4});
+  s+=sh(50,200,36,56,BLUE,{p:3,rot:3});
+  s+=sh(312,196,38,62,BLUE,{p:3,rot:-3});
+  s+=ln('M70 246L66 262M290 252L294 266',4);
+  // クッション
+  s+=sh(96,128,30,26,MINT,{p:2.6,rot:-12});
+  // 人（ぐでっと）
+  s+=sh(190,168,84,26,PINK,{p:2.8,rot:-4});
+  s+=sh(278,186,30,16,YEL,{p:2.6,rot:18});
+  s+=sh(318,214,16,10,'#FFF3D6',{p:2.2,rot:35});
+  s+=sh(112,150,28,26,'#FFF3D6',{p:2.1});
+  s+=ln('M98 150Q103 155 108 150M116 150Q121 155 126 150',2.2);
+  s+=ln('M105 164Q112 171 120 163',2.2);
+  s+=sh(112,126,24,10,INK,{p:2.2,rot:-8,sw:1.5});
+  s+=sh(130,184,34,10,'#FFF3D6',{p:2.4,rot:-30});
+  // ぐー
+  s+=`<text x="148" y="98" font-family="RocknRoll One" font-size="34" fill="${INK}" filter="url(#roughS)" class="wig">ぐぅ…</text>`;
+  s+=`<text x="228" y="60" font-family="RocknRoll One" font-size="22" fill="${BLUE}" stroke="${INK}" stroke-width=".8" filter="url(#roughS)">z</text><text x="256" y="38" font-family="RocknRoll One" font-size="17" fill="${BLUE}" stroke="${INK}" stroke-width=".8" filter="url(#roughS)">z</text>`;
+  // おやつ
+  s+=sh(236,250,26,9,'#fff',{p:2.4,sw:2});
+  $('#restSvg').innerHTML=s;
+}
+$('#undoRest').onclick=()=>{S.rest=false;go('record')};
+
+/* ---------- なかま ---------- */
+const FR=[
+ {n:'ケン',d:4,rest:0,c:'ベンチ 5kg ふえた〜！',col:PINK,note:'#FFE9A0',r:-1.6},
+ {n:'ミホ',d:2,rest:1,c:'ランで 5km いけた！',col:MINT,note:'#C4F3E2',r:1.4},
+ {n:'ユウタ',d:3,rest:0,c:'スクワット つらいよ〜',col:YEL,note:'#FFD0DE',r:-1},
+ {n:'サキ',d:1,rest:2,c:'のんびり 休み中〜',col:'#A9C2FF',note:'#DDE7FF',r:1.8}];
+const ICON={
+  heart:p=>`<path d="M15 25C3 17 4 7 10 7C13 7 15 10 15 11C15 10 17 7 20 7C26 7 27 17 15 25Z" fill="${PINK}" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round" filter="url(#roughS)"/>`,
+  star:p=>`<path d="M15 3L19 11L28 12L21.5 18L23 27L15 22.5L7 27L8.5 18L2 12L11 11Z" fill="${YEL}" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round" filter="url(#roughS)"/>`,
+  bolt:p=>`<path d="M18 2L6 17H14L11 28L24 12H16Z" fill="${BLUE}" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round" filter="url(#roughS)"/>`};
+const SK=[['heart','いいね'],['star','えらい'],['bolt','ぱわー']];
+function faceSVG(col){
+  return `<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">${sh(32,33,26,25,col,{p:2.1,n:12,sw:2.4})}${sh(24,31,2.6,3.2,INK,{p:2,n:8,sw:.5})}${sh(41,31,2.6,3.2,INK,{p:2,n:8,sw:.5})}${ln('M23 42Q32 50 42 42',2.4)}</svg>`;
+}
+function renderNotes(){
+  $('#notes').innerHTML=FR.map((f,i)=>{
+    const mini=Array.from({length:7},(_,j)=>`<div class="bl" data-fill="${j<f.d?MINT:j<f.d+f.rest?PINK:CREAM}" data-p="2" data-j=".12"></div>`).join('');
+    const st=SK.map(([k,lab])=>{const key=i+k,n=S.stamps[key]||0;return `<div class="st" data-key="${key}"><button class="bl jl" data-fill="#fff" data-p="2" data-j=".07" style="width:50px;height:50px;--r:${k==='star'?4:-4}deg" aria-label="${f.n}に「${lab}」スタンプ"><svg class="ic" viewBox="0 0 30 30" aria-hidden="true">${ICON[k]()}</svg></button><div class="bl cnt ${n?'on':''}" data-fill="#fff" data-p="2">${n||''}</div></div>`}).join('');
+    return `<article class="bl note" data-fill="${f.note}" data-p="3.6" data-j=".025" style="--r:${f.r}deg"><div class="hd">${faceSVG(f.col)}<div><div class="nm">${f.n}</div><div class="dd"><b>${f.d}</b>日${f.rest?'　休み '+f.rest:''}</div><div class="mini" aria-hidden="true">${mini}</div></div></div><p class="cm">${f.c}</p><div class="stamps">${st}</div></article>`}).join('');
+  blobify($('#v-friends'));
+  document.querySelectorAll('#notes .st').forEach(w=>{w.querySelector('button').onclick=()=>{
+    const k=w.dataset.key;S.stamps[k]=(S.stamps[k]||0)+1;const c=w.querySelector('.cnt');c.textContent=S.stamps[k];c.classList.add('on');
+  }});
+}
+
+/* ---------- じぶん（手描き線＋クレヨンの人体） ---------- */
+function body(side){
+  const C=k=>LC[lvl(sets(k))];
+  const P=(x,y,w,h,k,o={})=>sh(x+w/2,y+h/2,w/2,h/2,C(k),{p:3.1,j:.025,n:14,sw:2.2,...o});
+  let s='';
+  s+=P(44,128,15,56,'leg')+P(61,128,15,56,'leg')+P(45,188,13,44,'leg')+P(62,188,13,44,'leg');
+  s+=sh(60,88,20,42,CREAM,{p:3,j:.02,sw:2.2});
+  s+=P(18,66,15,40,'arm')+P(18,108,14,38,'arm')+P(87,66,15,40,'arm')+P(88,108,14,38,'arm');
+  if(side==='f'){
+    s+=P(44,50,15,26,'chest')+P(61,50,15,26,'chest')+P(46,79,28,46,'abs');
+    s+=ln('M60 82V122M48 98H72M48 111H72',1.4);
+  }else{
+    s+=P(43,50,34,52,'back',{p:3.4})+P(45,104,30,24,'leg');
+    s+=ln('M60 54V98',1.4);
+  }
+  s+=sh(35,54,11,11,C('shoulder'),{p:2.1,sw:2.2,n:12})+sh(85,54,11,11,C('shoulder'),{p:2.1,sw:2.2,n:12});
+  s+=P(54,34,12,14,'__',{}).replace(/fill="[^"]*"/,`fill="${CREAM}"`);
+  s+=sh(60,21,17,17,CREAM,{p:2.1,n:12,sw:2.3});
+  if(side==='f') s+=sh(54,22,2.2,2.6,INK,{p:2,n:8,sw:.4})+sh(66,22,2.2,2.6,INK,{p:2,n:8,sw:.4})+ln('M54 29Q60 34 66 29',2);
+  else s+=`<path d="M43 21A17 17 0 0 1 77 21Q60 13 43 21Z" fill="${INK}" filter="url(#roughS)"/>`;
+  return s;
+}
+function renderMe(){
+  $('#bodyF').innerHTML=body('f');$('#bodyB').innerHTML=body('b');
+  $('#plist').innerHTML=['chest','shoulder','arm','back','abs','leg'].map((k,i)=>{const n=sets(k);return `<div class="bl pi" data-fill="${['#fff','#C4F3E2','#FFF0B8','#FFD0DE'][lvl(n)]}" data-p="4" data-j=".03" style="transform:rotate(${[-1,1,.8,-.8,1.2,-1.2][i]}deg)"><span>${NAMES[k]}</span><b>${n}<small style="font-family:'Zen Maru Gothic';font-size:12px">セット</small></b></div>`}).join('');
+  blobify($('#v-me'));
+}
+
+/* ---------- ルーター ---------- */
+const VIEWS=['today','record','rest','friends','me'];
+function go(v){location.hash='#'+v}
+function route(){
+  let v=(location.hash||'#today').slice(1);if(!VIEWS.includes(v))v='today';
+  VIEWS.forEach(x=>$('#v-'+x).hidden=x!==v);
+  closeSheet();$('#v-'+v).scrollTop=0;
+  if(v==='today')renderToday();
+  if(v==='record')renderRec();
+  if(v==='rest'){renderRest();blobify($('#v-rest'))}
+  if(v==='friends')renderNotes();
+  if(v==='me')renderMe();
+}
+addEventListener('hashchange',route);
+(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>{document.querySelectorAll('.bl[data-b]').forEach(el=>{const g=el.querySelector(':scope>.bg');if(g)g.remove();delete el.dataset.b});route()});
+route();
+</script>
+</body>
+</html>
