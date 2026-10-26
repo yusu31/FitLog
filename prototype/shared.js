@@ -125,8 +125,11 @@ html[data-look="calm"] main > section, html[data-look="calm"] main > article { p
   // 確認用パネルの選択と「今日の状態」はページをまたいで残す（使えない環境でも既定値で表示する）
   const KEY = "fitlog-proto-v2";
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
-  const save = (v) => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {} };
+  // 比較ページ（compare.html）の枠の中では、枠の名前（look:xxx）で見た目を固定し、調整パネルは出さない
+  const framed = /^look:(\w+)$/.exec(window.name);
+  const save = (v) => { if (framed) return; try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {} };
   const prefs = { look: "now", flame: "1", restc: "blue", num: "nunito", soft: "mid", rest: "on", gap: "yday", today: "none", ...load() };
+  if (framed) prefs.look = framed[1];
   const apply = () => {
     document.documentElement.dataset.num = prefs.num;
     document.documentElement.dataset.soft = prefs.soft;
@@ -310,6 +313,6 @@ html[data-look="calm"] main > section, html[data-look="calm"] main > article { p
 
   document.addEventListener("DOMContentLoaded", () => {
     if (document.body.dataset.tab) renderTabs(document.body.dataset.tab);
-    renderPanel();
+    if (!framed) renderPanel();
   });
 })();
