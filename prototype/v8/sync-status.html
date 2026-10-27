@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FitLog 送信待ちの表示</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,800&family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* 色と部品は v8 の index.html から必要な分だけ写した（比較用の使い捨て） */
+:root{
+  --t:#17A2A6; --td:#0E7F83; --tl:#D5F0F1; --tm:#8FD4D6;
+  --y:#FFC21A; --yd:#D99A00; --yl:#FFF3CC;
+  --c:#FF6B5B; --cd:#D94A3B; --cl:#FFE4E0;
+  --p:#8E7CF0; --pd:#6A57CF; --pl:#ECE8FD;
+  --n:#E5E7EB; --nd:#C9CDD3;
+  --ink:#1E2A3A; --sub:#6B7280; --face:#F4F6F8;
+  --r:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#E9ECEF;color:var(--ink);font-family:'M PLUS Rounded 1c',sans-serif;font-weight:700;-webkit-tap-highlight-color:transparent}
+.num{font-family:'Barlow Condensed','M PLUS Rounded 1c',sans-serif;font-weight:800;font-style:italic;letter-spacing:.01em}
+.h{font-weight:800}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+svg{display:block}
+
+/* ページの枠 */
+.page{max-width:1240px;margin:0 auto;padding:20px 16px 40px}
+.page>h1{font-size:22px;margin:0 0 4px}
+.lead{font-size:13px;color:var(--sub);margin:0 0 16px;line-height:1.7;font-weight:700}
+.ctl{position:sticky;top:0;z-index:20;background:#E9ECEF;padding:8px 0 12px;display:flex;flex-wrap:wrap;gap:6px}
+.ctl button{min-height:44px;padding:0 14px;border-radius:var(--r);background:#fff;color:var(--sub);font-size:13px;box-shadow:0 3px 0 var(--n)}
+.ctl button.on{background:var(--ink);color:#fff;box-shadow:0 3px 0 #000}
+.ctl button:active{transform:translateY(3px);box-shadow:none}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;align-items:start}
+.col h2{font-size:17px;margin:0 0 2px}
+.col .what{font-size:12px;color:var(--sub);margin:0 0 10px;line-height:1.6;min-height:58px}
+.notes{margin:12px 0 0;padding:12px 14px;background:#fff;border-radius:var(--r);font-size:12px;line-height:1.7;color:var(--ink)}
+.notes b{display:block;font-size:12px;color:var(--sub);margin-top:6px}
+.notes b:first-child{margin-top:0}
+.notes ul{margin:2px 0 0;padding-left:18px}
+
+/* スマホの画面 */
+.app{width:100%;max-width:390px;height:700px;margin:0 auto;background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;border-radius:20px;box-shadow:0 2px 0 var(--nd)}
+.scroll{flex:1;overflow:hidden}
+.band{background:var(--t);color:#fff;flex:none}
+.band-top{display:flex;justify-content:space-between;align-items:center;height:44px;padding:0 16px}
+.band-top .mo{font-size:26px;line-height:1}
+.net{display:flex;align-items:center;gap:4px;font-size:11px;opacity:.9}
+.days{display:flex;height:84px}
+.day{flex:1;text-align:center;color:rgb(255 255 255 / .6);position:relative}
+.day.sel{color:#fff}
+.day .w{font-size:11px;display:block;margin-top:2px}
+.day .d{font-size:30px;display:block;line-height:32px}
+.day .m{height:26px;display:flex;justify-content:center;align-items:center;margin-top:3px}
+.dc{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}
+.dc.rec{background:var(--y);box-shadow:0 2px 0 var(--yd);color:var(--ink)}
+.dc.rest{background:var(--p);box-shadow:0 2px 0 var(--pd)}
+.dc.next{background:rgb(255 255 255 / .3)}
+.day.sel::after{content:"";position:absolute;left:50%;margin-left:-9px;bottom:0;border:9px solid transparent;border-bottom-color:#fff;border-top:0}
+
+/* お知らせの帯（案B・C） */
+.note{display:flex;align-items:center;gap:10px;margin:12px 16px 0;padding:10px 12px;border-radius:var(--r);font-size:13px;line-height:1.35}
+.note .ic{flex:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.note .tx{flex:1;min-width:0}
+.note .tx small{display:block;font-size:11px;opacity:.8;font-weight:700}
+.note.wait{background:var(--face);border:2px solid var(--n)}
+.note.wait .ic{background:#fff;color:var(--sub);border:2px solid var(--nd)}
+.note.sent{background:var(--tl)}
+.note.sent .ic{background:var(--t);color:#fff}
+.note.auth{background:var(--cl)}
+.note.auth .ic{background:var(--c);color:#fff}
+.note .go{flex:none;min-height:44px;padding:0 14px;border-radius:var(--r);background:var(--c);color:#fff;font-size:13px;box-shadow:0 3px 0 var(--cd)}
+.fade{font-size:10px;color:var(--sub);margin:4px 16px 0;text-align:right;font-weight:700}
+
+.hero{margin:12px 16px 0;padding:14px 16px;background:var(--t);color:#fff;border-radius:var(--r);box-shadow:0 4px 0 var(--td)}
+.tag{display:inline-block;background:var(--y);color:var(--ink);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;font-size:14px;letter-spacing:.14em;padding:2px 18px 2px 10px;clip-path:polygon(0 0,100% 0,calc(100% - 9px) 100%,0 100%)}
+.hero .nm{font-size:24px;margin-top:8px}
+.hero .big{display:flex;align-items:baseline;gap:6px;line-height:1}
+.hero .big .num{font-size:44px}
+.hero .prev{font-size:12px;opacity:.9;margin-top:4px}
+
+.sec{padding:14px 16px 6px;font-size:12px;color:var(--sub);letter-spacing:.08em}
+.road{padding:0 16px;display:flex;flex-direction:column;gap:4px}
+.rr{display:flex;align-items:center;gap:12px;min-height:58px}
+.nd{width:40px;height:40px;border-radius:50%;background:#fff;box-shadow:0 4px 0 var(--nd);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--sub);flex:none;border:2px solid var(--nd)}
+.nd.done{background:var(--y);box-shadow:0 4px 0 var(--yd);color:var(--ink);border-color:var(--y)}
+.rr .tx{flex:1;min-width:0;font-size:15px;line-height:1.25}
+.rr .tx small{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--sub);font-weight:700}
+.rr .tx small.wait{color:var(--sub)}
+.rr .tx small.auth{color:var(--cd)}
+.rr .pv{font-size:24px;white-space:nowrap}
+.rr .pv small{font-family:'M PLUS Rounded 1c';font-style:normal;font-size:11px;color:var(--sub);margin-left:2px}
+.rr.fin .tx,.rr.fin .pv{opacity:.6}
+.rr.fin .tx small.wait,.rr.fin .tx small.auth{opacity:1}
+.mark{position:relative}
+.mark .badge{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--nd);color:var(--sub);display:flex;align-items:center;justify-content:center}
+.mark .badge.auth{border-color:var(--c);color:var(--cd)}
+
+.tabs{display:flex;justify-content:space-around;padding:6px 12px 10px;border-top:2px solid var(--n);background:#fff;flex:none}
+.tab{width:84px;height:50px;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:#9AA1AB}
+.tab.on{background:rgb(23 162 166 / .1);color:var(--td)}
+
+/* 「できた」直後のシート */
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--tl);padding:18px 16px;border-radius:16px 16px 0 0;z-index:5}
+.sheet .tt{font-size:24px;line-height:1.15}
+.sheet p{margin:4px 0 0;font-size:13px;opacity:.85}
+.sheet .local{display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px 10px;background:#fff;border-radius:10px;font-size:12px;color:var(--sub)}
+.btn{display:flex;align-items:center;justify-content:center;min-height:56px;width:100%;margin-top:14px;border-radius:var(--r);background:var(--t);color:#fff;font-weight:800;font-size:18px;letter-spacing:.08em;box-shadow:0 4px 0 var(--td)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>保存済み／送信待ちの表示（3案の比較）</h1>
+  <p class="lead">F-30 オフライン記録。上のボタンで状態を切り替えると、3案が同じ状態に変わります。今日は「レッグプレス」を電波なしで記録し、昨日の「ラン 5.2km」も送れていない（送信待ちは2件）という場面です。キャラ（F-31）は削っても成り立つよう、この比較では出していません。</p>
+  <div class="ctl" role="group" aria-label="状態">
+    <button data-s="1" class="on" aria-pressed="true">① ふだん（全部送れた）</button>
+    <button data-s="2" aria-pressed="false">② 電波なしで「できた」</button>
+    <button data-s="3" aria-pressed="false">③ 電波が戻って送った</button>
+    <button data-s="4" aria-pressed="false">④ ログインが切れていた</button>
+  </div>
+  <div class="cols" id="cols"></div>
+</div>
+<script>
+const ICON={
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
+  cloudoff:'<path d="m2 2 20 20"/><path d="M5.8 5.8A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.3-.2"/><path d="M21.5 16.5A4.5 4.5 0 0 0 17.5 10h-1.8A7 7 0 0 0 10 5.1"/>',
+  cloud:'<path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9Z"/>',
+  key:'<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m15.5 7.5 3 3"/><path d="m18 5 3 3"/>',
+  bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'
+};
+const ic=(k,s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+
+const PLANS=[
+  {id:'A', name:'A. 行の小さな印', what:'送れていない記録の行に、時計の印と「送信待ち」を付ける。チャットアプリで未送信のメッセージに時計が付くのと同じ考え方。',
+   row:true, note:false, sheetLine:false,
+   good:['画面が増えない。部品は印1つ','どの記録が送れていないかが一目で分かる'],
+   bad:['昨日の「ラン」のように、今日の画面に出ていない記録は見えない（2件あるのに1件に見える）','ログイン切れのとき、ログインのボタンを置く場所がない','「なぜ送れていないか」（電波なし）が伝わらない']},
+  {id:'B', name:'B. お知らせの帯', what:'送信待ちが1件でもある間だけ、週の帯の下に1本の帯を出す。送れたら「送ったよ」を3秒出して消える。「できた」直後のシートにも1行。',
+   row:false, note:true, sheetLine:true,
+   good:['昨日の分も含めて件数で伝わる','理由（電波なし・ログイン切れ）と、次に起きること（自動で送る）を1か所で言える','ログイン切れのボタンを置ける','ふだん（①）は何も出ない'],
+   bad:['どの記録が送れていないかは分からない（自分しか見ない記録なので、件数で足りると見ている）']},
+  {id:'C', name:'C. 印＋帯', what:'A の行の印と B の帯の両方を出す。',
+   row:true, note:true, sheetLine:true,
+   good:['件数・理由・どの記録か、が全部分かる'],
+   bad:['同じことを2か所で言う。電波の悪いジムでは毎回、印と帯の両方が出て画面がにぎやかになる','テストする表示が倍になる']}
+];
+let S=1;
+
+function band(st){
+  const days=[['月',20,'rec'],['火',21,'rec'],['水',22,'today'],['木',23,''],['金',24,''],['土',25,''],['日',26,'']].map(([w,d,k])=>{
+    const m = k==='rec'||k==='today' ? `<span class="dc rec" aria-label="記録した">${ic('check',13)}</span>` : `<span class="dc next" aria-label="これから"></span>`;
+    return `<div class="day ${k==='today'?'sel':''}"><span class="w">${w}</span><span class="d num">${d}</span><span class="m">${m}</span></div>`;
+  }).join('');
+  const net = st===2 ? `<span class="net">${ic('cloudoff',14)}電波なし</span>` : '';
+  return `<header class="band"><div class="band-top"><div class="mo num">10/</div>${net}</div><div class="days">${days}</div></header>`;
+}
+function note(p,st){
+  if(!p.note) return '';
+  if(st===2) return `<div class="note wait" role="status"><span class="ic">${ic('clock',18)}</span><span class="tx">送信待ち <span class="num" style="font-size:17px">2</span>件<small>この端末に保存ずみ。つながったら自動で送るよ</small></span></div>`;
+  if(st===3) return `<div class="note sent" role="status"><span class="ic">${ic('check',18)}</span><span class="tx"><span class="num" style="font-size:17px">2</span>件 送ったよ</span></div><div class="fade">↑ 3秒で消える</div>`;
+  if(st===4) return `<div class="note auth" role="status"><span class="ic">${ic('key',17)}</span><span class="tx">送信待ち <span class="num" style="font-size:17px">2</span>件<small>記録は残ってるよ。ログインで送るね</small></span><button class="go">ログイン</button></div>`;
+  return '';
+}
+function rows(p,st){
+  const pend = st===2||st===4;
+  const EX=[
+    {n:'スクワット', kg:60, reps:10, done:true, pend:false},
+    {n:'レッグプレス', kg:80, reps:12, done:true, pend:pend},
+    {n:'レッグカール', kg:25, reps:12, done:false},
+    {n:'カーフレイズ', kg:30, reps:15, done:false}
+  ];
+  return EX.map((e,i)=>{
+    const showMark = p.row && e.pend;
+    const cls = st===4 ? 'auth' : 'wait';
+    const sub = !e.done ? `前回 ${e.kg}kg×${e.reps}`
+      : showMark ? `<small class="${cls}">${ic(st===4?'key':'clock',12)}${st===4?'ログインすると送るよ':'送信待ち'}</small>` : 'できた';
+    const nd = `<span class="nd ${e.done?'done':''} ${showMark?'mark':''}">${e.done?ic('check',20):`<span class="num">${i+1}</span>`}${showMark?`<span class="badge ${cls}">${ic(st===4?'key':'clock',12)}</span>`:''}</span>`;
+    return `<div class="rr ${e.done?'fin':''}">${nd}<span class="tx">${e.n}${sub.startsWith('<small')?sub:`<small>${sub}</small>`}</span><span class="pv num">${e.kg}<small>kg ×</small>${e.reps}</span></div>`;
+  }).join('');
+}
+function sheet(p,st){
+  if(st!==2) return '';
+  const line = p.sheetLine ? `<div class="local">${ic('cloudoff',14)}この端末に保存したよ。電波が戻ったら送るね</div>` : '';
+  return `<div class="sheet" role="status"><div class="tt h">前回と おなじ！</div><p>レッグプレス 80kg × 12回。ちゃんと できたよ</p>${line}<div class="btn">つぎへ</div></div>`;
+}
+function phone(p,st){
+  return `<div class="app" aria-label="案${p.id}の今日の画面">${band(st)}<div class="scroll">${note(p,st)}
+    <section class="hero"><span class="tag">NEXT</span><div class="nm h">レッグカール</div><div class="big"><span class="num">25</span><span>kg ×</span><span class="num">12</span></div><div class="prev">前回 25kg×12 ・ 3 セット</div></section>
+    <div class="sec">きょうの種目</div><div class="road">${rows(p,st)}</div></div>
+    <nav class="tabs"><span class="tab on">${ic('bell',22)}<span>今日</span></span><span class="tab">${ic('users',22)}<span>仲間</span></span><span class="tab">${ic('user',22)}<span>自分</span></span></nav>${sheet(p,st)}</div>`;
+}
+function render(){
+  document.getElementById('cols').innerHTML = PLANS.map(p=>`<section class="col"><h2>${p.name}</h2><p class="what">${p.what}</p>${phone(p,S)}
+    <div class="notes"><b>よいところ</b><ul>${p.good.map(x=>`<li>${x}</li>`).join('')}</ul><b>気になるところ</b><ul>${p.bad.map(x=>`<li>${x}</li>`).join('')}</ul></div></section>`).join('');
+  document.querySelectorAll('.ctl button').forEach(b=>{const on=+b.dataset.s===S; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on);});
+}
+document.querySelector('.ctl').addEventListener('click',e=>{const b=e.target.closest('[data-s]'); if(!b) return; S=+b.dataset.s; render();});
+const q=new URLSearchParams(location.search).get('s'); if(q) S=+q;
+render();
+</script>
+</body>
+</html>

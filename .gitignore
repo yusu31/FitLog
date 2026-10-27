@@ -4,6 +4,9 @@ spike/video/*.mp4
 spike/video/*.mov
 spike/video/*.webm
 
+# Python の実行時に自動でできるキャッシュ
+__pycache__/
+
 # Claude Code の個人設定（共有しない）
 CLAUDE.local.md
 .claude/settings.local.json
