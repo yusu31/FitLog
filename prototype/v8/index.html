@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FitLog v8 LPCキャラ試作</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,800&family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --t:#17A2A6; --td:#0E7F83; --tl:#D5F0F1; --tm:#8FD4D6;
+  --y:#FFC21A; --yd:#D99A00; --yl:#FFF3CC;
+  --c:#FF6B5B; --cd:#D94A3B; --cl:#FFE4E0;
+  --p:#8E7CF0; --pd:#6A57CF; --pl:#ECE8FD;
+  --n:#E5E7EB; --nd:#C9CDD3;
+  --ink:#1E2A3A; --sub:#6B7280; --face:#F4F6F8;
+  --r:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#E9ECEF;color:var(--ink);font-family:'M PLUS Rounded 1c',sans-serif;font-weight:700;min-height:100vh;display:flex;justify-content:center;align-items:center;-webkit-tap-highlight-color:transparent}
+.num{font-family:'Barlow Condensed','M PLUS Rounded 1c',sans-serif;font-weight:800;font-style:italic;letter-spacing:.01em}
+.h{font-weight:800}
+.app{width:390px;max-width:100%;height:min(844px,100dvh);background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+.hide{display:none!important}
+
+/* 縞 */
+.stripe-t{background:repeating-linear-gradient(-45deg,var(--t) 0 6px,var(--td) 6px 12px)}
+.stripe-y{background:repeating-linear-gradient(-45deg,var(--y) 0 6px,var(--yd) 6px 12px)}
+.stripe-p{background:repeating-linear-gradient(-45deg,var(--p) 0 6px,var(--pd) 6px 12px)}
+.stripe-n{background:repeating-linear-gradient(-45deg,var(--n) 0 6px,var(--nd) 6px 12px)}
+.stripe-c{background:repeating-linear-gradient(-45deg,var(--c) 0 6px,var(--cd) 6px 12px)}
+/* 斜めに切った札 */
+.tag{display:inline-block;background:var(--y);color:var(--ink);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;font-size:15px;letter-spacing:.14em;padding:3px 20px 3px 10px;clip-path:polygon(0 0,100% 0,calc(100% - 9px) 100%,0 100%)}
+.tag.ink{background:var(--ink);color:#fff}
+
+/* 厚みボタン */
+.btn{--bg:var(--t);--d:var(--td);display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;width:100%;border-radius:var(--r);background:var(--bg);color:#fff;font-weight:800;font-size:18px;letter-spacing:.08em;box-shadow:0 4px 0 var(--d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 0 0 var(--d)}
+.btn.white{--bg:#fff;--d:#B8E3E4;color:var(--td)}
+.btn.coral{--bg:var(--c);--d:var(--cd)}
+.btn.gold{--bg:var(--y);--d:var(--yd);color:var(--ink)}
+.btn.purple{--bg:var(--p);--d:var(--pd)}
+.btn.sm{min-height:44px;width:auto;padding:0 16px;font-size:14px;letter-spacing:.04em}
+.foot{padding:12px 16px 14px;background:#fff}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+
+/* 得点板 */
+.board{margin:14px 16px 0;display:flex;align-items:center;gap:14px;padding:10px 14px 10px 16px;background:#fff;border:2px solid var(--n);border-bottom-width:4px;border-radius:var(--r)}
+.board .lb{font-size:12px;color:var(--sub);line-height:1.2}
+.board .sc{display:flex;align-items:baseline;gap:2px;line-height:.9}
+.board .sc b{font-size:56px;color:var(--ink)}
+.board .sc span{font-size:28px;color:var(--sub)}
+.wk{margin-left:auto;display:flex;gap:5px}
+.wk div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--sub)}
+.wk i{display:block;width:12px;height:38px;border-radius:3px;transform:skewX(-14deg)}
+.wk i.e{background:var(--n)}
+.wk i.today{background:#fff;border:2px solid var(--t)}
+.wk .on{color:var(--ink)}
+
+/* 大きなカード */
+.hero{--bg:var(--t);--d:var(--td);position:relative;margin:16px 16px 0;padding:18px 18px 18px;background:var(--bg);color:#fff;border-radius:var(--r);box-shadow:0 4px 0 var(--d);overflow:hidden}
+.hero::before{content:"";position:absolute;right:-30px;top:-10px;width:150px;height:200px;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.12) 0 8px,transparent 8px 16px);transform:skewX(-14deg)}
+.hero>*{position:relative}
+.hero.coral{--bg:var(--c);--d:var(--cd)}
+.hero.gold{--bg:var(--y);--d:var(--yd);color:var(--ink)}
+.hero .nm{font-size:30px;line-height:1.15;margin-top:10px}
+.hero .big{display:flex;align-items:baseline;gap:8px;margin:2px 0 0;line-height:1}
+.hero .big .num{font-size:84px}
+.hero .big .u{font-size:26px}
+.hero .big .x{font-size:30px;opacity:.7}
+.hero .prev{font-size:13px;opacity:.9;margin:4px 0 16px}
+.hero .prev b{font-family:'Barlow Condensed';font-style:italic;font-size:16px;font-weight:800}
+
+.sec{padding:18px 16px 8px;font-size:12px;color:var(--sub);letter-spacing:.08em}
+.list{padding:0 16px 20px;display:flex;flex-direction:column;gap:8px}
+.li{display:flex;align-items:center;gap:12px;min-height:56px;width:100%;padding:6px 14px 6px 10px;background:#fff;border:2px solid var(--n);border-bottom-width:4px;border-radius:var(--r);text-align:left;transition:transform .08s}
+button.li:active{transform:translateY(2px)}
+.li .no{width:34px;height:34px;border-radius:50%;background:var(--face);color:var(--sub);display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+.li .no.done{background:var(--y);color:var(--ink)}
+.li .no.rest{background:var(--p);color:#fff}
+.li .tx{flex:1;min-width:0;font-size:15px;line-height:1.25}
+.li .tx small{display:block;font-size:11px;color:var(--sub);font-weight:700}
+.li .pv{font-size:24px;color:var(--ink);white-space:nowrap}
+.li .pv small{font-family:'M PLUS Rounded 1c';font-style:normal;font-size:11px;color:var(--sub);margin-left:2px;font-weight:700}
+.li.fin{opacity:.6}
+
+/* タブ */
+.tabs{display:flex;justify-content:space-around;padding:6px 12px 10px;border-top:2px solid var(--n);background:#fff}
+.tab{width:84px;height:52px;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:#9AA1AB}
+.tab.on{background:rgb(23 162 166 / .1);color:var(--td)}
+
+/* 記録 */
+.rtop{display:flex;align-items:center;gap:12px;padding:16px 16px 8px}
+.xbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#9AA1AB;border-radius:var(--r)}
+.bar{flex:1;height:16px;border-radius:5px;background:var(--n);position:relative;overflow:hidden;transform:skewX(-14deg)}
+.bar i{display:block;height:100%;transition:width .5s cubic-bezier(.3,1,.4,1)}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 20px}
+.eyebrow{font-size:13px;color:var(--sub);letter-spacing:.08em}
+.ename{font-size:32px;line-height:1.15;text-align:center}
+.bigrec{display:flex;align-items:baseline;gap:8px;line-height:1}
+.bigrec .num{font-size:100px}
+.bigrec .u{font-size:24px;color:var(--sub)}
+.bigrec .x{font-size:30px;color:var(--sub)}
+.step{display:flex;align-items:center;gap:20px}
+.rbtn{--bg:var(--n);--d:var(--nd);width:56px;height:56px;border-radius:50%;background:var(--bg);box-shadow:0 4px 0 var(--d);display:flex;align-items:center;justify-content:center;color:var(--ink);transition:transform .08s,box-shadow .08s}
+.rbtn:active{transform:translateY(4px);box-shadow:0 0 0 var(--d)}
+.step .sets{font-size:14px;color:var(--sub);min-width:70px;text-align:center}
+.card{background:var(--face);border:2px solid var(--n);border-bottom-width:4px;border-radius:var(--r);padding:12px 16px}
+.cmp{width:100%}
+.cmp .hd{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--sub);margin-bottom:8px}
+.cmp .hd .num{font-size:22px;color:var(--ink)}
+.cmp .rw{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:11px;color:var(--sub)}
+.cmp .rw span{width:34px}
+.cmp .tr{flex:1;height:12px;border-radius:4px;transform:skewX(-14deg);background:#fff;overflow:hidden}
+.cmp .tr i{display:block;height:100%;transition:width .3s}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--yl);padding:20px 16px 20px;transform:translateY(105%);visibility:hidden;transition:transform .38s cubic-bezier(.2,.9,.25,1.08),visibility 0s .38s;z-index:5;border-radius:16px 16px 0 0}
+.sheet.show{transform:none;visibility:visible;transition-delay:0s}
+.sheet .who{position:absolute;right:14px;bottom:calc(100% - 8px);pointer-events:none}
+.sheet.gold{background:var(--y)}
+.sheet.plain{background:var(--tl)}
+.sheet .row{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.sheet .tt{font-size:26px;line-height:1.15;color:var(--ink)}
+.sheet .tt .num{font-size:40px}
+.sheet p{margin:4px 0 0;color:var(--ink);font-size:13px;opacity:.85}
+
+
+/* 仲間・自分 */
+.title{padding:18px 16px 0;font-size:28px;margin:0}
+.hero.sm{padding:14px 18px 16px}
+.hero .big2{display:flex;align-items:baseline;gap:6px;margin-top:6px;line-height:.9}
+.hero .big2 .num{font-size:72px}
+.hero .big2 .u{font-size:22px}
+.hero .meta{font-size:13px;margin-top:6px;opacity:.95}
+.av{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px}
+.fl{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 10px;background:#fff;border:2px solid var(--n);border-bottom-width:4px;border-radius:var(--r)}
+.fl .gr{flex:1;min-width:0}
+.fl .nm2{font-size:16px}
+.fl .ds{font-size:11px;color:var(--sub);margin-top:1px}
+.dots{display:flex;gap:4px;margin-top:6px}
+.dots i{display:block;width:9px;height:14px;border-radius:2px;transform:skewX(-14deg);background:var(--n)}
+.dots i.d{background:var(--y)}.dots i.r{background:var(--p)}
+.panel{background:#fff;border-radius:8px;padding:10px 6px 8px;margin-top:12px;display:flex;justify-content:center;gap:22px;color:var(--sub);font-size:11px;text-align:center}
+.legend{display:flex;justify-content:center;gap:12px;font-size:11px;color:#fff;padding-top:12px}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:12px;height:12px;border-radius:3px;display:block;border:1px solid rgba(255,255,255,.7)}
+.br{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 14px;background:#fff;border:2px solid var(--n);border-bottom-width:4px;border-radius:var(--r)}
+.br .lb{width:38px;font-size:16px}
+.br .tr{flex:1;height:14px;border-radius:4px;transform:skewX(-14deg);background:var(--n);overflow:hidden}
+.br .tr i{display:block;height:100%}
+.br .ct{width:62px;text-align:right;font-size:12px;color:var(--sub)}
+.br .ct .num{font-size:24px;color:var(--ink)}
+
+
+/* ===== v7 追加 ===== */
+.hero.purple{--bg:var(--p);--d:var(--pd)}
+.band{background:var(--t);color:#fff;position:relative;flex:none}
+.band-top{display:flex;justify-content:space-between;align-items:center;height:44px;padding:0 0 0 16px}
+.band-top .mo{font-size:26px;line-height:1}
+.seg{display:flex;padding-right:12px;gap:2px}
+.seg button{width:44px;height:44px;background:transparent;color:#fff;font-size:14px;font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:800;letter-spacing:.04em;position:relative}
+.seg button::before{content:"";position:absolute;left:0;right:0;top:6px;bottom:6px;background:var(--td);z-index:0}
+.seg button:first-child::before{border-radius:8px 0 0 8px}.seg button:last-child::before{border-radius:0 8px 8px 0}
+.seg button.on::before{background:var(--ink)}
+.seg button span{position:relative;z-index:1}
+.days{display:flex;height:84px}
+.day{flex:1;text-align:center;color:rgb(255 255 255 / .6);position:relative}
+.day.sel{color:#fff}
+.day .w{font-size:11px;display:block;margin-top:2px}
+.day .d{font-size:30px;display:block;line-height:32px}
+.day .m{height:26px;display:flex;justify-content:center;align-items:center;margin-top:3px}
+.dc{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}
+.dc.rec{background:var(--y);box-shadow:0 2px 0 var(--yd)}
+.dc.rest{background:var(--p);box-shadow:0 2px 0 var(--pd)}
+.dc.today{border:3px solid #fff}
+.dc.next{background:rgb(255 255 255 / .3)}
+.day.sel::after{content:"";position:absolute;left:50%;margin-left:-9px;bottom:0;border:9px solid transparent;border-bottom-color:#fff;border-top:0}
+
+.stage{position:relative;margin:0 16px;padding-top:160px}
+.hw{position:relative}
+.stage .hero{margin:0}
+.stage .char{position:absolute;right:8px;bottom:calc(100% - 8px);pointer-events:none;line-height:0;z-index:2}
+.tod{position:absolute;left:0;top:30px}
+.tod .cap{font-size:10px;color:var(--sub);letter-spacing:.04em;margin-bottom:4px}
+.tod .row{display:flex;gap:4px}
+.tod button{width:44px;height:44px;border-radius:var(--r);background:var(--face);color:var(--sub);font-size:13px;box-shadow:0 3px 0 var(--n)}
+.tod button.on{background:var(--ink);color:#fff;box-shadow:0 3px 0 #000}
+.tod button:active{transform:translateY(3px);box-shadow:none}
+
+.road{position:relative;padding:0 16px 20px;display:flex;flex-direction:column;gap:6px}
+.road::before{content:"";position:absolute;left:36px;top:34px;bottom:70px;width:4px;background:radial-gradient(circle,var(--nd) 1.7px,transparent 2.2px) 0 0/4px 12px repeat-y}
+.rr{position:relative;display:flex;align-items:center;gap:14px;min-height:64px;width:100%;text-align:left;border-radius:var(--r)}
+button.rr:active .nd{transform:translateY(4px);box-shadow:0 0 0 var(--d)}
+.nd{--bg:#fff;--d:var(--nd);width:44px;height:44px;border-radius:50%;background:var(--bg);box-shadow:0 4px 0 var(--d);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--sub);flex:none;transition:transform .08s,box-shadow .08s;border:2px solid var(--nd)}
+.nd.done{--bg:var(--y);--d:var(--yd);color:var(--ink);border-color:var(--y)}
+.nd.rest{--bg:var(--p);--d:var(--pd);color:#fff;border-color:var(--p)}
+.rr .tx{flex:1;min-width:0;font-size:15px;line-height:1.25}
+.rr .tx small{display:block;font-size:11px;color:var(--sub);font-weight:700}
+.rr .pv{font-size:26px;color:var(--ink);white-space:nowrap}
+.rr .pv small{font-family:'M PLUS Rounded 1c';font-style:normal;font-size:11px;color:var(--sub);margin-left:2px;font-weight:700}
+.rr.fin .tx,.rr.fin .pv{opacity:.6}
+.road::before{z-index:0}.rr{z-index:1}
+
+.rtop .who64{flex:none;line-height:0;margin:-6px -6px -10px 0}
+.rtop{padding-bottom:0}
+.pt{font-size:32px;color:var(--pd)}
+.sub{font-size:14px;color:var(--sub);text-align:center;line-height:1.7}
+.restwrap{position:relative;line-height:0;margin-bottom:4px}
+.restwrap::before{content:"";position:absolute;left:50%;bottom:10px;width:230px;height:46px;margin-left:-115px;border-radius:50%;background:var(--pl)}
+.restwrap svg{position:relative}
+.spr{overflow:visible}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+/* ---------- データ（v6 と同じ） ---------- */
+const EX = [
+  {n:'スクワット', kg:60, reps:10, sets:3, last:'10/22'},
+  {n:'ルーマニアンデッドリフト', kg:50, reps:12, sets:3, last:'10/22'},
+  {n:'レッグプレス', kg:100, reps:12, sets:3, last:'10/22'},
+  {n:'カーフレイズ', kg:40, reps:15, sets:3, last:'10/22'},
+];
+const PARTS = [['胸',3],['肩',3],['腕',4],['背中',3],['脚',0]];
+const FRIENDS = [
+  {n:'ケン', d:4, rest:0, c:'#2F80ED'},
+  {n:'ミホ', d:2, rest:1, c:'#8E7CF0'},
+  {n:'ユウタ', d:3, rest:1, c:'#F08A2E'},
+  {n:'サキ', d:1, rest:2, c:'#E8527E'},
+];
+const WEEK = [['月',26,'rec'],['火',27,'rest'],['水',28,'rec'],['木',29,'today'],['金',30,''],['土',31,''],['日',1,'']];
+/* view: morning(朝) / noon(昼) / after(記録後) / rest(休み) */
+const S = { done:[false,false,false,false], sel:0, view:'noon', mode:'D', reps:EX.map(e=>e.reps), stamped:{}, sheet:null };
+
+/* ---------- アイコン ---------- */
+const IC = {
+  check:'<path d="M5 12.5l4.6 4.6L19.2 7" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>',
+  plus:'<path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>',
+  minus:'<path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>',
+  moon:'<path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z" fill="currentColor"/>',
+  bell:'<rect x="1.5" y="9" width="3" height="6" rx="1" fill="currentColor"/><rect x="4.5" y="6" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="8" y="10.8" width="8" height="2.4" fill="currentColor"/><rect x="16" y="6" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="19.5" y="9" width="3" height="6" rx="1" fill="currentColor"/>',
+  users:'<circle cx="8.5" cy="8" r="3.8" fill="currentColor"/><circle cx="17" cy="9" r="3" fill="currentColor"/><path d="M1.8 20a6.7 6.7 0 0 1 13.4 0zM15.6 20a5.4 5.4 0 0 0-1.9-4.1 5.5 5.5 0 0 1 8.5 4.1z" fill="currentColor"/>',
+  user:'<circle cx="12" cy="7.6" r="4.2" fill="currentColor"/><path d="M3.8 21a8.2 8.2 0 0 1 16.4 0z" fill="currentColor"/>',
+  star:'<path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+};
+const ic=(n,s=24)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+
+
+/* ================= ドット絵エンジン（32x32・1人のキャラ） =================
+   形（楕円・カプセル）で各パーツを置く → 輪郭線(紺1マス)を自動で付ける → 光(左上)と影(右下)で濃淡を付ける
+   → 文字の格子(32行×32文字)になる → rect にまとめて SVG に変換。
+   全ポーズが同じパーツ関数から作られるので、体型・顔が同じ人になる。 */
+const SP_W=32, SP_H=32;
+const SP_PAL={O:'#1E2A3A',s:'#FFD4B0',S:'#E8A47C',h:'#5B4766',t:'#5CC7CA',T:'#17A2A6',D:'#0E7F83',w:'#FFFFFF',g:'#C9CDD3',n:'#34465F',l:'#8E7CF0',y:'#FFC21A'};
+/* 素材 → [明, 中, 暗] のパレット記号 */
+const SP_TONE={k:['s','s','S'],t:['t','T','D'],n:['n','n','n'],w:['w','w','g'],c:['l','l','h'],H:['l'],h:['h','h','h'],y:['y'],g:['g'],q:['n'],O:['O']};
+const spBlank=()=>Array.from({length:SP_H},()=>Array(SP_W).fill('.'));
+const spIn=(x,y)=>x>=0&&y>=0&&x<SP_W&&y<SP_H;
+const spR=(x0,y0,w,h)=>(x,y)=>x>=x0&&x<x0+w&&y>=y0&&y<y0+h;
+const spE=(cx,cy,rx,ry)=>(x,y)=>((x+.5-cx)/rx)**2+((y+.5-cy)/ry)**2<=1;
+const spC=(a,b,r)=>(x,y)=>{const px=x-a[0],py=y-a[1],dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy;let t=l?(px*dx+py*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-t*dx,py-t*dy)<=r+1e-9};
+const spU=(...ts)=>(x,y)=>ts.some(t=>t(x,y));
+const spN4=[[1,0],[-1,0],[0,1],[0,-1]];
+function spPut(g,test,m,ring){
+  const cs=[];for(let y=0;y<SP_H;y++)for(let x=0;x<SP_W;x++)if(test(x,y))cs.push([x,y]);
+  if(ring){const set=new Set(cs.map(c=>c.join()));
+    for(const [x,y] of cs)for(const [dx,dy] of spN4){const nx=x+dx,ny=y+dy;
+      if(spIn(nx,ny)&&!set.has(nx+','+ny)&&(ring===true||g[ny][nx]==='.'))g[ny][nx]='O';}}
+  for(const [x,y] of cs)g[y][x]=m;
+}
+function spShade(g){
+  const o=g.map(r=>r.slice());
+  for(let y=0;y<SP_H;y++)for(let x=0;x<SP_W;x++){
+    const m=g[y][x];if(m==='.')continue;const tn=SP_TONE[m];if(!tn){o[y][x]=m;continue}
+    if(tn.length===1){o[y][x]=tn[0];continue}
+    const df=(dx,dy)=>!(spIn(x+dx,y+dy)&&g[y+dy][x+dx]===m);
+    const l=df(0,-1)||df(-1,0), d=df(0,1)||df(1,0);
+    o[y][x]=(l&&!d)?tn[0]:(d&&!l)?tn[2]:tn[1];
+  }
+  return o;
+}
+const spSet=(o,x,y,c)=>{if(spIn(x,y))o[y][x]=c};
+const spMir=x=>31-x;
+/* 顔（最後に直接置く。by = 体の上下ずれ） */
+function spFace(o,f,by){
+  const E=(x,y,c)=>{spSet(o,x,y+by,c);spSet(o,spMir(x),y+by,c)};
+  const eyesOpen=()=>{for(const ex of [12,13])for(const ey of [7,8,9])E(ex,ey,'O');E(12,7,'w')};
+  const eyesLine=(y)=>{E(12,y,'O');E(13,y,'O')};
+  if(f==='smile'){eyesOpen();E(14,11,'O');E(15,12,'O')}
+  else if(f==='grin'){eyesOpen();for(const x of [14,15])E(x,11,'O');E(15,11,'w');E(16,11,'w');E(15,12,'O')}
+  else if(f==='happy'){ /* ^ ^ + 大きな笑顔 */
+    E(11,8,'O');E(12,7,'O');E(13,8,'O');
+    for(const x of [14,15])E(x,11,'O');E(15,11,'w');E(16,11,'w');E(15,12,'O')}
+  else if(f==='sleepy'){eyesLine(9);E(11,9,'O');E(14,11,'O');E(15,12,'O')}
+  else if(f==='yawn'){ /* 目を細めて口を大きく */
+    E(11,8,'O');E(12,9,'O');E(13,8,'O');
+    for(const [x,y,c] of [[15,10,'O'],[14,11,'O'],[15,11,'O'],[15,12,'O']])E(x,y,c);}
+  else if(f==='stretch'){ /* 伸びきった > < とあくび */
+    E(11,7,'O');E(12,8,'O');E(11,9,'O');
+    for(const [x,y,c] of [[15,10,'O'],[14,11,'O'],[15,11,'O'],[15,12,'O']])E(x,y,c);}
+  else if(f==='strain'){ /* 食いしばり */
+    E(12,7,'O');E(13,8,'O');E(12,9,'O');E(13,9,'O');E(12,8,'w');
+    E(14,11,'O');E(15,11,'w');E(14,12,'O');E(15,12,'O');}
+}
+/* 中の細部 */
+function spHead(g,by){
+  const head=spE(16,8.5+by,6,5.5);
+  spPut(g,head,'k',true);
+  const hairIn=(x,y)=>head(x,y)&&((y-by<=5)||(y-by===6&&x!==17&&x!==18)||((y-by===7||y-by===8)&&(x<=11||x>=20)));
+  spPut(g,hairIn,'h',false);
+  spPut(g,spR(13,2+by,5,1),'h','out');
+  g[4+by][13]='H';g[4+by][14]='H';g[3+by][14]='H';g[5+by][12]='H';
+}
+function spStar(o,x,y,big){
+  if(!big){spSet(o,x,y,'y');return}
+  for(const [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]])spSet(o,x+dx,y+dy,'y');
+  spSet(o,x,y-2,'y');spSet(o,x,y+2,'y');spSet(o,x-2,y,'y');spSet(o,x+2,y,'y');
+}
+/* 1コマを作る。o: by(体の上下) legs shoes arms back front face post shadow sleeve */
+function spBuild(o){
+  const g=spBlank(), by=o.by||0;
+  if(o.back)o.back(g);
+  for(const [h,k,f] of o.legs)spPut(g,spU(spC(h,k,1),spC(k,f,1)),'k',true);
+  spPut(g,spR(12,14+by,8,8),'t',true);
+  spPut(g,o.shorts||spU(spR(12,22+by,8,2),spR(11,24+by,4,2),spR(17,24+by,4,2)),'n','out');
+  for(const [x,y] of o.shoes)spPut(g,spR(x,y,4,2),'w',true);
+  if(o.mid)o.mid(g);
+  for(const [sh,el,hd] of o.arms){
+    const h=a=>[a[0]+.5,a[1]+.5];   /* 腕は2マス幅: 点は2×2の左上マス */
+    const A=h(sh),B=h(el),Cc=h(hd);
+    spPut(g,spU(spC(A,B,.75),spC(B,Cc,.75)),'k',true);
+    const f=o.sleeve==null?.6:o.sleeve, se=[A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f];
+    spPut(g,spC(A,se,.75),'t',true);
+  }
+  spHead(g,by);
+  if(o.front)o.front(g);
+  const out=spShade(g);
+  spFace(out,o.face||'smile',by);
+  if(o.post)o.post(out);
+  /* 足元の影（ドット）。格子では '_' */
+  const sh=o.shadow||[[9,22,30],[11,20,31]];
+  for(const [a,b,y] of sh)for(let x=a;x<=b;x++)if(out[y][x]==='.')out[y][x]='_';
+  return out.map(r=>r.join(''));
+}
+const spMirArm=(a)=>a.map(p=>[30-p[0],p[1]]);
+const spUp=(pts,dy)=>pts.map(p=>[p[0],p[1]+dy]);
+const spLegsStand=(by=0)=>[[[13,24+by],[13,26],[12,27]],[[18,24+by],[18,26],[19,27]]];
+const spShoesStand=[[11,28],[17,28]];
+
+/* ---------------- 5つのポーズ ---------------- */
+const POSES={};
+/* 1 朝の伸び */
+(function(){
+  const armsDown=(by=0)=>{const L=[[9,16+by],[9,19+by],[9,22+by]];return[L,spMirArm(L)]};
+  const f0=spBuild({by:1,legs:spLegsStand(1),shoes:spShoesStand,arms:armsDown(1),face:'sleepy'});
+  const L1=[[9,16],[6,13],[6,10]];
+  const f1=spBuild({by:0,legs:spLegsStand(),shoes:spShoesStand,arms:[L1,spMirArm(L1)],face:'yawn'});
+  const L2=[[9,15],[6,10],[6,4]];
+  const f2=spBuild({by:-1,legs:[[[13,23],[13,26],[12,27]],[[18,23],[18,26],[19,27]]],shoes:spShoesStand,arms:[L2,spMirArm(L2)],face:'stretch',
+    shadow:[[9,22,30],[11,20,31]]});
+  POSES.stretch={name:'朝の伸び',frames:[f0,f1,f2],seq:[0,1,2,2,1],ms:420};
+})();
+/* 2 準備OK（ダンベルを持って弾む） */
+(function(){
+  const mk=(by,curl)=>{
+    const fy=12+by-curl;
+    const R=[[21,16+by],[25,18+by],[25,fy+1]];                 // 右手: ダンベル
+    const L=[[9,16+by],[6,19+by],[10,22+by]];                  // 左手: こしに
+    return spBuild({by,legs:spLegsStand(by),shoes:spShoesStand,arms:[L,R],face:'smile',
+      front:g=>{ /* ダンベル: 両はしの重り＋にぎりこぶし */
+        spPut(g,spR(23,fy-2,2,5),'g',true);spPut(g,spR(28,fy-2,2,5),'g',true);spPut(g,spR(25,fy,4,1),'q',false);
+        spPut(g,spR(25,fy-1,2,3),'k',true);},
+    });
+  };
+  POSES.ready={name:'準備OK',frames:[mk(0,0),mk(1,0),mk(0,1)],seq:[0,1,2,1],ms:300};
+})();
+/* 3 トレーニング中（スクワット） */
+(function(){
+  const sq=(d)=>{
+    const by=d, hx=13-(d>>1), kx=13-d*1.0, fx=12-(d>>1);
+    const legs=[[[hx,24+by],[Math.round(kx),26+Math.round(d/2)],[fx,27]],[[31-hx,24+by],[31-Math.round(kx),26+Math.round(d/2)],[31-fx,27]]];
+    const sxL=11-(d>>1);
+    const sh=d?spU(spR(11-(d>>2),22+by,10+(d>>1),2),spR(11-(d>>1),24+by,5+(d>>2),2),spR(16+(d>>2),24+by,5+(d>>2),2)):undefined;
+    const L=[[9,16+by],[8,18+by],[10,15+by]];
+    return spBuild({by,legs,shoes:[[sxL,28],[28-sxL,28]],shorts:sh,arms:[L,spMirArm(L)],face:d?'strain':'smile',
+      mid:g=>{ /* 肩にかついだバーベル: 長い棒＋両はしの重り（頭と手の後ろ側） */
+        spPut(g,spR(7,15+by,18,1),'g',true);
+        spPut(g,spR(3,13+by,2,8),'g',true);spPut(g,spR(27,13+by,2,8),'g',true);
+        spPut(g,spR(5,14+by,2,6),'g',true);spPut(g,spR(25,14+by,2,6),'g',true);}});
+  };
+  POSES.train={name:'トレーニング中',frames:[sq(0),sq(2),sq(4)],seq:[0,1,2,1],ms:380};
+})();
+/* 4 ガッツポーズ */
+(function(){
+  const flex=(by,st)=>{
+    const L=[[9,16+by],[5,16+by],[5,11+by]];
+    return spBuild({by,legs:spLegsStand(by),shoes:spShoesStand,arms:[L,spMirArm(L)],face:'grin',sleeve:.8,
+      post:o=>{spStar(o,28,4,st);spStar(o,3,3,!st)}});
+  };
+  const jump=()=>{
+    const by=-3, L=[[9,13],[6,9],[6,4]];
+    return spBuild({by,legs:[[[13,21],[13,23],[12,25]],[[18,21],[18,23],[19,25]]],shoes:[[11,26],[17,26]],arms:[L,spMirArm(L)],face:'happy',sleeve:.7,
+      shadow:[[11,20,30]],post:o=>{spStar(o,27,8,false);spStar(o,2,8,true)}});
+  };
+  POSES.cheer={name:'ガッツポーズ',frames:[flex(0,true),jump(),flex(1,false)],seq:[0,1,2,1],ms:260};
+})();
+/* 5 くつろぎ */
+(function(){
+  const mk=(by,steam)=>{
+    const L=[[9,19+by],[10,23+by],[13,23+by]];
+    const R=[[21,19+by],[25,22+by],[26,19+by]];
+    return spBuild({by:by,legs:[[[13,27],[13,28],[12,29]],[[18,27],[18,28],[19,29]]],shoes:[[11,29],[17,29]],
+      shorts:spU(spR(12,25+by,8,2),spR(11,27+by,4,2),spR(17,27+by,4,2)),
+      arms:[L,R],face:'sleepy',
+      shadow:[[4,27,30],[7,24,31]],
+      back:g=>{spPut(g,spE(16,18.5,7.5,6),'c',true);spPut(g,spE(16,25.5,13,4.5),'c',true)},
+      mid:g=>{ spPut(g,spR(25,15+by,4,4),'w',true);spPut(g,spR(29,16+by,1,2),'w',true); },
+      post:o=>{
+        const s=steam?[[26,13],[27,12],[26,11],[27,10]]:[[27,13],[26,12],[27,11],[26,10]];
+        for(const [x,y] of s)spSet(o,x,y+by,'g');
+        }
+    });
+  };
+  POSES.relax={name:'くつろぎ',frames:[mk(3,0),mk(3,1),mk(2,0),mk(2,1)],seq:[0,1,2,3],ms:520};
+})();
+
+/* ---------------- SVG への変換（同じ色の横並びは1つの rect にまとめる） ---------------- */
+function spRects(grid){
+  let s='';
+  grid.forEach((row,y)=>{let x=0;while(x<SP_W){const c=row[x];if(c==='.'){x++;continue}let e=x;while(e+1<SP_W&&row[e+1]===c)e++;
+    s+= c==='_' ? `<rect x="${x}" y="${y}" width="${e-x+1}" height="1" fill="#1E2A3A" fill-opacity=".2"/>` : `<rect x="${x}" y="${y}" width="${e-x+1}" height="1" fill="${SP_PAL[c]}"/>`;x=e+1}});
+  return s;
+}
+/* v8: キャラを LPC（64×64・CC0/OGA-BY 系の部品をティールに染めたもの）に差し替えた試作。しくみ（フレーム切替）は v7 のまま */
+const LPC_POSES={stretch:{n:3,seq:[0,1,2,2,1],ms:420,name:'朝の伸び'},ready:{n:2,seq:[0,1],ms:300,name:'準備OK'},
+  train:{n:2,seq:[0,1,1,0],ms:520,name:'トレーニング中'},cheer:{n:2,seq:[0,1],ms:320,name:'ガッツポーズ'},relax:{n:3,seq:[0,1,0,1,0,1,2,0],ms:700,name:'くつろぎ'},
+  idle:{n:2,seq:[0,1],ms:700,name:'待機'},welcome:{n:2,seq:[0,1],ms:420,name:'おかえり'},react:{n:2,seq:[0,1],ms:450,name:'仲間への反応'},
+  run:{n:8,seq:[0,1,2,3,4,5,6,7],ms:90,name:'ラン'},pb:{n:2,seq:[0,1],ms:380,name:'自己ベスト'}};
+function spriteSvg(key,scale,label){
+  const p=LPC_POSES[key], k={2:1,3:2,4:3,6:4}[scale]||3, px=64*k;
+  const fr=Array.from({length:p.n},(_,i)=>`<g data-f="${i}"${i?' display="none"':''}><image href="../assets/lpc-frames/${key}_${i}.png" width="64" height="64" style="image-rendering:pixelated"/></g>`).join('');
+  return `<svg class="spr" viewBox="0 0 64 64" width="${px}" height="${px}" shape-rendering="crispEdges" role="img" aria-label="ドット絵のキャラ（${label||p.name}）" data-seq="${p.seq.join(',')}" data-ms="${p.ms}">${fr}</svg>`;
+}
+const spReduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(!spReduce){
+  setInterval(()=>{
+    const now=performance.now();
+    document.querySelectorAll('svg.spr').forEach(s=>{
+      const seq=s.dataset.seq.split(',').map(Number), ms=+s.dataset.ms;
+      const f=seq[Math.floor((now+(s._o||(s._o=Math.random()*0)))/ms)%seq.length];
+      if(s._f!==f){s._f=f;s.querySelectorAll('g[data-f]').forEach(g=>g.setAttribute('display',+g.dataset.f===f?'inline':'none'))}
+    });
+  },40);
+}
+
+/* ---------- 人体（平らな塗り・線なし） ---------- */
+const LV = ['#E5E7EB','#8FD4D6','#17A2A6','#FFC21A'];
+const lvOf = s => s===0?0:(s<3?1:(s<4?2:3));
+function body(view){
+  const g = Object.fromEntries(PARTS.map(([k,s])=>[k,LV[lvOf(s)]]));
+  const sk='#F5CFA6', core='#EDEFF2', front = view==='f';
+  let s = `<svg width="118" height="236" viewBox="0 0 132 262" role="img" aria-label="${front?'前':'後ろ'}から見た体">`;
+  s += `<circle cx="66" cy="24" r="17" fill="${sk}"/><rect x="58" y="38" width="16" height="14" rx="6" fill="${sk}"/>`;
+  s += `<circle cx="32" cy="64" r="15" fill="${g['肩']}"/><circle cx="100" cy="64" r="15" fill="${g['肩']}"/>`;
+  if(front){
+    s += `<rect x="40" y="52" width="25" height="34" rx="12" fill="${g['胸']}"/><rect x="67" y="52" width="25" height="34" rx="12" fill="${g['胸']}"/>`;
+    s += `<rect x="47" y="90" width="38" height="44" rx="14" fill="${core}"/>`;
+  } else {
+    s += `<path d="M44 54h44q6 0 5 8l-5 42q-1 8-9 8H53q-8 0-9-8L39 62q-1-8 5-8z" fill="${g['背中']}"/>`;
+    s += `<rect x="46" y="116" width="40" height="22" rx="11" fill="${core}"/>`;
+  }
+  s += `<rect x="12" y="74" width="19" height="66" rx="9.5" fill="${g['腕']}"/><rect x="101" y="74" width="19" height="66" rx="9.5" fill="${g['腕']}"/>`;
+  s += `<circle cx="21" cy="150" r="9" fill="${sk}"/><circle cx="111" cy="150" r="9" fill="${sk}"/>`;
+  s += `<rect x="42" y="140" width="22" height="104" rx="11" fill="${g['脚']}"/><rect x="68" y="140" width="22" height="104" rx="11" fill="${g['脚']}"/>`;
+  s += `<rect x="38" y="244" width="28" height="12" rx="6" fill="${sk}"/><rect x="66" y="244" width="28" height="12" rx="6" fill="${sk}"/>`;
+  return s+'</svg>';
+}
+
+
+const POSE_OF = {morning:'stretch', noon:'ready', after:'cheer', rest:'relax'};
+
+/* ---------- 共通部品 ---------- */
+const $app = document.getElementById('app');
+const doneCount = () => S.done.filter(Boolean).length;
+const nextUndone = () => S.done.findIndex(d=>!d);
+const allDone = () => nextUndone()===-1;
+const curIdx = () => (S.sel>=0 && !S.done[S.sel]) ? S.sel : nextUndone();
+const nm = e => e.n.length>8 ? 'ルーマニアン<br>デッドリフト' : e.n;
+
+function band(){
+  const days = WEEK.map(([w,d,k])=>{
+    const sel = k==='today';
+    let kk = k; if(sel) kk = S.view==='rest'?'rest':(S.view==='after'?'rec':'today');
+    if(k==='') kk='next';
+    const m = kk==='rec' ? `<span class="dc rec" aria-label="記録した">${ic('check',14)}</span>`
+            : kk==='rest' ? `<span class="dc rest" aria-label="休んだ">${ic('moon',13)}</span>`
+            : kk==='today' ? `<span class="dc today" aria-label="今日"></span>`
+            : `<span class="dc next" aria-label="これから"></span>`;
+    return `<div class="day ${sel?'sel':''}"><span class="w">${w}</span><span class="d num">${d}</span><span class="m">${m}</span></div>`;
+  }).join('');
+  const seg = ['D','W','M'].map(x=>`<button data-mode="${x}" class="${S.mode===x?'on':''}" aria-label="${{D:'日',W:'週',M:'月'}[x]}表示"><span>${x}</span></button>`).join('');
+  return `<header class="band"><div class="band-top"><div class="mo num">10/</div><div class="seg">${seg}</div></div><div class="days" aria-label="今週の7日">${days}</div></header>`;
+}
+function tabs(on){
+  const t=[['today','bell','今日'],['friends','users','仲間'],['me','user','自分']];
+  return `<nav class="tabs">${t.map(([h,i,l])=>`<a href="#${h}" class="tab ${on===h?'on':''}">${ic(i,24)}<span>${l}</span></a>`).join('')}</nav>`;
+}
+function todSwitch(){
+  const t=[['morning','朝'],['noon','昼'],['after','後'],['rest','休']];
+  const nmOf={morning:'朝',noon:'昼',after:'記録後',rest:'休み'};
+  return `<div class="tod"><div class="cap">時間帯（プロトタイプ専用）</div><div class="row">${t.map(([k,l])=>`<button data-tod="${k}" class="${S.view===k?'on':''}" aria-pressed="${S.view===k}" aria-label="${nmOf[k]}にする">${l}</button>`).join('')}</div></div>`;
+}
+
+/* ---------- 今日 ---------- */
+function vToday(){
+  const ci = curIdx(), v = S.view;
+  let hero;
+  if(v==='rest'){
+    hero = `<section class="hero purple"><span class="tag ink">REST</span>
+      <div class="nm h">おやすみ</div>
+      <div class="prev" style="margin-top:8px;font-size:14px">休むのも 記録のひとつ</div>
+      <button class="btn white" data-rest style="--d:#C9BFFA;color:var(--pd)">ゆっくりする</button></section>`;
+  } else if(v==='after' || ci<0){
+    hero = `<section class="hero gold"><span class="tag ink">DONE</span>
+      <div class="nm h">ぜんぶ できた</div>
+      <div class="big"><span class="num">4</span><span class="x">/</span><span class="num">4</span><span class="u h">種目</span></div>
+      <div class="prev" style="opacity:.85">今日の脚の日は おつかれさま</div>
+      <button class="btn white" data-me style="--d:#D99A00">からだを見る</button></section>`;
+  } else {
+    const e=EX[ci];
+    hero = `<section class="hero"><span class="tag">NEXT</span>
+      <div class="nm h">${nm(e)}</div>
+      <div class="big"><span class="num">${e.kg}</span><span class="u h">kg</span><span class="x">×</span><span class="num">${e.reps}</span></div>
+      <div class="prev">前回 <b>${e.last}</b> ・ ${e.sets} セット</div>
+      <button class="btn white" data-start>はじめる</button></section>`;
+  }
+  const shown = (v==='noon'||v==='morning') && ci>=0 ? ci : -1;
+  const rows = EX.map((e,i)=>({e,i})).filter(o=>o.i!==shown).map(({e,i})=>{
+    const fin=S.done[i] || v==='after';
+    const inner = `<span class="nd num ${fin?'done':''}">${fin?ic('check',22):i+1}</span>
+      <span class="tx">${e.n}<small>${fin?'できた':'前回 '+e.last}</small></span>
+      <span class="pv num">${e.kg}<small>kg ×</small>${e.reps}</span>`;
+    return fin ? `<div class="rr fin">${inner}</div>` : `<button class="rr" data-pick="${i}" aria-label="${e.n}を次にする">${inner}</button>`;
+  }).join('');
+  const rest = `<button class="rr" data-rest><span class="nd rest">${ic('moon',20)}</span>
+      <span class="tx" style="color:var(--pd)">${v==='rest'?'おやすみ ずみ':'今日は 休む'}<small>休むのも 記録のひとつ</small></span></button>`;
+  const stage = `<div class="stage">${todSwitch()}<div class="hw"><div class="char">${spriteSvg(POSE_OF[v],4)}</div>${hero}</div></div>`;
+  return `<div class="scroll">${band()}${stage}<div class="sec">ほかの種目</div><div class="road">${rows}${rest}</div></div>`+tabs('today');
+}
+
+/* ---------- 記録 ---------- */
+function cmpHtml(i){
+  const e=EX[i], r=S.reps[i], mx=Math.max(e.reps,r,1)*1.15;
+  return `<div class="card cmp"><div class="hd"><span>前回のじぶん</span><span class="num">${e.kg}kg × ${e.reps}回</span></div>
+    <div class="rw"><span>前回</span><div class="tr"><i class="stripe-n" style="width:${e.reps/mx*100}%"></i></div></div>
+    <div class="rw"><span>今回</span><div class="tr"><i class="stripe-t" id="cmpnow" style="width:${r/mx*100}%"></i></div></div></div>`;
+}
+function vRecord(){
+  const i = curIdx()<0 ? 0 : curIdx(), e=EX[i], r=S.reps[i];
+  const pct = Math.round(doneCount()/EX.length*100);
+  return `<header class="rtop"><button class="xbtn" data-close aria-label="とじる">${ic('x',26)}</button>
+      <div class="bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i class="stripe-t" style="width:${Math.max(pct,6)}%"></i></div>
+      <div class="who64">${spriteSvg('train',2)}</div></header>
+    <main class="center">
+      <div class="eyebrow">${doneCount()+1} / ${EX.length} 種目め</div>
+      <div class="ename h">${nm(e)}</div>
+      <div class="bigrec"><span class="num" style="color:var(--ink)">${e.kg}</span><span class="u h">kg</span><span class="x">×</span><span class="num" id="reps" style="color:var(--t)">${r}</span><span class="u h">回</span></div>
+      <div class="step"><button class="rbtn" data-d="-1" aria-label="1回へらす">${ic('minus',26)}</button>
+        <div class="sets">${e.sets} セット</div>
+        <button class="rbtn" data-d="1" aria-label="1回ふやす">${ic('plus',26)}</button></div>
+      <div id="cmp" style="width:100%">${cmpHtml(i)}</div>
+    </main>
+    <div class="foot" style="padding-top:8px"><button class="btn" data-ok>できた</button></div>
+    <div class="sheet ${S.sheet?'show '+S.sheet.k:''}" id="sheet" role="status">${S.sheet?sheetBody():''}</div>`;
+}
+function sheetBody(){
+  const m=S.sheet;
+  return `<div class="who">${spriteSvg('cheer',3)}</div><div class="row"><div><div class="tt h">${m.t}</div><p>${m.s}</p></div></div>
+    <button class="btn" data-next>つぎへ</button>`;
+}
+
+/* ---------- おやすみ ---------- */
+function vRest(){
+  return `<main class="center" style="gap:12px">
+      <div class="restwrap">${spriteSvg('relax',6)}</div>
+      <div class="pt h">おやすみ</div>
+      <p class="sub" style="margin:0">休むのも 記録のひとつ。<br>今週の「休み」に ちゃんと数えたよ。</p>
+    </main>
+    <div class="foot"><button class="btn purple" data-back>もどる</button></div>`;
+}
+
+/* ---------- 仲間 ---------- */
+function dots(f){ return Array.from({length:7},(_,k)=>`<i class="${k<f.d?'d':(k<f.d+f.rest?'r':'')}"></i>`).join(''); }
+function vFriends(){
+  const total = FRIENDS.reduce((a,f)=>a+f.d,0);
+  const list = FRIENDS.map((f,i)=>{
+    const sent=S.stamped[i];
+    return `<div class="fl"><div class="av h" style="background:${f.c}">${f.n[0]}</div>
+      <div class="gr"><div class="nm2 h">${f.n}</div><div class="ds">今週 ${f.d}日${f.rest?` ・ 休み ${f.rest}`:''}</div><div class="dots">${dots(f)}</div></div>
+      <button class="btn sm ${sent?'gold':'coral'}" data-stamp="${i}" aria-pressed="${!!sent}">${ic(sent?'check':'star',18)}${sent?'おくった':'スタンプ'}</button></div>`;
+  }).join('');
+  return `<h1 class="title h">なかま</h1>
+    <div class="scroll"><section class="hero coral sm" style="margin-top:12px"><span class="tag">TEAM</span>
+      <div class="big2"><span class="num">${total}</span><span class="u h">日</span></div>
+      <div class="meta">朝トレ部 ・ 4人で 今週ここまで</div></section>
+      <div class="sec">みんなの ようす</div><div class="list">${list}</div></div>`+tabs('friends');
+}
+
+/* ---------- 自分 ---------- */
+function vMe(){
+  const tot = PARTS.reduce((a,[,s])=>a+s,0);
+  const bars = PARTS.map(([k,s])=>`<div class="br"><div class="lb h">${k}</div>
+    <div class="tr"><i class="${s===0?'':(lvOf(s)===3?'stripe-y':'stripe-t')}" style="width:${s/6*100}%"></i></div>
+    <div class="ct"><span class="num">${s}</span> セット</div></div>`).join('');
+  return `<h1 class="title h">からだ</h1>
+    <div class="scroll"><section class="hero sm" style="margin-top:12px"><span class="tag">WEEK</span>
+      <div class="big2"><span class="num">${tot}</span><span class="u h">セット</span></div>
+      <div class="meta">今週 きたえたところ</div>
+      <div class="panel"><figure style="margin:0">${body('f')}前</figure><figure style="margin:0">${body('b')}後ろ</figure></div>
+      <div class="legend"><span><i style="background:${LV[0]}"></i>まだ</span><span><i style="background:${LV[1]}"></i>1〜2</span><span><i style="background:${LV[2]}"></i>3</span><span><i style="background:${LV[3]}"></i>4〜</span></div></section>
+      <div class="sec">ぶいごとの セット数</div><div class="list">${bars}</div></div>`+tabs('me');
+}
+
+/* ---------- 描画 ---------- */
+function route(){ return (location.hash||'#today').slice(1); }
+function render(){
+  const r = route();
+  if(r==='rest') S.view = 'rest';
+  const v = {today:vToday, record:vRecord, rest:vRest, friends:vFriends, me:vMe}[r] || vToday;
+  $app.innerHTML = v();
+}
+window.addEventListener('hashchange',()=>{ S.sheet=null; render(); });
+
+$app.addEventListener('click',(ev)=>{
+  const t = ev.target.closest('[data-start],[data-pick],[data-rest],[data-me],[data-close],[data-d],[data-ok],[data-next],[data-back],[data-stamp],[data-tod],[data-mode]');
+  if(!t) return;
+  const d = t.dataset;
+  if('start' in d){ location.hash='#record'; }
+  else if('tod' in d){ S.view=d.tod; render(); }
+  else if('mode' in d){ S.mode=d.mode; render(); }
+  else if('pick' in d){ S.sel=+d.pick; if(S.view==='after'||S.view==='rest') S.view='noon'; render(); }
+  else if('me' in d){ location.hash='#me'; }
+  else if('rest' in d){ S.view='rest'; location.hash='#rest'; }
+  else if('close' in d || 'back' in d){ S.sheet=null; location.hash='#today'; }
+  else if('d' in d){
+    const i=curIdx()<0?0:curIdx(); S.reps[i]=Math.max(1,S.reps[i]+(+d.d));
+    document.getElementById('reps').textContent=S.reps[i];
+    document.getElementById('cmp').innerHTML=cmpHtml(i);
+  }
+  else if('ok' in d){
+    const i=curIdx(); if(i<0) return;
+    const diff=S.reps[i]-EX[i].reps, e=EX[i];
+    S.sheet = diff>0 ? {k:'gold', t:`前回超え <span class="num">+${diff}</span>回`, s:`${e.n} ${e.kg}kg × ${S.reps[i]}回 × ${e.sets}セット`}
+            : diff===0 ? {k:'plain', t:'前回と おなじ！', s:`${e.n} ${e.kg}kg × ${S.reps[i]}回。ちゃんと できたよ`}
+            : {k:'plain', t:'ちゃんと 記録したよ', s:`${e.n} ${e.kg}kg × ${S.reps[i]}回。むりしない日もOK`};
+    const sh=document.getElementById('sheet'); sh.className='sheet '+S.sheet.k; sh.innerHTML=sheetBody();
+    requestAnimationFrame(()=>sh.classList.add('show'));
+  }
+  else if('next' in d){
+    const i=curIdx(); S.done[i]=true; S.sheet=null; S.sel=nextUndone();
+    S.view = allDone() ? 'after' : (S.view==='morning' ? 'morning' : 'noon');
+    location.hash==='#today' ? render() : (location.hash='#today');
+  }
+  else if('stamp' in d){ S.stamped[d.stamp]=true; render(); }
+});
+render();
+</script>
+</body>
+</html>
