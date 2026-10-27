@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitLog v8 キャラのポーズ一覧</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,800&family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--t:#17A2A6;--td:#0E7F83;--ink:#1E2A3A;--sub:#6B7280;--n:#E5E7EB;--face:#F4F6F8;--pl:#EAE6FF}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:'M PLUS Rounded 1c',sans-serif;font-weight:700}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:26px;margin:0 0 4px;font-weight:800}
+.lead{font-size:13px;color:var(--sub);margin:0 0 20px;line-height:1.7}
+.num{font-family:'Barlow Condensed','M PLUS Rounded 1c',sans-serif;font-weight:800;font-style:italic}
+.pose{display:grid;grid-template-columns:230px 1fr;gap:20px;padding:18px 0;border-top:2px solid var(--n)}
+.pose .nm{font-size:20px;font-weight:800;margin:0 0 4px}
+.pose .when{font-size:12px;color:var(--sub);line-height:1.6;margin:0}
+.pose .mv{font-size:12px;color:var(--td);margin:6px 0 0;line-height:1.6}
+.row{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.frames{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap}
+.frames figure{margin:0;text-align:center;font-size:11px;color:var(--sub)}
+.frames img{display:block;width:96px;height:96px;image-rendering:pixelated;background:repeating-conic-gradient(#fff 0 25%,var(--face) 0 50%) 0 0/16px 16px}
+.spr{display:block;image-rendering:pixelated}
+.stand{position:relative;flex:none;width:200px;height:34px;background:var(--t);border-radius:12px;box-shadow:0 4px 0 var(--td);margin-top:150px}
+.stand .spr{position:absolute;right:4px;bottom:calc(100% - 8px)}
+.floor{position:relative;flex:none;width:200px;height:120px;border-radius:50%;background:var(--pl);margin-top:100px}
+.floor .spr{position:absolute;left:4px;bottom:20px}
+.small{display:flex;align-items:flex-end;gap:6px;font-size:11px;color:var(--sub)}
+.small .spr{width:64px;height:64px}
+@media (max-width:760px){.pose{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>キャラのポーズ一覧（v8・全10ポーズ）</h1>
+<p class="lead">素材は LPC（Liberated Pixel Cup）の部品（帰属表示だけが条件の OGA-BY・CC0 系を選んで使用。作者は <code>assets/lpc/CREDITS.md</code>）を、ティールの服・紺のショーツ・白い靴に染めたもの。64×64マス。星・ハート・太陽・後光・メダル・ダンベル・マグ・クッションは、この試作で描き足した。上が動いている状態（実寸）、下が各コマ。<span id="rm"></span></p>
+<div id="list"></div>
+</div>
+<script>
+const B = '../assets/lpc-frames/';
+/* key: 画像名の先頭／n: コマ数／seq: 再生順／ms: 1コマの時間 */
+const POSES = [
+  {key:'idle',    name:'待機',           when:'仲間・自分タブ、読み込み中など、特に出番のない画面', mv:'立ったまま、体がゆっくり1px上下（呼吸）', n:2, seq:[0,1], ms:700, on:'stand'},
+  {key:'ready',   name:'準備OK',         when:'昼以降でまだ記録していない（ホームの通常）',         mv:'片手のダンベルを持ち、体が小さく弾む', n:2, seq:[0,1], ms:300, on:'stand'},
+  {key:'train',   name:'トレーニング中', when:'記録画面（#record）のヘッダーの横に小さく',         mv:'両手にダンベル。立つ⇄しゃがむ（スクワットの上下）', n:2, seq:[0,1,1,0], ms:520, on:'stand'},
+  {key:'cheer',   name:'ガッツポーズ',   when:'「できた」の結果シート・今日の記録が終わった後のホーム', mv:'両腕を広げる⇄拳を上げる。金の星が交互に光る', n:2, seq:[0,1], ms:320, on:'stand'},
+  {key:'stretch', name:'朝の伸び',       when:'朝（〜10時）でまだ記録していない',                   mv:'腕を下ろす→胸の前→大きく広げる（3コマ）', n:3, seq:[0,1,2,2,1], ms:420, on:'stand'},
+  {key:'relax',   name:'くつろぎ',       when:'休みの日（#rest とホームの休み状態）',               mv:'クッションに座ってマグを持つ。湯気が揺れ、ときどきまばたき', n:3, seq:[0,1,0,1,0,1,2,0], ms:700, on:'floor'},
+  {key:'welcome', name:'おかえり',       when:'3日以上あいて開いたとき',                             mv:'片手を上げて手を振る。朝の太陽が光る', n:2, seq:[0,1], ms:420, on:'stand'},
+  {key:'react',   name:'仲間への反応',   when:'仲間が足跡・スタンプ・コメントをくれたとき（仲間タブ）', mv:'ハートが頭の上でふわっと上がる', n:2, seq:[0,1], ms:450, on:'stand'},
+  {key:'run',     name:'ラン',           when:'ランの記録の結果（距離・時間・ペースの画面）',       mv:'走りの8コマ（小さな足音のリズム）', n:8, seq:[0,1,2,3,4,5,6,7], ms:90, on:'stand'},
+  {key:'pb',      name:'自己ベスト',     when:'重さ・回数・距離のどれかが自己ベストを更新したとき', mv:'後光が回り、胸に金メダル。星がまたたく', n:2, seq:[0,1], ms:380, on:'stand'}
+];
+const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(reduce) document.getElementById('rm').textContent = '（このブラウザは「視差効果を減らす」設定なので、動きは1コマ目で止めています）';
+const list = document.getElementById('list');
+POSES.forEach(p=>{
+  const frames = Array.from({length:p.n},(_,i)=>`<figure><img src="${B}${p.key}_${i}.png" alt="${p.name} ${i+1}コマ目">${i+1}コマ目</figure>`).join('');
+  const live = `<img class="spr" data-key="${p.key}" data-seq="${p.seq.join(',')}" data-ms="${p.ms}" data-n="${p.n}" src="${B}${p.key}_0.png" width="192" height="192" alt="${p.name}（動いている状態）">`;
+  const stage = p.on==='floor' ? `<div class="floor">${live}</div>` : `<div class="stand">${live}</div>`;
+  list.insertAdjacentHTML('beforeend', `<section class="pose">
+    <div><h2 class="nm">${p.name}</h2><p class="when">いつ出るか: ${p.when}</p><p class="mv">${p.mv}<br>コマ数: <span class="num">${p.n}</span>（順番 ${p.seq.map(x=>x+1).join('→')}・${p.ms}ms/コマ）</p></div>
+    <div class="row">${stage}<div><div class="frames">${frames}</div><div class="small" style="margin-top:10px">縮小版（実際の見え方）<img class="spr" data-key="${p.key}" data-seq="${p.seq.join(',')}" data-ms="${p.ms}" data-n="${p.n}" src="${B}${p.key}_0.png" alt="${p.name}（64px）"></div></div></div>
+  </section>`);
+});
+if(!reduce){
+  setInterval(()=>{
+    const now = performance.now();
+    document.querySelectorAll('img.spr').forEach(im=>{
+      const seq = im.dataset.seq.split(',').map(Number), ms = +im.dataset.ms;
+      const f = seq[Math.floor(now/ms) % seq.length];
+      if(im._f!==f){ im._f=f; im.src = B + im.dataset.key + '_' + f + '.png'; }
+    });
+  }, 40);
+}
+</script>
+</body>
+</html>

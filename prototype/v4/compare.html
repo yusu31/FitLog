@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FitLog v4 パターン比較</title>
+  <style>
+    body { margin: 0; font-family: "Noto Sans JP", system-ui, sans-serif; background: #E9EBEE; color: #333; }
+    header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 20px; background: #E9EBEEee; border-bottom: 1px solid #D5D8DD; }
+    h1 { font-size: 16px; margin: 0 12px 0 0; }
+    header button { font: inherit; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 6px; border: 1px solid #C5C9CF; background: #fff; cursor: pointer; }
+    header button[aria-pressed="true"] { background: #333; color: #fff; border-color: #333; }
+    table { border-collapse: separate; border-spacing: 16px 12px; margin: 0 4px; }
+    th { font-size: 13px; text-align: left; vertical-align: top; white-space: nowrap; }
+    th small { display: block; font-weight: 400; color: #777; margin-top: 4px; white-space: normal; width: 120px; }
+    .cell { width: calc(390px * var(--s)); height: calc(844px * var(--s)); overflow: hidden; border-radius: 10px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .15); position: relative; }
+    .cell iframe { width: 390px; height: 844px; border: 0; transform: scale(var(--s)); transform-origin: 0 0; }
+    .cell a { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>v4 パターン比較（5パターン × 5画面）</h1>
+    <span>縮小:</span>
+    <button type="button" data-s="0.45" aria-pressed="true">小</button>
+    <button type="button" data-s="0.6" aria-pressed="false">中</button>
+    <button type="button" data-s="1" aria-pressed="false">原寸</button>
+    <span style="font-size:12px;color:#666">画面を押すと、そのパターンを別タブで触れます</span>
+  </header>
+  <table id="grid"></table>
+  <script>
+    // 行＝パターン、列＝画面。各セルは index.html 等をハッシュ付きで縮小表示する
+    const plans = [
+      ["index.html", "A ティール型", "日付の帯＋種目の2列タイル"],
+      ["b-umawalk.html", "B UMAWALK型", "桃の地に白カード。今日の進み具合"],
+      ["c-zenkai.html", "C 前回の重さ型", "前回の記録・±・休憩タイマー"],
+      ["d-feed.html", "D フィード型", "仲間の記録の流れがホーム"],
+      ["e-gogym.html", "E GoGym型", "今週の数字とヒートマップ"],
+    ];
+    const screens = [["today", "今日"], ["record", "記録中"], ["rest", "休みの日"], ["friends", "仲間"], ["me", "自分"]];
+    const grid = document.getElementById("grid");
+    grid.innerHTML = `<tr><th></th>${screens.map(([, l]) => `<th>${l}</th>`).join("")}</tr>` +
+      plans.map(([f, name, note]) => `<tr><th>${name}<small>${note}</small></th>${screens.map(([h]) =>
+        `<td><div class="cell"><iframe loading="lazy" src="${f}#${h}" title="${name} ${h}" tabindex="-1"></iframe><a href="${f}#${h}" target="_blank" rel="noopener" aria-label="${name}の${h}を開く"></a></div></td>`).join("")}</tr>`).join("");
+    const setScale = (s) => document.documentElement.style.setProperty("--s", s);
+    setScale(0.45);
+    document.querySelector("header").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-s]"); if (!b) return;
+      document.querySelectorAll("[data-s]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      setScale(b.dataset.s);
+    });
+  </script>
+</body>
+</html>
