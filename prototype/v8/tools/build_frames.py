@@ -13,7 +13,7 @@
 import math
 import os
 from pathlib import Path
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 HERE = Path(__file__).resolve().parent
 SRC = HERE.parent.parent / "assets" / "lpc"
@@ -25,6 +25,34 @@ GRAY1 = (112, 120, 132); GRAY2 = (168, 176, 188)
 LAV = (150, 138, 230); LAVL = (190, 180, 246); LAVD = (120, 106, 205)
 MUG = (247, 236, 216); STEAM = (232, 236, 242)
 FRONT_ROW = 2  # 4方向のうち正面向きの行
+SIDE_ROW = 3   # 右向きの行（ランに使う）
+SKIN_HI = (250, 236, 231); SKIN_HI_WARM = (252, 224, 200)  # LPC の肌の最も明るい色（白っぽい）→ 暖かい肌色
+
+
+def warm_skin(im):
+    """肌のハイライト（ほぼ白）を暖かい肌色にして、拳や頬が白く浮かないようにする。"""
+    im = im.convert("RGBA"); px = im.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            if px[x, y][:3] == SKIN_HI:
+                px[x, y] = SKIN_HI_WARM + (px[x, y][3],)
+    return im
+
+
+def outline(im, color=NAVY):
+    """シルエットの外側に、紺の1マスの輪郭を足す（v7 の「紺の輪郭」に寄せる）。"""
+    src = im.load(); out = Image.new("RGBA", im.size); o = out.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            if src[x, y][3]:
+                continue
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < im.width and 0 <= ny < im.height and src[nx, ny][3]:
+                    o[x, y] = color + (255,)
+                    break
+    out.alpha_composite(im)
+    return out
 
 
 def tint(im, rgb, lo=0.35):
@@ -49,25 +77,40 @@ def build(sex, hair, anim):
     out = Image.new("RGBA", base.size)
     for part, color in layers:
         im = Image.open(SRC / part / f"{anim}.png").convert("RGBA")
-        out.alpha_composite(tint(im, color) if color else im)
+        out.alpha_composite(tint(im, color) if color else warm_skin(im))
     return out
 
 
-def cell(sheet, k):
-    return sheet.crop((k * 64, FRONT_ROW * 64, k * 64 + 64, FRONT_ROW * 64 + 64))
+def cell(sheet, k, row=FRONT_ROW):
+    return sheet.crop((k * 64, row * 64, k * 64 + 64, row * 64 + 64))
 
 
 SHEETS = {a: build("male", "buzzcut", a) for a in ("idle", "emote", "sit", "jump", "run")}
-GROUND = cell(SHEETS["idle"], 0).getbbox()[3] - 1  # 足元の高さ（影の位置）
+IDLE_BOTTOM = cell(SHEETS["idle"], 0).getbbox()[3]
+GROUND = IDLE_BOTTOM - 1  # 足元の高さ（影の位置）
 
 
-def pose(anim, k, back=None, front=None):
-    """1コマ: （後光など）→ 足元の影 → キャラ → （小物）。"""
+def sprite(anim, k, row=FRONT_ROW, ground=False, dy=0, flip=False):
+    """キャラ1コマ。ground=足が浮いていたら足元に下ろす／dy=縦にずらす／flip=左右反転。"""
+    im = cell(SHEETS[anim], k, row)
+    if flip:
+        im = ImageOps.mirror(im)
+    if ground:
+        dy += IDLE_BOTTOM - im.getbbox()[3]
+    if dy:
+        moved = Image.new("RGBA", im.size)
+        moved.paste(im, (0, dy), im)
+        im = moved
+    return im
+
+
+def pose(anim, k, back=None, front=None, **kw):
+    """1コマ: （後光など）→ 足元の影 → キャラ（紺の輪郭つき）→ （小物）。"""
     out = Image.new("RGBA", (64, 64))
     if back:
         out.alpha_composite(back)
     ImageDraw.Draw(out).ellipse((32 - 13, GROUND - 2, 32 + 13, GROUND + 3), fill=NAVY + (51,))
-    out.alpha_composite(cell(SHEETS[anim], k))
+    out.alpha_composite(outline(sprite(anim, k, **kw)))
     if front:
         front(ImageDraw.Draw(out))
     return out
@@ -129,7 +172,7 @@ def relax(steam, eye):
             p[x, 28] = skin
         for x in (26, 27, 28, 29, 34, 35, 36, 37):
             p[x, 28] = (60, 42, 32, 255)
-    out.alpha_composite(g); d = ImageDraw.Draw(out)
+    out.alpha_composite(outline(g)); d = ImageDraw.Draw(out)
     d.rectangle((31, 41, 35, 45), fill=MUG); d.rectangle((31, 41, 35, 41), fill=NAVY); d.rectangle((31, 45, 35, 45), fill=NAVY)
     d.point([(30, 42), (30, 43), (30, 44), (36, 42), (36, 44), (37, 43)], fill=NAVY)       # 縁とハンドル
     for q in ([(33, 40), (34, 39), (33, 38), (34, 37)] if steam == 0 else [(34, 40), (33, 39), (34, 38), (33, 37)]):
@@ -155,12 +198,13 @@ POSES = {
     "ready":   [pose("idle", 0, front=lambda d: dumbbell(d, 43, 45)), pose("idle", 1, front=lambda d: dumbbell(d, 43, 44))],
     "train":   [pose("idle", 0, front=lambda d: [dumbbell(d, 20, 45), dumbbell(d, 43, 45)]),
                 pose("jump", 1, front=lambda d: [dumbbell(d, 20, 47), dumbbell(d, 43, 47)])],
-    "cheer":   [pose("emote", 2, front=with_stars(True)), pose("jump", 2, front=with_stars(False))],
+    "cheer":   [pose("emote", 2, front=with_stars(True)), pose("jump", 2, ground=True, front=with_stars(False))],
     "stretch": [pose("emote", k) for k in (0, 1, 2)],
     "relax":   [relax(0, 1), relax(1, 1), relax(0, 2)],
-    "welcome": [pose("jump", 3, front=lambda d: sun(d, 52, 9)), pose("idle", 1, front=lambda d: sun(d, 52, 9))],
-    "react":   [pose("emote", 1, front=lambda d: heart(d, 40, 6)), pose("emote", 0, front=lambda d: heart(d, 40, 3))],
-    "run":     [pose("run", k) for k in range(8)],
+    "welcome": [pose("emote", 2, front=lambda d: sun(d, 53, 7)), pose("idle", 1, front=lambda d: sun(d, 53, 7))],
+    "react":   [pose("jump", 2, ground=True, flip=True, front=lambda d: heart(d, 40, 6)),
+                pose("jump", 2, ground=True, flip=True, dy=-1, front=lambda d: heart(d, 40, 3))],
+    "run":     [pose("run", k, row=SIDE_ROW) for k in range(8)],
     "pb":      [pb(0, True), pb(18, False)],
 }
 
