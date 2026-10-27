@@ -28,7 +28,7 @@ flowchart LR
     L -.->|URL を発行| B
 ```
 
-- 画面と API は**同じサイト**（CloudFront の下の `/api/*`）に置く。Cookie が同じサイトのものとして送られ、CORS の設定が要らない
+- 画面と API は**同じサイト**（CloudFront の下の `/api/*`）に置く。Cookie が同じサイトのものとして送られ、API には CORS の設定が要らない（動画・GPX を置く S3 側は、ブラウザから直接送るので CORS が要る。[infrastructure.md](./infrastructure.md) を参照）
 - 動画と GPX は、ブラウザが S3 へ**直接**置く（API は署名付き URL を発行するだけ）。変換サーバーは置かない
 - 地図のファイル（PMTiles）は S3 + CloudFront から配り、ブラウザが直接読む（Lambda を通さない）
 
