@@ -15,10 +15,10 @@
 | カテゴリ | 使用技術 | バージョン | 選定理由 |
 |----------|----------|-----------|---------|
 | フレームワーク | Next.js（静的書き出し `output: 'export'`） | 16.x | React の部品資産（shadcn/ui・Motion 等）がそのまま使える。画面は S3 + CloudFront から配るだけにして、サーバーを持たない。詳細ページは動的ルートを使わず `?id=` で表す（静的書き出しでは動的ルートに制約があるため） |
-| 言語 | TypeScript | 未決 | 画面と API の型をそろえるため |
+| 言語 | TypeScript | 6.0.x | 画面と API の型をそろえるため。最新の 7.0 は使わない。7.0 はプログラムから使う API を持たず（7.1 で入る予定）、型の生成部品や lint などの道具が対応待ちのため（[下の節](#typescript-の版と型の生成)）。7.1 が出たら移行を検討する |
 | UI | shadcn/ui + Tailwind CSS | 未決 | 部品をコピーして持つ方式で、見た目を細かく調整できる |
 | データ取得・状態 | TanStack Query（`@tanstack/react-query`） | 5.105.x | 楽観的更新・再試行・キャッシュを1つで持てる。F-30 オフライン記録の中心（[下の節](#オフライン記録f-30)） |
-| 型の共有 | `@nestjs/swagger` が出す OpenAPI から画面用の型を生成 | 未決（生成部品は未決） | API の形を NestJS 側の1か所で決め、画面は生成した型を使う。生成部品（型だけの軽いもの／TanStack Query のフックまで作るもの）は未決 |
+| 型の共有 | `@nestjs/swagger` が出す OpenAPI から、orval で画面用の型と TanStack Query の部品を生成 | orval 8.x | API の形を NestJS 側の1か所で決め、画面は生成した型を使う。orval は TanStack Query のフックに加えて mutationKey とフックの外で使える送信処理も作るので、F-30 の `setMutationDefaults` にそのまま渡せる（[下の節](#typescript-の版と型の生成)） |
 | 認証（画面側） | `better-auth/react` | 未決 | API 側の better-auth と対になる |
 | 地図 | MapLibre GL JS + PMTiles（`pmtiles`） | 未決 | 地図の画像を自分の S3 + CloudFront から配り、外部の地図サービスに頼らない |
 | GPX の読み取り | `@tmcw/togeojson` | 未決 | 依存が無く、地図にそのまま渡せる GeoJSON で出る。壊れた XML・線0本・サイズ上限の検査は自前 |
@@ -100,6 +100,33 @@
 | 自作（localStorage ＋ `online` イベント） | 再送・順番・画面の巻き戻しを全部自作することになり、不具合とテストが重い |
 | TanStack DB | 0.x 系で API が変わりうる。提出の期限に対して危険が大きい |
 | Service Worker を最初から置かない | 電波の無い場所でブラウザを開き直すと何も表示されない。スパイクが失敗したときの逃げ道としてだけ残す |
+
+---
+
+## TypeScript の版と型の生成
+
+TypeScript の最新は 7.0（Go で書き直された新しいコンパイラー）。ただし 7.0 は、ほかの道具がプログラムから呼び出すための API を持っていない（7.1 で新しい API が入る予定）。型を生成する部品の多くはこの API を使うため、版によって動く・動かないが分かれる。
+
+**手元での確認結果（2026-10）**: 3つの部品で、同じ OpenAPI から生成し、生成物を型チェックした。
+
+| 部品 | TypeScript 7.0.2 で生成 | TypeScript 6.0.3 で生成 | 生成物の型チェック（6・7とも） |
+|------|------|------|------|
+| openapi-typescript 7.13.0 | ✕（`ts.factory` が無く落ちる） | ○ | エラー0件 |
+| @hey-api/openapi-ts 0.99.0 | ✕（`ts.SyntaxKind` が無く落ちる） | ○ | エラー0件 |
+| **orval 8.45.0（採用）** | ○ | ○ | エラー0件 |
+
+**orval の設定（予定）**: `client: 'react-query'`・`httpClient: 'fetch'`。送信処理ごとに `get{操作名}MutationKey()` と `get{操作名}MutationOptions()` が生成されるので、F-30 の再送の登録に使う。
+
+**注意**: スキーマ名（DTO の名前）に `Record` を使わない。TypeScript に元からある `Record<K, V>` 型とぶつかり、生成物が型エラーになる（試しの OpenAPI で実際に起きた。`TrainingRecord` に変えたら0件）。
+
+### 採らなかった案
+
+| 案 | 理由 |
+|----|------|
+| TypeScript 7.0 | 速い（公式で約10倍）が、プログラムから使う API が無く、型の生成部品・lint などが対応待ち |
+| TypeScript 7.0 と 6.0 の並べ入れ（`@typescript/typescript6` を npm の別名で入れる） | 公式に用意された方法だが、構成が複雑になり、設定の誤りで道具が落ちる原因になる |
+| openapi-typescript ＋ openapi-fetch ＋ openapi-react-query | 最も軽く利用者も多いが、TypeScript 5 までしか対応を宣言しておらず、6.0 でも入れるときに衝突する。7.0 では落ちる |
+| @hey-api/openapi-ts | TypeScript 6.0 なら動くが、0.x 系で API が変わりうる。7.0 では落ちる |
 
 ---
 

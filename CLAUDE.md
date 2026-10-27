@@ -28,7 +28,7 @@
 | データベース | PostgreSQL（Neon Free） |
 | 認証 | better-auth（Drizzleアダプター）+ Cookieセッション。`/api/*` を CloudFront の下に置き、画面と同じサイトにする |
 | データ取得・オフライン記録 | TanStack Query（楽観的更新・送信待ちを IndexedDB に保存して再送）＋ Serwist（画面のファイルだけ端末に保存。方式はスパイクで決める）。詳細は `docs/tech-stack.md` |
-| 画面とAPIの型の共有 | `@nestjs/swagger` で OpenAPI を出力し、画面用の型を生成する（認証は `better-auth/react` を別に使う） |
+| 画面とAPIの型の共有 | `@nestjs/swagger` で OpenAPI を出力し、orval 8.x で画面用の型と TanStack Query の部品を生成する（認証は `better-auth/react` を別に使う）。TypeScript は 6.0 系（7.0 は道具が対応待ち） |
 | 配信 | S3 + CloudFront（画面）／Lambda（API） |
 | 地図 | MapLibre GL JS + PMTiles。Protomaps の地図から日本全域を切り出したファイルを S3 + CloudFront で配信し、`pmtiles` で直接読む（Lambda不要）。開発中は OpenFreeMap。地図スタイルのURLは1か所で切り替える |
 | GPXの読み取り | @tmcw/togeojson（GeoJSONに変換）。壊れたXML・線0本・サイズ上限の検査は自前 |
