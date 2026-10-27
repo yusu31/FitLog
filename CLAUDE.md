@@ -27,6 +27,7 @@
 | ORM | Drizzle 0.45系 |
 | データベース | PostgreSQL（Neon Free） |
 | 認証 | better-auth（Drizzleアダプター）+ Cookieセッション。`/api/*` を CloudFront の下に置き、画面と同じサイトにする |
+| データ取得・オフライン記録 | TanStack Query（楽観的更新・送信待ちを IndexedDB に保存して再送）＋ Serwist（画面のファイルだけ端末に保存。方式はスパイクで決める）。詳細は `docs/tech-stack.md` |
 | 画面とAPIの型の共有 | `@nestjs/swagger` で OpenAPI を出力し、画面用の型を生成する（認証は `better-auth/react` を別に使う） |
 | 配信 | S3 + CloudFront（画面）／Lambda（API） |
 | 地図 | MapLibre GL JS + PMTiles。Protomaps の地図から日本全域を切り出したファイルを S3 + CloudFront で配信し、`pmtiles` で直接読む（Lambda不要）。開発中は OpenFreeMap。地図スタイルのURLは1か所で切り替える |
