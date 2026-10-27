@@ -83,19 +83,38 @@ function tinted(im, key, color){
   }
   g.putImageData(d,0,0); return (tintCache[k]=c);
 }
+/* 肌のハイライト（ほぼ白 250,236,231）を暖かい肌色（252,224,200）にして、拳や頬が白く浮かないようにする */
+function warmed(im, key){
+  const k = key+'|warm'; if(tintCache[k]) return tintCache[k];
+  const c = document.createElement('canvas'); c.width=im.width; c.height=im.height;
+  const g = c.getContext('2d'); g.drawImage(im,0,0);
+  const d = g.getImageData(0,0,c.width,c.height), px = d.data;
+  for(let i=0;i<px.length;i+=4){
+    if(px[i+3] && px[i]===250 && px[i+1]===236 && px[i+2]===231){ px[i]=252; px[i+1]=224; px[i+2]=200; }
+  }
+  g.putImageData(d,0,0); return (tintCache[k]=c);
+}
 async function layers(s, anim){
   const b = BODIES[s.sex], hairPath = `hair/${s.hair}/adult`;
   const parts = [[b.body,null],[b.head,null],[b.feet,'#EBEBEB'],[b.legs,s.pants],[b.torso,s.shirt],[hairPath,s.hairColor]];
-  return Promise.all(parts.map(async ([p,col])=>{ const im = await load(`${A}${p}/${anim}.png`); return col ? tinted(im,p+'/'+anim,col) : im; }));
+  return Promise.all(parts.map(async ([p,col])=>{ const im = await load(`${A}${p}/${anim}.png`); return col ? tinted(im,p+'/'+anim,col) : warmed(im,p+'/'+anim); }));
 }
 async function draw(cv, s, anim, frame, crop){
   const L = await layers(s, anim), g = cv.getContext('2d'); g.imageSmoothingEnabled=false;
   g.clearRect(0,0,cv.width,cv.height);
   if(!crop){ g.fillStyle='rgba(30,42,58,.2)'; g.beginPath(); g.ellipse(32,60,13,2.6,0,0,7); g.fill(); }   // 足元の影
+  /* 部品を元の大きさ（64px の格子）で1枚に重ねてから、紺の1マスの輪郭を足し、表示の大きさに拡大する */
+  const w = crop ? crop.w : 64, h = crop ? crop.h : 64;
+  const t = document.createElement('canvas'); t.width = w; t.height = h; const tg = t.getContext('2d');
   for(const im of L){
-    if(crop) g.drawImage(im, frame*64+crop.x, ROW*64+crop.y, crop.w, crop.h, 0, 0, cv.width, cv.height);
-    else g.drawImage(im, frame*64, ROW*64, 64, 64, 0, 0, 64, 64);
+    if(crop) tg.drawImage(im, frame*64+crop.x, ROW*64+crop.y, crop.w, crop.h, 0, 0, w, h);
+    else tg.drawImage(im, frame*64, ROW*64, 64, 64, 0, 0, 64, 64);
   }
+  const o = document.createElement('canvas'); o.width = w; o.height = h; const og = o.getContext('2d');
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) og.drawImage(t, dx, dy);
+  og.globalCompositeOperation = 'source-in'; og.fillStyle = '#1E2A3A'; og.fillRect(0,0,w,h);
+  og.globalCompositeOperation = 'source-over'; og.drawImage(t, 0, 0);
+  g.drawImage(o, 0, 0, w, h, 0, 0, cv.width, cv.height);
 }
 function pressed(btn, group){ group.querySelectorAll('[aria-pressed]').forEach(b=>b.setAttribute('aria-pressed', b===btn)); }
 function opt(parent, cls, label, on, fn, content){
