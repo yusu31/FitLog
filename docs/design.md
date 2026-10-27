@@ -86,7 +86,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | POST | `/records/{id}/sets` | 筋トレのセットを足す（`id`・`exerciseId`・`setNo`・`weightKg`・`reps`） | **冪等**。再送のとき、記録の作成を先に送る（送信待ちは作った順に送る） |
 | DELETE | `/records/{id}/sets/{setId}` | セットを消す（取り消し） | 自分のだけ |
 | DELETE | `/records/{id}` | 記録を消す | 自分のだけ |
-| GET | `/records` | 自分の記録の一覧（新しい順・`cursor`・`limit` 20） | 段階的に読み込む |
+| GET | `/records` | 自分の記録の一覧（新しい順・`cursor`・`limit` 20。`kind` で絞れる） | 段階的に読み込む。筋トレの記録は、種目ごとのセットを含めて返す（今日のメニューを画面が作る材料。`kind=workout&limit=1`） |
 | GET | `/records/{id}` | 記録の詳細（セット・ラン・動画の有無） | 自分か同じグループの人のだけ |
 | POST | `/records/{id}/gpx` | GPX の元ファイルを置く署名付き URL を発行する | ルートの読み取りは画面側。上限 5MB |
 
