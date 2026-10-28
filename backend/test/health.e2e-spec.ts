@@ -43,3 +43,49 @@ describe('Health (結合: 本物の PostgreSQL)', () => {
     await request(app.getHttpServer()).get('/api/health').expect(200, { status: 'ok' });
   });
 });
+
+// ---- 想定外のエラー（本物の drizzle のエラーを通す。陽性対照つき）----
+import { Controller, Get, Inject, Logger } from '@nestjs/common';
+import { sql } from 'drizzle-orm';
+import { DB } from '../src/db/db.module.js';
+import type { Db } from '../src/db/db.module.js';
+
+@Controller('boom')
+class BoomController {
+  constructor(@Inject(DB) private readonly db: Db) {}
+
+  // SQL の引数に「秘密になりうる値」を入れて、DB に届かず失敗させる
+  @Get()
+  async boom() {
+    await this.db.execute(sql`select ${'tok_SECRET_VALUE'}::text`);
+  }
+}
+
+describe('想定外のエラー（結合: 本物の drizzle のエラー）', () => {
+  let app: INestApplication;
+  afterEach(async () => {
+    await app?.close();
+    vi.restoreAllMocks();
+  });
+
+  // T-ERR-07: ログにも応答にも SQL の引数を出さず、設計の形で返す
+  it('DB に届かない想定外のエラーは 500 の決まった形で、SQL の引数をログにも応答にも出さない', async () => {
+    const errorLog = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const staticLog = vi.spyOn(Logger, 'error').mockImplementation(() => undefined);
+    process.env.DATABASE_URL = 'postgres://user:pw@127.0.0.1:1/none';
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+      controllers: [BoomController],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+
+    const res = await request(app.getHttpServer()).get('/api/boom').expect(500);
+
+    expect(res.body).toEqual({ code: 'INTERNAL_ERROR', message: 'サーバーでエラーが起きました', details: null });
+    const logged = JSON.stringify([errorLog.mock.calls, staticLog.mock.calls]);
+    expect(logged).not.toContain('tok_SECRET_VALUE');
+    expect(logged).toContain('ECONNREFUSED');
+  });
+});

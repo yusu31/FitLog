@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { HttpStatus } from '@nestjs/common';
+import { HttpStatus, Logger } from '@nestjs/common';
 import { HealthController } from './health.controller.js';
 import { DB } from '../db/db.module.js';
 
@@ -31,9 +31,24 @@ describe('HealthController', () => {
     const controller = await makeController(async () => {
       throw new Error('connect ECONNREFUSED postgres://user:secret@host/db');
     });
+    // 応答は丸ごと比べる（details にエラー文を入れる壊し方も見逃さない）
     await expect(controller.checkDb()).rejects.toMatchObject({
       status: HttpStatus.SERVICE_UNAVAILABLE,
-      response: { code: 'DB_UNAVAILABLE', message: expect.not.stringContaining('secret') },
+      response: { code: 'DB_UNAVAILABLE', message: 'データベースに接続できません', details: null },
     });
+  });
+
+  // T-HEALTH-07: drizzle は DB のエラーを包む（本当の原因は cause.code）。ログには原因の印を出し、SQL の引数は出さない
+  it('GET /health/db は、包まれたエラーでも原因の印をログに出し、SQL の引数は出さない', async () => {
+    const errorLog = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const cause = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+    const controller = await makeController(async () => {
+      throw new Error('Failed query: select $1::text\nparams: tok_SECRET_VALUE', { cause });
+    });
+    await expect(controller.checkDb()).rejects.toBeDefined();
+    const logged = JSON.stringify(errorLog.mock.calls);
+    expect(logged).toContain('ECONNREFUSED');
+    expect(logged).not.toContain('tok_SECRET_VALUE');
+    errorLog.mockRestore();
   });
 });

@@ -1,5 +1,6 @@
 import { Controller, Get, Inject, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
+import { errorCode } from '../common/error-code.js';
 import { DB, Db } from '../db/db.module.js';
 
 @Controller('health')
@@ -21,7 +22,7 @@ export class HealthController {
       await this.db.execute(sql`select 1`);
       return { status: 'ok', db: 'ok' };
     } catch (err) {
-      this.logger.error(`DB に接続できません: ${(err as { code?: string }).code ?? 'unknown'}`);
+      this.logger.error(`DB に接続できません: ${errorCode(err)}`);
       throw new ServiceUnavailableException({
         code: 'DB_UNAVAILABLE',
         message: 'データベースに接続できません',

@@ -155,6 +155,11 @@ TypeScript の最新は 7.0（Go で書き直された新しいコンパイラ�
 | Lambda 用のまとめ方 | **まず `nest build` ＋ 本番の依存だけを同梱**。サイズと起動時間を測ってから見直す | — | 素の esbuild は `emitDecoratorMetadata` に**対応しない**（esbuild 公式）ので、依存の注入が壊れる。公式の手順外の組み合わせはスパイクで確かめてから | 実測で遅い・大きいとき: tsc／SWC の出力を esbuild でまとめる |
 | フォルダ構成 | **npm のみ。`backend/` と `frontend/` を別の package**（ルートに `package.json` は置かない）。CI は job を分ける | npm 11 | 型は orval が OpenAPI から画面側に生成するので、共有 package が要らない。Lambda の zip づくりも `backend/` で閉じる | npm workspaces／pnpm: 画面と API で共有する実コード（スキーマ・定数）が出たとき、または CI の install が実測で遅いとき |
 
+- **使い方の落とし穴（再レビューで実測）**:
+  - `serverless-express` は**名前付き import** で使う: `import { configure } from '@codegenie/serverless-express'`。NestJS 公式の FAQ の例（既定の import）を ESM でそのまま写すと、型が `This expression is not callable`（TS2349）になる。型エラーを消そうと `.default(...)` と書くと、CI は通るのに Lambda で即死する（実行時は `.default` が `undefined`）
+  - **トランザクションの中は `tx` だけを使う**。`Pool({ max: 1 })` なので、中で `db` を使うと、空かない接続を待って10秒固まってからエラーになる（実測）。結合テストは `max: 1` のまま実際にトランザクションを通す
+  - 想定外のエラーは、全体の例外フィルター（`backend/src/common/all-exceptions.filter.ts`）で処理する。drizzle のエラーの message には SQL の引数（トークン・メールアドレス・招待リンクの値になりうる）が入り、Nest の既定ではそのままログに出るため、ログには名前と原因の印（`cause.code`）だけを出す
+  - 雛形の `npm run deploy`（外部の配備サービス Mau を起動する）は、お金・対外的な操作の止まる条件に当たるので、スクリプトと依存を消した
 - 起動時間の実測値と、`serverless-express` を ESM のまま動かす確認は、**02-1 ③ の公開スパイクで行う**（実機が要る＝時間待ち。今は取れない）
 - Neon の公式に「Lambda にはこのドライバー」と名指しする文はない（`choose-connection` のページに Lambda の語がない。原理的に取れない）。根拠は上のソース確認と Neon の Lambda ガイド（`pg` の例）
 - 雛形の `AGENTS.md` は外部の監視サービス（NestJS Observe）の宣伝で、採らない。外部サービスの追加は、比較してから決める
