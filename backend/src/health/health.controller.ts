@@ -1,5 +1,6 @@
 import { Controller, Get, Inject, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { sql } from 'drizzle-orm';
 import { errorCode } from '../common/error-code.js';
 import { ErrorResponse } from '../common/error-response.js';
@@ -13,7 +14,8 @@ export class HealthController {
 
   constructor(@Inject(DB) private readonly db: Pick<Db, 'execute'>) {}
 
-  // DB を見ない浅い確認。サーバーが起動していれば ok
+  // DB を見ない浅い確認。サーバーが起動していれば ok。ログイン不要（監視ツールが Cookie なしで呼ぶ）
+  @AllowAnonymous()
   @Get()
   @ApiOperation({ operationId: 'getHealth', summary: '生きているかの確認（DB には触れない）' })
   @ApiOkResponse({ type: HealthResponse })

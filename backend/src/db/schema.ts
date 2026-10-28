@@ -1,3 +1,69 @@
-// 表の定義の置き場。表は機能と同じ PR で足す（02-1 ③ の認証・02-2 の記録など）。
-// 02-1 ① では、接続・マイグレーションの道具と、DB に届く確認（ヘルスチェック）までを作る。
-export {};
+// 表の定義の置き場。表は機能と同じ PR で足す（認証＝02-1 ③a、記録＝02-2 など）。
+import { boolean, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+
+// ── better-auth が使う4つの表 ──────────────────────────────────────────
+// 列の形は better-auth 1.7.14 の @better-auth/core/dist/db/get-tables.mjs の定義に合わせる。
+// 表名を複数形（users 等）にするため、betterAuth の drizzleAdapter に usePlural: true を渡す（src/auth/auth.ts）。
+// better-auth は ID を自分で作る（text）。
+
+// キャラの設定の既定値（docs/database-design.md users.avatar）
+export const DEFAULT_AVATAR = {
+  body: 'A',
+  hair: 1,
+  hairColor: 'brown',
+  shirtColor: 'teal',
+  pantsColor: 'navy',
+} as const;
+
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  emailVerified: boolean('email_verified').notNull().default(false),
+  image: text('image'),
+  // better-auth の列ではない。登録のときは渡されないので、DB の既定値で埋まる
+  avatar: jsonb('avatar').notNull().default(DEFAULT_AVATAR),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const sessions = pgTable('sessions', {
+  id: text('id').primaryKey(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  token: text('token').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+});
+
+export const accounts = pgTable('accounts', {
+  id: text('id').primaryKey(),
+  accountId: text('account_id').notNull(),
+  providerId: text('provider_id').notNull(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  idToken: text('id_token'),
+  accessTokenExpiresAt: timestamp('access_token_expires_at', { withTimezone: true }),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at', { withTimezone: true }),
+  scope: text('scope'),
+  // メール＋パスワード登録のときのパスワードのハッシュ（better-auth が scrypt で作る）
+  password: text('password'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const verifications = pgTable('verifications', {
+  id: text('id').primaryKey(),
+  identifier: text('identifier').notNull(),
+  value: text('value').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
