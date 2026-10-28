@@ -1,0 +1,2 @@
+# シェルスクリプトは CRLF だと bash で動かないので、どの OS でも LF で取得する
+*.sh text eol=lf
