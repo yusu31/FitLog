@@ -102,7 +102,7 @@ erDiagram
 - **端末で作る ID（UUID）を主キーにする**（`records`・`workout_sets`・`reactions`・`comments`）。オフラインで作った記録が、再送されても二重にならないため（F-30）。API は、同じ ID が来たら新しく作らず成功を返す（`INSERT ... ON CONFLICT (id) DO NOTHING`）
 - **`records` は「1回の記録の入れ物」**。筋トレ・ラン・休みの3種類を `kind` で分け、種類ごとの中身は `workout_sets`（筋トレ）・`run_details`（ラン）に持つ。休みは中身がない。足跡・7マス・仲間の一覧が `records` だけで引けるようにするため
 - **日付は `local_date`（日本時間の日付）を列に持つ**。`recorded_at` は端末の時刻（UTC で保存）で、`local_date` はサーバーが `recorded_at` から Asia/Tokyo で出す。「7マス」「おかえり」「週の合計」を、時刻の計算なしに日付の比較だけで引けるようにするため（リスク #3）
-- **1人1グループ**を DB の制約で守る（`group_members.user_id` を一意にする）。人数の上限 5 人は制約では守れないので、参加の処理で数え直す（トランザクションの中で）
+- **1人1グループ**を DB の制約で守る（`group_members.user_id` を一意にする）。人数の上限 5 人は制約では守れないので、参加の処理で数え直す。**トランザクションで囲むだけでは足りない**: PostgreSQL の既定（READ COMMITTED）では、2人が同時に「4人」と数えて、両方が追加して6人になる。**数える前に `groups` の行を `SELECT ... FOR UPDATE` でロックする**（トランザクション単位のロックなので、Neon の PgBouncer のトランザクションモードでも使える。公式: https://www.postgresql.org/docs/current/transaction-iso.html）
 - **集計用のテーブルは作らない**。週・月の合計、ヒートマップ、7マスは、その都度 `records`・`workout_sets` から集計する（少人数で件数が少ないため。遅くなったら見直す）
 - **画面で組み立てるキャラ（決定11）の設定は、`users.avatar` の1列に持つ**（jsonb）
 

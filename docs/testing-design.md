@@ -266,7 +266,7 @@ T-REST-05: 別の日の休みは別に作れる（一意が `(user_id, local_dat
 | T-GRP-07 | 最後の1人が出る | グループは空のまま残る（削除しない）。出た人の記録は残るが仲間に見えない | 同 | 結 |
 | T-GRP-08 | 出た人が別のグループに入る | 成功（`group_members.user_id` の UNIQUE に当たらない） | 同 | 結 |
 
-T-GRP-04 は**わざと壊して赤を見る**価値が高い。人数を数えてから追加する間に別の参加が入る実装（トランザクションなし）に変えると、5人を超えて落ちることを確かめる。並行に送るテストは、2つの要求を同時に始める書き方にする（順番に送ると通ってしまう）。
+T-GRP-04 は**わざと壊して赤を見る**価値が高い。**ロックを外す**（`FOR UPDATE` なしで、人数を数えてから追加する間に別の参加が入る）実装に変えると、5人を超えて落ちることを確かめる。トランザクションを外すだけでは、タイミング次第で赤が出ないことがある。並行に送るテストは、2つの要求を同時に始める書き方にする（順番に送ると通ってしまう）。
 
 **招待の期限と状態（デシジョンテーブル）** 有効期限は作成から7日。条件が重なったときの評価の順番は、design.md 7章で決まっている（**取り消し済み 404 → 期限切れ 410 → すでに別のグループ 409 `ALREADY_IN_GROUP` → 満員 409 `GROUP_FULL`**。左の順に最初に当たったもの）。
 
@@ -483,9 +483,46 @@ design.md の 6 章のとおり、記録を取るクエリは1か所の共通関
 | T-HEALTH-04 | 実際に DB に届く | 本物の PostgreSQL に `select 1` | 200 | 結 |
 | T-HEALTH-05 | 実際に DB に届かない | 閉じたポートを指す接続文字列 | 503。応答に接続先のパスワードを含まない | 結 |
 | T-HEALTH-06 | DB が落ちていても起動は確認できる | 閉じたポート | `GET /api/health` は 200 | 結 |
+| T-HEALTH-07 | 包まれた DB エラー（drizzle）でも、原因の印がログに出る | 原因が `cause.code`（ECONNREFUSED）にあり、message に SQL の引数がある | ログに `ECONNREFUSED` が出て、SQL の引数は出ない | 単 |
+
+### 3-12. 想定外のエラーと、エラーの共通の形（02-1 ① の再レビューで足した）
+
+対象: 全体の例外フィルター（`AllExceptionsFilter`）と `errorCode`。応答は設計の形 `{ code, message, details }`（design.md 5章）。
+
+| ID | ケース | 入力 | 期待 | 層 |
+|----|--------|------|------|----|
+| T-ERR-01 | 原因の印 | `code` を持つ Error | その `code` | 単 |
+| T-ERR-02 | 包まれたエラー | `cause.code` だけを持つ Error（drizzle の形） | `cause.code` | 単 |
+| T-ERR-03 | 印が無い | どちらも無い／文字列 | `unknown` | 単 |
+| T-ERR-04 | 想定外のエラー | message に SQL の引数を含む Error | 500 `INTERNAL_ERROR`。ログに引数を出さず、原因の印は出す | 単 |
+| T-ERR-05 | 設計の形の HttpException | `{ code, message, details }` を持つ | そのまま返す | 単 |
+| T-ERR-06 | Nest 既定の形の HttpException | `statusCode`・`message` の形 | `{ code: BAD_REQUEST, message, details: null }` に直す | 単 |
+| T-ERR-07 | 本物の drizzle のエラー | DB に届かない問い合わせ（引数に秘密の値） | 500 の決まった形。引数をログにも応答にも出さない | 結 |
+
+- T-ERR-07 は、フィルターを外す（Nest の既定に戻す）と**赤になる**ことを確認した（応答が `{ statusCode: 500, message: ... }` になる）。T-HEALTH-07 は、原因の取り出しを `code` だけに戻すと赤になる
+- 再レビューで、旧 T-HEALTH-05 の「パスワードを含まない」検査が**空回り**していると分かった（閉じたポートのエラー文は、もともと接続先のパスワードを含まない）。応答を丸ごと比べる形に直し、秘密が入る壊し方は T-ERR-07 の引数で取る
 
 - T-HEALTH-03 は、応答にエラー文を出す実装に**わざと変えて赤になる**ことを確認した。T-HEALTH-04 は、接続先を間違えて赤になる（空回りしていない）ことを確認した
 - 結合テストは `DATABASE_URL` が無いと**落ちる**（飛ばさない。0件成功を防ぐ）
+
+### 3-13. 画面の骨組みと API の仕様の出力（02-1 ②。実装と同じ PR で書いた）
+
+対象: 画面の部品（Vitest＋Testing Library）と、OpenAPI の出力・orval の生成物。
+
+| ID | ケース | 入力 | 期待 | 層 |
+|----|--------|------|------|----|
+| T-API-01 | パスの先頭 | OpenAPI を作る | パスは `/api/health`・`/api/health/db`（`/api` から始まる） | 単 |
+| T-API-02 | operationId | 同上 | `getHealth`・`getHealthDb`（Controller 名を含む長い名前にしない。orval の関数名のもとになる） | 単 |
+| T-API-03 | スキーマ | 同上 | `HealthResponse`・`HealthDbResponse`・`ErrorResponse`。503 は `ErrorResponse`（必須: code・message・details） | 単 |
+| T-API-04 | スキーマ名 | 同上 | `Record` を含まない（TypeScript の `Record<K, V>` とぶつかる） | 単 |
+| T-FE-01 | 画面の見出し | 今日タブの仮の画面を描画 | `FitLog` が見出し（h1）で見える | 部品 |
+| T-FE-02 | 雛形の宣伝 | 同上 | 一文の説明が出て、雛形の Next.js のロゴは出ない | 部品 |
+| T-FE-03 | TanStack Query の入れ物 | `Providers` の中で `useQueryClient` | QueryClient が使え、既定の `staleTime`（30秒）が入っている | 部品 |
+| T-FE-04 | 子の表示 | `Providers` の中に子 | 子がそのまま表示される | 部品 |
+| T-FE-05 | F-30 の部品 | POST を1本持つ試しの OpenAPI を orval に通す | `getCreateTrainingRecordMutationKey`・`...MutationOptions`・`createTrainingRecord` が生成される。`Record` 型を作らない | 部品 |
+
+- 新しいテストは、実装の前に書いて**赤**（実装なし／試しの OpenAPI なし）を確認してから緑にした
+- CI の検査（テストではなく手順）: `openapi.json` と `lib/api/generated.ts` を再生成して `git diff --exit-code`。仕様を変えて再生成すると差分が出る（`exit=1`）ことを確認した
 
 ## 4. 実行件数の確認と、テストが本当に効いているかの確認
 
