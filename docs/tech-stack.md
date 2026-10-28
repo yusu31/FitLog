@@ -134,6 +134,19 @@ TypeScript の最新は 7.0（Go で書き直された新しいコンパイラ�
 
 ---
 
+## 画面の骨組み（02-1 ②。実装で確かめたこと）
+
+| 項目 | 内容 |
+|------|------|
+| 雛形 | `create-next-app` 16.4.3（`frontend/`）。TypeScript は雛形が 5 系なので **6.0.3 に直した**（決定どおり） |
+| 静的書き出し | `output: "export"`・`trailingSlash: true`・`images.unoptimized`。**雛形の `cacheComponents`・`partialPrefetching` は静的書き出しと併用できず（`Invariant: PPR cannot be enabled in export mode`）外した**（実際のビルドで確認） |
+| フォント | Google Fonts は使わない（ビルドが通信に頼らず、利用者の端末が外部へ問い合わせない）。システムの標準フォント。shadcn の初期化が戻したものも外した。`out/` に外部フォントの参照が無いことを確認 |
+| UI 部品 | shadcn/ui 4.23（base-nova・neutral）。追加された `cn` は shadcn 本人の公式パッケージ（clsx と tailwind-merge の置き換え。メンテナー・リポジトリを npm と GitHub で確認）。`@base-ui/react`・`class-variance-authority`・`lucide-react`・`tw-animate-css` も入った |
+| 画面のテスト | Vitest 4（backend と同じ）＋ Testing Library ＋ jsdom。`tsconfig.json` の `types` に `vitest/globals` |
+| 型の生成 | バックエンドが `@nestjs/swagger` で `backend/openapi.json` を出し（`npm run openapi`）、画面が orval 8.45 で `frontend/lib/api/generated.ts` を作る（`npm run api:generate`）。**どちらも Git に入れ、CI が再生成して差分が出たら落とす**（陽性対照: 仕様を変えて再生成すると `git diff --exit-code` が 1 になることを確認） |
+| F-30 の部品 | 今の API には POST が無いので、POST を1本持つ試しの OpenAPI（`lib/api/__fixtures__/`）で、`getCreateTrainingRecordMutationKey`・`...MutationOptions`・フックの外で使える `createTrainingRecord` が生成されることをテストで固定した（T-FE-05）。orval を上げて壊れたら赤になる |
+| Serwist | **この PR に含めない**（半日のスパイクは別。方式は結果で決める） |
+
 ## テストの道具（判断ログ 01-7）
 
 | 層 | 道具 | 理由 |

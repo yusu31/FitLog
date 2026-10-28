@@ -505,6 +505,25 @@ design.md の 6 章のとおり、記録を取るクエリは1か所の共通関
 - T-HEALTH-03 は、応答にエラー文を出す実装に**わざと変えて赤になる**ことを確認した。T-HEALTH-04 は、接続先を間違えて赤になる（空回りしていない）ことを確認した
 - 結合テストは `DATABASE_URL` が無いと**落ちる**（飛ばさない。0件成功を防ぐ）
 
+### 3-13. 画面の骨組みと API の仕様の出力（02-1 ②。実装と同じ PR で書いた）
+
+対象: 画面の部品（Vitest＋Testing Library）と、OpenAPI の出力・orval の生成物。
+
+| ID | ケース | 入力 | 期待 | 層 |
+|----|--------|------|------|----|
+| T-API-01 | パスの先頭 | OpenAPI を作る | パスは `/api/health`・`/api/health/db`（`/api` から始まる） | 単 |
+| T-API-02 | operationId | 同上 | `getHealth`・`getHealthDb`（Controller 名を含む長い名前にしない。orval の関数名のもとになる） | 単 |
+| T-API-03 | スキーマ | 同上 | `HealthResponse`・`HealthDbResponse`・`ErrorResponse`。503 は `ErrorResponse`（必須: code・message・details） | 単 |
+| T-API-04 | スキーマ名 | 同上 | `Record` を含まない（TypeScript の `Record<K, V>` とぶつかる） | 単 |
+| T-FE-01 | 画面の見出し | 今日タブの仮の画面を描画 | `FitLog` が見出し（h1）で見える | 部品 |
+| T-FE-02 | 雛形の宣伝 | 同上 | 一文の説明が出て、雛形の Next.js のロゴは出ない | 部品 |
+| T-FE-03 | TanStack Query の入れ物 | `Providers` の中で `useQueryClient` | QueryClient が使え、既定の `staleTime`（30秒）が入っている | 部品 |
+| T-FE-04 | 子の表示 | `Providers` の中に子 | 子がそのまま表示される | 部品 |
+| T-FE-05 | F-30 の部品 | POST を1本持つ試しの OpenAPI を orval に通す | `getCreateTrainingRecordMutationKey`・`...MutationOptions`・`createTrainingRecord` が生成される。`Record` 型を作らない | 部品 |
+
+- 新しいテストは、実装の前に書いて**赤**（実装なし／試しの OpenAPI なし）を確認してから緑にした
+- CI の検査（テストではなく手順）: `openapi.json` と `lib/api/generated.ts` を再生成して `git diff --exit-code`。仕様を変えて再生成すると差分が出る（`exit=1`）ことを確認した
+
 ## 4. 実行件数の確認と、テストが本当に効いているかの確認
 
 ### 4-1. 0件でも成功になる罠
