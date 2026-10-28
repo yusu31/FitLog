@@ -46,3 +46,22 @@ Claude Code が道具を使う直前に走り、次の3つを止める。登録�
 | 見積もり台帳の更新 | 台帳に3行以上の実績が入った後（同じ手順を3回やったら） | PR のマージ後に使用量を記録し、全体を再計算する |
 
 **却下**: 今のうちに、動かせないコマンドを書いたスキルを先に作る案。実際に動かして確かめていない手順を書くと、間違いを「正しい手順」として固定してしまう（RaiseTimeLine の server-start スキルは、環境構築の前に書かれて「実行できない」注記が残った）。
+
+## 4. 依存とサプライチェーン（2026-10-29）
+
+自分のコードに穴がなくても、**使っている部品（npm の依存・GitHub Actions・コンテナ）の側から**入り込まれることがある（サプライチェーン攻撃）。2026年は GitHub Actions のタグを悪いコードに付け替える乗っ取りが続いた（3月 Trivy・KICS・xygeni-action、5月 actions-cool、6月 semantic-release-action）。
+
+| 仕組み | 置き場 | 何を防ぐか |
+|---|---|---|
+| Actions を**コミットの SHA** で固定し、版は行末のコメントに書く | `.github/workflows/ci.yml` | タグの付け替え。SHA は中身の指紋なので付け替えが効かない |
+| `checkout` に `persist-credentials: false` | 同上 | GitHub の鍵を作業フォルダに残さない。後の手順が乗っ取られても鍵を持ち出せない |
+| コンテナ（postgres・pgbouncer）をダイジェストで固定 | `ci.yml`・`docker-compose.yml` | 同じ名前のイメージの中身の入れ替え |
+| Dependabot（npm×2・github-actions・docker-compose。週1回・まとめる） | `.github/dependabot.yml` | 固定したまま古くなること。脆弱性の修正は週1回を待たずに個別の PR |
+| CODEOWNERS | `.github/CODEOWNERS` | `.github/`・`.claude/` の変更を本人が必ず見る |
+| PR テンプレートのセキュリティ欄 | `.github/pull_request_template.md` | 秘密・依存・他人のデータ・ログ・課金の見落とし |
+| CodeQL（default setup）・Dependabot の通知 | GitHub の設定（公開リポジトリなので無料） | コードの危ない書き方・既知の脆弱性 |
+
+- **SHA の取り方**: `gh api repos/{owner}/{repo}/git/ref/tags/{tag}` で取る。中身が「注釈付きタグ」なら `git/tags/{sha}` で指す先のコミットまでたどる。推測で書かない
+- **CI のコンテナの更新**: Dependabot は `docker-compose.yml` を更新するが、`ci.yml` の `services` の中は更新しない。Dependabot の PR が来たら、同じダイジェストを `ci.yml` にも手で写す
+- **確かめ方**: `grep -n "uses:" .github/workflows/ci.yml` で全部が 40 桁の SHA。SHA を1桁変えると CI が「見つからない」で落ちる（赤の確認）
+- **非公開リポジトリで使うとき**: GitHub Free では、非公開リポジトリの Ruleset・CodeQL・秘密情報のプッシュ時保護は使えない（有料）。Dependabot は無料。代わりに Semgrep CE・gitleaks の CLI を CI で動かす（提出後に共通の仕組みへ抜き出す。[schedule.md](./schedule.md) 3.2）
