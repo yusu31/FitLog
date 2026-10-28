@@ -16,7 +16,8 @@ describe('認証（結合: 本物の PostgreSQL・better-auth）', () => {
 
   beforeAll(async () => {
     if (!url) throw new Error('DATABASE_URL が設定されていません');
-    await migrateDb(url);
+    // 表の作成は直接接続で（本番のマイグレーションと同じ）。アプリ側は DATABASE_URL（PgBouncer 経由）
+    await migrateDb(process.env.MIGRATION_DATABASE_URL ?? url);
   });
 
   beforeEach(async () => {
