@@ -1,7 +1,7 @@
 name: CI
 
 # push と PR のたびに自動で走る。ここに書いた検査が全部緑になるまでマージしない運用にする。
-# バックエンドのジョブ（lint・型チェック・テスト・ビルド）は 02-1 ① で追加した。画面のジョブは 02-1 ② で足す。
+# バックエンドのジョブ（lint・型チェック・テスト・ビルド）は 02-1 ① で追加した。画面のジョブも 02-1 ② で足した。
 on:
   pull_request:
   push:
@@ -73,5 +73,52 @@ jobs:
       - name: 結合テスト（本物の PostgreSQL）
         run: npm run test:e2e
 
+      # API の仕様（openapi.json）を再生成して、コミットされたものと違えば落とす。
+      # 仕様が変わったのに openapi.json を直し忘れると、画面の型が古いままになる。
+      - name: OpenAPI が古くなっていないか
+        run: |
+          npm run openapi
+          git diff --exit-code -- openapi.json
+
       - name: ビルド
         run: npm run build
+
+  frontend:
+    name: 画面（lint・型・テスト・ビルド）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 依存を入れる（lock どおり）
+        run: npm ci
+
+      # 画面の型は backend/openapi.json から生成する。再生成して、コミットされたものと違えば落とす。
+      - name: 生成した型が古くなっていないか
+        run: |
+          npm run api:generate
+          git diff --exit-code -- lib/api/generated.ts
+
+      - name: lint
+        run: npm run lint
+
+      - name: 型チェック
+        run: npm run typecheck
+
+      # Vitest は「テストが0件」だと失敗する。実行件数はログの "Tests N passed" で見る
+      - name: 部品テスト
+        run: npm test
+
+      - name: ビルド（静的書き出し）
+        run: npm run build
+
+      - name: out/index.html ができているか
+        run: test -f out/index.html

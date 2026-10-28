@@ -1,0 +1,40 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "FitLog API（orval の確認用。実際の API ではない）", "version": "0.0.0" },
+  "paths": {
+    "/api/records": {
+      "post": {
+        "operationId": "createTrainingRecord",
+        "summary": "記録を作る（冪等。端末で作った id を送る）",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateTrainingRecordRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "作った", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TrainingRecord" } } } },
+          "200": { "description": "同じ id の2回目", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TrainingRecord" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateTrainingRecordRequest": {
+        "type": "object",
+        "required": ["id", "kind"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "kind": { "type": "string", "enum": ["workout", "run", "rest"] }
+        }
+      },
+      "TrainingRecord": {
+        "type": "object",
+        "required": ["id", "kind"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "kind": { "type": "string", "enum": ["workout", "run", "rest"] }
+        }
+      }
+    }
+  }
+}
