@@ -142,6 +142,7 @@ TypeScript の最新は 7.0（Go で書き直された新しいコンパイラ�
 | 静的書き出し | `output: "export"`・`trailingSlash: true`・`images.unoptimized`。**雛形の `cacheComponents`・`partialPrefetching` は静的書き出しと併用できず（`Invariant: PPR cannot be enabled in export mode`）外した**（実際のビルドで確認） |
 | フォント | Google Fonts は使わない（ビルドが通信に頼らず、利用者の端末が外部へ問い合わせない）。システムの標準フォント。shadcn の初期化が戻したものも外した。`out/` に外部フォントの参照が無いことを確認 |
 | UI 部品 | shadcn/ui 4.23（base-nova・neutral）。追加された `cn` は shadcn 本人の公式パッケージ（clsx と tailwind-merge の置き換え。メンテナー・リポジトリを npm と GitHub で確認）。`@base-ui/react`・`class-variance-authority`・`lucide-react`・`tw-animate-css` も入った |
+| 型チェック | `next typegen && tsc --noEmit`。`LayoutProps` などの型は Next.js がビルド・開発のときに生成する。手元は `.next/` が残っているので通るが、**きれいな状態の CI では `Cannot find name 'LayoutProps'` で落ちた**（まっさらなクローンで再現し、`next typegen` を先に走らせて解消）|
 | 画面のテスト | Vitest 4（backend と同じ）＋ Testing Library ＋ jsdom。`tsconfig.json` の `types` に `vitest/globals` |
 | 型の生成 | バックエンドが `@nestjs/swagger` で `backend/openapi.json` を出し（`npm run openapi`）、画面が orval 8.45 で `frontend/lib/api/generated.ts` を作る（`npm run api:generate`）。**どちらも Git に入れ、CI が再生成して差分が出たら落とす**（陽性対照: 仕様を変えて再生成すると `git diff --exit-code` が 1 になることを確認） |
 | F-30 の部品 | 今の API には POST が無いので、POST を1本持つ試しの OpenAPI（`lib/api/__fixtures__/`）で、`getCreateTrainingRecordMutationKey`・`...MutationOptions`・フックの外で使える `createTrainingRecord` が生成されることをテストで固定した（T-FE-05）。orval を上げて壊れたら赤になる |
