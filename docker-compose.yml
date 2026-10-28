@@ -1,0 +1,21 @@
+# ローカル開発とテスト用の PostgreSQL。本番は Neon（docs/infrastructure.md）。
+# 5432・5433 は他のプロジェクトが使うことがあるので、FitLog は 5434 を使う。
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: fitlog
+      POSTGRES_PASSWORD: fitlog
+      POSTGRES_DB: fitlog
+    ports:
+      - "5434:5432"
+    volumes:
+      - fitlog-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitlog -d fitlog"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  fitlog-db:

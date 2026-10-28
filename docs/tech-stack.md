@@ -138,12 +138,26 @@ TypeScript の最新は 7.0（Go で書き直された新しいコンパイラ�
 
 | 層 | 道具 | 理由 |
 |----|------|------|
-| API（NestJS）の単体・結合 | Jest（`supertest` で HTTP を通す） | NestJS はデコレーターの型情報（`emitDecoratorMetadata`）に頼る。Vitest の標準の変換はこれを出さない見込みで、依存の注入が動かない地雷を避ける |
-| 画面の単体 | Vitest ＋ Testing Library | Next.js と同じ ES モジュールの世界で速く動く |
+| API（NestJS）の単体・結合 | **Vitest**（`supertest` で HTTP を通す） | NestJS 12 の雛形の既定。**デコレーターの型情報が効くことを実測で確認した**（`emitDecoratorMetadata` を切ると見本テストが `undefined` で落ち、入れると通る。2026-10-28） |
+| 画面の単体 | Vitest ＋ Testing Library | Next.js と同じ ES モジュールの世界で速く動く。API と同じ道具で覚えることが減る |
 | E2E | Playwright | 前作で使い慣れている。電波なし（オフライン）の切り替えと回線の制限ができる |
 
-- 条件: 02-1 ① で NestJS 12 の雛形を作り、既定の道具を確かめる。**雛形が Vitest なら API も Vitest に寄せる**（道具が1つにそろう）
-- 採らなかった案: API も画面も Vitest に統一（上の型情報の心配が消えるまでは選ばない）
+- **決め直した経緯**: 01-7 では「API は Jest」としたが、理由は「Vitest ではデコレーターの型情報が出ない見込み」という**推測**だった。02-1 ① で雛形を作って実測したところ、その心配は当たらなかった（雛形は Vitest ＋ Vite 8。NestJS 12 の移行ガイドにも「ESM は既定 Vitest」「Jest で ESM 版を読むには Node 24.9 以上が要る」とある）。01-7 に書いた条件「雛形が Vitest なら API も寄せる」のとおり、Vitest に統一した
+- 採らなかった案: API は Jest（雛形の既定から外れ、NestJS 12 の ESM では Node の版の条件が付く。型情報の心配は消えたので、選ぶ理由がない）
+- 型は Vitest が見ない。**型チェック（`tsc --noEmit`）を CI の別の手順に置く**（02-1 ① で、`err.code` の型の誤りを Vitest は通し、`tsc` が見つけた）
+
+## バックエンドの道具（判断ログ 02-1 ①）
+
+| 役割 | 決定 | 版 | 決め手 | 選ばなかった案を選ぶ条件 |
+|------|------|-----|--------|--------------------------|
+| DB ドライバー | **node-postgres（`pg`）**＋ `drizzle-orm/node-postgres`。Neon の `-pooler` 経由・`Pool({ max: 1 })` | pg 8.23.x | 「グループ参加」は「人数を数える→追加する」を1つのトランザクションにする。**`neon-http` は `transaction()` が例外を投げて使えない**（drizzle-orm 0.45.4 の `neon-http/session.js` に `"No transactions support in neon-http driver"`。2026-10-28 に原本で確認）。Neon 自身の Lambda ガイドも `pg` | `neon-serverless`（WebSocket）: `pg` の TCP が使えない環境（Cloudflare Workers など）へ移るとき |
+| Lambda に載せる部品 | **`@codegenie/serverless-express`** ＋ `@nestjs/platform-express` | 5.0.0 | NestJS 公式の serverless の FAQ が名指し（NestJS 12 対応済み）。Function URL の形式（API Gateway payload 2.0）を処理し、複数の Set-Cookie を `cookies` 配列で返すことをソースで確認 | `@fastify/aws-lambda`＋`platform-fastify`: 起動時間を詰めたいとき（実測が先） |
+| Lambda 用のまとめ方 | **まず `nest build` ＋ 本番の依存だけを同梱**。サイズと起動時間を測ってから見直す | — | 素の esbuild は `emitDecoratorMetadata` に**対応しない**（esbuild 公式）ので、依存の注入が壊れる。公式の手順外の組み合わせはスパイクで確かめてから | 実測で遅い・大きいとき: tsc／SWC の出力を esbuild でまとめる |
+| フォルダ構成 | **npm のみ。`backend/` と `frontend/` を別の package**（ルートに `package.json` は置かない）。CI は job を分ける | npm 11 | 型は orval が OpenAPI から画面側に生成するので、共有 package が要らない。Lambda の zip づくりも `backend/` で閉じる | npm workspaces／pnpm: 画面と API で共有する実コード（スキーマ・定数）が出たとき、または CI の install が実測で遅いとき |
+
+- 起動時間の実測値と、`serverless-express` を ESM のまま動かす確認は、**02-1 ③ の公開スパイクで行う**（実機が要る＝時間待ち。今は取れない）
+- Neon の公式に「Lambda にはこのドライバー」と名指しする文はない（`choose-connection` のページに Lambda の語がない。原理的に取れない）。根拠は上のソース確認と Neon の Lambda ガイド（`pg` の例）
+- 雛形の `AGENTS.md` は外部の監視サービス（NestJS Observe）の宣伝で、採らない。外部サービスの追加は、比較してから決める
 
 ## 採用しない技術と理由
 
