@@ -64,7 +64,7 @@
 | 層 | 使用技術 | バージョン | 使い方 |
 |----|----------|-----------|--------|
 | ① | TanStack Query の楽観的更新 | 5.105.x | `onMutate` で先に画面を更新し、失敗したら巻き戻す |
-| ② | TanStack Query の一時停止した送信 ＋ `@tanstack/react-query-persist-client` ＋ `@tanstack/query-async-storage-persister` ＋ `idb-keyval`（IndexedDB） | 5.105.x / 6.3.x | オフラインの送信は一時停止し、再接続すると同じ順番で再送される。再読み込みしても再送できるよう、`setMutationDefaults` で送信処理を登録し、保存した状態を復元した後に `resumePausedMutations()` を呼ぶ（送信処理そのものは保存できないため） |
+| ② | TanStack Query の一時停止した送信 ＋ `@tanstack/react-query-persist-client` ＋ `@tanstack/query-async-storage-persister` ＋ `idb-keyval`（IndexedDB） | 5.105.x / 6.3.x | オフラインの送信は一時停止し、再接続すると同じ順番で再送される。再読み込みしても再送できるよう、`setMutationDefaults` で送信処理を登録し、保存した状態を復元した後に `resumePausedMutations()` を呼ぶ（送信処理そのものは保存できないため）。**順番を守るには、同じ `scope.id` を付ける**（同じ `scope.id` の送信は1本ずつ順に実行される。付けないと順番は保証されない。[TanStack Query の公式](https://tanstack.com/query/latest/docs/framework/react/guides/mutations)） |
 | ③ | Serwist（最小構成） | 9.5.x | 画面のファイルだけを端末に保存する。API の応答は Service Worker では保存しない（表示は②の永続化が受け持つ） |
 
 **③ は仮置き。実装の前に半日のスパイク（技術検証）で方式を決める。**
@@ -84,6 +84,10 @@
 ### 既知の制限
 
 - iPhone の Safari は、そのサイトを操作しないまま Safari を7日使うと、IndexedDB・Service Worker を消す（ホーム画面に追加したアプリは対象外）。送信待ちは次に開いたときに送るので実害は小さいと見ているが、7日以上開かずに Safari で使い続けた場合、送っていない記録は消える
+
+### 実装の段取り（判断ログ 01-7）
+
+記録の書き込みは、**02-2 の最初から**この形で書く: orval の mutationKey ＋ `setMutationDefaults` ＋ `scope.id`（利用者ごとに1つ。記録の作成 → セットの追加の親子の順番を守るため）。02-2 で普通の `useMutation` で書くと、02-4 で書き込みを全部書き直すことになるため。02-4 に残すのは、端末への保存（IndexedDB）・送信待ちの帯・Serwist だけ。送れなかったときの扱いは [design.md 7章](./design.md#7-細かい取り決めテスト設計の洗い出しで決めたもの)。
 
 ### テスト
 
@@ -129,6 +133,17 @@ TypeScript の最新は 7.0（Go で書き直された新しいコンパイラ�
 | @hey-api/openapi-ts | TypeScript 6.0 なら動くが、0.x 系で API が変わりうる。7.0 では落ちる |
 
 ---
+
+## テストの道具（判断ログ 01-7）
+
+| 層 | 道具 | 理由 |
+|----|------|------|
+| API（NestJS）の単体・結合 | Jest（`supertest` で HTTP を通す） | NestJS はデコレーターの型情報（`emitDecoratorMetadata`）に頼る。Vitest の標準の変換はこれを出さない見込みで、依存の注入が動かない地雷を避ける |
+| 画面の単体 | Vitest ＋ Testing Library | Next.js と同じ ES モジュールの世界で速く動く |
+| E2E | Playwright | 前作で使い慣れている。電波なし（オフライン）の切り替えと回線の制限ができる |
+
+- 条件: 02-1 ① で NestJS 12 の雛形を作り、既定の道具を確かめる。**雛形が Vitest なら API も Vitest に寄せる**（道具が1つにそろう）
+- 採らなかった案: API も画面も Vitest に統一（上の型情報の心配が消えるまでは選ばない）
 
 ## 採用しない技術と理由
 
