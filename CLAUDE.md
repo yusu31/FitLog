@@ -25,6 +25,10 @@
 | フロントエンド | Next.js 16（静的書き出し。詳細ページは `?id=` で表す）+ TypeScript + shadcn/ui + Tailwind CSS |
 | バックエンド | NestJS 12（AWS Lambda 上で動かす） |
 | ORM | Drizzle 0.45系 |
+| DB ドライバー | node-postgres（`pg`）。Neon の `-pooler` 経由・接続は1環境1本（`neon-http` はトランザクションが使えないので採らない。詳細は `docs/tech-stack.md`） |
+| Lambda に載せる部品 | `@codegenie/serverless-express` ＋ `@nestjs/platform-express`（まとめ方は `nest build` から始め、実測して見直す） |
+| テスト | Vitest（API・画面とも）＋ Testing Library ／ E2E は Playwright。型は CI の `tsc --noEmit` で別に見る |
+| フォルダ構成 | npm のみ。`backend/` と `frontend/` を別の package にする |
 | データベース | PostgreSQL（Neon Free） |
 | 認証 | better-auth（Drizzleアダプター）+ Cookieセッション。`/api/*` を CloudFront の下に置き、画面と同じサイトにする |
 | データ取得・オフライン記録 | TanStack Query（楽観的更新・送信待ちを IndexedDB に保存して再送）＋ Serwist（画面のファイルだけ端末に保存。方式はスパイクで決める）。詳細は `docs/tech-stack.md` |

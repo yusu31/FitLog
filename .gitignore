@@ -10,3 +10,11 @@ __pycache__/
 # Claude Code の個人設定（共有しない）
 CLAUDE.local.md
 .claude/settings.local.json
+
+# バックエンドの生成物と、接続文字列などの秘密（Git に入れない）
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

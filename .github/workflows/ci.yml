@@ -1,7 +1,7 @@
 name: CI
 
 # push と PR のたびに自動で走る。ここに書いた検査が全部緑になるまでマージしない運用にする。
-# lint・型チェック・テスト・ビルドのジョブは、アプリのコードができる 02-1 で追加する。
+# バックエンドのジョブ（lint・型チェック・テスト・ビルド）は 02-1 ① で追加した。画面のジョブは 02-1 ② で足す。
 on:
   pull_request:
   push:
@@ -24,3 +24,54 @@ jobs:
         uses: gitleaks/gitleaks-action@v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  backend:
+    name: バックエンド（lint・型・テスト・ビルド）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      # 結合テスト用の本物の PostgreSQL（本番は Neon。バージョンはローカルの docker-compose.yml と同じ）
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: fitlog
+          POSTGRES_PASSWORD: fitlog
+          POSTGRES_DB: fitlog
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fitlog -d fitlog"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: 依存を入れる（lock どおり）
+        run: npm ci
+
+      - name: lint
+        run: npm run lint
+
+      - name: 型チェック
+        run: npm run typecheck
+
+      # Vitest は「テストが0件」だと失敗する（passWithNoTests にしない）。実行件数はログの "Tests N passed" で見る
+      - name: 単体テスト
+        run: npm test
+
+      - name: 結合テスト（本物の PostgreSQL）
+        run: npm run test:e2e
+
+      - name: ビルド
+        run: npm run build
