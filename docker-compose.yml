@@ -2,7 +2,8 @@
 # 5432・5433 は他のプロジェクトが使うことがあるので、FitLog は 5434 を使う。
 services:
   db:
-    image: postgres:17
+    # ダイジェスト（中身の指紋）で固定。CI（.github/workflows/ci.yml）と同じもの。更新は Dependabot が PR を出す
+    image: postgres:17@sha256:31ba9c94a03ada9988f2bb493a22a75eef3a185884533e5cdbcd498ea835b08f
     environment:
       POSTGRES_USER: fitlog
       POSTGRES_PASSWORD: fitlog

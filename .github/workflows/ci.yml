@@ -7,6 +7,9 @@ on:
   push:
     branches: [main]
 
+# 使う部品（Actions）はタグではなくコミットの SHA（中身の指紋）で固定する。タグは付け替えられるため（2026年に乗っ取りが続いた）。
+# 版は行末のコメントに書く。新しい版への更新は Dependabot が PR を出す（.github/dependabot.yml）。docs/dev-harness.md 4章。
+# checkout は persist-credentials: false（GitHub の鍵を作業フォルダに残さない。後の手順が乗っ取られても鍵を持ち出せない）。
 permissions:
   contents: read
 
@@ -16,12 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: リポジトリを取得する（履歴ぜんぶ）
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: 秘密情報が含まれていないか検査する
-        uses: gitleaks/gitleaks-action@v3.0.0
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -34,7 +38,7 @@ jobs:
     services:
       # 結合テスト用の本物の PostgreSQL（本番は Neon。バージョンはローカルの docker-compose.yml と同じ）
       postgres:
-        image: postgres:17
+        image: postgres:17@sha256:31ba9c94a03ada9988f2bb493a22a75eef3a185884533e5cdbcd498ea835b08f
         env:
           POSTGRES_USER: fitlog
           POSTGRES_PASSWORD: fitlog
@@ -49,9 +53,11 @@ jobs:
     env:
       DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
@@ -90,9 +96,11 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
