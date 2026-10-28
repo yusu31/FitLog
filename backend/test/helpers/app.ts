@@ -6,9 +6,10 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import { vi } from 'vitest';
 import { AppModule } from '../../src/app.module.js';
+import { setupApp } from '../../src/app.setup.js';
 
 // 結合テスト用の部品。本番の組み立て（src/main.ts）と同じ設定にそろえる:
-// 接頭辞 api・bodyParser: false（連携部品の必須設定）。
+// src/app.setup.ts の setupApp（接頭辞 api・ログ・リクエスト ID）と、bodyParser: false（連携部品の必須設定）。
 
 export const TEST_ORIGIN = 'http://localhost:3000';
 
@@ -26,10 +27,12 @@ export async function createApp(databaseUrl: string | undefined, options: { skip
   if (!databaseUrl) throw new Error('DATABASE_URL が設定されていません（docker compose up -d db のあと、.env.example を参照）');
   process.env.DATABASE_URL = databaseUrl;
   setAuthEnv();
+  // 普通のテストは WARN 以上だけ出す（出力をうるさくしない）。ログの確認をするテストは LOG_LEVEL=INFO にしてから呼ぶ
+  process.env.LOG_LEVEL ??= 'WARN';
   if (options.skipAuth) skipAuthGuard();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication({ bodyParser: false });
-  app.setGlobalPrefix('api');
+  setupApp(app);
   await app.init();
   return app;
 }

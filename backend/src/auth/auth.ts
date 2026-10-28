@@ -1,7 +1,11 @@
+import { Logger } from '@nestjs/common';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import type { Db } from '../db/db.module.js';
 import * as schema from '../db/schema.js';
+import { logFromBetterAuth } from './auth-log.js';
+
+const authLogger = new Logger('Auth');
 
 // 認証の設定（docs/design.md 2章）。メール＋パスワードで登録・ログインし、Cookie でセッションを持つ。
 // 受け付けるパスは /api/auth/*（sign-up/email・sign-in/email・sign-out・get-session ほか）。
@@ -17,6 +21,8 @@ export function createAuth(db: Db) {
     basePath: '/api/auth',
     // usePlural: 表名を複数形（users・sessions・accounts・verifications）にする（docs/database-design.md）
     database: drizzleAdapter(db, { provider: 'pg', usePlural: true, schema }),
+    // better-auth のログは、アプリのログ（JSON）に通し、SQL の引数などを出さない形にする（auth-log.ts）
+    logger: { level: 'warn', log: (level, message, ...args) => logFromBetterAuth(authLogger, level, message, ...args) },
     emailAndPassword: {
       enabled: true,
       // 登録時のメール確認・パスワード再設定は作らない（docs/requirements.md「やらない」・判断ログ 01-7 決定5）
