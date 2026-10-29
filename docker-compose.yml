@@ -18,5 +18,27 @@ services:
       timeout: 3s
       retries: 20
 
+
+  # 本番の Neon の -pooler（PgBouncer のトランザクションモード）と同じ制約で結合テストをするための窓口。
+  # トランザクションモードでは SET・セッション単位のロック・名前つきの PREPARE が使えない（docs/infrastructure.md 5.2章）。
+  # アプリと結合テストは、こちらのポート（6434）につなぐ。マイグレーションは直接（5434）。
+  # 1本の接続を複数の接続で使い回す（default_pool_size=1）ので、「窓口を通っている」ことをテストで確かめられる。
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.26.1-p0@sha256:488422e38cff912895d0d65d8963fcd306e6ac589a724398b6eb8e294e94d624
+    environment:
+      DB_HOST: db
+      DB_USER: fitlog
+      DB_PASSWORD: fitlog
+      DB_NAME: fitlog
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      DEFAULT_POOL_SIZE: "1"
+      MAX_CLIENT_CONN: "50"
+    ports:
+      - "6434:5432"
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   fitlog-db:

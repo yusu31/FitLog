@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# next dev が起動のたびに自動生成する AI 向けの案内（雛形の生成物なので入れない）
+AGENTS.md

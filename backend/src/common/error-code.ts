@@ -7,3 +7,8 @@ export function errorCode(err: unknown): string {
   if (typeof causeCode === 'string') return causeCode;
   return 'unknown';
 }
+
+// SQL の文面らしい文字列か。DB のエラーの文字列は、SQL とその引数（メールアドレスやパスワードのハッシュ）を含みうる。
+// 出どころが分からない文字列を、ログに通す前の見分けに使う。
+const SQL_LIKE = /Failed query|params:|\binsert into\b|\bselect\b.+\bfrom\b|\bupdate\b.+\bset\b|\bdelete from\b|\bKey \([^)]*\)=\(/i;
+export const looksLikeSql = (text: string): boolean => SQL_LIKE.test(text);

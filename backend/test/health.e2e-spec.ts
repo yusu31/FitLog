@@ -2,17 +2,12 @@ import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { createApp, setAuthEnv, skipAuthGuard } from './helpers/app.js';
 
 // 本物の PostgreSQL につなぐ結合テスト。DATABASE_URL が無ければ「落ちる」（飛ばさない。0件成功を防ぐ）。
-const start = async (databaseUrl: string | undefined): Promise<INestApplication> => {
-  if (!databaseUrl) throw new Error('DATABASE_URL が設定されていません（docker compose up -d db のあと、.env.example を参照）');
-  process.env.DATABASE_URL = databaseUrl;
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-  const app = moduleRef.createNestApplication();
-  app.setGlobalPrefix('api');
-  await app.init();
-  return app;
-};
+// /api/health/db はログイン必須になった（02-1 ③a）。ここでは DB の応答の形を確かめたいので、ログインの検査だけを素通りにする
+// （DB に届かない状態ではログインできないため）。ログインの検査そのものは auth.e2e-spec.ts が本物でやる。
+const start = (databaseUrl: string | undefined) => createApp(databaseUrl, { skipAuth: true });
 
 describe('Health (結合: 本物の PostgreSQL)', () => {
   const realUrl = process.env.DATABASE_URL;
@@ -20,6 +15,7 @@ describe('Health (結合: 本物の PostgreSQL)', () => {
 
   afterEach(async () => {
     await app?.close();
+    vi.restoreAllMocks();
     if (realUrl) process.env.DATABASE_URL = realUrl;
   });
 
@@ -39,7 +35,8 @@ describe('Health (結合: 本物の PostgreSQL)', () => {
 
   // T-HEALTH-06: 浅い確認は DB が落ちていても 200（起動の確認）
   it('GET /api/health は、DB に届かなくても 200', async () => {
-    app = await start('postgres://user:secretpw@127.0.0.1:1/none');
+    // ガードを素通りにしない: Cookie なし・DB なしで、ログイン不要の道が DB に触れずに 200 を返すことを確かめる
+    app = await createApp('postgres://user:secretpw@127.0.0.1:1/none');
     await request(app.getHttpServer()).get('/api/health').expect(200, { status: 'ok' });
   });
 });
@@ -73,11 +70,13 @@ describe('想定外のエラー（結合: 本物の drizzle のエラー）', ()
     const errorLog = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     const staticLog = vi.spyOn(Logger, 'error').mockImplementation(() => undefined);
     process.env.DATABASE_URL = 'postgres://user:pw@127.0.0.1:1/none';
+    setAuthEnv();
+    skipAuthGuard();
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
       controllers: [BoomController],
     }).compile();
-    app = moduleRef.createNestApplication();
+    app = moduleRef.createNestApplication({ bodyParser: false });
     app.setGlobalPrefix('api');
     await app.init();
 

@@ -50,8 +50,27 @@ jobs:
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
+      # 本番の Neon の -pooler（PgBouncer のトランザクションモード）と同じ制約で結合テストをする窓口。
+      # 設定はローカルの docker-compose.yml と同じ。postgres（上のサービス名）につなぐ
+      pgbouncer:
+        image: edoburu/pgbouncer:v1.26.1-p0@sha256:488422e38cff912895d0d65d8963fcd306e6ac589a724398b6eb8e294e94d624
+        env:
+          DB_HOST: postgres
+          DB_USER: fitlog
+          DB_PASSWORD: fitlog
+          DB_NAME: fitlog
+          AUTH_TYPE: scram-sha-256
+          POOL_MODE: transaction
+          DEFAULT_POOL_SIZE: "1"
+          MAX_CLIENT_CONN: "50"
+        ports:
+          - 6432:5432
     env:
-      DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
+      # アプリ・結合テストは PgBouncer 経由。表の作成（マイグレーション）は直接接続
+      DATABASE_URL: postgres://fitlog:fitlog@localhost:6432/fitlog
+      MIGRATION_DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
+      # テスト専用のダミー（本番の値ではない）
+      BETTER_AUTH_SECRET: ci-only-not-a-real-secret-ci-only-not-a-real-secret
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
