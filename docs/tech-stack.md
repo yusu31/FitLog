@@ -174,7 +174,11 @@ TypeScript の最新は 7.0（Go で書き直された新しいコンパイラ�
   - **トランザクションの中は `tx` だけを使う**。`Pool({ max: 1 })` なので、中で `db` を使うと、空かない接続を待って10秒固まってからエラーになる（実測）。結合テストは `max: 1` のまま実際にトランザクションを通す
   - 想定外のエラーは、全体の例外フィルター（`backend/src/common/all-exceptions.filter.ts`）で処理する。drizzle のエラーの message には SQL の引数（トークン・メールアドレス・招待リンクの値になりうる）が入り、Nest の既定ではそのままログに出るため、ログには名前と原因の印（`cause.code`）だけを出す
   - 雛形の `npm run deploy`（外部の配備サービス Mau を起動する）は、お金・対外的な操作の止まる条件に当たるので、スクリプトと依存を消した
-- 起動時間の実測値と、`serverless-express` を ESM のまま動かす確認は、**02-1 ③ の公開スパイクで行う**（実機が要る＝時間待ち。今は取れない）
+- **Lambda の入口（`backend/src/lambda.ts`）と一式（`npm run package:lambda`）の実測（手元の Windows・Lambda ではない）**:
+  - `serverless-express` は ESM のまま動いた（名前付き import。結合テスト `test/lambda.e2e-spec.ts` が、Function URL の形式（payload 2.0）のイベントで GET／POST／PATCH／DELETE・Set-Cookie の `cookies` 配列・Cookie の `cookies` 配列での送信・外部 Origin の 403 を確かめる）
+  - NestJS の起動は最初の1回だけにして使い回す（2回目は約 3 ミリ秒）。起動に失敗したら捨てて次の呼び出しでやり直す。**`abortOnError: false` が要る**: 既定では NestJS が起動の失敗で `process.exit` するため、やり直しが働かない（テストで発見）
+  - 本番の依存だけを入れた一式は **展開後 42.5 MB・zip 15.1 MB**（Lambda の上限は展開後 250 MB）。`npm ci --omit=dev` だけでは 198 MB（`du` の値）残る。`better-auth` が多くの統合先（vitest・vite・drizzle-kit など）を「任意の peer 依存」として宣言し、lock では dev かつ任意（devOptional）になるため。`--omit=optional` を足し、さらに `typescript`・`swagger-ui-dist` を取り除く（外しても起動することを `npm run smoke:lambda` と CI で毎回確かめる）。予算は実測の2倍強の 100 MB（CI が超えたら落とす）
+  - 起動時間（読み込み約 3.0〜3.9 秒・最初の呼び出し約 0.3〜0.4 秒）は手元の値。**Lambda の小さい CPU ではもっと遅い見込み（推測）**で、requirements.md の「画面 3 秒」に収まるかは **02-1 ③b の公開スパイクで実測する**（実機が要る）
 - Neon の公式に「Lambda にはこのドライバー」と名指しする文はない（`choose-connection` のページに Lambda の語がない。原理的に取れない）。根拠は上のソース確認と Neon の Lambda ガイド（`pg` の例）
 - 雛形の `AGENTS.md` は外部の監視サービス（NestJS Observe）の宣伝で、採らない。外部サービスの追加は、比較してから決める
 

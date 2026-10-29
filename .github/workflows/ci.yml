@@ -108,6 +108,13 @@ jobs:
       - name: ビルド
         run: npm run build
 
+      # Lambda に載せる一式（本番の依存だけ）を作り、大きさの予算を超えていないか・実際に起動するかを確かめる。
+      # 取り除いた依存のせいで起動しない、という事故を、Lambda に上げる前に見つける（課金なし）
+      - name: Lambda 用の一式を作り、動くか確かめる
+        run: |
+          npm run package:lambda
+          npm run smoke:lambda
+
   frontend:
     name: 画面（lint・型・テスト・ビルド）
     runs-on: ubuntu-latest
