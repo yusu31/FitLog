@@ -13,11 +13,14 @@ const nextConfig: NextConfig = {
   // 雛形の cacheComponents・partialPrefetching は output: "export" と併用できない
   // （Invariant: PPR cannot be enabled in export mode）ので外した。
   // 開発中だけ /api/* を手元の API（Nest・3000番）へ転送し、本番（CloudFront の下の /api/*）と同じ「同じサイト」にする。
-  // 静的書き出しの本番には rewrites は出ない（next build は書き出し時に無視する）。
-  async rewrites() {
-    if (process.env.NODE_ENV !== "development") return [];
-    return [{ source: "/api/:path*", destination: "http://localhost:3000/api/:path*" }];
-  },
+  // 本番のビルドには設定自体を渡さない（渡すと、静的書き出しでは使えないという警告が毎回出る）。
+  ...(process.env.NODE_ENV === "development"
+    ? {
+        async rewrites() {
+          return [{ source: "/api/:path*", destination: "http://localhost:3000/api/:path*" }];
+        },
+      }
+    : {}),
   turbopack: {
     rules: {
       "*.css": {

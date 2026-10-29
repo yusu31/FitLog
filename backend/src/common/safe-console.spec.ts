@@ -34,6 +34,19 @@ describe('installSafeConsole', () => {
     expect(JSON.stringify(logged)).not.toContain('a@example.com');
   });
 
+  // T-CONSOLE-04: Error でも SQL でもない「オブジェクト」や、Postgres の重複エラーの説明文（Key (email)=(…)）も、本文を出さない
+  // （壊す側のレビュー指摘: 以前はこれらがそのまま出ていた）
+  it.each([
+    ['オブジェクト', [{ email: 'a@example.com' }]],
+    ['Postgres の重複エラーの説明', ['Key (email)=(a@example.com) already exists.']],
+  ])('%s は元の console.error に渡さず、本文を出さない', (_name, args) => {
+    const { passed, logged } = setup();
+    console.error(...args);
+    expect(passed).toHaveLength(0);
+    expect(JSON.stringify(logged)).not.toContain('a@example.com');
+    expect(logged[0]).toMatchObject({ event: 'console.error', dropped: true });
+  });
+
   // T-CONSOLE-03（陽性対照）: ふつうの出力は、そのまま元の console.error に渡る。何でも握りつぶしているわけではない
   it('ふつうの文字列は、そのまま元の console.error に渡す', () => {
     const { passed, logged } = setup();

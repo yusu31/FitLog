@@ -110,6 +110,54 @@ describe('認証（結合: 本物の PostgreSQL・better-auth）', () => {
     await request(app.getHttpServer()).get(PROTECTED).set('Cookie', cookie).expect(200);
   });
 
+  // T-AUTH-10: Cookie なしのログインでも、知らない Origin は断る（ログイン CSRF: 攻撃者のアカウントに入れさせられる）
+  it('知らない Origin からのログイン・登録は 403', async () => {
+    await signUp().expect(200);
+    await request(app.getHttpServer())
+      .post('/api/auth/sign-in/email')
+      .set('Origin', 'https://evil.example')
+      .send({ email: credentials.email, password: credentials.password })
+      .expect(403);
+    await request(app.getHttpServer())
+      .post('/api/auth/sign-up/email')
+      .set('Origin', 'https://evil.example')
+      .send({ ...credentials, email: 'other@example.com' })
+      .expect(403);
+  });
+
+  // T-AUTH-11: 本番（https のサイト）では、Cookie に Secure が付く（design.md 2章）。付かないと http でも Cookie が流れる
+  it('https のサイトでは、Cookie に Secure が付く', async () => {
+    await app.close();
+    const prev = process.env.BETTER_AUTH_URL;
+    process.env.BETTER_AUTH_URL = 'https://fitlog.example';
+    try {
+      app = await createApp(url);
+      const res = await request(app.getHttpServer())
+        .post('/api/auth/sign-up/email')
+        .set('Origin', 'https://fitlog.example')
+        .send(credentials)
+        .expect(200);
+      expect((res.headers['set-cookie'] as unknown as string[]).join('\n')).toMatch(/;\s*Secure/i);
+    } finally {
+      if (prev === undefined) delete process.env.BETTER_AUTH_URL;
+      else process.env.BETTER_AUTH_URL = prev;
+    }
+  });
+
+  // T-AUTH-12: パスワードの長さの境界（8文字未満は拒否・8文字は通る）。画面の minlength だけでは、直接 API を叩く人を止められない
+  it('パスワードは 8 文字未満を拒否し、8 文字は通す', async () => {
+    const short = await signUp({ ...credentials, password: '1234567' });
+    expect(short.status).toBe(400);
+    await signUp({ ...credentials, password: '12345678' }).expect(200);
+  });
+
+  // T-AUTH-13: 表示名の長さ（空・31文字は拒否、30文字は通る）。画面の maxLength=30 と同じ境界を、サーバーでも守る
+  it('表示名は 1〜30 文字だけ通す', async () => {
+    expect((await signUp({ ...credentials, name: '' })).status).toBe(400);
+    expect((await signUp({ ...credentials, name: 'あ'.repeat(31) })).status).toBe(400);
+    await signUp({ ...credentials, name: 'あ'.repeat(30) }).expect(200);
+  });
+
   // T-AUTH-08: 偽の Cookie は通さない
   it('偽の Cookie では 401', async () => {
     await request(app.getHttpServer()).get(PROTECTED).set('Cookie', 'better-auth.session_token=forged.value').expect(401);

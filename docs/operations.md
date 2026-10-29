@@ -22,7 +22,7 @@
 | `msg` | 短い説明 | 固定の文言にし、値は別のフィールドに入れる（検索しやすくするため） |
 | `event` | 業務上の出来事の名前（例: `http.request`・`group.created`・`group.joined`・`video.url_issued`） | INFO のとき必ず付ける。`http.request` は要求ごとの1行（応答が決まった後に出す） |
 | `context` | どの部品が出したか（`Http`・`Auth`・`Console` など。NestJS の Logger の名前） | 実装で足した（調べるとき部品で絞れる） |
-| `requestId` | 1回の要求を追うための ID（1-2） | 全行に付ける |
+| `requestId` | 1回の要求を追うための ID（1-2） | 要求の処理中に出す行には全部付ける（起動時など、要求の外の行には付かない） |
 | `userId` | 本人を特定できる値（`users.id`）だけ | メールアドレス・表示名は出さない |
 | `method` / `route` | HTTP メソッドと**パスの型**（例: `/invitations/:token`） | 実際のパスでなく型を出す（1-3）。例外: `/api/auth/*` は NestJS のルートでないので、クエリを除いた実際のパス（値は入らない）。どのルートにも当たらなければ `(unmatched)` |
 | `status` | HTTP ステータス | |
