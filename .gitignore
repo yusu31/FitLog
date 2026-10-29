@@ -18,3 +18,12 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Terraform の状態ファイル（アカウント ID や設定値が入る）・変数ファイル・作業用フォルダ・Lambda の zip（Git に入れない）
+infra/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+infra/build/
+crash.log

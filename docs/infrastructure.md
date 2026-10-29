@@ -241,6 +241,7 @@ Lambda は、同時に来たリクエストの数だけ**別々の実行環境**
 | `iam.tf` | 5.2章・4.2章の最小権限 |
 | `secrets.tf` | 秘密情報の「入れ物」だけ（値は入れない。8章） |
 
+- **実装（02-1 ③b 準備②）**: `infra/` に上の5ファイル＋`versions.tf`（版の固定・タグ）・`variables.tf`・`outputs.tf`・`spike-site/index.html`（スパイク用の確認ページ）。ロックファイル（`.terraform.lock.hcl`）はコミットする。**スパイクで作るのは S3A だけ**（動画・GPX 用の S3B と、その権限は 02-4 で足す）。`terraform validate`・Trivy が通る。手順は [infra-spike-runbook.md](./infra-spike-runbook.md)。Trivy の指摘 7 件（Free プランのログなし・WAF・CMK・X-Ray・S3 のログとバージョニング）は、理由と期限つきで `infra/.trivyignore.yaml` に残した（WAF は 11/20 までに P2 で再判断）
 - 状態ファイル（`terraform.tfstate`）には**アカウント ID や設定値が入る**。公開リポジトリに入れないため、`.gitignore` に入れる。置き場は、まずは手元（**仮置き**）。S3 に置く方式は、1人で使う間は不要と見ている
 - 変数のファイル（`*.tfvars`）も `.gitignore` 済みにし、公開してよい `*.tfvars.example` だけを入れる
 
