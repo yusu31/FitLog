@@ -98,6 +98,18 @@ describe('認証（結合: 本物の PostgreSQL・better-auth）', () => {
     expect(count).toBe(1);
   });
 
+  // T-AUTH-09: 別のサイトから Cookie 付きで送られた書き込み（CSRF）は、better-auth の Origin 検査で拒否される。
+  // 連携部品 2.8.0 には Nest 側の Origin 検査の設定は無い。/api/auth/* はこの検査、それ以外は SameSite=Lax の Cookie で守る
+  it('知らない Origin からのログアウトは 403 で、セッションは消えない', async () => {
+    const cookie = cookieOf(await signUp().expect(200));
+    await request(app.getHttpServer())
+      .post('/api/auth/sign-out')
+      .set('Origin', 'https://evil.example')
+      .set('Cookie', cookie)
+      .expect(403);
+    await request(app.getHttpServer()).get(PROTECTED).set('Cookie', cookie).expect(200);
+  });
+
   // T-AUTH-08: 偽の Cookie は通さない
   it('偽の Cookie では 401', async () => {
     await request(app.getHttpServer()).get(PROTECTED).set('Cookie', 'better-auth.session_token=forged.value').expect(401);

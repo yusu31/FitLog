@@ -23,6 +23,9 @@ export function createAuth(db: Db) {
     database: drizzleAdapter(db, { provider: 'pg', usePlural: true, schema }),
     // better-auth のログは、アプリのログ（JSON）に通し、SQL の引数などを出さない形にする（auth-log.ts）
     logger: { level: 'warn', log: (level, message, ...args) => logFromBetterAuth(authLogger, level, message, ...args) },
+    // Origin 検査（別のサイトから Cookie 付きで送られた書き込みを断る）を、必ず有効にする。
+    // 明示しないと better-auth は NODE_ENV=test のとき検査を飛ばし、テストが本番の守りを確かめられなくなる
+    advanced: { disableOriginCheck: false },
     emailAndPassword: {
       enabled: true,
       // 登録時のメール確認・パスワード再設定は作らない（docs/requirements.md「やらない」・判断ログ 01-7 決定5）
