@@ -62,6 +62,7 @@ Claude Code が道具を使う直前に走り、次の3つを止める。登録�
 | CodeQL（default setup）・Dependabot の通知 | GitHub の設定（公開リポジトリなので無料） | コードの危ない書き方・既知の脆弱性 |
 
 - **SHA の取り方**: `gh api repos/{owner}/{repo}/git/ref/tags/{tag}` で取る。中身が「注釈付きタグ」なら `git/tags/{sha}` で指す先のコミットまでたどる。推測で書かない
+- **大きな版上げ（major）は Dependabot に出させない**（2026-10-29）: 有効にした直後に、決定とぶつかる大きな版上げの PR が9本出た（TypeScript 7・`@types/node` 26・Vitest 5・ESLint 10・Actions の v7 など）。major は [tech-stack.md](./tech-stack.md) の決定の見直しと一緒に人が判断する。Dependabot に任せるのは小さい更新（minor・patch）と脆弱性の通知。注意: この設定は脆弱性の修正 PR にも効くので、修正が major にしかないときは PR が出ない。そのときも Dependabot の通知（Security タブ）には出るので、週1回の確認で拾う
 - **CI のコンテナの更新**: Dependabot は `docker-compose.yml` を更新するが、`ci.yml` の `services` の中は更新しない。Dependabot の PR が来たら、同じダイジェストを `ci.yml` にも手で写す
 - **確かめ方**: `grep -n "uses:" .github/workflows/ci.yml` で全部が 40 桁の SHA。SHA を1桁変えると CI が「見つからない」で落ちる（赤の確認）
 - **非公開リポジトリで使うとき**: GitHub Free では、非公開リポジトリの Ruleset・CodeQL・秘密情報のプッシュ時保護は使えない（有料）。Dependabot は無料。代わりに Semgrep CE・gitleaks の CLI を CI で動かす（提出後に共通の仕組みへ抜き出す。[schedule.md](./schedule.md) 3.2）

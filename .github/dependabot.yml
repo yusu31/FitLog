@@ -1,5 +1,5 @@
 # 依存の更新と脆弱性の知らせを、Dependabot に PR で出させる（docs/dev-harness.md 4章）。
-# 確認の手間を減らすため、週1回（月曜の朝・日本時間）にまとめる。小さい更新（minor・patch）は1本の PR にまとめる。
+# 確認の手間を減らすため、週1回（月曜の朝・日本時間）にまとめる。小さい更新（minor・patch）は1本の PR にまとめ、大きな版上げ（major）は出さない。
 # 脆弱性の修正（security updates）は、この週1回を待たずに個別に出る（GitHub の設定で有効にする）。
 version: 2
 updates:
@@ -10,6 +10,10 @@ updates:
       day: monday
       time: "09:00"
       timezone: Asia/Tokyo
+    # 大きな版上げ（major）は対象外。決定（docs/tech-stack.md）の見直しと一緒に人が判断する（2026-10-29。初回に9本出た）
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
     groups:
       backend-minor-and-patch:
@@ -22,6 +26,10 @@ updates:
       day: monday
       time: "09:00"
       timezone: Asia/Tokyo
+    # 大きな版上げ（major）は対象外。決定（docs/tech-stack.md）の見直しと一緒に人が判断する（2026-10-29。初回に9本出た）
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
     groups:
       frontend-minor-and-patch:
@@ -35,6 +43,10 @@ updates:
       day: monday
       time: "09:00"
       timezone: Asia/Tokyo
+    # 大きな版上げ（major）は対象外。決定（docs/tech-stack.md）の見直しと一緒に人が判断する（2026-10-29。初回に9本出た）
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       actions:
         patterns: ["*"]
@@ -42,6 +54,10 @@ updates:
   # docker-compose.yml のコンテナ（ダイジェストで固定してある）を更新する。CI（ci.yml）の同じイメージは手で合わせる
   - package-ecosystem: docker-compose
     directory: /
+    # postgres 17 → 18 のような大きな版上げは、本番の Neon の版と合わせて人が判断する
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     schedule:
       interval: weekly
       day: monday
