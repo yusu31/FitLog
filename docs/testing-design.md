@@ -590,7 +590,13 @@ design.md の 6 章のとおり、記録を取るクエリは1か所の共通関
 
 ### 6-1. 今の状態
 
-`.github/workflows/ci.yml` で動いているのは**秘密情報の検査（gitleaks）だけ**。残りは 02-1 の最初の PR で足す（ci.yml のコメントと同じ）。
+`.github/workflows/ci.yml` に3つのジョブがあり、3つとも main の必須チェック（2026-10-29 時点）。
+
+- **秘密情報の検査**: gitleaks で履歴全体
+- **バックエンド**: lint（oxlint）・型（tsc）・単体（Vitest）・結合（本物の PostgreSQL。02-1 ③a で PgBouncer のトランザクションモード経由に）・OpenAPI の古さ・ビルド
+- **画面**: orval の生成物の古さ・lint（ESLint）・型・単体（Vitest＋Testing Library）・静的書き出しのビルド
+
+まだ無いのは 6-2 の 7（E2E）と、依存の自動検査（`npm audit`・OSV-Scanner。ハーネス計画の P2）。使う Actions とコンテナは SHA・ダイジェストで固定している（[dev-harness.md](./dev-harness.md) 4章）。
 
 ### 6-2. 目指す段階
 

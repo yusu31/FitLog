@@ -1,0 +1,49 @@
+# 依存の更新と脆弱性の知らせを、Dependabot に PR で出させる（docs/dev-harness.md 4章）。
+# 確認の手間を減らすため、週1回（月曜の朝・日本時間）にまとめる。小さい更新（minor・patch）は1本の PR にまとめる。
+# 脆弱性の修正（security updates）は、この週1回を待たずに個別に出る（GitHub の設定で有効にする）。
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    groups:
+      backend-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    groups:
+      frontend-minor-and-patch:
+        update-types: [minor, patch]
+
+  # ci.yml の Actions（SHA で固定してある）を、新しい版の SHA に更新する PR を出す
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # docker-compose.yml のコンテナ（ダイジェストで固定してある）を更新する。CI（ci.yml）の同じイメージは手で合わせる
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo

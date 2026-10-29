@@ -89,6 +89,20 @@
 
 外部の LLM によるレビュー（second-opinion）は、CLI が入っていないため今回は行っていない。入れるかは本人の判断。
 
+## 3.2 ハーネス（品質・セキュリティの仕組み）の宿題
+
+2026-10-29 に決めた計画（判断ログ「ハーネス計画」）。FitLog の工程は止めず、対応する作業の**中で一緒に**行う。置き場の考え方・項目の説明は [dev-harness.md](./dev-harness.md) 4章。
+
+| 段階 | いつまでに | やること | だれ |
+|---|---|---|---|
+| P0 | 今（③a の画面の前） | Actions の SHA 固定・コンテナのダイジェスト固定・Dependabot・CODEOWNERS・PR テンプレートのセキュリティ欄・CodeQL・Dependabot の通知の有効化 | Claude |
+| P1 | 02-1 ③b の `terraform apply` の前 | AWS アカウントの土台: ルートと IAM ユーザーの MFA・Budgets（予算の通知）・CloudTrail（管理イベント1本）。有効にする前に料金ページで無料の条件を確かめる | **本人の操作**＋Claude の手順書 |
+| P2 | 02-1 ③b の中 | Terraform に最初から S3 のパブリックアクセス全ブロック・IAM 最小権限・タグ／Terraform の検査（Trivy か Checkov。SHA 固定）／CloudFront Free プランで WAF が使えれば基本のルール／`npm audit`（本番の依存）と OSV-Scanner を警告から | Claude（apply は本人確認） |
+| P3 | 02-2 の後 | DB の定期書き出しと**戻す練習を1回**（Neon Free は6時間分しか戻せない）／アラームの通知先を決める | Claude（通知の有効化は本人確認） |
+| P4 | 02-4 の設計の前 | OWASP ASVS レベル1から該当項目を選び、design.md 6章の脅威表に足す／GPX のプライバシーゾーン（スタート・ゴール付近を隠す）を入れるか | Claude＋**本人判断** |
+| P5 | 02-5 | Semgrep CE・ZAP（公開 URL に1回）・Playwright と a11y・余力で変異テスト（Stryker）と OpenSSF Scorecard | Claude |
+| 抽出 | 02-6（提出）の後 | 動いたものを、ほかの作品・受注開発で使える共通の公開リポジトリと ~/.claude に移す（公開リポジトリの作成は本人確認） | Claude |
+
 ## 4. 確かめる日
 
 | 日 | 確かめること | 外れたときにすること |
