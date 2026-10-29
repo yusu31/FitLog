@@ -3,7 +3,7 @@
 //
 // やること: dist/ と package.json・lock をコピー → 本番の依存だけを入れる → 実行に要らないものを取り除く → 大きさを測って上限を超えたら失敗。
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const OUT = resolve('.lambda');
@@ -42,8 +42,9 @@ execFileSync(process.execPath, [npmCli, 'ci', '--omit=dev', '--omit=optional', '
 
 for (const name of PRUNE) rmSync(join(OUT, 'node_modules', name), { recursive: true, force: true });
 
+// lstatSync: リンクの先をたどらない。取り除いた typescript を指す .bin/tsc（Linux のシンボリックリンク）が宙に浮いていても失敗しない
 function sizeOf(path) {
-  const stat = statSync(path);
+  const stat = lstatSync(path);
   if (!stat.isDirectory()) return stat.size;
   return readdirSync(path).reduce((sum, entry) => sum + sizeOf(join(path, entry)), 0);
 }
