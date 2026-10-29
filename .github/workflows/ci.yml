@@ -139,7 +139,8 @@ jobs:
       - name: 生成した型が古くなっていないか
         run: |
           npm run api:generate
-          git diff --exit-code -- lib/api/generated.ts
+          # generated.ts だけでなく lib/api/ 全体を見る。生成の道具がほかのファイル（テスト等）を消したら落とす（Issue #81）
+          git diff --exit-code -- lib/api
 
       - name: lint
         run: npm run lint
