@@ -12,7 +12,10 @@ export default defineConfig({
       httpClient: 'fetch',
       // 画面と API は同じサイト（CloudFront の下の /api/*）。パスは openapi.json の /api/... のまま相対で呼ぶ
       baseUrl: '',
-      clean: true,
+      // clean: true だと、出力先（lib/api/）の中身を全部消してから生成する。同じ場所に置いた
+      // テスト（mutation-key.test.ts）と fixtures まで消え、CI でそのテストが実行されなかった（Issue #81）。
+      // generated.ts は毎回上書きされるので、false で足りる
+      clean: false,
     },
   },
 });
