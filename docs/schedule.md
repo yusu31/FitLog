@@ -79,7 +79,7 @@
 | いつまでに | 直すこと | 直す文書 |
 |---|---|---|
 | 02-1 ③（認証） | better-auth の表名（既定は単数形）を database-design の複数形に合わせる設定、`users.avatar` の既定値。招待リンクの値を登録・ログインの画面をまたいで保持する方法 | database-design.md・features.md |
-| 02-2 の前 | 7マスの色と「2日以上あいた」の式（日付の差か、空白の日数か）・休みを記録に数えるか。種目約30件と部位の割り当て、お試しの前回値の置き場。グループを作る画面と、記録・セットを消す操作の置き場。招待の取り消し API。追加した種目が仲間の足跡でどう見えるか・同名の一意索引 | features.md・screen-design.md・database-design.md・design.md |
+| 02-2 の前（**2026-10-29 に決定・Issue #78**。判断の根拠は PR の本文） | 7マスの色と「2日以上あいた」の式（日付の差か、空白の日数か）・休みを記録に数えるか。種目約30件と部位の割り当て、お試しの前回値の置き場。グループを作る画面と、記録・セットを消す操作の置き場。招待の取り消し API。追加した種目が仲間の足跡でどう見えるか・同名の一意索引 | features.md・screen-design.md・database-design.md・design.md |
 | 02-3 の前 | Lambda の同時実行数の上限を Service Quotas で読む（**本人の操作**。読むだけで課金なし） | infrastructure.md |
 | 02-1 ③（認証）の前 | 全体のログイン必須ガードに `/health` の例外を足し、`/health/db` はログイン必須にする（design.md 2章）。CI とローカルに PgBouncer（トランザクションモード）のコンテナを足し、結合テストをそこ経由にする（本番は `-pooler` 経由で、SET・セッション単位のロック・SQL の PREPARE が使えない）。Lambda のタイムアウトは既定の3秒では足りない（`connectionTimeoutMillis` 10秒と Neon の起床待ち）ので、15〜30秒に（推測。Terraform で値を書く）。Parameter Store の読み込みは `NestFactory.create` より前に終える（`createPool` が起動時に環境変数を読む）。Neon の接続文字列は `sslmode=verify-full`（pg 8.23 は require だと警告）。ログを構造化（JSON）にする（`ConsoleLogger({ json: true })` で足りるかを比較） | tech-stack.md・infrastructure.md |
 | 02-2 のグループ参加の前 | 人数の上限は `SELECT ... FOR UPDATE` で `groups` の行をロックしてから数える（database-design.md）。T-GRP-04 の「わざと壊す」は**ロックを外す**。better-auth の drizzle アダプターが中で `db` と `tx` をどう使うか読む（`max: 1` で `db` を使うと10秒固まる） | database-design.md・testing-design.md |
