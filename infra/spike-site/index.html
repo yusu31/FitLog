@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitLog 公開スパイクの確認</title>
+<style>
+  body { font: 16px/1.6 system-ui, sans-serif; max-width: 52rem; margin: 0 auto; padding: 1rem; }
+  button { font: inherit; padding: .5rem 1rem; margin: .25rem .25rem .25rem 0; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1rem; font-size: 14px; }
+  th, td { border: 1px solid #8884; padding: .35rem .5rem; text-align: left; vertical-align: top; }
+  .ok { color: #1a7f37; font-weight: 700; } .ng { color: #cf222e; font-weight: 700; }
+  pre { white-space: pre-wrap; background: #8881; padding: .5rem; }
+</style>
+</head>
+<body>
+<h1>FitLog 公開スパイクの確認（使い捨て）</h1>
+<p>CloudFront の入口から <code>/api/*</code> を呼び、docs/infrastructure.md 3.2章の確認項目を順に試します。結果は下の表に出ます。</p>
+<button id="run">① 確認を最初から実行</button>
+<button id="again">② 「6分以上あけた直後の1回目」だけ実行（/api/health/db）</button>
+<table id="out"><thead><tr><th>項目</th><th>結果</th><th>状態</th><th>時間(ms)</th><th>メモ</th></tr></thead><tbody></tbody></table>
+<h2>結果の写し（Claude に貼る用）</h2>
+<pre id="json">（実行すると出ます）</pre>
+<script>
+const rows = [];
+const tbody = document.querySelector('#out tbody');
+
+// 本文の SHA-256（16進）。Function URL を OAC で呼ぶとき、POST/PUT には x-amz-content-sha256 が要る（infrastructure.md 3.1章）
+async function sha256Hex(text) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function step(name, expected, request, note = '') {
+  const started = performance.now();
+  let status = 'error', bodyText = '';
+  try {
+    const res = await request();
+    status = res.status;
+    bodyText = (await res.text()).slice(0, 160);
+  } catch (e) {
+    bodyText = String(e);
+  }
+  const ms = Math.round(performance.now() - started);
+  const ok = expected === null ? true : [].concat(expected).includes(status);
+  rows.push({ name, expected, status, ms, ok, note, body: bodyText });
+  const tr = tbody.insertRow();
+  for (const text of [name, String(status), ok ? '✓ 期待どおり' : '✗ 期待と違う', String(ms), note + (bodyText ? ' / ' + bodyText : '')]) {
+    tr.insertCell().textContent = text;
+  }
+  tr.cells[2].className = ok ? 'ok' : 'ng';
+  document.querySelector('#json').textContent = JSON.stringify(rows, null, 2);
+}
+
+async function postJson(path, payload, withSha = true) {
+  const body = JSON.stringify(payload);
+  const headers = { 'content-type': 'application/json' };
+  if (withSha) headers['x-amz-content-sha256'] = await sha256Hex(body);
+  return fetch(path, { method: 'POST', headers, body, credentials: 'same-origin' });
+}
+
+document.querySelector('#run').addEventListener('click', async () => {
+  rows.length = 0; tbody.innerHTML = '';
+  const email = `spike-${Date.now()}@example.com`;
+  const credentials = { name: 'スパイク', email, password: 'spike-password-123' };
+
+  await step('GET /api/health（最初の1回＝コールドスタート込み）', 200, () => fetch('/api/health'));
+  await step('GET /api/health（2回目＝使い回し）', 200, () => fetch('/api/health'));
+  await step('GET /api/health/db（Cookie なし）', 401, () => fetch('/api/health/db'), 'ログイン必須の道。401 なら入口からガードまで届いている');
+  await step('POST sign-up（SHA-256 ヘッダーなし）', null, () => postJson('/api/auth/sign-up/email', { ...credentials, email: 'nosha-' + email }, false), 'OAC の署名のために SHA-256 が要るかを見る（403 なら要る）');
+  await step('POST sign-up（SHA-256 ヘッダーあり）', 200, () => postJson('/api/auth/sign-up/email', credentials), 'DB に書く最初の1回。Neon の起床時間も含みうる');
+  await step('GET /api/auth/get-session（Cookie の往復）', 200, () => fetch('/api/auth/get-session', { credentials: 'same-origin' }), '本文に登録したメールが入っていれば Cookie が往復している');
+  await step('GET /api/health/db（Cookie あり）', 200, () => fetch('/api/health/db', { credentials: 'same-origin' }), 'DB に select 1 が通る');
+  await step('PATCH /api/no-such-route（SHA-256 あり・本文あり）', 404, () => {
+    const body = '{}';
+    return sha256Hex(body).then((h) => fetch('/api/no-such-route', { method: 'PATCH', headers: { 'content-type': 'application/json', 'x-amz-content-sha256': h }, body }));
+  }, '404（NestJS まで届いた）なら PATCH も通る');
+  await step('PATCH /api/no-such-route（SHA-256 なし・本文あり）', null, () =>
+    fetch('/api/no-such-route', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: '{}' }), '403 なら PATCH にも SHA-256 が要る（公式の注意書きは PUT/POST のみで、推測だった）');
+  await step('DELETE /api/no-such-route', 404, () => fetch('/api/no-such-route', { method: 'DELETE' }), '404 なら DELETE も通る');
+  await step('POST sign-out', 200, () => postJson('/api/auth/sign-out', {}));
+  await step('GET /api/health/db（ログアウト後）', 401, () => fetch('/api/health/db', { credentials: 'same-origin' }), 'ログアウト後は 401 に戻る');
+});
+
+document.querySelector('#again').addEventListener('click', async () => {
+  // 先に ① でログインしたままなら Cookie がある。無ければ 401 になる（それでも「入口まで届く時間」は測れる）
+  await step('GET /api/health/db（6分以上あけた直後の1回目）', null, () => fetch('/api/health/db', { credentials: 'same-origin' }), '200 なら成功。500 系なら、凍結中に切れた DB 接続の再利用で失敗した可能性（infrastructure.md 5.2章）');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# Trivy（Terraform の検査）で出た指摘のうち、「理由を付けて受け入れる」もの。
+# 黙って消さず、理由と見直しの期限を書く。期限を過ぎると、また指摘に出る（見直しの合図）。
+# 検査のしかた: docs/infra-spike-runbook.md の「検査」。見直しの正本: docs/dev-harness.md（P2）。
+misconfigurations:
+  - id: AWS-0010
+    paths: ["cloudfront.tf"]
+    statement: "CloudFront の Free プランはログが出ない仕様（infrastructure.md 6章）。ログが要る調査は Lambda 側のログ（構造化ログ）で行う"
+    expired_at: 2026-12-31
+  - id: AWS-0011
+    paths: ["cloudfront.tf"]
+    statement: "WAF は P2 で「Free プランで使えれば基本のルール（5つまで）」を判断する（dev-harness.md）。スパイクでは付けない。02-3（本番）の前に必ず見直す"
+    expired_at: 2026-11-20
+  - id: AWS-0017
+    paths: ["lambda.tf"]
+    statement: "ログ置き場の暗号化は AWS 管理の既定で行われる。自分の鍵（KMS CMK）は月額がかかるので使わない（infrastructure.md 4.3章の方針）"
+    expired_at: 2026-12-31
+  - id: AWS-0066
+    paths: ["lambda.tf"]
+    statement: "X-Ray（呼び出しの追跡）は追加費用がかかる。少人数のアプリには不要。性能の調べものはログの処理時間（durationMs）で行う"
+    expired_at: 2026-12-31
+  - id: AWS-0089
+    paths: ["s3.tf"]
+    statement: "S3 のアクセスログは使わない。バケットは CloudFront 以外から読めず、誰が読んだかは CloudFront 側で足りる（Free プランはログが出ないので、本番で必要なら再検討）"
+    expired_at: 2026-12-31
+  - id: AWS-0090
+    paths: ["s3.tf"]
+    statement: "画面用のバケットは、ビルドのたびに全部置き直すファイルだけ。履歴（バージョニング）は不要で、増えると保存料金が増える。動画・GPX 用（02-4）は別途判断する"
+    expired_at: 2026-12-31
+  - id: AWS-0132
+    paths: ["s3.tf"]
+    statement: "S3 の暗号化は標準（AWS 管理）のまま。自分の鍵（KMS CMK）は追加費用がかかるので使わない（infrastructure.md 4.3章で決定済み）"
+    expired_at: 2026-12-31
