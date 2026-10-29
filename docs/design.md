@@ -41,7 +41,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | 項目 | 内容 |
 |------|------|
 | ログイン | メールアドレス + パスワード。成功すると、`HttpOnly`・`Secure`・`SameSite=Lax` の Cookie でセッションを発行する |
-| 認証の API | better-auth が提供する `/api/auth/*`（登録・ログイン・ログアウト・セッションの確認）をそのまま使う。実際のパスは版を固定するときに確かめ、このページへ写す |
+| 認証の API | better-auth が提供する `/api/auth/*`（登録・ログイン・ログアウト・セッションの確認）をそのまま使う。版は better-auth 1.7.14・連携部品（`@thallesp/nestjs-better-auth`）2.8.0 で固定。確かめたパス: `POST /api/auth/sign-up/email`（表示名・メール・パスワード。成功すると、そのままログイン済み）・`POST /api/auth/sign-in/email`・`POST /api/auth/sign-out`・`GET /api/auth/get-session`。画面の側は `better-auth/react` の `authClient` を通して呼ぶ |
 | 保護された API | `/api/auth/*`・`GET /invitations/{token}`・`GET /health` 以外はすべて、ログイン済みであることを確かめる（共通のガード）。していなければ 401 |
 | ログイン不要の例外 | `GET /invitations/{token}` だけ。招待リンクを開いた未登録の人に「どのグループに招かれたか」を見せるため。返すのは**グループ名と今の人数だけ**（メンバーの名前・記録は返さない）。リンクの値は推測できない乱数で7日の期限があるので、見えるものを絞れば足りる（判断ログ 01-7） |
 | 登録時のメール確認 | **送らない**。最大5人・招待リンクを持つ人しか入れないため。代わりにパスワードの再設定は作らない（[要件定義書の「やらない」](./requirements.md)） |

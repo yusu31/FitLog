@@ -95,7 +95,7 @@ erDiagram
     }
 ```
 
-認証のテーブル（`sessions`・`accounts`・`verifications`）は better-auth が作るので、本書には載せない（版を固定するときに、実際の定義を [tech-stack.md](./tech-stack.md) に写す）。
+認証のテーブル（`sessions`・`accounts`・`verifications`）は better-auth が作るので、本書には載せない。表名は複数形（`usePlural: true`）で、実際の定義は実装の `backend/src/db/schema.ts` が正。
 
 ### 設計のポイント
 

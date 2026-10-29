@@ -19,7 +19,7 @@
 | UI | shadcn/ui + Tailwind CSS | 未決 | 部品をコピーして持つ方式で、見た目を細かく調整できる |
 | データ取得・状態 | TanStack Query（`@tanstack/react-query`） | 5.105.x | 楽観的更新・再試行・キャッシュを1つで持てる。F-30 オフライン記録の中心（[下の節](#オフライン記録f-30)） |
 | 型の共有 | `@nestjs/swagger` が出す OpenAPI から、orval で画面用の型と TanStack Query の部品を生成 | orval 8.x | API の形を NestJS 側の1か所で決め、画面は生成した型を使う。orval は TanStack Query のフックに加えて mutationKey とフックの外で使える送信処理も作るので、F-30 の `setMutationDefaults` にそのまま渡せる（[下の節](#typescript-の版と型の生成)） |
-| 認証（画面側） | `better-auth/react` | 未決 | API 側の better-auth と対になる |
+| 認証（画面側） | `better-auth/react` | 1.7.14（API 側と同じ版で固定） | API 側の better-auth と対になる。baseURL を指定せず、今開いているサイトの `/api/auth` を呼ぶ |
 | 地図 | MapLibre GL JS + PMTiles（`pmtiles`） | 未決 | 地図の画像を自分の S3 + CloudFront から配り、外部の地図サービスに頼らない |
 | GPX の読み取り | `@tmcw/togeojson` | 未決 | 依存が無く、地図にそのまま渡せる GeoJSON で出る。壊れた XML・線0本・サイズ上限の検査は自前 |
 | 動画 | MediaRecorder（ブラウザ標準） | - | 画面の中で2秒だけ撮る（720p・MP4/H.264 を優先）。変換サーバーを置かない |
@@ -30,7 +30,7 @@
 |----------|----------|-----------|---------|
 | フレームワーク | NestJS（AWS Lambda 上で動かす） | 12.x | 型つきで、コントローラー・サービス・モジュールの作法が決まっている。使う時だけ動く Lambda に載せ、費用を抑える |
 | ORM | Drizzle | 0.45.x | 週ごと・部位ごとの集計を型つきで書ける。Lambda で軽い |
-| 認証 | better-auth（Drizzle アダプター）+ Cookie セッション | 未決 | 利用者が多く、自分の DB に保存できる。`/api/*` を CloudFront の下に置き、画面と同じサイトにして Cookie を使う |
+| 認証 | better-auth（Drizzle アダプター）+ Cookie セッション。Nest とのつなぎは `@thallesp/nestjs-better-auth` | 1.7.14／連携部品 2.8.0（どちらも固定） | 利用者が多く、自分の DB に保存できる。`/api/*` を CloudFront の下に置き、画面と同じサイトにして Cookie を使う |
 | API 仕様の出力 | `@nestjs/swagger` | 未決 | NestJS 公式。OpenAPI を出力して画面の型を作る |
 | メニュー説明文 | テンプレート文 ＋ Cloudflare Workers AI（無料枠） | - | テンプレート文を必ず作り、AI が使えるときだけ数値を変えずに言い換える。AI が止まってもアプリは壊れない |
 
