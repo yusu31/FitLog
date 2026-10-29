@@ -56,3 +56,14 @@ export class InvitationCreatedResponse {
   @ApiProperty({ format: 'date-time', description: '作ってから7日' })
   expiresAt!: Date;
 }
+
+export class InvitationPreviewResponse {
+  @ApiProperty({ example: '朝トレ部' })
+  groupName!: string;
+
+  @ApiProperty({ example: 3, description: '今の人数' })
+  memberCount!: number;
+
+  @ApiProperty({ example: 5, description: '人数の上限' })
+  memberMax!: number;
+}

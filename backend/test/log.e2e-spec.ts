@@ -75,7 +75,8 @@ describe('リクエストのログ（結合）', () => {
     await request(app.getHttpServer()).get('/api/invitations/SECRET-INVITE-TOKEN-0123').expect(404);
     const text = output.join('');
     expect(text).not.toContain('SECRET-INVITE-TOKEN-0123');
-    expect(requestLines()[0]).toMatchObject({ route: '(unmatched)', status: 404 });
+    // 招待の閲覧の道（02-2）ができたので、型は /api/invitations/:token になる。値は型に置き換わって出ない
+    expect(requestLines()[0]).toMatchObject({ route: '/api/invitations/:token', status: 404 });
   });
 
   // T-LOG-10: DB のエラー（better-auth の中で起きる）でも、SQL の引数をログに出さない。

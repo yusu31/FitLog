@@ -51,4 +51,13 @@ export class GroupsController {
   async revokeInvitation(@Session() session: UserSession, @Param('id') id: string): Promise<void> {
     await this.groups.revokeInvitation(session.user.id, id);
   }
+
+  @Delete('current/members/me')
+  @HttpCode(204)
+  @ApiOperation({ operationId: 'leaveGroup', summary: 'グループを出る（グループは残る）' })
+  @ApiNoContentResponse()
+  @ApiNotFoundResponse({ type: ErrorResponse, description: 'グループに入っていない' })
+  async leave(@Session() session: UserSession): Promise<void> {
+    await this.groups.leaveGroup(session.user.id);
+  }
 }

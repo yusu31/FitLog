@@ -11,6 +11,7 @@ import { getGetCurrentGroupQueryKey, useCreateGroup, useGetCurrentGroup, type Gr
 import { authClient } from '@/lib/auth-client';
 import { messageOf } from '@/lib/api/message';
 import { InvitePanel } from './invite-panel';
+import { LeaveGroup } from './leave-group';
 
 const GROUP_NAME_MAX = 20;
 export const GROUP_MEMBER_MAX = 5;
@@ -184,6 +185,7 @@ function GroupPanel({ group }: { group: GroupDetailResponse }) {
       </section>
 
       <InvitePanel full={count >= GROUP_MEMBER_MAX} />
+      <LeaveGroup />
     </div>
   );
 }

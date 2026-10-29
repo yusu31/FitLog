@@ -194,6 +194,143 @@
           "groups"
         ]
       }
+    },
+    "/api/groups/current/members/me": {
+      "delete": {
+        "operationId": "leaveGroup",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "グループに入っていない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "グループを出る（グループは残る）",
+        "tags": [
+          "groups"
+        ]
+      }
+    },
+    "/api/invitations/{token}": {
+      "get": {
+        "operationId": "getInvitation",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationPreviewResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "存在しない・取り消し済み（INVITATION_NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "期限切れ（INVITATION_EXPIRED）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "招待の中身（グループ名と今の人数）を見る。ログイン不要",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/api/invitations/{token}/accept": {
+      "post": {
+        "operationId": "acceptInvitation",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "存在しない・取り消し済み（INVITATION_NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "すでにグループにいる（ALREADY_IN_GROUP）・満員（GROUP_FULL）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "期限切れ（INVITATION_EXPIRED）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "招待リンクでグループに参加する",
+        "tags": [
+          "invitations"
+        ]
+      }
     }
   },
   "info": {
@@ -399,6 +536,30 @@
           "id",
           "token",
           "expiresAt"
+        ]
+      },
+      "InvitationPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "groupName": {
+            "type": "string",
+            "example": "朝トレ部"
+          },
+          "memberCount": {
+            "type": "number",
+            "example": 3,
+            "description": "今の人数"
+          },
+          "memberMax": {
+            "type": "number",
+            "example": 5,
+            "description": "人数の上限"
+          }
+        },
+        "required": [
+          "groupName",
+          "memberCount",
+          "memberMax"
         ]
       }
     }
