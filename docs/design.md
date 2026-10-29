@@ -72,6 +72,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | POST | `/groups/current/invitations` | 招待リンクを作る | リンクの値は**このレスポンスの1回だけ**返す |
 | GET | `/invitations/{token}` | 招待の内容（グループ名・今の人数）を見る | **ログイン不要**（2章）。期限切れ 410・取り消し済み 404 |
 | POST | `/invitations/{token}/accept` | 参加する | 満員 409・すでに別のグループ 409・期限切れ 410 |
+| DELETE | `/groups/current/invitations/{id}` | 招待リンクを取り消す（`revoked_at` に時刻を入れる。行は消さない） | 自分のグループの招待だけ。すでに取り消し済みでも 204（冪等）。`id` は招待を作ったレスポンスで返す |
 | DELETE | `/groups/current/members/me` | グループを出る | |
 
 ### 種目（F-03）
@@ -79,7 +80,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | メソッド | パス | 説明 | 備考 |
 |----------|------|------|------|
 | GET | `/exercises` | 一覧の種目＋自分が追加した種目 | |
-| POST | `/exercises` | 自分用の種目を追加する（`name`・`bodyPart`） | 同じ名前は 409 |
+| POST | `/exercises` | 自分用の種目を追加する（`name`・`bodyPart`） | 同じ名前（大文字小文字は区別しない）は 409。一覧の種目と同じ名前も 409 |
 | GET | `/exercises/{id}/previous` | **前回**（同じ種目の直近の記録）のセットと、自己ベストを返す（ゴースト・F-05・F-06） | 前回がなければ空 |
 
 ### 記録（F-03・F-04・F-08・F-14）

@@ -159,7 +159,23 @@ erDiagram
 | id | uuid | PK | 部位つきの一覧（約30種目）は、マイグレーションで固定の ID を入れる |
 | name | text | NOT NULL | 1〜30字 |
 | body_part | body_part | NOT NULL | ヒートマップの部位。種目ごとに1つ |
-| created_by | text | FK → users.id | 自分で追加した種目の作者。**一覧の種目は NULL**。NULL でなければ、その人にだけ見える |
+| created_by | text | FK → users.id | 自分で追加した種目の作者。**一覧の種目は NULL**。NULL でなければ、種目の一覧にはその人にだけ出る（記録した足跡には種目名がそのまま出る） |
+| trial_weight_kg | numeric(4,1) |  | お試しの前回値の重量。**一覧の種目だけ**に入れ、自分で追加した種目は NULL |
+| trial_reps | smallint |  | お試しの前回値の回数。`trial_weight_kg` と同時に入れる（片方だけは不可）。**記録としては保存しない**（features.md） |
+
+#### 一覧の種目（約30件・下書き。**部位の割り当ては本人レビュー待ち**）
+
+部位は `body_part`（仮置きの7つ）に合わせる。お試しの前回値は、初めて使う人が「前回」と並べられる軽めの値で、確定ではない。
+
+| 部位 | 種目（お試しの前回値） |
+|------|------------------------|
+| chest | ベンチプレス（20kg×10）／ダンベルプレス（8kg×10）／腕立て伏せ（0kg×10）／ダンベルフライ（5kg×10） |
+| back | ラットプルダウン（20kg×10）／懸垂（0kg×5）／ベントオーバーロウ（15kg×10）／デッドリフト（30kg×8） |
+| shoulders | ショルダープレス（8kg×10）／サイドレイズ（3kg×12）／フェイスプル（10kg×12） |
+| arms | アームカール（5kg×12）／トライセプスエクステンション（5kg×12）／ディップス（0kg×8） |
+| abs | クランチ（0kg×15）／レッグレイズ（0kg×10）／プランク（0kg×1。1回＝1分） |
+| glutes | ヒップスラスト（20kg×10）／ブルガリアンスクワット（0kg×8）／グルートブリッジ（0kg×15） |
+| legs | スクワット（20kg×10）／レッグプレス（40kg×10）／レッグエクステンション（20kg×12）／レッグカール（20kg×12）／ランジ（0kg×10）／カーフレイズ（0kg×15） |
 
 ### records（記録）
 
@@ -259,6 +275,8 @@ erDiagram
 | reactions | UNIQUE `(record_id, user_id, stamp_key)` | 二重付与の防止・記録ごとの一覧 |
 | comments | `(record_id, created_at)` | 記録ごとのコメント一覧 |
 | exercises | `(created_by)` | 自分が追加した種目の一覧 |
+| exercises | UNIQUE `(created_by, lower(name))` | 自分が追加した種目の同名の防止（大文字小文字は区別しない）。ゴースト対戦の前回値が割れないようにするため |
+| exercises | UNIQUE `(lower(name))` WHERE `created_by IS NULL` | 一覧の種目の同名の防止。**一覧の種目と同じ名前を自分で追加することは、API 側で確かめて 409 にする**（索引だけでは別の行どうしを比べられない） |
 
 「前回の取得」のクエリ（同じ種目の直近の記録のセット）は、`records(user_id, recorded_at DESC)` と `workout_sets(exercise_id, record_id)` を使う。件数が増えて遅くなったら、実行計画（`EXPLAIN`）を見て直す。
 
@@ -272,7 +290,7 @@ Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次�
 |----|------|
 | 1 | better-auth の表（users・sessions・accounts・verifications）。`users` に `avatar` を足す |
 | 2 | groups・group_members・invitations |
-| 3 | body_part・exercises（一覧の種目を固定の ID で入れる） |
+| 3 | body_part・exercises（一覧の種目と、お試しの前回値を、固定の ID で入れる。種目を直すときは新しいマイグレーションを足す） |
 | 4 | record_kind・records・workout_sets・run_details |
 | 5 | reactions・comments |
 | 6 | videos |
