@@ -1,5 +1,5 @@
 // 表の定義の置き場。表は機能と同じ PR で足す（認証＝02-1 ③a、記録＝02-2 など）。
-import { boolean, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 // ── better-auth が使う4つの表 ──────────────────────────────────────────
 // 列の形は better-auth 1.7.14 の @better-auth/core/dist/db/get-tables.mjs の定義に合わせる。
@@ -66,4 +66,41 @@ export const verifications = pgTable('verifications', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ── グループと招待（docs/database-design.md 3章） ─────────────────────────────
+export const groups = pgTable('groups', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  createdBy: text('created_by').references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// user_id の UNIQUE が「1人が入れるグループは1つ」を守る。人数の上限（5人）は制約では守れないので、参加の処理で数え直す
+export const groupMembers = pgTable(
+  'group_members',
+  {
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => groups.id),
+    userId: text('user_id')
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.groupId, t.userId] })],
+);
+
+// 招待リンクの値そのものは保存しない（SHA-256 のハッシュだけ）。取り消しは行を消さず revoked_at に時刻を入れる
+export const invitations = pgTable('invitations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  groupId: uuid('group_id')
+    .notNull()
+    .references(() => groups.id),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdBy: text('created_by').references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
 });

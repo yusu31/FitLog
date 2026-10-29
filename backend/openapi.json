@@ -54,6 +54,146 @@
           "health"
         ]
       }
+    },
+    "/api/groups": {
+      "post": {
+        "operationId": "createGroup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGroupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "すでにグループにいる（ALREADY_IN_GROUP）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "グループを作る（作った人が最初のメンバー）",
+        "tags": [
+          "groups"
+        ]
+      }
+    },
+    "/api/groups/current": {
+      "get": {
+        "operationId": "getCurrentGroup",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupDetailResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "グループに入っていない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "今のグループとメンバーを返す",
+        "tags": [
+          "groups"
+        ]
+      }
+    },
+    "/api/groups/current/invitations": {
+      "post": {
+        "operationId": "createInvitation",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationCreatedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "グループに入っていない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "招待リンクを作る（値はこの応答の1回だけ）",
+        "tags": [
+          "groups"
+        ]
+      }
+    },
+    "/api/groups/current/invitations/{id}": {
+      "delete": {
+        "operationId": "revokeInvitation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "自分のグループの招待ではない・存在しない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "招待リンクを取り消す（2回目以降も 204）",
+        "tags": [
+          "groups"
+        ]
+      }
     }
   },
   "info": {
@@ -121,6 +261,144 @@
           "code",
           "message",
           "details"
+        ]
+      },
+      "CreateGroupRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "朝ランの会",
+            "minLength": 1,
+            "maxLength": 20,
+            "description": "グループ名（1〜20字）"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "GroupResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "朝ランの会"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "AvatarResponse": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "example": "A"
+          },
+          "hair": {
+            "type": "number",
+            "example": 1
+          },
+          "hairColor": {
+            "type": "string",
+            "example": "brown"
+          },
+          "shirtColor": {
+            "type": "string",
+            "example": "teal"
+          },
+          "pantsColor": {
+            "type": "string",
+            "example": "navy"
+          }
+        },
+        "required": [
+          "body",
+          "hair",
+          "hairColor",
+          "shirtColor",
+          "pantsColor"
+        ]
+      },
+      "MemberResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "example": "たろう"
+          },
+          "avatar": {
+            "description": "キャラの設定。メールアドレスは返さない",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "avatar"
+        ]
+      },
+      "GroupDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "朝ランの会"
+          },
+          "members": {
+            "description": "参加した順",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberResponse"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "members"
+        ]
+      },
+      "InvitationCreatedResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "取り消すときに使う ID"
+          },
+          "token": {
+            "type": "string",
+            "description": "招待リンクの値。**この応答の1回だけ**返す（DB にはハッシュだけを保存する）"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "作ってから7日"
+          }
+        },
+        "required": [
+          "id",
+          "token",
+          "expiresAt"
         ]
       }
     }
