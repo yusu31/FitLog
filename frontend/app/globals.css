@@ -4,6 +4,30 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* FitLog の色（docs/screen-design.md 6章。元は prototype/v8）。
+   白文字を載せる背景は、コントラスト比 4.5 以上になる濃い色を使う（6章の「実装での扱い」） */
+@theme {
+  --color-teal: #17a2a6;
+  --color-teal-dark: #0e7f83; /* 白文字 4.79 */
+  --color-teal-deep: #0a5f62; /* 濃ティールのボタンの影 */
+  --color-teal-light: #d5f0f1;
+  --color-gold: #ffc21a; /* 紺の文字 8.97 */
+  --color-gold-dark: #d99a00;
+  --color-gold-light: #fff3cc;
+  --color-coral: #ff6b5b; /* 白文字は 2.80 で不可。紺の文字（5.19）にする */
+  --color-coral-dark: #d94a3b;
+  --color-coral-strong: #c23b2d; /* 白文字 5.31 */
+  --color-coral-light: #ffe4e0;
+  --color-grape: #8e7cf0;
+  --color-grape-dark: #6a57cf; /* 白文字 5.42 */
+  --color-ink: #1e2a3a;
+  --color-sub: #6b7280; /* 白の上 4.83 */
+  --color-sub-strong: #4b5563; /* 面（#F4F6F8）の上 6.98 */
+  --color-face: #f4f6f8;
+  --color-line: #e5e7eb;
+  --color-line-dark: #c9cdd3;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -53,30 +77,31 @@ body {
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --background: #ffffff;
+  --foreground: #1e2a3a;
+  --card: #ffffff;
+  --card-foreground: #1e2a3a;
+  --popover: #ffffff;
+  --popover-foreground: #1e2a3a;
+  --primary: #0e7f83;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: #4b5563;
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --destructive: #c23b2d;
+  --border: #e5e7eb;
+  /* 入力欄の枠は、白との比 3 以上（WCAG 1.4.11 の部品の境界） */
+  --input: #8b929c;
+  --ring: #17a2a6;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -130,5 +155,60 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* FitLog の部品（docs/screen-design.md 6章「文字と部品」） */
+@layer components {
+  /* 厚みボタン: 下に影を置き、押すと沈む。影の色は --thick で変える */
+  .fl-thick {
+    box-shadow: 0 4px 0 var(--thick, var(--color-teal-deep));
+    transition: transform 80ms, box-shadow 80ms;
+  }
+  .fl-thick:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--thick, var(--color-teal-deep));
+  }
+  /* 枠つきの面（リストの行・カード）。下の枠を太くして厚みを出す */
+  .fl-slab {
+    border: 2px solid var(--color-line);
+    border-bottom-width: 4px;
+    border-radius: var(--radius);
+    background: #ffffff;
+  }
+  /* 斜めに切った札 */
+  .fl-tag {
+    display: inline-block;
+    padding: 3px 20px 3px 10px;
+    font-style: italic;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+  }
+  /* 大きいカードの右上に入れる斜めの縞。縞の色は --stripe で変える。
+     濃い背景（白文字）では黒の縞にする: 白の縞だと文字の背景が明るくなり、比が 4.5 を割る（白 on 濃ティール＋白12% は 3.90） */
+  .fl-stripes::before {
+    content: "";
+    position: absolute;
+    right: -30px;
+    top: -10px;
+    width: 150px;
+    height: 220px;
+    background: repeating-linear-gradient(-45deg, var(--stripe, rgb(255 255 255 / 0.12)) 0 8px, transparent 8px 16px);
+    transform: skewX(-14deg);
+    pointer-events: none;
+  }
+  /* 太い斜体の数字 */
+  .fl-num {
+    font-style: italic;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fl-thick {
+      transition: none;
+    }
   }
 }
