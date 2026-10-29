@@ -272,6 +272,8 @@ Lambda は、同時に来たリクエストの数だけ**別々の実行環境**
 
 **値の入れ方:** 値は Terraform に書かず、**AWS の画面か CLI で手で入れる**（Terraform は入れ物だけ作る）。そうしないと値が状態ファイルに残る。Lambda が読めるのは、そのパラメータだけ（4.2章）。ローカル開発では `.gitignore` 済みの `.env` を使う。ログに値を出さない（design.md 6章）。
 
+**実装（02-1 ③b 準備③）**: `backend/src/config/ssm-secrets.ts`。環境変数 `FITLOG_SSM_PREFIX`（例 `/fitlog/spike`）があるときだけ、`database-url`・`better-auth-secret`・`better-auth-url` を読んで `DATABASE_URL`・`BETTER_AUTH_SECRET`・`BETTER_AUTH_URL` に入れる（`lambda.ts` の起動の最初・1実行環境につき1回）。すでに環境変数があればそちらを優先し、読みにも行かない（手元・テストは AWS を呼ばない）。仮の文字（`CHANGE_ME`）のまま・足りない・読めないときは、名前だけを出して起動を止める。`@aws-sdk/client-ssm` 3.1152.0 を固定（公開から2週間以上経った版）。一式は 50.4 MB（予算 100 MB）。
+
 ---
 
 ## 9. 既知の制限・残課題

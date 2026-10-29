@@ -2,7 +2,7 @@
 
 使い捨ての公開（半日）で、[infrastructure.md 3.2章](./infrastructure.md)の確認項目を実機で確かめる手順。**課金の発生しうる操作は、手順の中の「⚠ 課金」の印の所だけ**で、実行の直前に必ず確認してから行う。作るものは `infra/` の Terraform（[7章](./infrastructure.md#7-デプロイ手順)）。
 
-> **状態**: Terraform の下書きまで（`terraform validate`・Trivy の検査が通る）。**手順5（Lambda が秘密情報を読む実装）は未実装**で、次の PR で入れる。それまで、手順6より先には進めない。
+> **状態**: Terraform の下書き（`terraform validate`・Trivy が通る）と、Lambda が起動時に Parameter Store の3値を読む実装（`backend/src/config/ssm-secrets.ts`）まで済んでいる。**実際に AWS で動くかは、公開スパイクで初めて確かめる**（時間待ちではなく、`apply` が要る＝本人確認が要る）。Neon のプロジェクト（`fitlog`・シンガポール・Postgres 17）は作成済み。接続文字列は控えず、手順5で Neon の画面（Connect）から直接コピーする。
 
 ## 0. 先に済ませること（本人の操作）
 
@@ -56,7 +56,7 @@ AWS の画面で Systems Manager → Parameter Store を開き、次の3つの�
 | `/fitlog/spike/better-auth-secret` | 32文字以上のランダムな文字列 |
 | `/fitlog/spike/better-auth-url` | 手順4で表示された `site_url` |
 
-> 未実装: Lambda がこの3つを起動時に読む処理（次の PR）。標準パラメータの暗号化が使えるかも、ここで初めて確かめる（infrastructure.md 8章の**未確認**）。
+> Lambda は、起動の最初に（`FITLOG_SSM_PREFIX` の下の）この3つを読む。**仮の文字（`CHANGE_ME`）のまま・足りない・読めないときは、起動を止めて、名前だけをログに出す**（値は出さない）。標準パラメータの暗号化（SecureString）が使えるか・Lambda の実行ロールで読めるか（鍵の権限）は、ここで初めて確かめる（infrastructure.md 8章。理由: 実際の AWS が要る＝`apply` が要る）。
 
 ## 6. 表を作る
 

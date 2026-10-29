@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import type { Handler } from 'aws-lambda';
 import { AppModule } from './app.module.js';
 import { setupApp } from './app.setup.js';
+import { loadSecretsFromSsm } from './config/ssm-secrets.js';
 
 // Lambda の入口（docs/infrastructure.md 3章・tech-stack.md「Lambda に載せる部品」）。
 // CloudFront → Function URL（payload 2.0）のイベントを、Express の要求に変えて NestJS に渡す。
@@ -16,6 +17,9 @@ type LambdaHandler = ReturnType<typeof configure>;
 let cached: Promise<LambdaHandler> | undefined;
 
 async function bootstrap(): Promise<LambdaHandler> {
+  // 秘密情報（接続文字列・署名鍵・外向きアドレス）を Parameter Store から読んで、環境変数に入れる（config/ssm-secrets.ts）。
+  // FITLOG_SSM_PREFIX が無ければ何もしない（手元・テスト）。NestFactory.create より前に呼ぶ: DB と認証の設定が、起動時に環境変数を読むため
+  await loadSecretsFromSsm(process.env);
   // abortOnError: false — 既定では、起動の失敗で NestJS がプロセスごと終了させる（process.exit）。
   // それだと「失敗を捨てて次の呼び出しでやり直す」が働かない。例外として受け取り、下の catch で後始末する
   const app = await NestFactory.create(AppModule, { bodyParser: false, bufferLogs: true, abortOnError: false });
