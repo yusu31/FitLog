@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
+import { AuthLayout } from '@/components/auth/auth-layout';
+import { ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth-client';
@@ -40,29 +41,28 @@ export function LoginForm() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-4">
-      <h1 className="text-2xl font-bold">ログイン</h1>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <AuthLayout title="ログイン">
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email">メールアドレス</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
+          <Label className="font-extrabold" htmlFor="email">メールアドレス</Label>
+          <Input className="h-12 text-base" id="email" name="email" type="email" autoComplete="email" required />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">パスワード</Label>
-          <Input id="password" name="password" type="password" autoComplete="current-password" required />
+          <Label className="font-extrabold" htmlFor="password">パスワード</Label>
+          <Input className="h-12 text-base" id="password" name="password" type="password" autoComplete="current-password" required />
         </div>
         {error && (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
             {error}
           </p>
         )}
-        <Button type="submit" disabled={pending}>
+        <ThickButton type="submit" disabled={pending}>
           {pending ? 'ログイン中…' : 'ログイン'}
-        </Button>
+        </ThickButton>
       </form>
-      <p className="text-sm text-muted-foreground">
-        はじめての方は <Link href={withNext('/signup', next)} className="underline">新規登録</Link>
+      <p className="text-center text-sm text-sub">
+        はじめての方は <Link href={withNext('/signup', next)} className="font-extrabold text-teal-dark underline underline-offset-4">新規登録</Link>
       </p>
-    </main>
+    </AuthLayout>
   );
 }
