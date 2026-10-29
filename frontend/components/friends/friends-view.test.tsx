@@ -168,6 +168,21 @@ describe('FriendsView（S-20 仲間）', () => {
     });
   });
 
+  it('グループを出る: 確かめてから DELETE を送り、グループなしの表示に戻る。「やめる」なら送らない', async () => {
+    replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }, { status: 404, body: {} }];
+    replies['DELETE /api/groups/current/members/me'] = [{ status: 204 }];
+    const user = userEvent.setup();
+    renderView();
+    await user.click(await screen.findByRole('button', { name: 'グループを出る' }));
+    await user.click(screen.getByRole('button', { name: 'やめる' }));
+    expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
+
+    await user.click(screen.getByRole('button', { name: 'グループを出る' }));
+    await user.click(screen.getByRole('button', { name: '出る' }));
+    expect(await screen.findByRole('button', { name: 'グループを作る' })).toBeInTheDocument();
+    expect(calls.filter((c) => c.method === 'DELETE').map((c) => c.url)).toEqual(['/api/groups/current/members/me']);
+  });
+
   it('読み込みが通信で失敗したら、責めない文言で知らせる', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))));
     renderView();

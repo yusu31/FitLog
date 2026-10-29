@@ -90,6 +90,14 @@ export interface InvitationCreatedResponse {
   expiresAt: string;
 }
 
+export interface InvitationPreviewResponse {
+  groupName: string;
+  /** 今の人数 */
+  memberCount: number;
+  /** 人数の上限 */
+  memberMax: number;
+}
+
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
   for (const key of Object.keys(query)) {
@@ -791,4 +799,346 @@ export const useRevokeInvitation = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getRevokeInvitationMutationOptions(options), queryClient);
+    }
+
+export type leaveGroupResponse204 = {
+  data: void
+  status: 204
+}
+
+export type leaveGroupResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type leaveGroupResponseSuccess = (leaveGroupResponse204) & {
+  headers: Headers;
+};
+export type leaveGroupResponseError = (leaveGroupResponse404) & {
+  headers: Headers;
+};
+
+export type leaveGroupResponse = (leaveGroupResponseSuccess | leaveGroupResponseError)
+
+export const getLeaveGroupUrl = () => {
+
+
+
+
+  return `/api/groups/current/members/me`
+}
+
+/**
+ * @summary グループを出る（グループは残る）
+ */
+export const leaveGroup = async ( options?: RequestInit): Promise<leaveGroupResponse> => {
+
+  const res = await fetch(getLeaveGroupUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: leaveGroupResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as leaveGroupResponse
+}
+
+
+
+
+
+export const getLeaveGroupMutationKey = () => ['leaveGroup'] as const;
+
+export const getLeaveGroupMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveGroup>>, TError,void, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof leaveGroup>>, TError,void, TContext> => {
+
+const mutationKey = getLeaveGroupMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof leaveGroup>>, void> = () => {
+
+
+          return  leaveGroup(fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LeaveGroupMutationResult = NonNullable<Awaited<ReturnType<typeof leaveGroup>>>
+
+    export type LeaveGroupMutationError = ErrorResponse
+
+
+    /**
+ * @summary グループを出る（グループは残る）
+ */
+export const useLeaveGroup = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveGroup>>, TError,void, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof leaveGroup>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLeaveGroupMutationOptions(options), queryClient);
+    }
+
+export type getInvitationResponse200 = {
+  data: InvitationPreviewResponse
+  status: 200
+}
+
+export type getInvitationResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getInvitationResponse410 = {
+  data: ErrorResponse
+  status: 410
+}
+
+export type getInvitationResponseSuccess = (getInvitationResponse200) & {
+  headers: Headers;
+};
+export type getInvitationResponseError = (getInvitationResponse404 | getInvitationResponse410) & {
+  headers: Headers;
+};
+
+export type getInvitationResponse = (getInvitationResponseSuccess | getInvitationResponseError)
+
+export const getGetInvitationUrl = (token: string,) => {
+
+
+
+
+  return `/api/invitations/${token}`
+}
+
+/**
+ * @summary 招待の中身（グループ名と今の人数）を見る。ログイン不要
+ */
+export const getInvitation = async (token: string, options?: RequestInit): Promise<getInvitationResponse> => {
+
+  const res = await fetch(getGetInvitationUrl(token),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getInvitationResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getInvitationResponse
+}
+
+
+
+
+
+export const getGetInvitationQueryKey = (token: string,) => {
+    return [
+    `/api/invitations/${token}`
+    ] as const;
+    }
+
+
+export const getGetInvitationQueryOptions = <TData = Awaited<ReturnType<typeof getInvitation>>, TError = ErrorResponse>(token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInvitationQueryKey(token);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInvitation>>> = ({ signal }) => getInvitation(token, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: token !== null && token !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInvitationQueryResult = NonNullable<Awaited<ReturnType<typeof getInvitation>>>
+export type GetInvitationQueryError = ErrorResponse
+
+
+export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation>>, TError = ErrorResponse>(
+ token: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvitation>>,
+          TError,
+          Awaited<ReturnType<typeof getInvitation>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation>>, TError = ErrorResponse>(
+ token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvitation>>,
+          TError,
+          Awaited<ReturnType<typeof getInvitation>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation>>, TError = ErrorResponse>(
+ token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 招待の中身（グループ名と今の人数）を見る。ログイン不要
+ */
+
+export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation>>, TError = ErrorResponse>(
+ token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInvitationQueryOptions(token,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type acceptInvitationResponse200 = {
+  data: GroupResponse
+  status: 200
+}
+
+export type acceptInvitationResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type acceptInvitationResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type acceptInvitationResponse410 = {
+  data: ErrorResponse
+  status: 410
+}
+
+export type acceptInvitationResponseSuccess = (acceptInvitationResponse200) & {
+  headers: Headers;
+};
+export type acceptInvitationResponseError = (acceptInvitationResponse404 | acceptInvitationResponse409 | acceptInvitationResponse410) & {
+  headers: Headers;
+};
+
+export type acceptInvitationResponse = (acceptInvitationResponseSuccess | acceptInvitationResponseError)
+
+export const getAcceptInvitationUrl = (token: string,) => {
+
+
+
+
+  return `/api/invitations/${token}/accept`
+}
+
+/**
+ * @summary 招待リンクでグループに参加する
+ */
+export const acceptInvitation = async (token: string, options?: RequestInit): Promise<acceptInvitationResponse> => {
+
+  const res = await fetch(getAcceptInvitationUrl(token),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: acceptInvitationResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as acceptInvitationResponse
+}
+
+
+
+
+
+export const getAcceptInvitationMutationKey = () => ['acceptInvitation'] as const;
+
+export const getAcceptInvitationMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptInvitation>>, TError,AcceptInvitationMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptInvitation>>, TError,AcceptInvitationMutationVariables, TContext> => {
+
+const mutationKey = getAcceptInvitationMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptInvitation>>, AcceptInvitationMutationVariables> = (props) => {
+          const {token} = props ?? {};
+
+          return  acceptInvitation(token,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof acceptInvitation>>>
+
+    export type AcceptInvitationMutationError = ErrorResponse
+    export type AcceptInvitationMutationVariables = {token: string}
+
+    /**
+ * @summary 招待リンクでグループに参加する
+ */
+export const useAcceptInvitation = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptInvitation>>, TError,AcceptInvitationMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof acceptInvitation>>,
+        TError,
+        AcceptInvitationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAcceptInvitationMutationOptions(options), queryClient);
     }
