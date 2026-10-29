@@ -24,7 +24,7 @@ services:
   # アプリと結合テストは、こちらのポート（6434）につなぐ。マイグレーションは直接（5434）。
   # 1本の接続を複数の接続で使い回す（default_pool_size=1）ので、「窓口を通っている」ことをテストで確かめられる。
   pgbouncer:
-    image: edoburu/pgbouncer:v1.26.1-p0
+    image: edoburu/pgbouncer:v1.26.1-p0@sha256:488422e38cff912895d0d65d8963fcd306e6ac589a724398b6eb8e294e94d624
     environment:
       DB_HOST: db
       DB_USER: fitlog

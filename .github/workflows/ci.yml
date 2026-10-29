@@ -53,7 +53,7 @@ jobs:
       # 本番の Neon の -pooler（PgBouncer のトランザクションモード）と同じ制約で結合テストをする窓口。
       # 設定はローカルの docker-compose.yml と同じ。postgres（上のサービス名）につなぐ
       pgbouncer:
-        image: edoburu/pgbouncer:v1.26.1-p0
+        image: edoburu/pgbouncer:v1.26.1-p0@sha256:488422e38cff912895d0d65d8963fcd306e6ac589a724398b6eb8e294e94d624
         env:
           DB_HOST: postgres
           DB_USER: fitlog
