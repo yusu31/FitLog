@@ -26,6 +26,8 @@
   --color-face: #f4f6f8;
   --color-line: #e5e7eb;
   --color-line-dark: #c9cdd3;
+  /* 角の丸みは 12px（docs/screen-design.md 6章）。Tailwind の rounded-xl は 16.8px になるので、別名で持つ */
+  --radius-fl: 12px;
 }
 
 @theme inline {
@@ -182,7 +184,7 @@ body {
     padding: 3px 20px 3px 10px;
     font-style: italic;
     font-weight: 800;
-    font-size: 13px;
+    font-size: 15px;
     letter-spacing: 0.14em;
     clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
   }

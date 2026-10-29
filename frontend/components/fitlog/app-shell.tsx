@@ -25,8 +25,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         ) : (
           <main aria-busy="true" aria-label="読み込み中" className="flex-1 space-y-4 px-4 pt-8">
             <div className="h-8 w-28 animate-pulse rounded-lg bg-face" />
-            <div className="h-40 animate-pulse rounded-xl bg-face" />
-            <div className="h-16 animate-pulse rounded-xl bg-face" />
+            <div className="h-40 animate-pulse rounded-fl bg-face" />
+            <div className="h-16 animate-pulse rounded-fl bg-face" />
           </main>
         )}
         <TabBar />
@@ -37,5 +37,5 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 // 画面の見出し（v8 の .title）
 export function PageTitle({ children }: { children: ReactNode }) {
-  return <h1 className="px-4 pt-6 text-[28px] leading-tight font-black">{children}</h1>;
+  return <h1 className="px-4 pt-[18px] text-[28px] font-extrabold">{children}</h1>;
 }

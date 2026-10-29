@@ -31,7 +31,7 @@ export function MeView() {
         <section className="fl-slab flex items-center gap-3 px-4 py-3">
           <span
             aria-hidden
-            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-teal-dark text-xl font-black text-white"
+            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-teal-dark text-xl font-extrabold text-white"
           >
             {session ? Array.from(session.user.name)[0] : ''}
           </span>

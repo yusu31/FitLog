@@ -24,9 +24,9 @@ export function FriendsView() {
     <>
       <PageTitle>なかま</PageTitle>
       {isPending ? (
-        <div aria-busy="true" aria-label="読み込み中" className="mx-4 mt-3 h-40 animate-pulse rounded-xl bg-face" />
+        <div aria-busy="true" aria-label="読み込み中" className="mx-4 mt-3 h-40 animate-pulse rounded-fl bg-face" />
       ) : isError || !data || (data.status !== 200 && data.status !== 404) ? (
-        <p role="alert" className="mx-4 mt-4 rounded-xl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="mx-4 mt-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
           読み込めませんでした。電波の良い所で開き直してください
         </p>
       ) : data.status === 404 ? (
@@ -42,9 +42,9 @@ function NoGroup() {
   const [open, setOpen] = useState(false);
   return (
     <div className="space-y-4 px-4 pt-3">
-      <section className="fl-stripes relative overflow-hidden rounded-xl bg-teal-dark [--stripe:rgb(0_0_0/0.14)] px-5 pt-4 pb-5 text-white shadow-[0_4px_0_var(--color-teal-deep)]">
+      <section className="fl-stripes relative overflow-hidden rounded-fl bg-teal-dark [--stripe:rgb(0_0_0/0.14)] px-[18px] pt-3.5 pb-4 text-white shadow-[0_4px_0_var(--color-teal-deep)]">
         <span className="fl-tag bg-gold text-ink">TEAM</span>
-        <h2 className="mt-3 text-2xl leading-snug font-black">仲間と、見せ合おう</h2>
+        <h2 className="mt-3 text-2xl leading-snug font-extrabold">仲間と、見せ合おう</h2>
         <p className="mt-1 text-sm leading-relaxed font-bold">
           グループは1つ・<span className="fl-num text-base">{GROUP_MEMBER_MAX}</span>人まで。記録した日やスタンプを、仲間どうしで見せ合えます。
         </p>
@@ -151,14 +151,14 @@ function GroupPanel({ group }: { group: GroupDetailResponse }) {
 
   return (
     <div className="space-y-4 px-4 pt-3">
-      <section className="fl-stripes relative overflow-hidden rounded-xl bg-coral px-5 pt-4 pb-5 text-ink shadow-[0_4px_0_var(--color-coral-dark)]">
-        <span className="fl-tag bg-ink text-white">TEAM</span>
+      <section className="fl-stripes relative overflow-hidden rounded-fl bg-coral px-[18px] pt-3.5 pb-4 text-ink shadow-[0_4px_0_var(--color-coral-dark)]">
+        <span className="fl-tag bg-gold text-ink">TEAM</span>
         <p className="mt-3 flex items-baseline gap-1.5 leading-none">
           <span className="fl-num text-7xl">{count}</span>
-          <span className="text-xl font-black">人</span>
+          <span className="text-xl font-extrabold">人</span>
           <span className="ml-1 text-sm font-bold">／ {GROUP_MEMBER_MAX}人まで</span>
         </p>
-        <h2 className="mt-2 text-lg font-black break-all">{group.name}</h2>
+        <h2 className="mt-2 text-lg font-extrabold break-all">{group.name}</h2>
       </section>
 
       <section aria-labelledby="members-heading">
@@ -168,10 +168,10 @@ function GroupPanel({ group }: { group: GroupDetailResponse }) {
         </h2>
         <ul className="space-y-2">
           {group.members.map((m) => (
-            <li key={m.id} className="fl-slab flex min-h-14 items-center gap-3 px-3 py-2">
+            <li key={m.id} className="fl-slab flex min-h-14 items-center gap-3 p-2.5">
               <span
                 aria-hidden
-                className="flex size-11 shrink-0 items-center justify-center rounded-full text-lg font-black text-white"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full text-[19px] font-extrabold text-white"
                 style={{ background: AVATAR_BG[m.avatar.shirtColor] ?? AVATAR_BG.navy }}
               >
                 {Array.from(m.name)[0]}

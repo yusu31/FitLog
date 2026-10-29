@@ -13,7 +13,7 @@ export default function Home() {
   }, [router]);
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-2 px-4">
-      <h1 className="text-3xl font-black">FitLog</h1>
+      <h1 className="text-3xl font-extrabold">FitLog</h1>
       <p className="text-sub">少人数で使う、筋トレとランの記録アプリ</p>
     </main>
   );

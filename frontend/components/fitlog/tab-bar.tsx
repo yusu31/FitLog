@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, User, Users } from 'lucide-react';
+import { Dumbbell, User, Users } from 'lucide-react';
 import { cn } from 'cn';
 
 // 下のタブは3つ（docs/screen-design.md 1章）。選択中は色だけでなく aria-current と背景で示す
 const TABS = [
-  { href: '/today', label: '今日', Icon: Bell },
+  { href: '/today', label: '今日', Icon: Dumbbell },
   { href: '/friends', label: '仲間', Icon: Users },
   { href: '/me', label: '自分', Icon: User },
 ] as const;
@@ -28,7 +28,7 @@ export function TabBar() {
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex h-13 w-21 flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold outline-none',
+                  'flex h-13 w-21 flex-col items-center justify-center gap-0.5 rounded-fl text-[11px] font-bold outline-none',
                   'focus-visible:ring-4 focus-visible:ring-teal/40',
                   // 選択中の文字は濃いティール（ティール10%の背景の上で 4.5 以上）
                   active ? 'bg-teal/10 text-teal-deep' : 'text-sub',

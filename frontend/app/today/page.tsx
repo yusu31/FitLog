@@ -5,9 +5,9 @@ export default function TodayPage() {
   return (
     <AppShell>
       <PageTitle>きょう</PageTitle>
-      <section className="fl-stripes relative mx-4 mt-3 overflow-hidden rounded-xl bg-teal-dark [--stripe:rgb(0_0_0/0.14)] px-5 pt-4 pb-5 text-white shadow-[0_4px_0_var(--color-teal-deep)]">
+      <section className="fl-stripes relative mx-4 mt-3 overflow-hidden rounded-fl bg-teal-dark [--stripe:rgb(0_0_0/0.14)] px-[18px] pt-3.5 pb-4 text-white shadow-[0_4px_0_var(--color-teal-deep)]">
         <span className="fl-tag bg-gold text-ink">NEXT</span>
-        <h2 className="mt-3 text-2xl leading-snug font-black">記録は、もうすぐ</h2>
+        <h2 className="mt-3 text-2xl leading-snug font-extrabold">記録は、もうすぐ</h2>
         <p className="mt-1 text-sm leading-relaxed font-bold">
           筋トレとランの記録は、次の更新で使えるようになります。先に「仲間」タブでグループを作っておけます。
         </p>

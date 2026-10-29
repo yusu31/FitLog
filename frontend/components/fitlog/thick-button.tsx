@@ -25,7 +25,7 @@ export function ThickButton({ tone = 'teal', size = 'lg', className, type = 'but
     <button
       type={type}
       className={cn(
-        'fl-thick inline-flex items-center justify-center gap-2 rounded-xl font-extrabold outline-none',
+        'fl-thick inline-flex items-center justify-center gap-2 rounded-fl font-extrabold outline-none',
         'focus-visible:ring-4 focus-visible:ring-teal/40 disabled:cursor-not-allowed disabled:opacity-60',
         '[&_svg]:size-5 [&_svg]:shrink-0',
         tones[tone],
