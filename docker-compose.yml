@@ -12,6 +12,8 @@ services:
       - "5434:5432"
     volumes:
       - fitlog-db:/var/lib/postgresql/data
+      # 結合テスト専用の DB（fitlog_test）を作る。開発の DB をテストが空にしないため（Issue #88）
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fitlog -d fitlog"]
       interval: 2s
@@ -29,7 +31,7 @@ services:
       DB_HOST: db
       DB_USER: fitlog
       DB_PASSWORD: fitlog
-      DB_NAME: fitlog
+      # DB_NAME を書かない: 開発の fitlog と、結合テストの fitlog_test の両方を通す（全部の DB を通す設定 * になる）
       AUTH_TYPE: scram-sha-256
       POOL_MODE: transaction
       DEFAULT_POOL_SIZE: "1"
