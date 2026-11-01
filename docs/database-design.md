@@ -295,7 +295,7 @@ Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次�
 | 1 | better-auth の表（users・sessions・accounts・verifications）。`users` に `avatar` を足す |
 | 2 | groups・group_members・invitations |
 | 3 | body_part・exercises（`0002_exercises.sql`）と、一覧の種目30件・お試しの前回値の投入（`0003_seed_exercises.sql`。固定の ID `00000000-0000-4000-8000-0000000000NN`（NN は一覧の順の 01〜30）。種目を直すときは、この行を書き換えず新しいマイグレーションを足す） |
-| 4 | record_kind・records・workout_sets・run_details |
+| 4 | record_kind・records（`0004_records.sql`。2026-11-01）・workout_sets・run_details（次の PR 以降。それぞれ別のマイグレーションに分ける） |
 | 5 | reactions・comments |
 | 6 | videos |
 
