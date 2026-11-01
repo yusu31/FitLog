@@ -201,9 +201,9 @@ erDiagram
 | id | uuid | PK | 端末で作る UUID |
 | record_id | uuid | FK → records.id・NOT NULL・ON DELETE CASCADE | `kind = 'workout'` の記録だけを指す（API で確かめる） |
 | exercise_id | uuid | FK → exercises.id・NOT NULL | |
-| set_no | smallint | NOT NULL | その種目の何セット目か（1から）。同じ `record_id`・`exercise_id` の中で一意 |
-| weight_kg | numeric(4,1) | NOT NULL | 0〜500（0.5 刻み）。自重の種目は 0 |
-| reps | smallint | NOT NULL | 1〜999 |
+| set_no | smallint | NOT NULL | その種目の何セット目か（1〜99。CHECK 制約）。同じ `record_id`・`exercise_id` の中で一意 |
+| weight_kg | numeric(4,1) | NOT NULL | 0〜500（0.5 刻み。CHECK 制約）。自重の種目は 0 |
+| reps | smallint | NOT NULL | 1〜999（CHECK 制約） |
 | created_at | timestamptz | NOT NULL | |
 
 ### run_details（ランの詳細）
@@ -295,7 +295,7 @@ Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次�
 | 1 | better-auth の表（users・sessions・accounts・verifications）。`users` に `avatar` を足す |
 | 2 | groups・group_members・invitations |
 | 3 | body_part・exercises（`0002_exercises.sql`）と、一覧の種目30件・お試しの前回値の投入（`0003_seed_exercises.sql`。固定の ID `00000000-0000-4000-8000-0000000000NN`（NN は一覧の順の 01〜30）。種目を直すときは、この行を書き換えず新しいマイグレーションを足す） |
-| 4 | record_kind・records（`0004_records.sql`。2026-11-01）・workout_sets・run_details（次の PR 以降。それぞれ別のマイグレーションに分ける） |
+| 4 | record_kind・records（`0004_records.sql`。2026-11-01）・workout_sets（`0005_workout_sets.sql`。2026-11-02）・run_details（次の PR 以降。別のマイグレーションに分ける） |
 | 5 | reactions・comments |
 | 6 | videos |
 
