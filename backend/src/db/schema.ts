@@ -165,3 +165,32 @@ export const records = pgTable(
       .where(sql`${t.kind} = 'rest'`),
   ],
 );
+
+// ── 筋トレのセット（docs/database-design.md workout_sets） ──────────────────
+// id は端末で作る UUID（再送しても二重にならない。F-30）。範囲の検査は API でもするが、すり抜けても DB が止める（CHECK）。
+// 重量は 0〜500 の 0.5 刻み、回数は 1〜999、セット番号は 1〜99（セット番号の上限は docs/design.md 7章）
+export const workoutSets = pgTable(
+  'workout_sets',
+  {
+    id: uuid('id').primaryKey(),
+    recordId: uuid('record_id')
+      .notNull()
+      .references(() => records.id, { onDelete: 'cascade' }),
+    exerciseId: uuid('exercise_id')
+      .notNull()
+      .references(() => exercises.id),
+    setNo: smallint('set_no').notNull(),
+    weightKg: numeric('weight_kg', { precision: 4, scale: 1 }).notNull(),
+    reps: smallint('reps').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // 同じ記録・同じ種目・同じセット番号の二重登録を防ぐ
+    uniqueIndex('workout_sets_record_exercise_set_uq').on(t.recordId, t.exerciseId, t.setNo),
+    // 前回の取得（ゴースト）・自己ベストの判定
+    index('workout_sets_exercise_record_idx').on(t.exerciseId, t.recordId),
+    check('workout_sets_set_no_ck', sql`${t.setNo} between 1 and 99`),
+    check('workout_sets_weight_ck', sql`${t.weightKg} between 0 and 500 and (${t.weightKg} * 2) = trunc(${t.weightKg} * 2)`),
+    check('workout_sets_reps_ck', sql`${t.reps} between 1 and 999`),
+  ],
+);

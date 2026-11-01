@@ -468,6 +468,87 @@
           "records"
         ]
       }
+    },
+    "/api/records/{id}/sets": {
+      "post": {
+        "operationId": "addSet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "すでにある（同じ id の再送）。1回目の内容を返す",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "新しく作った",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "重量が 0〜500 の 0.5 刻みでない・回数が 1〜999 の整数でない・id が UUID でない など（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・他の人の記録（RECORD_NOT_FOUND）、種目が無い・他の人が追加した種目（EXERCISE_NOT_FOUND）、他の人のセットと同じ id（SET_NOT_FOUND）。存在を教えない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "筋トレでない記録（RECORD_KIND_MISMATCH）・同じセット番号を別の id で二重登録（SET_NUMBER_TAKEN）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "筋トレの記録にセットを足す。冪等",
+        "tags": [
+          "records"
+        ]
+      }
     }
   },
   "info": {
@@ -840,6 +921,77 @@
           "kind",
           "recordedAt",
           "localDate"
+        ]
+      },
+      "CreateSetRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "端末で作る ID。同じ ID を送り直しても、セットは1件のまま（冪等）"
+          },
+          "exerciseId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "種目の ID（一覧の種目か、自分で追加した種目）"
+          },
+          "setNo": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 99,
+            "example": 1,
+            "description": "その種目の何セット目か（1〜99）。同じ記録・同じ種目の中で一意"
+          },
+          "weightKg": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 500,
+            "multipleOf": 0.5,
+            "example": 40,
+            "description": "重量（kg）。0〜500 の 0.5 刻み。自重の種目は 0"
+          },
+          "reps": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 999,
+            "example": 10,
+            "description": "回数（1〜999 の整数）"
+          }
+        },
+        "required": [
+          "id",
+          "exerciseId",
+          "setNo",
+          "weightKg",
+          "reps"
+        ]
+      },
+      "SetResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "setNo": {
+            "type": "number",
+            "example": 1
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 40
+          },
+          "reps": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "id",
+          "setNo",
+          "weightKg",
+          "reps"
         ]
       }
     }

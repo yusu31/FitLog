@@ -178,6 +178,38 @@ export interface RecordResponse {
   localDate: string;
 }
 
+export interface CreateSetRequest {
+  /** 端末で作る ID。同じ ID を送り直しても、セットは1件のまま（冪等） */
+  id: string;
+  /** 種目の ID（一覧の種目か、自分で追加した種目） */
+  exerciseId: string;
+  /**
+     * その種目の何セット目か（1〜99）。同じ記録・同じ種目の中で一意
+     * @minimum 1
+     * @maximum 99
+     */
+  setNo: number;
+  /**
+     * 重量（kg）。0〜500 の 0.5 刻み。自重の種目は 0
+     * @minimum 0
+     * @maximum 500
+     */
+  weightKg: number;
+  /**
+     * 回数（1〜999 の整数）
+     * @minimum 1
+     * @maximum 999
+     */
+  reps: number;
+}
+
+export interface SetResponse {
+  id: string;
+  setNo: number;
+  weightKg: number;
+  reps: number;
+}
+
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
   for (const key of Object.keys(query)) {
@@ -1584,4 +1616,134 @@ export const useCreateRecord = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getCreateRecordMutationOptions(options), queryClient);
+    }
+
+export type addSetResponse200 = {
+  data: SetResponse
+  status: 200
+}
+
+export type addSetResponse201 = {
+  data: SetResponse
+  status: 201
+}
+
+export type addSetResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type addSetResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type addSetResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type addSetResponseSuccess = (addSetResponse200 | addSetResponse201) & {
+  headers: Headers;
+};
+export type addSetResponseError = (addSetResponse400 | addSetResponse404 | addSetResponse409) & {
+  headers: Headers;
+};
+
+export type addSetResponse = (addSetResponseSuccess | addSetResponseError)
+
+export const getAddSetUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}/sets`
+}
+
+/**
+ * @summary 筋トレの記録にセットを足す。冪等
+ */
+export const addSet = async (id: string,
+    createSetRequest: CreateSetRequest, options?: RequestInit): Promise<addSetResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAddSetUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createSetRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: addSetResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as addSetResponse
+}
+
+
+
+
+
+export const getAddSetMutationKey = () => ['addSet'] as const;
+
+export const getAddSetMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSet>>, TError,AddSetMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof addSet>>, TError,AddSetMutationVariables, TContext> => {
+
+const mutationKey = getAddSetMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addSet>>, AddSetMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addSet(id,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddSetMutationResult = NonNullable<Awaited<ReturnType<typeof addSet>>>
+    export type AddSetMutationBody = CreateSetRequest
+    export type AddSetMutationError = ErrorResponse
+    export type AddSetMutationVariables = {id: string;data: CreateSetRequest}
+
+    /**
+ * @summary 筋トレの記録にセットを足す。冪等
+ */
+export const useAddSet = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSet>>, TError,AddSetMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addSet>>,
+        TError,
+        AddSetMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddSetMutationOptions(options), queryClient);
     }

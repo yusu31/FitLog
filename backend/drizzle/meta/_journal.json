@@ -36,6 +36,13 @@
       "when": 1793544342268,
       "tag": "0004_records",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793546137164,
+      "tag": "0005_workout_sets",
+      "breakpoints": true
     }
   ]
 }

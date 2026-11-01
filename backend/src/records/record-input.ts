@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { isUuid } from '../common/uuid.js';
 
 // 今のところ作れる種類。ラン（run）は F-04 の PR で足す
 export const CREATABLE_KINDS = ['workout', 'rest'] as const;
@@ -7,7 +8,6 @@ export type CreatableKind = (typeof CREATABLE_KINDS)[number];
 // 端末の時計は少しずれるので、未来は5分先まで受け付ける（docs/testing-design.md T-DATE-07。5分1秒は 400）
 export const FUTURE_LIMIT_MS = 5 * 60 * 1000;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // ISO 8601 の日時（タイムゾーンつき）。日付だけ・空白区切り・数値は受けない
 const ISO = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\.\d{1,3})?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
 
@@ -27,7 +27,7 @@ export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: st
   const body = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
   const details: string[] = [];
 
-  const id = typeof body.id === 'string' && UUID.test(body.id) ? body.id.toLowerCase() : undefined;
+  const id = isUuid(body.id) ? body.id.toLowerCase() : undefined;
   if (!id) details.push('id: UUID で指定してください');
 
   const kind = (CREATABLE_KINDS as readonly unknown[]).includes(body.kind) ? (body.kind as CreatableKind) : undefined;
