@@ -1,10 +1,13 @@
-import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { and, asc, eq, isNull, or, sql } from 'drizzle-orm';
 import { errorCode } from '../common/error-code.js';
 import { DB, type Db } from '../db/db.module.js';
+import { isUuid } from '../common/uuid.js';
 import { exercises } from '../db/schema.js';
+import { findPersonalBest, findPrevious } from '../records/ghost-queries.js';
+import { parseIso } from '../records/record-input.js';
 import { parseExerciseInput } from './exercise-input.js';
-import type { ExerciseResponse } from './exercises.response.js';
+import type { ExerciseResponse, PreviousResponse } from './exercises.response.js';
 
 const PG_UNIQUE_VIOLATION = '23505';
 
@@ -62,6 +65,31 @@ export class ExercisesService {
       if (errorCode(err) === PG_UNIQUE_VIOLATION) throw this.alreadyExists();
       throw err;
     }
+  }
+
+  // 前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト・F-05・F-06）。before を付けると、その時刻より前の記録だけを見る
+  // （記録中の自分の記録が「前回」にならないように、画面は今の記録の時刻を渡す）。一覧の種目か自分の種目だけが見える
+  async previous(userId: string, exerciseId: string, beforeRaw: unknown): Promise<PreviousResponse> {
+    let before: Date | null = null;
+    if (beforeRaw !== undefined) {
+      const at = typeof beforeRaw === 'string' ? parseIso(beforeRaw) : undefined;
+      if (!at) {
+        throw new BadRequestException({ code: 'VALIDATION_ERROR', message: '入力が正しくありません', details: ['before: ISO 8601 の日時（例: 2026-11-01T09:00:00Z）で指定してください'] });
+      }
+      before = at;
+    }
+
+    const notFound = () => new NotFoundException({ code: 'EXERCISE_NOT_FOUND', message: '種目が見つかりません', details: null });
+    if (!isUuid(exerciseId)) throw notFound();
+    const id = exerciseId.toLowerCase();
+    const [exercise] = await this.db
+      .select({ id: exercises.id })
+      .from(exercises)
+      .where(and(eq(exercises.id, id), or(isNull(exercises.createdBy), eq(exercises.createdBy, userId))));
+    if (!exercise) throw notFound();
+
+    const [previous, personalBest] = await Promise.all([findPrevious(this.db, userId, id, before), findPersonalBest(this.db, userId, id, before)]);
+    return { previous: previous && { recordedAt: previous.recordedAt.toISOString(), sets: previous.sets }, personalBest };
   }
 
   private alreadyExists() {

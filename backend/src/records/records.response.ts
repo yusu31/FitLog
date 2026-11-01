@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { GhostResult } from '../common/ghost.js';
 import { RECORD_KINDS, type RecordKind } from '../db/schema.js';
 import { CREATABLE_KINDS, type CreatableKind } from './record-input.js';
 
@@ -56,4 +57,14 @@ export class SetResponse {
 
   @ApiProperty({ example: 10 })
   reps!: number;
+
+  @ApiProperty({
+    enum: ['up', 'same', 'down'],
+    nullable: true,
+    description: '前回の同じセットとの比べ結果。重量が同じなら回数、違えば重量×回数で比べる。前回が無ければ null。down は「負け」と言わない',
+  })
+  result!: GhostResult | null;
+
+  @ApiProperty({ description: 'その種目で、過去最大の重量×回数を超えたら true（同じは false。初めての記録の最初のセットも false）' })
+  isPersonalBest!: boolean;
 }

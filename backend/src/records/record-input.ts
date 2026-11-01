@@ -12,7 +12,7 @@ export const FUTURE_LIMIT_MS = 5 * 60 * 1000;
 const ISO = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\.\d{1,3})?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
 
 // 日時の文字列を Date にする。実在しない日付（2月30日など）は、JavaScript が3月2日に繰り上げてしまうので、年月日が元のままかを確かめる
-function parseIso(text: string): Date | undefined {
+export function parseIso(text: string): Date | undefined {
   const m = ISO.exec(text);
   if (!m) return undefined;
   const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
