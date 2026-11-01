@@ -407,6 +407,66 @@
         ]
       }
     },
+    "/api/exercises/{id}/previous": {
+      "get": {
+        "operationId": "getPrevious",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "前回がなければ previous が null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviousResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "before が ISO 8601 の日時でない（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "種目が無い・他の人が追加した種目（EXERCISE_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト）",
+        "tags": [
+          "exercises"
+        ]
+      }
+    },
     "/api/records": {
       "post": {
         "operationId": "createRecord",
@@ -836,6 +896,101 @@
           "trialReps"
         ]
       },
+      "PreviousSetResponse": {
+        "type": "object",
+        "properties": {
+          "setNo": {
+            "type": "number",
+            "example": 1
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 40
+          },
+          "reps": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "setNo",
+          "weightKg",
+          "reps"
+        ]
+      },
+      "PreviousRecordResponse": {
+        "type": "object",
+        "properties": {
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "前回の記録の時刻（UTC）"
+          },
+          "sets": {
+            "description": "前回のセット（セット番号の順）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreviousSetResponse"
+            }
+          }
+        },
+        "required": [
+          "recordedAt",
+          "sets"
+        ]
+      },
+      "PersonalBestResponse": {
+        "type": "object",
+        "properties": {
+          "weightKg": {
+            "type": "number",
+            "example": 45
+          },
+          "reps": {
+            "type": "number",
+            "example": 8
+          },
+          "volume": {
+            "type": "number",
+            "example": 360,
+            "description": "重量×回数"
+          }
+        },
+        "required": [
+          "weightKg",
+          "reps",
+          "volume"
+        ]
+      },
+      "PreviousResponse": {
+        "type": "object",
+        "properties": {
+          "previous": {
+            "nullable": true,
+            "description": "同じ種目の直近の記録。無ければ null",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PreviousRecordResponse"
+              }
+            ]
+          },
+          "personalBest": {
+            "nullable": true,
+            "description": "過去最大の重量×回数のセット。無ければ null",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonalBestResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "previous",
+          "personalBest"
+        ]
+      },
       "CreateExerciseRequest": {
         "type": "object",
         "properties": {
@@ -985,13 +1140,29 @@
           "reps": {
             "type": "number",
             "example": 10
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "up",
+              "same",
+              "down"
+            ],
+            "nullable": true,
+            "description": "前回の同じセットとの比べ結果。重量が同じなら回数、違えば重量×回数で比べる。前回が無ければ null。down は「負け」と言わない"
+          },
+          "isPersonalBest": {
+            "type": "boolean",
+            "description": "その種目で、過去最大の重量×回数を超えたら true（同じは false。初めての記録の最初のセットも false）"
           }
         },
         "required": [
           "id",
           "setNo",
           "weightKg",
-          "reps"
+          "reps",
+          "result",
+          "isPersonalBest"
         ]
       }
     }

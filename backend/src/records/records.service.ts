@@ -1,9 +1,11 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { and, eq, isNull, or } from 'drizzle-orm';
+import { compareSet, isPersonalBest } from '../common/ghost.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
 import { exercises, records, workoutSets } from '../db/schema.js';
+import { findPrevious, pastMaxVolume } from './ghost-queries.js';
 import { parseRecordInput } from './record-input.js';
 import type { RecordResponse, SetResponse } from './records.response.js';
 import { parseSetInput } from './set-input.js';
@@ -17,13 +19,7 @@ const toResponse = (row: Row): RecordResponse => ({
   localDate: row.localDate,
 });
 
-// numeric 列は文字列で返ってくるので、数に直す
-const toSetResponse = (row: typeof workoutSets.$inferSelect): SetResponse => ({
-  id: row.id,
-  setNo: row.setNo,
-  weightKg: Number(row.weightKg),
-  reps: row.reps,
-});
+type SetRow = typeof workoutSets.$inferSelect;
 
 const recordNotFound = () => new NotFoundException({ code: 'RECORD_NOT_FOUND', message: '記録が見つかりません', details: null });
 
@@ -75,7 +71,7 @@ export class RecordsService {
     const input = parseSetInput(raw);
     if (!isUuid(recordId)) throw recordNotFound();
 
-    const [record] = await this.db.select({ userId: records.userId, kind: records.kind }).from(records).where(eq(records.id, recordId.toLowerCase()));
+    const [record] = await this.db.select({ userId: records.userId, kind: records.kind, recordedAt: records.recordedAt }).from(records).where(eq(records.id, recordId.toLowerCase()));
     if (!record || record.userId !== userId) throw recordNotFound();
     if (record.kind !== 'workout') {
       throw new ConflictException({ code: 'RECORD_KIND_MISMATCH', message: '筋トレの記録にだけセットを足せます', details: null });
@@ -97,18 +93,35 @@ export class RecordsService {
       .returning();
     if (inserted) {
       this.logger.log(`セットを追加: ${inserted.id}`);
-      return { created: true, set: toSetResponse(inserted) };
+      return { created: true, set: await this.toSetResponse(userId, inserted, record.recordedAt) };
     }
 
     const [existing] = await this.db
-      .select({ set: workoutSets, ownerId: records.userId })
+      .select({ set: workoutSets, ownerId: records.userId, recordedAt: records.recordedAt })
       .from(workoutSets)
       .innerJoin(records, eq(records.id, workoutSets.recordId))
       .where(eq(workoutSets.id, input.id));
     if (existing) {
       if (existing.ownerId !== userId) throw new NotFoundException({ code: 'SET_NOT_FOUND', message: 'セットが見つかりません', details: null });
-      return { created: false, set: toSetResponse(existing.set) };
+      return { created: false, set: await this.toSetResponse(userId, existing.set, existing.recordedAt) };
     }
     throw new ConflictException({ code: 'SET_NUMBER_TAKEN', message: 'そのセット番号はすでに使われています', details: null });
+  }
+
+  // 応答に、ゴースト（前回の同じセットとの比べ結果）と自己ベストの札を付ける。比べ方は画面と共通の関数（common/ghost.ts）。
+  // どちらも「このセットより前」に積まれたものだけを見るので、再送（同じ id の2回目）でも1回目と同じ判定になる（T-PB-05・T-OFF-02）
+  //  ・result: 前回の同じセット番号と比べる。前回にその番号が無ければ前回の最後のセット（T-GHOST-12）。前回が無ければ null
+  private async toSetResponse(userId: string, row: SetRow, recordedAt: Date): Promise<SetResponse> {
+    const current = { weightKg: Number(row.weightKg), reps: row.reps };
+    const previous = await findPrevious(this.db, userId, row.exerciseId, recordedAt);
+    const target = previous ? (previous.sets.find((s) => s.setNo === row.setNo) ?? previous.sets[previous.sets.length - 1]) : undefined;
+    const past = await pastMaxVolume(this.db, userId, row.exerciseId, row.recordId, recordedAt, row.setNo);
+    return {
+      id: row.id,
+      setNo: row.setNo,
+      ...current,
+      result: target ? compareSet(target, current) : null,
+      isPersonalBest: isPersonalBest(current, past),
+    };
   }
 }

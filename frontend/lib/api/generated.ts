@@ -129,6 +129,39 @@ export interface ExerciseResponse {
   trialReps: number | null;
 }
 
+export interface PreviousSetResponse {
+  setNo: number;
+  weightKg: number;
+  reps: number;
+}
+
+export interface PreviousRecordResponse {
+  /** 前回の記録の時刻（UTC） */
+  recordedAt: string;
+  /** 前回のセット（セット番号の順） */
+  sets: PreviousSetResponse[];
+}
+
+export interface PersonalBestResponse {
+  weightKg: number;
+  reps: number;
+  /** 重量×回数 */
+  volume: number;
+}
+
+export interface PreviousResponse {
+  /**
+     * 同じ種目の直近の記録。無ければ null
+     * @nullable
+     */
+  previous: PreviousRecordResponse | null;
+  /**
+     * 過去最大の重量×回数のセット。無ければ null
+     * @nullable
+     */
+  personalBest: PersonalBestResponse | null;
+}
+
 export interface CreateExerciseRequest {
   /**
      * 種目名（1〜30字。前後の空白は取り除く）
@@ -203,12 +236,39 @@ export interface CreateSetRequest {
   reps: number;
 }
 
+/**
+ * 前回の同じセットとの比べ結果。重量が同じなら回数、違えば重量×回数で比べる。前回が無ければ null。down は「負け」と言わない
+ * @nullable
+ */
+export type SetResponseResult = typeof SetResponseResult[keyof typeof SetResponseResult] | null;
+
+
+export const SetResponseResult = {
+  up: 'up',
+  same: 'same',
+  down: 'down',
+} as const;
+
 export interface SetResponse {
   id: string;
   setNo: number;
   weightKg: number;
   reps: number;
+  /**
+     * 前回の同じセットとの比べ結果。重量が同じなら回数、違えば重量×回数で比べる。前回が無ければ null。down は「負け」と言わない
+     * @nullable
+     */
+  result: SetResponseResult;
+  /** その種目で、過去最大の重量×回数を超えたら true（同じは false。初めての記録の最初のセットも false） */
+  isPersonalBest: boolean;
 }
+
+export type GetPreviousParams = {
+/**
+ * この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す
+ */
+before?: string;
+};
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
@@ -1493,6 +1553,153 @@ export const useCreateExercise = <TError = ErrorResponse,
       > => {
       return useMutation(getCreateExerciseMutationOptions(options), queryClient);
     }
+
+export type getPreviousResponse200 = {
+  data: PreviousResponse
+  status: 200
+}
+
+export type getPreviousResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getPreviousResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getPreviousResponseSuccess = (getPreviousResponse200) & {
+  headers: Headers;
+};
+export type getPreviousResponseError = (getPreviousResponse400 | getPreviousResponse404) & {
+  headers: Headers;
+};
+
+export type getPreviousResponse = (getPreviousResponseSuccess | getPreviousResponseError)
+
+export const getGetPreviousUrl = (id: string,
+    params?: GetPreviousParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/exercises/${id}/previous?${stringifiedParams}` : `/api/exercises/${id}/previous`
+}
+
+/**
+ * @summary 前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト）
+ */
+export const getPrevious = async (id: string,
+    params?: GetPreviousParams, options?: RequestInit): Promise<getPreviousResponse> => {
+
+  const res = await fetch(getGetPreviousUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getPreviousResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getPreviousResponse
+}
+
+
+
+
+
+export const getGetPreviousQueryKey = (id: string,
+    params?: GetPreviousParams,) => {
+    return [
+    `/api/exercises/${id}/previous`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPreviousQueryOptions = <TData = Awaited<ReturnType<typeof getPrevious>>, TError = ErrorResponse>(id: string,
+    params?: GetPreviousParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPreviousQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPrevious>>> = ({ signal }) => getPrevious(id,params, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPreviousQueryResult = NonNullable<Awaited<ReturnType<typeof getPrevious>>>
+export type GetPreviousQueryError = ErrorResponse
+
+
+export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, TError = ErrorResponse>(
+ id: string,
+    params: undefined |  GetPreviousParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPrevious>>,
+          TError,
+          Awaited<ReturnType<typeof getPrevious>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, TError = ErrorResponse>(
+ id: string,
+    params?: GetPreviousParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPrevious>>,
+          TError,
+          Awaited<ReturnType<typeof getPrevious>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, TError = ErrorResponse>(
+ id: string,
+    params?: GetPreviousParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト）
+ */
+
+export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, TError = ErrorResponse>(
+ id: string,
+    params?: GetPreviousParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPreviousQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export type createRecordResponse200 = {
   data: RecordResponse

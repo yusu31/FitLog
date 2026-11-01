@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { ErrorResponse } from '../common/error-response.js';
-import { CreateExerciseRequest, ExerciseResponse } from './exercises.response.js';
+import { CreateExerciseRequest, ExerciseResponse, PreviousResponse } from './exercises.response.js';
 import { ExercisesService } from './exercises.service.js';
 
 // 種目（F-03。docs/design.md 4章）。すべてログイン必須（共通のガードが既定で守る）
@@ -16,6 +16,16 @@ export class ExercisesController {
   @ApiOkResponse({ type: [ExerciseResponse] })
   list(@Session() session: UserSession) {
     return this.exercises.list(session.user.id);
+  }
+
+  @Get(':id/previous')
+  @ApiOperation({ operationId: 'getPrevious', summary: '前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト）' })
+  @ApiQuery({ name: 'before', required: false, description: 'この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す' })
+  @ApiOkResponse({ type: PreviousResponse, description: '前回がなければ previous が null' })
+  @ApiBadRequestResponse({ type: ErrorResponse, description: 'before が ISO 8601 の日時でない（VALIDATION_ERROR）' })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '種目が無い・他の人が追加した種目（EXERCISE_NOT_FOUND。存在を教えない）' })
+  previous(@Session() session: UserSession, @Param('id') id: string, @Query('before') before?: string) {
+    return this.exercises.previous(session.user.id, id, before);
   }
 
   @Post()

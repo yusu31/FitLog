@@ -62,13 +62,14 @@ describe('セットを足す（結合: 本物の PostgreSQL・better-auth）', (
 
   describe('セットを足す（201）', () => {
     // T-SET-01
-    it('代表的な値（40kg×10）は 201。id・setNo・weightKg・reps を返し、DB に1行入る', async () => {
+    it('代表的な値（40kg×10）は 201。id・setNo・weightKg・reps・result・isPersonalBest を返し、DB に1行入る', async () => {
       const cookie = await signUpAs('たろう');
       const recordId = await createRecord(cookie);
       const body = set();
       const res = await addSet(cookie, recordId, body).expect(201);
 
-      expect(res.body).toEqual({ id: body.id, setNo: 1, weightKg: 40, reps: 10 });
+      // 前回が無い・初めての記録なので、result は null・札は付かない（ゴーストの細かい判定は ghost.e2e-spec.ts）
+      expect(res.body).toEqual({ id: body.id, setNo: 1, weightKg: 40, reps: 10, result: null, isPersonalBest: false });
       expect(await setRows()).toEqual([{ id: body.id, record_id: recordId, exercise_id: BENCH_PRESS_ID, set_no: 1, weight_kg: '40.0', reps: 10 }]);
     });
 
