@@ -1,6 +1,6 @@
 // 表の定義の置き場。表は機能と同じ PR で足す（認証＝02-1 ③a、記録＝02-2 など）。
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, jsonb, numeric, pgEnum, pgTable, primaryKey, smallint, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, date, index, jsonb, numeric, pgEnum, pgTable, primaryKey, smallint, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 // ── better-auth が使う4つの表 ──────────────────────────────────────────
 // 列の形は better-auth 1.7.14 の @better-auth/core/dist/db/get-tables.mjs の定義に合わせる。
@@ -133,5 +133,35 @@ export const exercises = pgTable(
     uniqueIndex('exercises_common_name_uq')
       .on(sql`lower(${t.name})`)
       .where(sql`${t.createdBy} is null`),
+  ],
+);
+
+// ── 記録（docs/database-design.md records） ──────────────────────────────────
+// 筋トレ・ラン・休みの3種類を kind で分ける「1回の記録の入れ物」。種類ごとの中身は workout_sets・run_details が持つ。
+export const RECORD_KINDS = ['workout', 'run', 'rest'] as const;
+export type RecordKind = (typeof RECORD_KINDS)[number];
+export const recordKind = pgEnum('record_kind', RECORD_KINDS);
+
+// id は端末で作る UUID（オフラインで作った記録が、再送されても二重にならないため。F-30）
+// local_date は、サーバーが recorded_at から日本時間（Asia/Tokyo）で出す日付
+export const records = pgTable(
+  'records',
+  {
+    id: uuid('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    kind: recordKind('kind').notNull(),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
+    localDate: date('local_date').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('records_user_local_date_idx').on(t.userId, t.localDate.desc()),
+    index('records_user_recorded_at_idx').on(t.userId, t.recordedAt.desc()),
+    // 休みは1日1件（筋トレ・ランは1日に何件でもよい）
+    uniqueIndex('records_rest_per_day_uq')
+      .on(t.userId, t.localDate)
+      .where(sql`${t.kind} = 'rest'`),
   ],
 );

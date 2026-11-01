@@ -406,6 +406,68 @@
           "exercises"
         ]
       }
+    },
+    "/api/records": {
+      "post": {
+        "operationId": "createRecord",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "すでにある（同じ id の再送、または同じ日の休み）。1回目の内容を返す",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "新しく作った",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "id が UUID でない・kind が workout/rest でない・recordedAt が日時でない／未来すぎる（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "同じ id が他の人の記録にある（RECORD_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録（筋トレ・休み）を作る。冪等",
+        "tags": [
+          "records"
+        ]
+      }
     }
   },
   "info": {
@@ -716,6 +778,68 @@
         "required": [
           "name",
           "bodyPart"
+        ]
+      },
+      "CreateRecordRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "端末で作る ID。同じ ID を送り直しても、記録は1件のまま（冪等）"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "workout",
+              "rest"
+            ],
+            "description": "筋トレ（workout）か休み（rest）。ラン（run）は後の PR で足す"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-01T09:00:00+09:00",
+            "description": "運動した時刻（ISO 8601）。未来は5分先まで"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "recordedAt"
+        ]
+      },
+      "RecordResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "workout",
+              "run",
+              "rest"
+            ]
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "運動した時刻（UTC）"
+          },
+          "localDate": {
+            "type": "string",
+            "example": "2026-11-01",
+            "description": "日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "recordedAt",
+          "localDate"
         ]
       }
     }

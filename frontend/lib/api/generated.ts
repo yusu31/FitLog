@@ -140,6 +140,44 @@ export interface CreateExerciseRequest {
   bodyPart: BodyPart;
 }
 
+/**
+ * 筋トレ（workout）か休み（rest）。ラン（run）は後の PR で足す
+ */
+export type CreateRecordRequestKind = typeof CreateRecordRequestKind[keyof typeof CreateRecordRequestKind];
+
+
+export const CreateRecordRequestKind = {
+  workout: 'workout',
+  rest: 'rest',
+} as const;
+
+export interface CreateRecordRequest {
+  /** 端末で作る ID。同じ ID を送り直しても、記録は1件のまま（冪等） */
+  id: string;
+  /** 筋トレ（workout）か休み（rest）。ラン（run）は後の PR で足す */
+  kind: CreateRecordRequestKind;
+  /** 運動した時刻（ISO 8601）。未来は5分先まで */
+  recordedAt: string;
+}
+
+export type RecordResponseKind = typeof RecordResponseKind[keyof typeof RecordResponseKind];
+
+
+export const RecordResponseKind = {
+  workout: 'workout',
+  run: 'run',
+  rest: 'rest',
+} as const;
+
+export interface RecordResponse {
+  id: string;
+  kind: RecordResponseKind;
+  /** 運動した時刻（UTC） */
+  recordedAt: string;
+  /** 日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す */
+  localDate: string;
+}
+
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
   for (const key of Object.keys(query)) {
@@ -1422,4 +1460,128 @@ export const useCreateExercise = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getCreateExerciseMutationOptions(options), queryClient);
+    }
+
+export type createRecordResponse200 = {
+  data: RecordResponse
+  status: 200
+}
+
+export type createRecordResponse201 = {
+  data: RecordResponse
+  status: 201
+}
+
+export type createRecordResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type createRecordResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type createRecordResponseSuccess = (createRecordResponse200 | createRecordResponse201) & {
+  headers: Headers;
+};
+export type createRecordResponseError = (createRecordResponse400 | createRecordResponse404) & {
+  headers: Headers;
+};
+
+export type createRecordResponse = (createRecordResponseSuccess | createRecordResponseError)
+
+export const getCreateRecordUrl = () => {
+
+
+
+
+  return `/api/records`
+}
+
+/**
+ * @summary 記録（筋トレ・休み）を作る。冪等
+ */
+export const createRecord = async (createRecordRequest: CreateRecordRequest, options?: RequestInit): Promise<createRecordResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCreateRecordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createRecordRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createRecordResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as createRecordResponse
+}
+
+
+
+
+
+export const getCreateRecordMutationKey = () => ['createRecord'] as const;
+
+export const getCreateRecordMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRecord>>, TError,CreateRecordMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof createRecord>>, TError,CreateRecordMutationVariables, TContext> => {
+
+const mutationKey = getCreateRecordMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRecord>>, CreateRecordMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRecord(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRecordMutationResult = NonNullable<Awaited<ReturnType<typeof createRecord>>>
+    export type CreateRecordMutationBody = CreateRecordRequest
+    export type CreateRecordMutationError = ErrorResponse
+    export type CreateRecordMutationVariables = {data: CreateRecordRequest}
+
+    /**
+ * @summary 記録（筋トレ・休み）を作る。冪等
+ */
+export const useCreateRecord = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRecord>>, TError,CreateRecordMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createRecord>>,
+        TError,
+        CreateRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateRecordMutationOptions(options), queryClient);
     }
