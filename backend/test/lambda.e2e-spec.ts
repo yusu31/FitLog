@@ -1,5 +1,5 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2, Context } from 'aws-lambda';
-import { migrateDb, setAuthEnv, TEST_ORIGIN, withPool } from './helpers/app.js';
+import { migrateDb, resetDb, setAuthEnv, TEST_ORIGIN } from './helpers/app.js';
 
 // Lambda の入口（src/lambda.ts）の結合テスト。本物の PostgreSQL・本物の better-auth に、
 // CloudFront → Function URL が渡す形（payload 2.0）のイベントを直接渡す。AWS には触れない（課金なし）。
@@ -66,7 +66,7 @@ describe('Lambda の入口（結合: 本物の PostgreSQL・Function URL 形式�
     process.env.DATABASE_URL = url;
     setAuthEnv();
     process.env.LOG_LEVEL ??= 'WARN';
-    await withPool(url!, (pool) => pool.query('TRUNCATE users CASCADE'));
+    await resetDb(url!);
   });
 
   // T-LAMBDA-01: 要求が NestJS まで届き、本文が返る（ログイン不要の /health）

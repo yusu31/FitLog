@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createApp, migrateDb, TEST_ORIGIN, withPool } from './helpers/app.js';
+import { createApp, migrateDb, resetDb, TEST_ORIGIN, withPool } from './helpers/app.js';
 
 // リクエストのログの結合テスト（本物の PostgreSQL・better-auth）。operations.md 1-1〜1-3 の約束を確かめる。
 const url = process.env.DATABASE_URL;
@@ -17,7 +17,7 @@ describe('リクエストのログ（結合）', () => {
   });
 
   beforeEach(async () => {
-    await withPool(url!, (pool) => pool.query('TRUNCATE users CASCADE'));
+    await resetDb(url!);
     process.env.LOG_LEVEL = 'INFO';
     output = [];
     // 標準出力・標準エラー出力・console の全部を集める（better-auth の標準のログは console.error に出る）

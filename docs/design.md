@@ -187,7 +187,7 @@ NestJS の例外フィルターで、すべてのエラーを次の形にそろ�
 | 項目 | 内容 |
 |------|------|
 | statusCode | HTTP ステータス |
-| code | 機械が読む短い文字列（`GROUP_FULL`・`ALREADY_IN_GROUP`・`INVITATION_EXPIRED`・`VALIDATION_FAILED` など） |
+| code | 機械が読む短い文字列（`GROUP_FULL`・`ALREADY_IN_GROUP`・`INVITATION_EXPIRED`・`EXERCISE_ALREADY_EXISTS`・`VALIDATION_ERROR` など。入力エラーは 400 `VALIDATION_ERROR`） |
 | message | 画面に出せる日本語の文言。**内部の事情（SQL・スタックトレース・パス）を入れない** |
 | details | 入力エラーのとき、項目ごとの理由の配列。それ以外は `null` |
 

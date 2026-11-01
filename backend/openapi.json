@@ -331,6 +331,81 @@
           "invitations"
         ]
       }
+    },
+    "/api/exercises": {
+      "get": {
+        "operationId": "listExercises",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExerciseResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "一覧の種目と、自分が追加した種目を返す（部位の順）",
+        "tags": [
+          "exercises"
+        ]
+      },
+      "post": {
+        "operationId": "createExercise",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExerciseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "名前が1〜30字でない・部位が一覧に無い（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "同じ名前（大文字小文字は区別しない）がすでにある。一覧の種目と同じ名前も同じ（EXERCISE_ALREADY_EXISTS）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分用の種目を追加する",
+        "tags": [
+          "exercises"
+        ]
+      }
     }
   },
   "info": {
@@ -560,6 +635,87 @@
           "groupName",
           "memberCount",
           "memberMax"
+        ]
+      },
+      "BodyPart": {
+        "type": "string",
+        "enum": [
+          "chest",
+          "back",
+          "shoulders",
+          "arms",
+          "abs",
+          "glutes",
+          "legs"
+        ]
+      },
+      "ExerciseResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "ベンチプレス"
+          },
+          "bodyPart": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BodyPart"
+              }
+            ]
+          },
+          "isCustom": {
+            "type": "boolean",
+            "description": "自分で追加した種目なら true。一覧の種目は false"
+          },
+          "trialWeightKg": {
+            "type": "number",
+            "nullable": true,
+            "example": 20,
+            "description": "お試しの前回値の重量（kg）。一覧の種目だけ。自分で追加した種目は null"
+          },
+          "trialReps": {
+            "type": "number",
+            "nullable": true,
+            "example": 10,
+            "description": "お試しの前回値の回数。一覧の種目だけ。自分で追加した種目は null"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "bodyPart",
+          "isCustom",
+          "trialWeightKg",
+          "trialReps"
+        ]
+      },
+      "CreateExerciseRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "ヨガ",
+            "minLength": 1,
+            "maxLength": 30,
+            "description": "種目名（1〜30字。前後の空白は取り除く）"
+          },
+          "bodyPart": {
+            "example": "abs",
+            "description": "ヒートマップの部位。種目ごとに1つ",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BodyPart"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "bodyPart"
         ]
       }
     }
