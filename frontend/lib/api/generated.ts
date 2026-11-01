@@ -98,6 +98,48 @@ export interface InvitationPreviewResponse {
   memberMax: number;
 }
 
+export type BodyPart = typeof BodyPart[keyof typeof BodyPart];
+
+
+export const BodyPart = {
+  chest: 'chest',
+  back: 'back',
+  shoulders: 'shoulders',
+  arms: 'arms',
+  abs: 'abs',
+  glutes: 'glutes',
+  legs: 'legs',
+} as const;
+
+export interface ExerciseResponse {
+  id: string;
+  name: string;
+  bodyPart: BodyPart;
+  /** 自分で追加した種目なら true。一覧の種目は false */
+  isCustom: boolean;
+  /**
+     * お試しの前回値の重量（kg）。一覧の種目だけ。自分で追加した種目は null
+     * @nullable
+     */
+  trialWeightKg: number | null;
+  /**
+     * お試しの前回値の回数。一覧の種目だけ。自分で追加した種目は null
+     * @nullable
+     */
+  trialReps: number | null;
+}
+
+export interface CreateExerciseRequest {
+  /**
+     * 種目名（1〜30字。前後の空白は取り除く）
+     * @minLength 1
+     * @maxLength 30
+     */
+  name: string;
+  /** ヒートマップの部位。種目ごとに1つ */
+  bodyPart: BodyPart;
+}
+
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
   for (const key of Object.keys(query)) {
@@ -1141,4 +1183,243 @@ export const useAcceptInvitation = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getAcceptInvitationMutationOptions(options), queryClient);
+    }
+
+export type listExercisesResponse200 = {
+  data: ExerciseResponse[]
+  status: 200
+}
+
+export type listExercisesResponseSuccess = (listExercisesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type listExercisesResponse = (listExercisesResponseSuccess)
+
+export const getListExercisesUrl = () => {
+
+
+
+
+  return `/api/exercises`
+}
+
+/**
+ * @summary 一覧の種目と、自分が追加した種目を返す（部位の順）
+ */
+export const listExercises = async ( options?: RequestInit): Promise<listExercisesResponse> => {
+
+  const res = await fetch(getListExercisesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listExercisesResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as listExercisesResponse
+}
+
+
+
+
+
+export const getListExercisesQueryKey = () => {
+    return [
+    `/api/exercises`
+    ] as const;
+    }
+
+
+export const getListExercisesQueryOptions = <TData = Awaited<ReturnType<typeof listExercises>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListExercisesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listExercises>>> = ({ signal }) => listExercises({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListExercisesQueryResult = NonNullable<Awaited<ReturnType<typeof listExercises>>>
+export type ListExercisesQueryError = unknown
+
+
+export function useListExercises<TData = Awaited<ReturnType<typeof listExercises>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listExercises>>,
+          TError,
+          Awaited<ReturnType<typeof listExercises>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListExercises<TData = Awaited<ReturnType<typeof listExercises>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listExercises>>,
+          TError,
+          Awaited<ReturnType<typeof listExercises>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListExercises<TData = Awaited<ReturnType<typeof listExercises>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 一覧の種目と、自分が追加した種目を返す（部位の順）
+ */
+
+export function useListExercises<TData = Awaited<ReturnType<typeof listExercises>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListExercisesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type createExerciseResponse201 = {
+  data: ExerciseResponse
+  status: 201
+}
+
+export type createExerciseResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type createExerciseResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type createExerciseResponseSuccess = (createExerciseResponse201) & {
+  headers: Headers;
+};
+export type createExerciseResponseError = (createExerciseResponse400 | createExerciseResponse409) & {
+  headers: Headers;
+};
+
+export type createExerciseResponse = (createExerciseResponseSuccess | createExerciseResponseError)
+
+export const getCreateExerciseUrl = () => {
+
+
+
+
+  return `/api/exercises`
+}
+
+/**
+ * @summary 自分用の種目を追加する
+ */
+export const createExercise = async (createExerciseRequest: CreateExerciseRequest, options?: RequestInit): Promise<createExerciseResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCreateExerciseUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createExerciseRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createExerciseResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as createExerciseResponse
+}
+
+
+
+
+
+export const getCreateExerciseMutationKey = () => ['createExercise'] as const;
+
+export const getCreateExerciseMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExercise>>, TError,CreateExerciseMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof createExercise>>, TError,CreateExerciseMutationVariables, TContext> => {
+
+const mutationKey = getCreateExerciseMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createExercise>>, CreateExerciseMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createExercise(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateExerciseMutationResult = NonNullable<Awaited<ReturnType<typeof createExercise>>>
+    export type CreateExerciseMutationBody = CreateExerciseRequest
+    export type CreateExerciseMutationError = ErrorResponse
+    export type CreateExerciseMutationVariables = {data: CreateExerciseRequest}
+
+    /**
+ * @summary 自分用の種目を追加する
+ */
+export const useCreateExercise = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExercise>>, TError,CreateExerciseMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createExercise>>,
+        TError,
+        CreateExerciseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateExerciseMutationOptions(options), queryClient);
     }

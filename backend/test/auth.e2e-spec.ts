@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createApp, migrateDb, TEST_ORIGIN, withPool } from './helpers/app.js';
+import { createApp, migrateDb, resetDb, TEST_ORIGIN, withPool } from './helpers/app.js';
 
 // 認証の結合テスト（本物の PostgreSQL・本物の better-auth）。DATABASE_URL が無ければ「落ちる」（飛ばさない）。
 const url = process.env.DATABASE_URL;
@@ -21,7 +21,7 @@ describe('認証（結合: 本物の PostgreSQL・better-auth）', () => {
   });
 
   beforeEach(async () => {
-    await withPool(url!, (pool) => pool.query('TRUNCATE users CASCADE'));
+    await resetDb(url!);
     app = await createApp(url);
   });
 

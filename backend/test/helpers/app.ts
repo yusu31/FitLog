@@ -60,3 +60,20 @@ export async function withPool<T>(url: string, fn: (pool: Pool) => Promise<T>): 
     await pool.end();
   }
 }
+
+// 結合テストの後片付け。users を空にする（TRUNCATE ... CASCADE）と、users を参照する exercises も空になり、
+// マイグレーションが入れた一覧の種目（created_by が NULL）まで消える。消える前に取っておき、空にしたあとで戻す。
+export async function resetDb(url: string): Promise<void> {
+  await withPool(url, async (pool) => {
+    await pool.query('BEGIN');
+    try {
+      await pool.query('CREATE TEMP TABLE common_exercises ON COMMIT DROP AS SELECT * FROM exercises WHERE created_by IS NULL');
+      await pool.query('TRUNCATE users CASCADE');
+      await pool.query('INSERT INTO exercises SELECT * FROM common_exercises');
+      await pool.query('COMMIT');
+    } catch (err) {
+      await pool.query('ROLLBACK');
+      throw err;
+    }
+  });
+}

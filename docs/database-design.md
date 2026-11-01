@@ -161,7 +161,7 @@ erDiagram
 | body_part | body_part | NOT NULL | ヒートマップの部位。種目ごとに1つ |
 | created_by | text | FK → users.id | 自分で追加した種目の作者。**一覧の種目は NULL**。NULL でなければ、種目の一覧にはその人にだけ出る（記録した足跡には種目名がそのまま出る） |
 | trial_weight_kg | numeric(4,1) |  | お試しの前回値の重量。**一覧の種目だけ**に入れ、自分で追加した種目は NULL |
-| trial_reps | smallint |  | お試しの前回値の回数。`trial_weight_kg` と同時に入れる（片方だけは不可）。**記録としては保存しない**（features.md） |
+| trial_reps | smallint |  | お試しの前回値の回数。`trial_weight_kg` と同時に入れる（片方だけは不可。CHECK 制約 `exercises_trial_pair_ck` で守る）。**記録としては保存しない**（features.md） |
 
 #### 一覧の種目（30件。2026-10-30 に既存アプリの調査を踏まえて直した。部位・お試し値は本人が確認済み）
 
@@ -288,13 +288,13 @@ erDiagram
 
 ## 5. マイグレーション
 
-Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次のとおり（実装フェーズで番号を確定する）。
+Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次のとおり（`backend/drizzle/` のファイル名の番号は、実装した順に付く。下の「順」とは別）。
 
 | 順 | 内容 |
 |----|------|
 | 1 | better-auth の表（users・sessions・accounts・verifications）。`users` に `avatar` を足す |
 | 2 | groups・group_members・invitations |
-| 3 | body_part・exercises（一覧の種目と、お試しの前回値を、固定の ID で入れる。種目を直すときは新しいマイグレーションを足す） |
+| 3 | body_part・exercises（`0002_exercises.sql`）と、一覧の種目30件・お試しの前回値の投入（`0003_seed_exercises.sql`。固定の ID `00000000-0000-4000-8000-0000000000NN`（NN は一覧の順の 01〜30）。種目を直すときは、この行を書き換えず新しいマイグレーションを足す） |
 | 4 | record_kind・records・workout_sets・run_details |
 | 5 | reactions・comments |
 | 6 | videos |

@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createApp, migrateDb, TEST_ORIGIN, withPool } from './helpers/app.js';
+import { createApp, migrateDb, resetDb, TEST_ORIGIN, withPool } from './helpers/app.js';
 
 // 招待を受ける側（閲覧・参加）とグループを出るの結合テスト（本物の PostgreSQL・本物の better-auth）。
 // DATABASE_URL が無ければ「落ちる」（飛ばさない）。
@@ -19,7 +19,7 @@ describe('招待を受ける・参加する・出る（結合: 本物の Postgre
   });
 
   beforeEach(async () => {
-    await withPool(url!, (pool) => pool.query('TRUNCATE users CASCADE'));
+    await resetDb(url!);
     app = await createApp(url);
   });
 
@@ -143,7 +143,7 @@ describe('招待を受ける・参加する・出る（結合: 本物の Postgre
       const second = await createApp(direct);
       try {
         for (let round = 0; round < 3; round++) {
-          await withPool(url!, (pool) => pool.query('TRUNCATE users CASCADE'));
+          await resetDb(url!);
           const { token } = await groupWith(4);
           const x = await signUpAs('えっくす');
           const y = await signUpAs('わい', second);

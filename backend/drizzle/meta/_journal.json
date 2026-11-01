@@ -15,6 +15,20 @@
       "when": 1793281504905,
       "tag": "0001_groups_and_invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793542345569,
+      "tag": "0002_exercises",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793542349494,
+      "tag": "0003_seed_exercises",
+      "breakpoints": true
     }
   ]
 }
