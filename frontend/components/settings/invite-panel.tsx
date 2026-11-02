@@ -4,7 +4,7 @@ import { Check, Copy, Send, X } from 'lucide-react';
 import { useState } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { useCreateInvitation, useRevokeInvitation } from '@/lib/api/generated';
-import { messageOf } from '@/lib/api/message';
+import { GROUP_MESSAGES, groupErrorMessage } from '@/lib/messages';
 
 type Invitation = { id: string; url: string; expiresAt: string };
 
@@ -33,14 +33,14 @@ export function InvitePanel({ full }: { full: boolean }) {
     try {
       const res = await createInvitation.mutateAsync();
       if (res.status !== 201) {
-        setError(messageOf(res.data, '招待リンクを作れませんでした'));
+        setError(groupErrorMessage(res.data, GROUP_MESSAGES.invitationFailed, res.status));
         return;
       }
       const url = `${window.location.origin}/invite?token=${encodeURIComponent(res.data.token)}`;
       setInvitation({ id: res.data.id, url, expiresAt: String(res.data.expiresAt) });
       setCopied(false);
     } catch {
-      setError('通信に失敗しました。電波の良い所でもう一度お試しください');
+      setError(GROUP_MESSAGES.network);
     }
   }
 
@@ -50,7 +50,7 @@ export function InvitePanel({ full }: { full: boolean }) {
       await navigator.clipboard.writeText(invitation.url);
       setCopied(true);
     } catch {
-      setError('コピーできませんでした。リンクを長押しして選んでください');
+      setError(GROUP_MESSAGES.copyFailed);
     }
   }
 
@@ -60,13 +60,13 @@ export function InvitePanel({ full }: { full: boolean }) {
     try {
       const res = await revokeInvitation.mutateAsync({ id: invitation.id });
       if (res.status !== 204) {
-        setError(messageOf(res.data, '取り消せませんでした'));
+        setError(groupErrorMessage(res.data, GROUP_MESSAGES.revokeFailed, res.status));
         return;
       }
       setInvitation(null);
       setNotice('リンクを取り消しました。もう使えません');
     } catch {
-      setError('通信に失敗しました。電波の良い所でもう一度お試しください');
+      setError(GROUP_MESSAGES.network);
     }
   }
 
@@ -85,8 +85,10 @@ export function InvitePanel({ full }: { full: boolean }) {
             <label htmlFor="invite-url" className="text-sm font-extrabold">
               招待リンク
             </label>
-            <p className="text-xs text-sub-strong">
-              {formatJst(invitation.expiresAt)} まで使えます（7日間）。この画面を閉じると、もう表示されません
+            <p className="text-xs text-sub-strong [word-break:auto-phrase]">
+              {formatJst(invitation.expiresAt)} まで使えます（7日間）。
+              <br />
+              この画面を閉じると、もう表示されません
             </p>
           </div>
           <input
