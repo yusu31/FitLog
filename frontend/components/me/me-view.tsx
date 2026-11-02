@@ -1,6 +1,7 @@
 'use client';
 
 import { ListChecks, LogOut, Settings } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { PageTitle } from '@/components/fitlog/app-shell';
@@ -8,8 +9,8 @@ import { ThickButton } from '@/components/fitlog/thick-button';
 import { authClient } from '@/lib/auth-client';
 import { RecordsList } from './records-list';
 
-// S-30 自分（docs/screen-design.md 4章）。読み取り専用。ヒートマップ（02-4）・記録の削除・設定の画面はまだなので、導線は見た目だけ（押せない）。
-// ログアウトは本来 S-31 設定に置くが、設定の画面ができるまでここに置く
+// S-30 自分（docs/screen-design.md 4章）。記録の一覧には「…」から削除がある。ヒートマップ（02-4）・「記録をくわしく」はまだなので、導線は見た目だけ（押せない）。
+// 「設定」は /settings へのリンク。ログアウトは本来 S-31 設定に置くが、設定の画面ができるまでここに置く
 export function MeView() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
@@ -39,11 +40,14 @@ export function MeView() {
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-extrabold">{session?.user.name}</p>
           </div>
-          {/* 設定の画面（S-31）はまだない。押せない */}
-          <ThickButton tone="white" size="sm" disabled aria-label="設定（準備中）">
+          {/* 設定の画面（S-31 /settings）は別の担当が作る。ここはリンクだけ。ThickButton（white・sm）と同じ見た目 */}
+          <Link
+            href="/settings"
+            className="fl-thick inline-flex min-h-11 items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-white px-4 text-sm font-extrabold tracking-wide text-teal-dark outline-none [--thick:#b8e3e4] focus-visible:ring-4 focus-visible:ring-teal/40 [&_svg]:size-5 [&_svg]:shrink-0"
+          >
             <Settings aria-hidden />
             設定
-          </ThickButton>
+          </Link>
         </section>
 
         {/* ヒートマップは 02-4 で作る。場所と見出しだけ置く */}

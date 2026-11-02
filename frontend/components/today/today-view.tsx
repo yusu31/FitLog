@@ -1,10 +1,14 @@
 'use client';
 
-import { Check, Moon, Sparkles } from 'lucide-react';
+import { Check, Footprints, Moon, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, type ReactNode } from 'react';
 import { cn } from 'cn';
 import { ThickButton } from '@/components/fitlog/thick-button';
+import { sendErrorText } from '@/lib/api/api-error';
+import { useRecordMutations } from '@/lib/mutations';
+import { useOnline } from '@/lib/use-browser-state';
 import {
   ListRecordsKind,
   useGetWeek,
@@ -13,7 +17,7 @@ import {
   type WeekDay,
 } from '@/lib/api/generated';
 import { formatSet } from '@/lib/format';
-import { HOME_MESSAGES } from '@/lib/messages';
+import { HOME_MESSAGES, REST_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { buildMenu, type MenuItem, type TodayMenu } from '@/lib/today-menu';
 import { shouldWelcomeBack } from '@/lib/welcome-back';
@@ -24,7 +28,7 @@ const LOAD_ERROR = '読み込めませんでした。電波の良い所で開き
 const recordHref = (exerciseId: string) => `/record?exercise=${encodeURIComponent(exerciseId)}`;
 
 // S-10 今日（docs/screen-design.md 4章）。読み取り専用。
-// 「今日は休む」「送信待ちの帯」は書き込みの土台ができてから（次の PR）なので、見た目だけ置く。
+// 「送信待ちの帯」は端末への保存（02-4）のあとに足す。
 export function TodayView() {
   // 日付は日本時間。端末のタイムゾーンを使わない（T-DATE-11）
   const today = toLocalDate(new Date());
@@ -82,6 +86,7 @@ export function TodayView() {
           </>
         )}
 
+        <RunLink />
         {todayStatus !== 'rest' && <RestButton />}
       </div>
     </>
@@ -221,15 +226,60 @@ function Menu({ items }: { items: MenuItem[] }) {
   );
 }
 
-// 「今日は休む」: 見た目だけ。押したときの処理（休みの記録を書く）は書き込みの土台ができてから。
+// 「今日は休む」（UC-13）: 押すと kind=rest の記録を作り、S-14 おやすみへ移る。
+// 休みは1日1件で、2回目以降はサーバーが 200 で既存を返す（どちらも成功として扱う）。
+// 電波があるときは、送れたのを確かめてから移る（送れなかったのに「休んだ」画面へ行かないため）。
+// 電波が無いときは、F-30 の形で、送信待ちに入れて待たずに移る（電波が戻ったら送られる）
 function RestButton() {
+  const router = useRouter();
+  const online = useOnline();
+  const { createRecord } = useRecordMutations();
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onRest() {
+    if (sending) return;
+    setError(null);
+    const data = { id: crypto.randomUUID(), kind: 'rest' as const, recordedAt: new Date().toISOString() };
+    if (!online) {
+      createRecord.mutate({ data });
+      router.push('/rest');
+      return;
+    }
+    setSending(true);
+    try {
+      await createRecord.mutateAsync({ data });
+      router.push('/rest');
+    } catch (e) {
+      setError(sendErrorText(e, REST_MESSAGES.sendError));
+      setSending(false);
+    }
+  }
+
   return (
     <div>
-      <ThickButton tone="white" disabled>
+      <ThickButton tone="white" disabled={sending} onClick={onRest}>
         <Moon aria-hidden />
         今日は休む
       </ThickButton>
-      <p className="mt-2 text-center text-xs text-sub">もうすぐ使えるようになります</p>
+      {error && (
+        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+          {error}
+        </p>
+      )}
     </div>
+  );
+}
+
+// ランの記録（S-13）への入口。休みの日でも出す（休みを残したまま、走った日の記録を足せる。UC-13）
+function RunLink() {
+  return (
+    <Link
+      href="/run"
+      className="fl-slab flex min-h-14 items-center justify-center gap-2 px-4 text-base font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+    >
+      <Footprints aria-hidden className="size-5" />
+      ランを記録
+    </Link>
   );
 }

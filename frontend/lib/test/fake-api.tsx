@@ -18,7 +18,8 @@ export function installFakeApi(routes: Record<string, Reply | Reply[]>) {
       const route = routes[`${method} ${url}`] ?? routes[url];
       if (!route) throw new Error(`想定外の呼び出し: ${method} ${url}`);
       const { status, body } = Array.isArray(route) ? (route.length > 1 ? route.shift()! : route[0]) : route;
-      return new Response(JSON.stringify(body ?? {}), { status, headers: { 'Content-Type': 'application/json' } });
+      // 204 は本文を持てない（Response が例外を投げる）
+      return new Response(status === 204 ? null : JSON.stringify(body ?? {}), { status, headers: { 'Content-Type': 'application/json' } });
     }),
   );
 }
