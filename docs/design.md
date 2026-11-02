@@ -87,7 +87,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 
 | メソッド | パス | 説明 | 備考 |
 |----------|------|------|------|
-| POST | `/records` | 記録を作る（`id`・`kind`・`recordedAt`。`kind=run` なら `run` も） | **冪等**。休みは同じ日に2回でも1件 |
+| POST | `/records` | 記録を作る（`id`・`kind`・`recordedAt`。`kind=run` なら `run: { distanceM, durationS }` も必須。距離 100〜200000 m・時間 60〜86400 秒の整数。run を他の kind に付けると 400。記録と詳細は同じトランザクションで入れ、再送の応答には1回目の `run` が入る） | **冪等**。休みは同じ日に2回でも1件 |
 | POST | `/records/{id}/sets` | 筋トレのセットを足す（`id`・`exerciseId`・`setNo`・`weightKg`・`reps`） | **冪等**。再送のとき、記録の作成を先に送る（送信待ちは作った順に送る） |
 | DELETE | `/records/{id}/sets/{setId}` | セットを消す（取り消し） | 自分のだけ |
 | DELETE | `/records/{id}` | 記録を消す | 自分のだけ |

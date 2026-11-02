@@ -4,19 +4,21 @@ import { compareSet, isPersonalBest } from '../common/ghost.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
-import { exercises, records, workoutSets } from '../db/schema.js';
+import { exercises, records, runDetails, workoutSets } from '../db/schema.js';
 import { findPrevious, pastMaxVolume } from './ghost-queries.js';
-import { parseRecordInput } from './record-input.js';
+import { parseRecordInput, type RunInput } from './record-input.js';
 import type { RecordResponse, SetResponse } from './records.response.js';
 import { parseSetInput } from './set-input.js';
 
 type Row = typeof records.$inferSelect;
 
-const toResponse = (row: Row): RecordResponse => ({
+// ランの記録だけ run（距離と時間）を付ける。筋トレ・休みには付けない
+const toResponse = (row: Row, run?: RunInput): RecordResponse => ({
   id: row.id,
   kind: row.kind,
   recordedAt: row.recordedAt.toISOString(),
   localDate: row.localDate,
+  ...(run ? { run } : {}),
 });
 
 type SetRow = typeof workoutSets.$inferSelect;
@@ -35,21 +37,26 @@ export class RecordsService {
   //  ・同じ id が他の人の記録にある → 404（存在を教えない。T-OFF-04）
   //  ・休みを、同じ日に別の id で送った → すでにある休みを返す（休みは1日1件）
   async create(userId: string, raw: unknown): Promise<{ created: boolean; record: RecordResponse }> {
-    const { id, kind, recordedAt } = parseRecordInput(raw);
+    const { id, kind, recordedAt, run } = parseRecordInput(raw);
     const localDate = toLocalDate(recordedAt);
 
     // ON CONFLICT DO NOTHING（対象を決めない）は、主キー（id）の衝突も、休みの部分一意索引の衝突も、エラーにせず「何もしない」にする。
     // 同時に2つ届いても、後から来た方は先の方の確定を待って「何もしない」になるので、どちらも成功する（T-OFF-06・T-REST-06）
-    const [inserted] = await this.db.insert(records).values({ id, userId, kind, recordedAt, localDate }).onConflictDoNothing().returning();
+    // ランは、記録と詳細（距離・時間）を同じトランザクションで入れる（片方だけ残らないように）。記録が「何もしない」になったときは詳細も入れない
+    const inserted = await this.db.transaction(async (tx) => {
+      const [row] = await tx.insert(records).values({ id, userId, kind, recordedAt, localDate }).onConflictDoNothing().returning();
+      if (row && run) await tx.insert(runDetails).values({ recordId: row.id, distanceM: run.distanceM, durationS: run.durationS });
+      return row;
+    });
     if (inserted) {
       this.logger.log(`記録を作成: ${inserted.id}（${kind}）`);
-      return { created: true, record: toResponse(inserted) };
+      return { created: true, record: toResponse(inserted, run) };
     }
 
     const [sameId] = await this.db.select().from(records).where(eq(records.id, id));
     if (sameId) {
       if (sameId.userId !== userId) throw new NotFoundException({ code: 'RECORD_NOT_FOUND', message: '記録が見つかりません', details: null });
-      return { created: false, record: toResponse(sameId) };
+      return { created: false, record: toResponse(sameId, await this.runOf(sameId)) };
     }
 
     const [sameDayRest] = await this.db
@@ -60,6 +67,13 @@ export class RecordsService {
 
     // 何もしなかったのに、どちらの行も見つからない（間に消された）。起きない想定なので 500 にして気づけるようにする
     throw new Error('記録の作成が衝突したのに、衝突相手が見つかりません');
+  }
+
+  // すでにある記録がランなら、1回目に入れた距離と時間を読む（再送の応答は1回目と同じ内容にする）
+  private async runOf(row: Row): Promise<RunInput | undefined> {
+    if (row.kind !== 'run') return undefined;
+    const [detail] = await this.db.select({ distanceM: runDetails.distanceM, durationS: runDetails.durationS }).from(runDetails).where(eq(runDetails.recordId, row.id));
+    return detail;
   }
 
   // 筋トレのセットを足す。冪等（再送しても二重にならない）。created=true なら新しく作った（201）、false ならすでにあるセットを返した（200）。

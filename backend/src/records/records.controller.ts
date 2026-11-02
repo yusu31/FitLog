@@ -13,10 +13,10 @@ export class RecordsController {
   constructor(private readonly records: RecordsService) {}
 
   @Post()
-  @ApiOperation({ operationId: 'createRecord', summary: '記録（筋トレ・休み）を作る。冪等' })
+  @ApiOperation({ operationId: 'createRecord', summary: '記録（筋トレ・ラン・休み）を作る。冪等' })
   @ApiCreatedResponse({ type: RecordResponse, description: '新しく作った' })
   @ApiOkResponse({ type: RecordResponse, description: 'すでにある（同じ id の再送、または同じ日の休み）。1回目の内容を返す' })
-  @ApiBadRequestResponse({ type: ErrorResponse, description: 'id が UUID でない・kind が workout/rest でない・recordedAt が日時でない／未来すぎる（VALIDATION_ERROR）' })
+  @ApiBadRequestResponse({ type: ErrorResponse, description: 'id が UUID でない・kind が workout/run/rest でない・recordedAt が日時でない／未来すぎる・ランの距離（100〜200000m）か時間（60〜86400秒）が範囲外／run の付け忘れ・付けすぎ（VALIDATION_ERROR）' })
   @ApiNotFoundResponse({ type: ErrorResponse, description: '同じ id が他の人の記録にある（RECORD_NOT_FOUND。存在を教えない）' })
   async create(@Session() session: UserSession, @Body() body: CreateRecordRequest, @Res({ passthrough: true }) res: Response): Promise<RecordResponse> {
     const { created, record } = await this.records.create(session.user.id, body);

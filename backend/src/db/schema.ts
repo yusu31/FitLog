@@ -1,6 +1,6 @@
 // 表の定義の置き場。表は機能と同じ PR で足す（認証＝02-1 ③a、記録＝02-2 など）。
 import { sql } from 'drizzle-orm';
-import { boolean, check, date, index, jsonb, numeric, pgEnum, pgTable, primaryKey, smallint, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, date, index, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, smallint, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 // ── better-auth が使う4つの表 ──────────────────────────────────────────
 // 列の形は better-auth 1.7.14 の @better-auth/core/dist/db/get-tables.mjs の定義に合わせる。
@@ -163,6 +163,24 @@ export const records = pgTable(
     uniqueIndex('records_rest_per_day_uq')
       .on(t.userId, t.localDate)
       .where(sql`${t.kind} = 'rest'`),
+  ],
+);
+
+// ── ランの詳細（docs/database-design.md run_details） ──────────────────────
+// kind = 'run' の記録に1行。距離は m・時間は秒の整数で持つ（ペースは画面が計算する。DB には持たない）。
+// route（GPX のルート）と gpx_s3_key は GPX の PR で足す
+export const runDetails = pgTable(
+  'run_details',
+  {
+    recordId: uuid('record_id')
+      .primaryKey()
+      .references(() => records.id, { onDelete: 'cascade' }),
+    distanceM: integer('distance_m').notNull(),
+    durationS: integer('duration_s').notNull(),
+  },
+  (t) => [
+    check('run_details_distance_ck', sql`${t.distanceM} between 100 and 200000`),
+    check('run_details_duration_ck', sql`${t.durationS} between 60 and 86400`),
   ],
 );
 

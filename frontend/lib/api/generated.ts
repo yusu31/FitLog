@@ -173,22 +173,40 @@ export interface CreateExerciseRequest {
   bodyPart: BodyPart;
 }
 
+export interface RunDetail {
+  /**
+     * 距離（m）。100〜200,000（0.1〜200km）の整数
+     * @minimum 100
+     * @maximum 200000
+     */
+  distanceM: number;
+  /**
+     * 時間（秒）。60〜86,400（1分〜24時間）の整数。ペースは画面が計算する
+     * @minimum 60
+     * @maximum 86400
+     */
+  durationS: number;
+}
+
 /**
- * 筋トレ（workout）か休み（rest）。ラン（run）は後の PR で足す
+ * 筋トレ（workout）・ラン（run）・休み（rest）
  */
 export type CreateRecordRequestKind = typeof CreateRecordRequestKind[keyof typeof CreateRecordRequestKind];
 
 
 export const CreateRecordRequestKind = {
   workout: 'workout',
+  run: 'run',
   rest: 'rest',
 } as const;
 
 export interface CreateRecordRequest {
   /** 端末で作る ID。同じ ID を送り直しても、記録は1件のまま（冪等） */
   id: string;
-  /** 筋トレ（workout）か休み（rest）。ラン（run）は後の PR で足す */
+  /** 筋トレ（workout）・ラン（run）・休み（rest） */
   kind: CreateRecordRequestKind;
+  /** kind が run のときだけ必須（距離と時間）。ほかの kind に付けると 400 */
+  run?: RunDetail;
   /** 運動した時刻（ISO 8601）。未来は5分先まで */
   recordedAt: string;
 }
@@ -209,6 +227,8 @@ export interface RecordResponse {
   recordedAt: string;
   /** 日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す */
   localDate: string;
+  /** ランの記録だけ。距離と時間 */
+  run?: RunDetail;
 }
 
 export interface CreateSetRequest {
@@ -1739,7 +1759,7 @@ export const getCreateRecordUrl = () => {
 }
 
 /**
- * @summary 記録（筋トレ・休み）を作る。冪等
+ * @summary 記録（筋トレ・ラン・休み）を作る。冪等
  */
 export const createRecord = async (createRecordRequest: CreateRecordRequest, options?: RequestInit): Promise<createRecordResponse> => {
 
@@ -1812,7 +1832,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type CreateRecordMutationVariables = {data: CreateRecordRequest}
 
     /**
- * @summary 記録（筋トレ・休み）を作る。冪等
+ * @summary 記録（筋トレ・ラン・休み）を作る。冪等
  */
 export const useCreateRecord = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRecord>>, TError,CreateRecordMutationVariables, TContext>, fetch?: RequestInit}

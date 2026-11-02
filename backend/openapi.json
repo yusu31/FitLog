@@ -503,7 +503,7 @@
             }
           },
           "400": {
-            "description": "id が UUID でない・kind が workout/rest でない・recordedAt が日時でない／未来すぎる（VALIDATION_ERROR）",
+            "description": "id が UUID でない・kind が workout/run/rest でない・recordedAt が日時でない／未来すぎる・ランの距離（100〜200000m）か時間（60〜86400秒）が範囲外／run の付け忘れ・付けすぎ（VALIDATION_ERROR）",
             "content": {
               "application/json": {
                 "schema": {
@@ -523,7 +523,7 @@
             }
           }
         },
-        "summary": "記録（筋トレ・休み）を作る。冪等",
+        "summary": "記録（筋トレ・ラン・休み）を作る。冪等",
         "tags": [
           "records"
         ]
@@ -1016,6 +1016,29 @@
           "bodyPart"
         ]
       },
+      "RunDetail": {
+        "type": "object",
+        "properties": {
+          "distanceM": {
+            "type": "number",
+            "minimum": 100,
+            "maximum": 200000,
+            "example": 5000,
+            "description": "距離（m）。100〜200,000（0.1〜200km）の整数"
+          },
+          "durationS": {
+            "type": "number",
+            "minimum": 60,
+            "maximum": 86400,
+            "example": 1800,
+            "description": "時間（秒）。60〜86,400（1分〜24時間）の整数。ペースは画面が計算する"
+          }
+        },
+        "required": [
+          "distanceM",
+          "durationS"
+        ]
+      },
       "CreateRecordRequest": {
         "type": "object",
         "properties": {
@@ -1028,9 +1051,18 @@
             "type": "string",
             "enum": [
               "workout",
+              "run",
               "rest"
             ],
-            "description": "筋トレ（workout）か休み（rest）。ラン（run）は後の PR で足す"
+            "description": "筋トレ（workout）・ラン（run）・休み（rest）"
+          },
+          "run": {
+            "description": "kind が run のときだけ必須（距離と時間）。ほかの kind に付けると 400",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunDetail"
+              }
+            ]
           },
           "recordedAt": {
             "type": "string",
@@ -1069,6 +1101,14 @@
             "type": "string",
             "example": "2026-11-01",
             "description": "日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す"
+          },
+          "run": {
+            "description": "ランの記録だけ。距離と時間",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunDetail"
+              }
+            ]
           }
         },
         "required": [
