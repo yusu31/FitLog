@@ -28,3 +28,16 @@ export function formatDuration(seconds: number): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
+
+// 1kmあたりのペース。5200m・1930秒 → "6:11/km"。秒は四捨五入して分:秒にそろえる。
+// 距離・時間が 0 以下や数でないとき（0 割りを防ぐ）は null（画面は出さない）
+export function formatPace(distanceM: number, durationS: number): string | null {
+  if (!Number.isFinite(distanceM) || !Number.isFinite(durationS) || distanceM <= 0 || durationS <= 0) return null;
+  return `${formatDuration(Math.round(durationS / (distanceM / 1000)))}/km`;
+}
+
+// UTC の時刻 → 日本時間の "H:mm"（端末のタイムゾーンを使わない）。"2026-10-22T03:05:00.000Z" → "12:05"
+export function formatJstTime(iso: string): string {
+  const d = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);
+  return `${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+}

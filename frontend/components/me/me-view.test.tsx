@@ -24,6 +24,15 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('MeView（S-30 自分）', () => {
   describe('記録の一覧', () => {
+    it('各行は、記録の詳細（S-21）へのリンク（自分の記録なので from=me つき）', async () => {
+      installFakeApi({ [FIRST]: page([workout('r3', '2026-10-22', [squat]), restRecord('r1', '2026-10-19')]) });
+      renderWithQuery(<MeView />);
+      await screen.findByText('おやすみ');
+      const rows = within(screen.getByRole('list', { name: '記録' })).getAllByRole('listitem');
+      expect(within(rows[0]).getByRole('link')).toHaveAttribute('href', '/record-detail?id=r3&from=me');
+      expect(within(rows[1]).getByRole('link')).toHaveAttribute('href', '/record-detail?id=r1&from=me');
+    });
+
     it('筋トレは種目の要約、ランは距離と時間、休みは「おやすみ」で、新しい順に並ぶ', async () => {
       installFakeApi({
         [FIRST]: page([
