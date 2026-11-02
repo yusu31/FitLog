@@ -13,6 +13,12 @@ export class ApiError extends Error {
   }
 }
 
+// 書き込みの失敗を、画面に出せる文言にする。4xx（入力の誤り・重複など）は API が返した日本語の文言を出し、
+// 5xx・通信の失敗は内部の事情を出さず、呼ぶ側が決めた文言にする（design.md 5章・screen-design.md 5章）
+export function sendErrorText(error: unknown, fallback: string): string {
+  return error instanceof ApiError && error.status < 500 ? messageOf(error.body, fallback) : fallback;
+}
+
 // 成功（200・201・204）の応答だけを通し、型も成功の形に絞る
 export function unwrap<T extends { status: number; data: unknown }>(res: T): Extract<T, { status: 200 | 201 | 204 }> {
   if (res.status >= 200 && res.status < 300) return res as Extract<T, { status: 200 | 201 | 204 }>;

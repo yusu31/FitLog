@@ -1,5 +1,5 @@
 import { FORBIDDEN_WORDS } from './forbidden-words';
-import { GHOST_MESSAGES, HOME_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from './messages';
+import { GHOST_MESSAGES, HOME_MESSAGES, ME_MESSAGES, RECORD_MESSAGES, REST_MESSAGES, RUN_MESSAGES, ghostUpMessage, runSavedMessage } from './messages';
 
 // 責めない言葉の検査（T-DATE-13・T-GHOST-13、features.md UC-12・2.5）。
 // 使ってはいけない語の一覧（FORBIDDEN_WORDS）を、画面の文言定数がすべて避けていることを確かめる。
@@ -18,10 +18,18 @@ describe('文言の定数', () => {
     expect(FORBIDDEN_WORDS).toEqual(expect.arrayContaining(['また 0 から', '途切れ', '負け']));
   });
 
-  const all = [...collect(GHOST_MESSAGES), ...collect(HOME_MESSAGES), ...collect(RECORD_MESSAGES), ghostUpMessage(1), ghostUpMessage(100)];
+  const all = [...collect(GHOST_MESSAGES), ...collect(HOME_MESSAGES), ...collect(RECORD_MESSAGES),
+    ...collect(REST_MESSAGES),
+    ...collect(ME_MESSAGES),
+    ...collect(RUN_MESSAGES),
+    ghostUpMessage(1),
+    ghostUpMessage(100),
+    runSavedMessage(5200, 1930),
+    runSavedMessage(100, 60),
+  ];
 
   it('検査の対象になる文言が集まっている', () => {
-    expect(all.length).toBeGreaterThanOrEqual(5);
+    expect(all.length).toBeGreaterThanOrEqual(15);
   });
 
   it.each(all)('「%s」は使ってはいけない語を含まない（T-DATE-13・T-GHOST-13）', (text) => {
