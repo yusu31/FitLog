@@ -9,6 +9,15 @@ export const GHOST_MESSAGES = {
   down: 'ちゃんと 記録したよ。むりしない日もOK',
 } as const;
 
+// 記録画面（S-12）の文言。結果の言い方は GHOST_MESSAGES を使う
+export const RECORD_MESSAGES = {
+  // 前回が無い（比べる相手がいない）セットの結果
+  recorded: '記録したよ',
+  best: 'ベスト',
+  trial: 'お試し',
+  noPrevious: '前回の記録は まだないよ',
+} as const;
+
 // ホームの一言（おかえり・前日の記録の有無に応じた出し分け）。あいた日数は責めずに一言添える程度にとどめる
 export const HOME_MESSAGES = {
   welcomeBack: 'おかえり。また 一緒に はじめよう',
