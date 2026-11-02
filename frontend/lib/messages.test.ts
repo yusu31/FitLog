@@ -4,9 +4,13 @@ import {
   GROUP_ERROR_BY_CODE,
   GROUP_MESSAGES,
   HOME_MESSAGES,
+  ME_MESSAGES,
   RECORD_MESSAGES,
+  REST_MESSAGES,
+  RUN_MESSAGES,
   ghostUpMessage,
   groupErrorMessage,
+  runSavedMessage,
 } from './messages';
 
 // 責めない言葉の検査（T-DATE-13・T-GHOST-13、features.md UC-12・2.5）。
@@ -32,12 +36,17 @@ describe('文言の定数', () => {
     ...collect(RECORD_MESSAGES),
     ...collect(GROUP_MESSAGES),
     ...collect(GROUP_ERROR_BY_CODE),
+    ...collect(REST_MESSAGES),
+    ...collect(ME_MESSAGES),
+    ...collect(RUN_MESSAGES),
     ghostUpMessage(1),
     ghostUpMessage(100),
+    runSavedMessage(5200, 1930),
+    runSavedMessage(100, 60),
   ];
 
   it('検査の対象になる文言が集まっている', () => {
-    expect(all.length).toBeGreaterThanOrEqual(5);
+    expect(all.length).toBeGreaterThanOrEqual(15);
   });
 
   it.each(all)('「%s」は使ってはいけない語を含まない（T-DATE-13・T-GHOST-13）', (text) => {

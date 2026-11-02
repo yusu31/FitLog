@@ -19,7 +19,9 @@ import {
   getDeleteRecordMutationKey,
   getDeleteSetMutationKey,
   getGetRecordQueryKey,
+  getGetWeekQueryKey,
   getListExercisesQueryKey,
+  getListRecordsQueryKey,
   type AddSetMutationVariables,
   type CreateRecordMutationVariables,
   type DeleteRecordMutationVariables,
@@ -73,6 +75,14 @@ function exerciseNameOf(client: QueryClient, exerciseId: string): string {
   return list?.status === 200 ? (list.data.find((e) => e.id === exerciseId)?.name ?? '') : '';
 }
 
+// 記録の一覧（自分）と週の帯（今日）を古い扱いにして、見ている画面は取り直し、見ていない画面は次に開いたとき取り直す。
+// どちらも 30秒は取り直さない設定（providers.tsx）なので、書き込みのあとに印を付けないと、古い一覧が残る。
+// 成功でも失敗でも行う（失敗したときは、サーバーの状態が正）
+function refreshLists(client: QueryClient): void {
+  void client.invalidateQueries({ queryKey: getListRecordsQueryKey() });
+  void client.invalidateQueries({ queryKey: getGetWeekQueryKey() });
+}
+
 // 書き込み4つの送信処理と楽観的更新を、QueryClient に登録する。何度呼んでも同じ結果（登録し直すだけ）。
 // 送信処理そのものは端末に保存できないので、再読み込みのあとは、保存した状態を戻す前にこれを呼ぶ（02-4）
 export function registerRecordMutations(client: QueryClient, userId: string): void {
@@ -80,6 +90,7 @@ export function registerRecordMutations(client: QueryClient, userId: string): vo
 
   client.setMutationDefaults(getCreateRecordMutationKey(), {
     scope,
+    onSettled: () => refreshLists(client),
     mutationFn: async (vars: CreateRecordMutationVariables) => unwrap(await createRecord(vars.data)),
     onMutate: async (vars: CreateRecordMutationVariables): Promise<Snapshot> => {
       const snap = await snapshot(client, vars.data.id);
@@ -99,6 +110,7 @@ export function registerRecordMutations(client: QueryClient, userId: string): vo
 
   client.setMutationDefaults(getAddSetMutationKey(), {
     scope,
+    onSettled: () => refreshLists(client),
     mutationFn: async (vars: AddSetMutationVariables) => unwrap(await addSet(vars.id, vars.data)),
     onMutate: async (vars: AddSetMutationVariables): Promise<Snapshot> => {
       const snap = await snapshot(client, vars.id);
@@ -123,6 +135,7 @@ export function registerRecordMutations(client: QueryClient, userId: string): vo
 
   client.setMutationDefaults(getDeleteSetMutationKey(), {
     scope,
+    onSettled: () => refreshLists(client),
     mutationFn: async (vars: DeleteSetMutationVariables) => unwrap(await deleteSet(vars.id, vars.setId)),
     onMutate: async (vars: DeleteSetMutationVariables): Promise<Snapshot> => {
       const snap = await snapshot(client, vars.id);
@@ -143,6 +156,7 @@ export function registerRecordMutations(client: QueryClient, userId: string): vo
 
   client.setMutationDefaults(getDeleteRecordMutationKey(), {
     scope,
+    onSettled: () => refreshLists(client),
     mutationFn: async (vars: DeleteRecordMutationVariables) => unwrap(await deleteRecord(vars.id)),
     onMutate: async (vars: DeleteRecordMutationVariables): Promise<Snapshot> => {
       const snap = await snapshot(client, vars.id);

@@ -7,7 +7,9 @@ import {
   getDeleteRecordMutationKey,
   getDeleteSetMutationKey,
   getGetRecordQueryKey,
+  getGetWeekQueryKey,
   getListExercisesQueryKey,
+  getListRecordsQueryKey,
   type RecordDetailResponse,
 } from '@/lib/api/generated';
 import { ApiError } from '@/lib/api/api-error';
@@ -226,5 +228,46 @@ describe('楽観的更新（失敗したら元に戻す）', () => {
     const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
     await act(() => result.current.deleteRecord.mutateAsync({ id: REC }));
     expect(detailOf(client)).toBeUndefined();
+  });
+});
+
+// 一覧・週の帯は 30秒「新鮮」とみなして取り直さないため、書き込みのあとに古いと印を付けて取り直させる
+describe('書き込みのあとの取り直し（今日・自分の画面に反映するため）', () => {
+  const listKey = getListRecordsQueryKey({ limit: '20' });
+  const weekKey = getGetWeekQueryKey({ date: '2026-11-02' });
+  const seedLists = (client: QC) => {
+    client.setQueryData(listKey, { status: 200, data: { items: [], nextCursor: null }, headers: new Headers() });
+    client.setQueryData(weekKey, { status: 200, data: { weekStart: '2026-11-02', days: [] }, headers: new Headers() });
+  };
+  const stale = (client: QC) => ({
+    list: client.getQueryState(listKey)?.isInvalidated,
+    week: client.getQueryState(weekKey)?.isInvalidated,
+  });
+
+  it('記録を作ると、記録の一覧と週の帯が古い扱いになる', async () => {
+    respond = () => ({ status: 201, body: { id: REC } });
+    const client = makeClient();
+    seedLists(client);
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    await act(() => result.current.createRecord.mutateAsync({ data: { id: REC, kind: 'rest', recordedAt: NOW } }));
+    await waitFor(() => expect(stale(client)).toEqual({ list: true, week: true }));
+  });
+
+  it('記録を消すと、記録の一覧と週の帯が古い扱いになる', async () => {
+    respond = () => ({ status: 204 });
+    const client = makeClient();
+    seedLists(client);
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    await act(() => result.current.deleteRecord.mutateAsync({ id: REC }));
+    await waitFor(() => expect(stale(client)).toEqual({ list: true, week: true }));
+  });
+
+  it('失敗したときも取り直す（サーバーの状態が正）', async () => {
+    respond = () => ({ status: 500, body: { code: 'INTERNAL', message: 'x' } });
+    const client = makeClient();
+    seedLists(client);
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    await act(() => result.current.deleteRecord.mutateAsync({ id: REC }).catch(() => {}));
+    await waitFor(() => expect(stale(client)).toEqual({ list: true, week: true }));
   });
 });

@@ -1,7 +1,8 @@
-import { screen, within } from '@testing-library/react';
+import { onlineManager } from '@tanstack/react-query';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
-import { HOME_MESSAGES } from '@/lib/messages';
+import { HOME_MESSAGES, REST_MESSAGES } from '@/lib/messages';
 import { calls, installFakeApi, renderWithQuery, restRecord, weekOf, workout } from '@/lib/test/fake-api';
 import { TodayView } from './today-view';
 
@@ -21,10 +22,18 @@ const squat = (sets: [number, number][]) => ({ id: 'sq', name: 'スクワット'
 const curl = (sets: [number, number][]) => ({ id: 'lc', name: 'レッグカール', sets });
 const PREV = workout('r1', '2026-11-02', [squat([[60, 10]]), curl([[25, 12]])]);
 
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('@/lib/auth-client', () => ({
+  authClient: { useSession: () => ({ data: { user: { id: 'u1' } }, isPending: false }) },
+}));
+
 beforeEach(() => {
+  push.mockClear();
   vi.useFakeTimers({ toFake: ['Date'], now: new Date(NOON_WED) });
 });
 afterEach(() => {
+  onlineManager.setOnline(true);
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -205,15 +214,108 @@ describe('TodayView（S-10 今日）', () => {
   });
 
   describe('「今日は休む」', () => {
-    it('見た目だけ。押せない状態で、押しても何も送らない', async () => {
-      installFakeApi({ [WEEK]: ok(weekOf(TODAY)), [WORKOUTS]: list(PREV), [LATEST]: list(PREV) });
+    const REST_POST = 'POST /api/records';
+    const base = {
+      [WEEK]: ok(weekOf(TODAY)),
+      [WORKOUTS]: list(PREV),
+      [LATEST]: list(PREV),
+    };
+    const posts = () => calls.filter((c) => c === REST_POST);
+    const bodyOfPost = () => {
+      const fetchMock = vi.mocked(globalThis.fetch);
+      const call = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST');
+      return JSON.parse(String(call?.[1]?.body));
+    };
+
+    it('押せる状態で出ている（休みの日でないとき）', async () => {
+      installFakeApi(base);
+      renderWithQuery(<TodayView />);
+      expect(await screen.findByRole('button', { name: /今日は休む/ })).toBeEnabled();
+      expect(screen.queryByText('もうすぐ使えるようになります')).not.toBeInTheDocument();
+    });
+
+    it('押すと kind=rest の記録を作り（POST /records）、おやすみ画面（/rest）へ移る', async () => {
+      installFakeApi({ ...base, [REST_POST]: { status: 201, body: { id: 'x', kind: 'rest' } } });
+      renderWithQuery(<TodayView />);
+      await userEvent.setup().click(await screen.findByRole('button', { name: /今日は休む/ }));
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/rest'));
+      expect(posts()).toHaveLength(1);
+      const body = bodyOfPost();
+      expect(body.kind).toBe('rest');
+      expect(body.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      expect(body.recordedAt).toBe(NOON_WED);
+      expect(body).not.toHaveProperty('run');
+    });
+
+    it('すでに今日の休みがあって 200 で既存が返っても、同じように おやすみ画面へ移る（休みは1日1件）', async () => {
+      installFakeApi({ ...base, [REST_POST]: { status: 200, body: { id: 'old', kind: 'rest' } } });
+      renderWithQuery(<TodayView />);
+      await userEvent.setup().click(await screen.findByRole('button', { name: /今日は休む/ }));
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/rest'));
+    });
+
+    it('送れなかったときは、おやすみ画面へ移らず、日本語の文言を出して、もう一度押せる', async () => {
+      installFakeApi({ ...base, [REST_POST]: { status: 500, body: { code: 'INTERNAL', message: 'stack trace' } } });
+      renderWithQuery(<TodayView />);
+      await userEvent.setup().click(await screen.findByRole('button', { name: /今日は休む/ }));
+      expect(await screen.findByRole('alert')).toHaveTextContent(REST_MESSAGES.sendError);
+      expect(document.body.textContent).not.toContain('stack trace');
+      expect(push).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: /今日は休む/ })).toBeEnabled();
+    });
+
+    it('送っている間は押せない（二度押しで2件送らない）', async () => {
+      let release: () => void = () => {};
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      installFakeApi({ ...base, [REST_POST]: { status: 201, body: { id: 'x' } } });
+      const inner = vi.mocked(globalThis.fetch).getMockImplementation()!;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (url: string, init?: RequestInit) => {
+          if (init?.method === 'POST') await gate;
+          return inner(url, init);
+        }),
+      );
+      renderWithQuery(<TodayView />);
+      const user = userEvent.setup();
+      const button = await screen.findByRole('button', { name: /今日は休む/ });
+      await user.click(button);
+      await waitFor(() => expect(button).toBeDisabled());
+      await user.click(button);
+      release();
+      await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
+      expect(posts()).toHaveLength(1);
+    });
+
+    it('電波が無いときも押せる。待たずに おやすみ画面へ移り、送信は電波が戻るまで待つ（F-30）', async () => {
+      installFakeApi({ ...base, [REST_POST]: { status: 201, body: { id: 'x' } } });
       renderWithQuery(<TodayView />);
       const button = await screen.findByRole('button', { name: /今日は休む/ });
-      expect(button).toBeDisabled();
-      const before = calls.length;
+      onlineManager.setOnline(false);
       await userEvent.setup().click(button);
-      expect(calls).toHaveLength(before);
-      expect(calls.some((c) => c.startsWith('POST'))).toBe(false);
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/rest'));
+      expect(posts()).toHaveLength(0);
+      onlineManager.setOnline(true);
+      await waitFor(() => expect(posts()).toHaveLength(1));
+    });
+
+    it('今日がもう休みなら、「今日は休む」は出さない', async () => {
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { [TODAY]: 'rest' })),
+        [WORKOUTS]: list(PREV),
+        [LATEST]: list(restRecord('r3', TODAY)),
+      });
+      renderWithQuery(<TodayView />);
+      await screen.findByRole('heading', { name: '今日は おやすみ' });
+      expect(screen.queryByRole('button', { name: /今日は休む/ })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('「ランを記録」', () => {
+    it('ラン記録画面（/run）へのリンクがある', async () => {
+      installFakeApi({ [WEEK]: ok(weekOf(TODAY)), [WORKOUTS]: list(PREV), [LATEST]: list(PREV) });
+      renderWithQuery(<TodayView />);
+      expect(await screen.findByRole('link', { name: /ランを記録/ })).toHaveAttribute('href', '/run');
     });
   });
 
