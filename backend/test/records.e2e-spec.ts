@@ -100,10 +100,10 @@ describe('記録を作る（結合: 本物の PostgreSQL・better-auth）', () =
       expect(await rows()).toHaveLength(1);
     });
 
-    it('id が UUID でない・kind が run（今は未対応）・recordedAt が日時でない は 400（DB のエラー 500 にしない）', async () => {
+    it('id が UUID でない・kind が run でも swim でも一覧外（swim）・recordedAt が日時でない は 400（DB のエラー 500 にしない）', async () => {
       const cookie = await signUpAs('たろう');
       await post(cookie, { ...workout(SUN_LAST), id: 'abc' }).expect(400);
-      await post(cookie, { ...workout(SUN_LAST), kind: 'run' }).expect(400);
+      await post(cookie, { ...workout(SUN_LAST), kind: 'swim' }).expect(400);
       await post(cookie, { ...workout(SUN_LAST), recordedAt: 'あした' }).expect(400);
       await post(cookie, {}).expect(400);
       expect(await rows()).toHaveLength(0);

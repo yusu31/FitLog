@@ -1,14 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { GhostResult } from '../common/ghost.js';
 import { RECORD_KINDS, type RecordKind } from '../db/schema.js';
-import { CREATABLE_KINDS, type CreatableKind } from './record-input.js';
+import { CREATABLE_KINDS, DISTANCE_M_MAX, DISTANCE_M_MIN, DURATION_S_MAX, DURATION_S_MIN, type CreatableKind } from './record-input.js';
+
+export class RunDetail {
+  @ApiProperty({ minimum: DISTANCE_M_MIN, maximum: DISTANCE_M_MAX, example: 5000, description: '距離（m）。100〜200,000（0.1〜200km）の整数' })
+  distanceM!: number;
+
+  @ApiProperty({ minimum: DURATION_S_MIN, maximum: DURATION_S_MAX, example: 1800, description: '時間（秒）。60〜86,400（1分〜24時間）の整数。ペースは画面が計算する' })
+  durationS!: number;
+}
 
 export class CreateRecordRequest {
   @ApiProperty({ format: 'uuid', description: '端末で作る ID。同じ ID を送り直しても、記録は1件のまま（冪等）' })
   id!: string;
 
-  @ApiProperty({ enum: CREATABLE_KINDS, description: '筋トレ（workout）か休み（rest）。ラン（run）は後の PR で足す' })
+  @ApiProperty({ enum: CREATABLE_KINDS, description: '筋トレ（workout）・ラン（run）・休み（rest）' })
   kind!: CreatableKind;
+
+  @ApiProperty({ type: RunDetail, required: false, description: 'kind が run のときだけ必須（距離と時間）。ほかの kind に付けると 400' })
+  run?: RunDetail;
 
   @ApiProperty({ format: 'date-time', example: '2026-11-01T09:00:00+09:00', description: '運動した時刻（ISO 8601）。未来は5分先まで' })
   recordedAt!: string;
@@ -26,6 +37,9 @@ export class RecordResponse {
 
   @ApiProperty({ example: '2026-11-01', description: '日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す' })
   localDate!: string;
+
+  @ApiProperty({ type: RunDetail, required: false, description: 'ランの記録だけ。距離と時間' })
+  run?: RunDetail;
 }
 
 export class CreateSetRequest {

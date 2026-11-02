@@ -27,8 +27,7 @@ describe('parseRecordInput（記録の入力検査）', () => {
   });
 
   describe('kind', () => {
-    // run（ラン）は F-04 の PR で足す。それまでは 400
-    it.each([[undefined], [null], [''], ['Workout'], ['run'], ['swim'], [1]])('%j は 400', (kind) => {
+    it.each([[undefined], [null], [''], ['Workout'], ['Run'], ['swim'], [1]])('%j は 400', (kind) => {
       expect(() => parse({ ...valid, kind })).toThrow(BadRequestException);
     });
   });
@@ -58,6 +57,48 @@ describe('parseRecordInput（記録の入力検査）', () => {
     });
   });
 
+  describe('ラン（kind=run。F-04）', () => {
+    const run = { distanceM: 5000, durationS: 1800 };
+    const parseRun = (override: Record<string, unknown> = {}) => parse({ ...valid, kind: 'run', run: { ...run, ...override } });
+
+    it('距離と時間つきなら通り、run に入る', () => {
+      expect(parse({ ...valid, kind: 'run', run })).toEqual({ id: ID, kind: 'run', recordedAt: new Date(valid.recordedAt), run });
+    });
+
+    // T-RUN-01〜04・05〜08: 境界値（距離 100〜200,000 m・時間 60〜86,400 秒）
+    it.each<[string, number, boolean]>([
+      ['T-RUN-01 距離 99', 99, false],
+      ['T-RUN-02 距離 100', 100, true],
+      ['T-RUN-03 距離 200000', 200000, true],
+      ['T-RUN-04 距離 200001', 200001, false],
+    ])('%s', (_name, distanceM, ok) => {
+      if (ok) expect(parseRun({ distanceM }).run?.distanceM).toBe(distanceM);
+      else expect(() => parseRun({ distanceM })).toThrow(BadRequestException);
+    });
+
+    it.each<[string, number, boolean]>([
+      ['T-RUN-05 時間 59', 59, false],
+      ['T-RUN-06 時間 60', 60, true],
+      ['T-RUN-07 時間 86400', 86400, true],
+      ['T-RUN-08 時間 86401', 86401, false],
+    ])('%s', (_name, durationS, ok) => {
+      if (ok) expect(parseRun({ durationS }).run?.durationS).toBe(durationS);
+      else expect(() => parseRun({ durationS })).toThrow(BadRequestException);
+    });
+
+    it.each([[1500.5], ['5000'], [null], [undefined], [NaN], [-1], [0]])('距離が整数でない・数でない（%j）は 400', (distanceM) => {
+      expect(() => parseRun({ distanceM })).toThrow(BadRequestException);
+    });
+
+    it.each([[undefined], [null], ['x'], [5000], [[]]])('kind=run で run が %j は 400', (value) => {
+      expect(() => parse({ ...valid, kind: 'run', run: value })).toThrow(BadRequestException);
+    });
+
+    it.each(['workout', 'rest'])('kind=%s に run を付けると 400（run は kind=run のときだけ）', (kind) => {
+      expect(() => parse({ ...valid, kind, run })).toThrow(BadRequestException);
+    });
+  });
+
   describe('入力そのものの型', () => {
     it.each([[undefined], [null], ['text'], [42], [[]]])('%j は 400', (raw) => {
       expect(() => parse(raw)).toThrow(BadRequestException);
@@ -66,7 +107,7 @@ describe('parseRecordInput（記録の入力検査）', () => {
 
   it('400 の応答は code=VALIDATION_ERROR と、項目ごとの理由（3項目とも誤りなら3つ）を持つ', () => {
     try {
-      parse({ id: 'x', kind: 'run', recordedAt: 'あした' });
+      parse({ id: 'x', kind: 'swim', recordedAt: 'あした' });
       expect.unreachable();
     } catch (err) {
       const body = (err as BadRequestException).getResponse() as { code: string; details: string[] };
