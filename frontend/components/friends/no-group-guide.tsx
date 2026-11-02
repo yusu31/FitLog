@@ -7,7 +7,7 @@ import { CreateGroupForm } from './create-group-form';
 import { GROUP_MEMBER_MAX } from './member-list';
 
 // グループに入っていない人への案内（docs/screen-design.md 4章・5章）。
-// 「グループを作る」と「招待リンクで参加する」の2つだけ。グループを作る入口は仲間タブのここ（専用の画面は置かない）。
+// 「グループを作る」と「招待リンクで参加する」の2つだけ。グループを作る入口は、仲間タブのここと S-32（グループの設定）の2か所。
 // 順位・連続日数は出さない
 export function NoGroupGuide() {
   const [open, setOpen] = useState(false);
