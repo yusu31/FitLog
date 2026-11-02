@@ -1,14 +1,16 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, between, eq, isNull, or } from 'drizzle-orm';
+import { and, asc, between, desc, eq, exists, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { compareSet, isPersonalBest } from '../common/ghost.js';
 import { cellStatus, weekDates, weekStartOf } from '../common/week.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
-import { exercises, records, runDetails, workoutSets } from '../db/schema.js';
+import { exercises, groupMembers, records, runDetails, workoutSets } from '../db/schema.js';
 import { findPrevious, pastMaxVolume } from './ghost-queries.js';
+import { encodeCursor, parseListQuery } from './list-input.js';
 import { parseRecordInput, type RunInput } from './record-input.js';
-import type { RecordResponse, SetResponse, WeekResponse } from './records.response.js';
+import type { RecordDetailResponse, RecordedExercise, RecordListResponse, RecordResponse, SetResponse, WeekResponse } from './records.response.js';
 import { parseSetInput } from './set-input.js';
 import { parseWeekDate } from './week-input.js';
 
@@ -26,6 +28,20 @@ const toResponse = (row: Row, run?: RunInput): RecordResponse => ({
 type SetRow = typeof workoutSets.$inferSelect;
 
 const recordNotFound = () => new NotFoundException({ code: 'RECORD_NOT_FOUND', message: '記録が見つかりません', details: null });
+
+// 記録の持ち主が、userId と同じグループにいる、という条件（自分の記録かどうかは別に判定する）。
+// group_members.user_id は UNIQUE（1人1グループ）なので、同じ group_id に載っている行を引けば仲間が分かる。
+// 人の見える範囲は、この1か所で決める（design.md 6章。足跡・スタンプ・コメントもここを通す）
+const mine = alias(groupMembers, 'mine');
+const theirs = alias(groupMembers, 'theirs');
+const ownerInMyGroup = (db: Db, userId: string) =>
+  exists(
+    db
+      .select({ one: sql`1` })
+      .from(theirs)
+      .innerJoin(mine, eq(mine.groupId, theirs.groupId))
+      .where(and(eq(theirs.userId, records.userId), eq(mine.userId, userId))),
+  );
 
 @Injectable()
 export class RecordsService {
@@ -86,6 +102,131 @@ export class RecordsService {
       weekStart,
       days: dates.map((date) => ({ date, status: cellStatus(rows.filter((r) => r.localDate === date).map((r) => r.kind)) })),
     };
+  }
+
+  // 自分の記録の一覧（新しい順）。運動した時刻の降順、同じ時刻は id の降順で並べ、cursor は「最後に読んだ1件」の（時刻, id）。
+  // limit+1 件読み、余った1件があれば続きがある（ちょうど割り切れるときに空のページを返さない）
+  async list(userId: string, rawQuery: { limit?: unknown; cursor?: unknown; kind?: unknown }): Promise<RecordListResponse> {
+    const { limit, cursor, kind } = parseListQuery(rawQuery);
+    const rows = await this.db
+      .select()
+      .from(records)
+      .where(
+        and(
+          eq(records.userId, userId),
+          kind ? eq(records.kind, kind) : undefined,
+          cursor ? or(lt(records.recordedAt, cursor.recordedAt), and(eq(records.recordedAt, cursor.recordedAt), lt(records.id, cursor.id))) : undefined,
+        ),
+      )
+      .orderBy(desc(records.recordedAt), desc(records.id))
+      .limit(limit + 1);
+
+    const page = rows.slice(0, limit);
+    const last = page[page.length - 1];
+    return {
+      items: await this.withDetails(page),
+      nextCursor: rows.length > limit && last ? encodeCursor(last.recordedAt, last.id) : null,
+    };
+  }
+
+  // 記録の詳細。見られるのは持ち主と、同じグループの人だけ。
+  // 無い・他のグループの人の・グループに入っていない人から見た他人の記録は、すべて同じ 404（存在を教えない）
+  async detail(userId: string, recordId: string): Promise<RecordDetailResponse> {
+    if (!isUuid(recordId)) throw recordNotFound();
+    const [row] = await this.db
+      .select()
+      .from(records)
+      .where(
+        and(
+          eq(records.id, recordId.toLowerCase()),
+          or(eq(records.userId, userId), ownerInMyGroup(this.db, userId)),
+        ),
+      );
+    if (!row) throw recordNotFound();
+    const [detail] = await this.withDetails([row]);
+    return detail;
+  }
+
+  // 記録を消す（取り消し）。自分のだけ。セット・ランの詳細は DB の ON DELETE CASCADE で一緒に消える。
+  // 持ち主の確認と削除を1つの文で行う（確認と削除の間に割り込まれない）。
+  // 消えた行は持ち主が分からないので、二重削除も他人の記録も無い id も、同じ 404
+  async deleteRecord(userId: string, recordId: string): Promise<void> {
+    if (!isUuid(recordId)) throw recordNotFound();
+    const deleted = await this.db
+      .delete(records)
+      .where(and(eq(records.id, recordId.toLowerCase()), eq(records.userId, userId)))
+      .returning({ id: records.id });
+    if (deleted.length === 0) throw recordNotFound();
+    this.logger.log(`記録を削除: ${deleted[0].id}`);
+  }
+
+  // セットを消す（取り消し）。確かめる順番: 記録が自分のものか（404 RECORD_NOT_FOUND。他人の記録も同じ）→ その記録のセットか（404 SET_NOT_FOUND）。
+  // セットの持ち主は記録で決まるので、「自分の記録の下にあるセット」だけを1つの文で消す
+  async deleteSet(userId: string, recordId: string, setId: string): Promise<void> {
+    if (!isUuid(recordId)) throw recordNotFound();
+    const [record] = await this.db
+      .select({ userId: records.userId })
+      .from(records)
+      .where(eq(records.id, recordId.toLowerCase()));
+    if (!record || record.userId !== userId) throw recordNotFound();
+
+    const deleted = isUuid(setId)
+      ? await this.db
+          .delete(workoutSets)
+          .where(and(eq(workoutSets.id, setId.toLowerCase()), eq(workoutSets.recordId, recordId.toLowerCase())))
+          .returning({ id: workoutSets.id })
+      : [];
+    if (deleted.length === 0) throw new NotFoundException({ code: 'SET_NOT_FOUND', message: 'セットが見つかりません', details: null });
+    this.logger.log(`セットを削除: ${deleted[0].id}`);
+  }
+
+  // 記録の行に、ラン（距離と時間）と筋トレのセット（種目ごと）を付ける。ページ分の id をまとめて引く（記録ごとには引かない）
+  private async withDetails(rows: Row[]): Promise<RecordDetailResponse[]> {
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
+
+    const runs = await this.db
+      .select({ recordId: runDetails.recordId, distanceM: runDetails.distanceM, durationS: runDetails.durationS })
+      .from(runDetails)
+      .where(inArray(runDetails.recordId, ids));
+    const runById = new Map(runs.map((r) => [r.recordId, { distanceM: r.distanceM, durationS: r.durationS }]));
+
+    const setRows = await this.db
+      .select({
+        recordId: workoutSets.recordId,
+        id: workoutSets.id,
+        exerciseId: workoutSets.exerciseId,
+        exerciseName: exercises.name,
+        setNo: workoutSets.setNo,
+        weightKg: workoutSets.weightKg,
+        reps: workoutSets.reps,
+        createdAt: workoutSets.createdAt,
+      })
+      .from(workoutSets)
+      .innerJoin(exercises, eq(exercises.id, workoutSets.exerciseId))
+      .where(inArray(workoutSets.recordId, ids))
+      .orderBy(asc(workoutSets.createdAt), asc(workoutSets.setNo), asc(workoutSets.id));
+
+    // 種目は最初にセットを足した順（createdAt の昇順に読んでいるので、Map に入れた順）。セットは種目の中でセット番号の昇順
+    const exercisesByRecord = new Map<string, Map<string, RecordedExercise>>();
+    for (const s of setRows) {
+      const perRecord = exercisesByRecord.get(s.recordId) ?? new Map<string, RecordedExercise>();
+      exercisesByRecord.set(s.recordId, perRecord);
+      const entry = perRecord.get(s.exerciseId) ?? { exerciseId: s.exerciseId, name: s.exerciseName, sets: [] };
+      perRecord.set(s.exerciseId, entry);
+      entry.sets.push({ id: s.id, setNo: s.setNo, weightKg: Number(s.weightKg), reps: s.reps });
+    }
+
+    return rows.map((row) => {
+      const base = toResponse(row, runById.get(row.id));
+      if (row.kind !== 'workout') return base;
+      const exercisesOfRecord = [...(exercisesByRecord.get(row.id)?.values() ?? [])].map((e) => ({
+        exerciseId: e.exerciseId,
+        name: e.name,
+        sets: e.sets.toSorted((a, b) => a.setNo - b.setNo),
+      }));
+      return Object.assign(base, { exercises: exercisesOfRecord });
+    });
   }
 
   // すでにある記録がランなら、1回目に入れた距離と時間を読む（再送の応答は1回目と同じ内容にする）

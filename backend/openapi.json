@@ -527,6 +527,70 @@
         "tags": [
           "records"
         ]
+      },
+      "get": {
+        "operationId": "listRecords",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1ページの件数。1〜100。既定 20",
+            "schema": {
+              "example": 20,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "前の応答の nextCursor をそのまま渡す（続きを読む）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "description": "種類で絞る",
+            "schema": {
+              "enum": [
+                "workout",
+                "run",
+                "rest"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "limit が 1〜100 の整数でない・kind が workout/run/rest でない・cursor が壊れている（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む",
+        "tags": [
+          "records"
+        ]
       }
     },
     "/api/records/{id}/sets": {
@@ -605,6 +669,121 @@
           }
         },
         "summary": "筋トレの記録にセットを足す。冪等",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/api/records/{id}": {
+      "get": {
+        "operationId": "getRecord",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordDetailResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "無い・別のグループの人の記録・グループに入っていない人から見た他人の記録（RECORD_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録の詳細（セット・ラン）。自分か同じグループの人の記録だけ",
+        "tags": [
+          "records"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteRecord",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "消した"
+          },
+          "404": {
+            "description": "無い・他の人の記録・もう消した（RECORD_NOT_FOUND）。存在を教えない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録を取り消す。自分のだけ。セット・ランの詳細も一緒に消える",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/api/records/{id}/sets/{setId}": {
+      "delete": {
+        "operationId": "deleteSet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "setId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "消した"
+          },
+          "404": {
+            "description": "記録が無い・他の人の記録（RECORD_NOT_FOUND）、その記録にセットが無い・もう消した（SET_NOT_FOUND）。存在を教えない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "セットを取り消す。自分のだけ",
         "tags": [
           "records"
         ]
@@ -1246,6 +1425,127 @@
           "reps",
           "result",
           "isPersonalBest"
+        ]
+      },
+      "RecordedSet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "setNo": {
+            "type": "number",
+            "example": 1
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 40
+          },
+          "reps": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "id",
+          "setNo",
+          "weightKg",
+          "reps"
+        ]
+      },
+      "RecordedExercise": {
+        "type": "object",
+        "properties": {
+          "exerciseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "ベンチプレス"
+          },
+          "sets": {
+            "description": "セット番号の昇順",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecordedSet"
+            }
+          }
+        },
+        "required": [
+          "exerciseId",
+          "name",
+          "sets"
+        ]
+      },
+      "RecordDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "workout",
+              "run",
+              "rest"
+            ]
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "運動した時刻（UTC）"
+          },
+          "localDate": {
+            "type": "string",
+            "example": "2026-11-01",
+            "description": "日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す"
+          },
+          "run": {
+            "description": "ランの記録だけ。距離と時間",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunDetail"
+              }
+            ]
+          },
+          "exercises": {
+            "description": "筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecordedExercise"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "recordedAt",
+          "localDate"
+        ]
+      },
+      "RecordListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "新しい順（運動した時刻の降順。同じ時刻は id の降順）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecordDetailResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "続きがあるときの印。次の呼び出しの cursor にそのまま渡す。最後のページは null"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
         ]
       },
       "WeekDay": {
