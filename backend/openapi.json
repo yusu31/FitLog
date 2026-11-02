@@ -609,6 +609,49 @@
           "records"
         ]
       }
+    },
+    "/api/week": {
+      "get": {
+        "operationId": "getWeek",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "日本時間の日付（YYYY-MM-DD）",
+            "schema": {
+              "example": "2026-10-26",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeekResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "date が実在する YYYY-MM-DD でない・無い（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "その日を含む週（月曜〜日曜）の、自分の7マスを返す",
+        "tags": [
+          "records"
+        ]
+      }
     }
   },
   "info": {
@@ -1203,6 +1246,50 @@
           "reps",
           "result",
           "isPersonalBest"
+        ]
+      },
+      "WeekDay": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-10-26",
+            "description": "日本時間の日付（YYYY-MM-DD）"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "rec",
+              "rest",
+              "none"
+            ],
+            "description": "記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec"
+          }
+        },
+        "required": [
+          "date",
+          "status"
+        ]
+      },
+      "WeekResponse": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "example": "2026-10-26",
+            "description": "その週の月曜の日付"
+          },
+          "days": {
+            "description": "月曜から日曜までの7日分（日付の昇順）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeekDay"
+            }
+          }
+        },
+        "required": [
+          "weekStart",
+          "days"
         ]
       }
     }
