@@ -1,14 +1,16 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, eq, isNull, or } from 'drizzle-orm';
+import { and, between, eq, isNull, or } from 'drizzle-orm';
 import { compareSet, isPersonalBest } from '../common/ghost.js';
+import { cellStatus, weekDates, weekStartOf } from '../common/week.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
 import { exercises, records, runDetails, workoutSets } from '../db/schema.js';
 import { findPrevious, pastMaxVolume } from './ghost-queries.js';
 import { parseRecordInput, type RunInput } from './record-input.js';
-import type { RecordResponse, SetResponse } from './records.response.js';
+import type { RecordResponse, SetResponse, WeekResponse } from './records.response.js';
 import { parseSetInput } from './set-input.js';
+import { parseWeekDate } from './week-input.js';
 
 type Row = typeof records.$inferSelect;
 
@@ -67,6 +69,23 @@ export class RecordsService {
 
     // 何もしなかったのに、どちらの行も見つからない（間に消された）。起きない想定なので 500 にして気づけるようにする
     throw new Error('記録の作成が衝突したのに、衝突相手が見つかりません');
+  }
+
+  // 今週の7マス（F-07）。date（日本時間の日付）を含む週（月曜〜日曜）の、自分の記録だけを日ごとにまとめる。
+  // 他の人の記録は入らない。同じ日に記録と休みがあれば rec が優先（共通の関数 common/week.ts）
+  async week(userId: string, dateRaw: unknown): Promise<WeekResponse> {
+    const weekStart = weekStartOf(parseWeekDate(dateRaw));
+    const dates = weekDates(weekStart);
+
+    const rows = await this.db
+      .select({ localDate: records.localDate, kind: records.kind })
+      .from(records)
+      .where(and(eq(records.userId, userId), between(records.localDate, dates[0], dates[6])));
+
+    return {
+      weekStart,
+      days: dates.map((date) => ({ date, status: cellStatus(rows.filter((r) => r.localDate === date).map((r) => r.kind)) })),
+    };
   }
 
   // すでにある記録がランなら、1回目に入れた距離と時間を読む（再送の応答は1回目と同じ内容にする）

@@ -99,7 +99,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 
 | メソッド | パス | 説明 | 備考 |
 |----------|------|------|------|
-| GET | `/week?date=YYYY-MM-DD` | その日を含む週の、自分の7マス（日ごとに `rec`・`rest`・なし） | 週は月曜〜日曜 |
+| GET | `/week?date=YYYY-MM-DD` | その日を含む週の、自分の7マス。応答は `{ weekStart, days: [{ date, status }] × 7 }`（月曜から日曜の順。`status` は `rec`・`rest`・`none`） | 週は月曜〜日曜（日本時間）。同じ日に記録と休みがあれば `rec`。`date` が実在する日付でない・無いときは 400 |
 | GET | `/feed?weekStart=YYYY-MM-DD&cursor=` | 同じグループの足跡（新しい順・20件ずつ）と、その週の合計 | |
 | GET | `/me/heatmap?weekStart=YYYY-MM-DD` | その週の部位ごとのセット数 | F-12 |
 

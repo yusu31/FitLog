@@ -283,11 +283,44 @@ export interface SetResponse {
   isPersonalBest: boolean;
 }
 
+/**
+ * 記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec
+ */
+export type WeekDayStatus = typeof WeekDayStatus[keyof typeof WeekDayStatus];
+
+
+export const WeekDayStatus = {
+  rec: 'rec',
+  rest: 'rest',
+  none: 'none',
+} as const;
+
+export interface WeekDay {
+  /** 日本時間の日付（YYYY-MM-DD） */
+  date: string;
+  /** 記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec */
+  status: WeekDayStatus;
+}
+
+export interface WeekResponse {
+  /** その週の月曜の日付 */
+  weekStart: string;
+  /** 月曜から日曜までの7日分（日付の昇順） */
+  days: WeekDay[];
+}
+
 export type GetPreviousParams = {
 /**
  * この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す
  */
 before?: string;
+};
+
+export type GetWeekParams = {
+/**
+ * 日本時間の日付（YYYY-MM-DD）
+ */
+date: string;
 };
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
@@ -1974,3 +2007,131 @@ export const useAddSet = <TError = ErrorResponse,
       > => {
       return useMutation(getAddSetMutationOptions(options), queryClient);
     }
+
+export type getWeekResponse200 = {
+  data: WeekResponse
+  status: 200
+}
+
+export type getWeekResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getWeekResponseSuccess = (getWeekResponse200) & {
+  headers: Headers;
+};
+export type getWeekResponseError = (getWeekResponse400) & {
+  headers: Headers;
+};
+
+export type getWeekResponse = (getWeekResponseSuccess | getWeekResponseError)
+
+export const getGetWeekUrl = (params: GetWeekParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/week?${stringifiedParams}` : `/api/week`
+}
+
+/**
+ * @summary その日を含む週（月曜〜日曜）の、自分の7マスを返す
+ */
+export const getWeek = async (params: GetWeekParams, options?: RequestInit): Promise<getWeekResponse> => {
+
+  const res = await fetch(getGetWeekUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getWeekResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getWeekResponse
+}
+
+
+
+
+
+export const getGetWeekQueryKey = (params?: GetWeekParams,) => {
+    return [
+    `/api/week`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetWeekQueryOptions = <TData = Awaited<ReturnType<typeof getWeek>>, TError = ErrorResponse>(params: GetWeekParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWeekQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWeek>>> = ({ signal }) => getWeek(params, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWeekQueryResult = NonNullable<Awaited<ReturnType<typeof getWeek>>>
+export type GetWeekQueryError = ErrorResponse
+
+
+export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError = ErrorResponse>(
+ params: GetWeekParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWeek>>,
+          TError,
+          Awaited<ReturnType<typeof getWeek>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError = ErrorResponse>(
+ params: GetWeekParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWeek>>,
+          TError,
+          Awaited<ReturnType<typeof getWeek>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError = ErrorResponse>(
+ params: GetWeekParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary その日を含む週（月曜〜日曜）の、自分の7マスを返す
+ */
+
+export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError = ErrorResponse>(
+ params: GetWeekParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetWeekQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}

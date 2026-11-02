@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { GhostResult } from '../common/ghost.js';
+import type { CellStatus } from '../common/week.js';
 import { RECORD_KINDS, type RecordKind } from '../db/schema.js';
 import { CREATABLE_KINDS, DISTANCE_M_MAX, DISTANCE_M_MIN, DURATION_S_MAX, DURATION_S_MIN, type CreatableKind } from './record-input.js';
 
@@ -82,3 +83,20 @@ export class SetResponse {
   @ApiProperty({ description: 'その種目で、過去最大の重量×回数を超えたら true（同じは false。初めての記録の最初のセットも false）' })
   isPersonalBest!: boolean;
 }
+
+export class WeekDay {
+  @ApiProperty({ example: '2026-10-26', description: '日本時間の日付（YYYY-MM-DD）' })
+  date!: string;
+
+  @ApiProperty({ enum: ['rec', 'rest', 'none'], description: '記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec' })
+  status!: CellStatus;
+}
+
+export class WeekResponse {
+  @ApiProperty({ example: '2026-10-26', description: 'その週の月曜の日付' })
+  weekStart!: string;
+
+  @ApiProperty({ type: [WeekDay], description: '月曜から日曜までの7日分（日付の昇順）' })
+  days!: WeekDay[];
+}
+
