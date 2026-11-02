@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 import { cn } from 'cn';
 
 // 厚みボタン（docs/screen-design.md 6章）。押すと沈む。タップできる大きさは 44px 以上。
@@ -15,7 +15,8 @@ const sizes = {
   sm: 'min-h-11 px-4 text-sm tracking-wide',
 } as const;
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
+// ComponentProps にして ref（React 19 では props として渡せる）も受ける。確認ダイアログが最初のフォーカス先を決めるのに使う
+type Props = ComponentProps<'button'> & {
   tone?: keyof typeof tones;
   size?: keyof typeof sizes;
 };

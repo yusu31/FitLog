@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { FriendsView } from './friends-view';
 
 vi.mock('@/lib/auth-client', () => ({
@@ -55,13 +56,34 @@ const renderView = () => {
 };
 
 describe('FriendsView（S-20 仲間）', () => {
-  describe('グループに入っていないとき', () => {
-    it('「グループを作る」と「招待リンクで参加する」の2つだけを出す', async () => {
+  describe('グループに入っていないとき（案内の部品）', () => {
+    beforeEach(() => {
       replies['GET /api/groups/current'] = [{ status: 404, body: { code: 'GROUP_NOT_FOUND', message: 'グループに入っていません' } }];
+    });
+
+    it('「グループを作る」と「招待リンクで参加する」の2つだけを出す', async () => {
       renderView();
       expect(await screen.findByRole('button', { name: 'グループを作る' })).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: '招待リンクで参加する' })).toBeInTheDocument();
       expect(screen.queryByText('メンバー')).not.toBeInTheDocument();
+    });
+
+    it('順位・連続日数・足跡は出さない（責めない・見せ合うだけ）', async () => {
+      renderView();
+      await screen.findByRole('button', { name: 'グループを作る' });
+      const text = document.body.textContent ?? '';
+      for (const word of ['順位', '連続', ...FORBIDDEN_WORDS]) expect(text).not.toContain(word);
+    });
+
+    it('「グループを作る」を押すと、この画面の中に名前の入力欄を開く（作る入口は仲間タブ）', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await user.click(await screen.findByRole('button', { name: 'グループを作る' }));
+      expect(screen.getByLabelText('グループ名')).toBeInTheDocument();
+      // やめると閉じる
+      await user.click(screen.getByRole('button', { name: 'やめる' }));
+      expect(screen.queryByLabelText('グループ名')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'グループを作る' })).toBeInTheDocument();
     });
 
     it('名前を入れて作ると POST /api/groups を送り、グループの表示に変わる', async () => {
@@ -78,44 +100,42 @@ describe('FriendsView（S-20 仲間）', () => {
       expect(calls.find((c) => c.method === 'POST')?.body).toEqual({ name: '朝トレ部' });
     });
 
-    // 境界値: 空・空白だけは送らずに知らせる（21字は入力欄の maxLength で打てない）
-    it.each([['空', ''], ['空白だけ', '   ']])('名前が%sなら送らずに知らせる', async (_label, value) => {
-      replies['GET /api/groups/current'] = [{ status: 404, body: {} }];
+    // T-NAME-01 境界値: 0字（空・空白）と21字は送らず知らせる
+    it.each([
+      ['空', ''],
+      ['空白だけ', '   '],
+      ['21字', 'あ'.repeat(21)],
+    ])('名前が%sなら送らずに知らせる', async (_label, value) => {
       const user = userEvent.setup();
       renderView();
       await user.click(await screen.findByRole('button', { name: 'グループを作る' }));
-      if (value) await user.type(screen.getByLabelText('グループ名'), value);
+      fireEvent.change(screen.getByLabelText('グループ名'), { target: { value } });
       await user.click(screen.getByRole('button', { name: '作る' }));
 
       expect(await screen.findByRole('alert')).toHaveTextContent('グループ名は1〜20字で入れてください');
       expect(calls.some((c) => c.method === 'POST')).toBe(false);
     });
 
-    it('入力欄は20字までしか入らない', async () => {
-      replies['GET /api/groups/current'] = [{ status: 404, body: {} }];
-      renderView();
-      await userEvent.click(await screen.findByRole('button', { name: 'グループを作る' }));
-      expect(screen.getByLabelText('グループ名')).toHaveAttribute('maxLength', '20');
-    });
-
-    it('すでにグループにいる（409）なら、API の文言を出す', async () => {
-      replies['GET /api/groups/current'] = [{ status: 404, body: {} }];
+    it('すでにグループにいる（409 ALREADY_IN_GROUP）なら、決めた文言を出す', async () => {
       replies['POST /api/groups'] = [{ status: 409, body: { code: 'ALREADY_IN_GROUP', message: 'すでにグループに入っています', details: null } }];
       const user = userEvent.setup();
       renderView();
       await user.click(await screen.findByRole('button', { name: 'グループを作る' }));
       await user.type(screen.getByLabelText('グループ名'), '二つ目');
       await user.click(screen.getByRole('button', { name: '作る' }));
-      expect(await screen.findByRole('alert')).toHaveTextContent('すでにグループに入っています');
+      expect(await screen.findByRole('alert')).toHaveTextContent('1人が入れるグループは1つです');
     });
   });
 
   describe('グループに入っているとき', () => {
-    it('人数・グループ名・メンバーを出し、自分には「あなた」を付ける', async () => {
+    beforeEach(() => {
       replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }];
+    });
+
+    it('人数・グループ名・メンバーを出し、自分には「あなた」を付ける', async () => {
       renderView();
       expect(await screen.findByRole('heading', { name: '朝トレ部' })).toBeInTheDocument();
-      const items = screen.getAllByRole('listitem');
+      const items = within(screen.getByRole('list', { name: 'メンバー' })).getAllByRole('listitem');
       expect(items).toHaveLength(2);
       expect(items[0]).toHaveTextContent('たろう');
       expect(items[0]).toHaveTextContent('あなた');
@@ -123,64 +143,13 @@ describe('FriendsView（S-20 仲間）', () => {
       expect(items[1]).not.toHaveTextContent('あなた');
     });
 
-    it('5人なら招待リンクを作れず、満員と出す', async () => {
-      const members = Array.from({ length: 5 }, (_, i) => ({ id: `u${i + 1}`, name: `人${i + 1}`, avatar: AVATAR }));
-      replies['GET /api/groups/current'] = [{ status: 200, body: { ...GROUP, members } }];
+    it('招待・グループを出るは S-32 に移したので、ここには置かず、設定へのリンクだけ置く', async () => {
       renderView();
-      expect(await screen.findByText('満員です（5人まで）')).toBeInTheDocument();
+      await screen.findByRole('heading', { name: '朝トレ部' });
       expect(screen.queryByRole('button', { name: '招待リンクを作る' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'グループを出る' })).not.toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /グループの設定/ })).toHaveAttribute('href', '/settings/group');
     });
-
-    it('招待リンクを作るとリンクと期限を出し、取り消すと DELETE を送って消える', async () => {
-      replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }];
-      replies['POST /api/groups/current/invitations'] = [
-        { status: 201, body: { id: 'inv-1', token: 'abc_DEF-123', expiresAt: '2026-11-06T03:00:00.000Z' } },
-      ];
-      replies['DELETE /api/groups/current/invitations/inv-1'] = [{ status: 204 }];
-      const user = userEvent.setup();
-      renderView();
-      await user.click(await screen.findByRole('button', { name: '招待リンクを作る' }));
-
-      const link = await screen.findByLabelText('招待リンク');
-      expect(link).toHaveValue(`${window.location.origin}/invite?token=abc_DEF-123`);
-      // 期限は日本時間で出す（UTC 03:00 → 日本時間 12:00）
-      expect(screen.getByText(/11\/6 12:00 まで使えます/)).toBeInTheDocument();
-
-      await user.click(screen.getByRole('button', { name: '取り消す' }));
-      expect(await screen.findByText('リンクを取り消しました。もう使えません')).toBeInTheDocument();
-      expect(screen.queryByLabelText('招待リンク')).not.toBeInTheDocument();
-      expect(calls.some((c) => c.method === 'DELETE' && c.url.endsWith('/invitations/inv-1'))).toBe(true);
-    });
-
-    it('コピーを押すと、リンクをクリップボードへ書き、「コピーしました」に変わる', async () => {
-      replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }];
-      replies['POST /api/groups/current/invitations'] = [
-        { status: 201, body: { id: 'inv-1', token: 'tok', expiresAt: '2026-11-06T03:00:00.000Z' } },
-      ];
-      const user = userEvent.setup();
-      const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
-      renderView();
-      await user.click(await screen.findByRole('button', { name: '招待リンクを作る' }));
-      await user.click(await screen.findByRole('button', { name: 'コピー' }));
-
-      await waitFor(() => expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/invite?token=tok`));
-      expect(screen.getByRole('button', { name: 'コピーしました' })).toBeInTheDocument();
-    });
-  });
-
-  it('グループを出る: 確かめてから DELETE を送り、グループなしの表示に戻る。「やめる」なら送らない', async () => {
-    replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }, { status: 404, body: {} }];
-    replies['DELETE /api/groups/current/members/me'] = [{ status: 204 }];
-    const user = userEvent.setup();
-    renderView();
-    await user.click(await screen.findByRole('button', { name: 'グループを出る' }));
-    await user.click(screen.getByRole('button', { name: 'やめる' }));
-    expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
-
-    await user.click(screen.getByRole('button', { name: 'グループを出る' }));
-    await user.click(screen.getByRole('button', { name: '出る' }));
-    expect(await screen.findByRole('button', { name: 'グループを作る' })).toBeInTheDocument();
-    expect(calls.filter((c) => c.method === 'DELETE').map((c) => c.url)).toEqual(['/api/groups/current/members/me']);
   });
 
   it('読み込みが通信で失敗したら、責めない文言で知らせる', async () => {
