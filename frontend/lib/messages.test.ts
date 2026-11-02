@@ -1,5 +1,6 @@
 import { FORBIDDEN_WORDS } from './forbidden-words';
 import {
+  DETAIL_MESSAGES,
   GHOST_MESSAGES,
   GROUP_ERROR_BY_CODE,
   GROUP_MESSAGES,
@@ -39,6 +40,7 @@ describe('文言の定数', () => {
     ...collect(REST_MESSAGES),
     ...collect(ME_MESSAGES),
     ...collect(RUN_MESSAGES),
+    ...collect(DETAIL_MESSAGES),
     ghostUpMessage(1),
     ghostUpMessage(100),
     runSavedMessage(5200, 1930),

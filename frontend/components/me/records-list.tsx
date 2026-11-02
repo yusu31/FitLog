@@ -1,6 +1,7 @@
 'use client';
 
 import { Ellipsis, Moon, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { cn } from 'cn';
 import { ThickButton } from '@/components/fitlog/thick-button';
@@ -131,6 +132,11 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
   const open = actions.menuFor === record.id;
   return (
     <li className="fl-slab relative flex min-h-16 items-center gap-3 py-1 pr-1 pl-3">
+      {/* 日付と中身をまとめて、記録の詳細（S-21）へのリンクにする。自分の記録なので from=me を付ける */}
+      <Link
+        href={`/record-detail?id=${encodeURIComponent(record.id)}&from=me`}
+        className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-fl outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+      >
       <div className="w-[68px] shrink-0 leading-tight">
         <p className="fl-num text-xl text-ink">{formatMonthDay(record.localDate)}</p>
         <p className="text-[11px] font-bold text-sub">{WEEKDAYS[weekdayIndex(record.localDate)]}曜</p>
@@ -149,6 +155,7 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
         </p>
         {detail && <p className="mt-0.5 text-xs font-bold text-sub">{detail}</p>}
       </div>
+      </Link>
       <button
         type="button"
         aria-label={`${formatMonthDay(record.localDate)} ${title}の メニュー`}

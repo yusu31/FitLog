@@ -89,3 +89,19 @@ export const RUN_MESSAGES = {
 // 保存したあとの結果の一言（距離と時間を添える）
 export const runSavedMessage = (distanceM: number, durationS: number): string =>
   `${formatDistance(distanceM)} を ${formatDuration(durationS)} で。${RUN_MESSAGES.tail}`;
+
+// 記録の詳細（S-21）。読み込めない・見つからないときも責めない。スタンプ・コメント・動画・ルートは 02-4
+export const DETAIL_MESSAGES = {
+  kindWorkout: '筋トレ',
+  kindRun: 'ラン',
+  kindRest: 'おやすみ',
+  restBody: '休むのも 記録のひとつ。ちゃんと数えたよ。',
+  noSets: 'セットは まだありません',
+  notFoundTitle: '記録が見つかりませんでした',
+  notFoundBody: 'すでに消えたか、見られない記録かもしれません',
+  loadFailed: '読み込めませんでした。電波の良い所で開き直してください',
+  removing: '消しています',
+  deleteButton: 'この記録を 消す',
+  backMe: '自分にもどる',
+  backFriends: '仲間にもどる',
+} as const;
