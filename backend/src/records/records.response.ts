@@ -43,6 +43,50 @@ export class RecordResponse {
   run?: RunDetail;
 }
 
+// 一覧・詳細に入れるセット。再送の応答（SetResponse）と違い、ゴーストの比べ結果と自己ベストの札は付けない（記録した瞬間に使うもの）
+export class RecordedSet {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ example: 1 })
+  setNo!: number;
+
+  @ApiProperty({ example: 40 })
+  weightKg!: number;
+
+  @ApiProperty({ example: 10 })
+  reps!: number;
+}
+
+export class RecordedExercise {
+  @ApiProperty({ format: 'uuid' })
+  exerciseId!: string;
+
+  @ApiProperty({ example: 'ベンチプレス' })
+  name!: string;
+
+  @ApiProperty({ type: [RecordedSet], description: 'セット番号の昇順' })
+  sets!: RecordedSet[];
+}
+
+// 一覧の1件・詳細。RecordResponse に、筋トレなら種目ごとのセットを足したもの
+export class RecordDetailResponse extends RecordResponse {
+  @ApiProperty({
+    type: [RecordedExercise],
+    required: false,
+    description: '筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない',
+  })
+  exercises?: RecordedExercise[];
+}
+
+export class RecordListResponse {
+  @ApiProperty({ type: [RecordDetailResponse], description: '新しい順（運動した時刻の降順。同じ時刻は id の降順）' })
+  items!: RecordDetailResponse[];
+
+  @ApiProperty({ type: String, nullable: true, description: '続きがあるときの印。次の呼び出しの cursor にそのまま渡す。最後のページは null' })
+  nextCursor!: string | null;
+}
+
 export class CreateSetRequest {
   @ApiProperty({ format: 'uuid', description: '端末で作る ID。同じ ID を送り直しても、セットは1件のまま（冪等）' })
   id!: string;

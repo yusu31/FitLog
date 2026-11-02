@@ -1,9 +1,20 @@
-import { Body, Controller, Param, Post, Res } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Res } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { ErrorResponse } from '../common/error-response.js';
-import { CreateRecordRequest, CreateSetRequest, RecordResponse, SetResponse } from './records.response.js';
+import { RECORD_KINDS } from '../db/schema.js';
+import { CreateRecordRequest, CreateSetRequest, RecordDetailResponse, RecordListResponse, RecordResponse, SetResponse } from './records.response.js';
 import { RecordsService } from './records.service.js';
 
 // 記録（F-03・F-08。docs/design.md 4章）。すべてログイン必須（共通のガードが既定で守る）
@@ -41,5 +52,42 @@ export class RecordsController {
     const { created, set } = await this.records.addSet(session.user.id, recordId, body);
     if (!created) res.status(200);
     return set;
+  }
+
+  @Get()
+  @ApiOperation({ operationId: 'listRecords', summary: '自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む' })
+  @ApiQuery({ name: 'limit', required: false, example: 20, description: '1ページの件数。1〜100。既定 20' })
+  @ApiQuery({ name: 'cursor', required: false, description: '前の応答の nextCursor をそのまま渡す（続きを読む）' })
+  @ApiQuery({ name: 'kind', required: false, enum: RECORD_KINDS, description: '種類で絞る' })
+  @ApiOkResponse({ type: RecordListResponse })
+  @ApiBadRequestResponse({ type: ErrorResponse, description: 'limit が 1〜100 の整数でない・kind が workout/run/rest でない・cursor が壊れている（VALIDATION_ERROR）' })
+  list(@Session() session: UserSession, @Query('limit') limit?: string, @Query('cursor') cursor?: string, @Query('kind') kind?: string) {
+    return this.records.list(session.user.id, { limit, cursor, kind });
+  }
+
+  @Get(':id')
+  @ApiOperation({ operationId: 'getRecord', summary: '記録の詳細（セット・ラン）。自分か同じグループの人の記録だけ' })
+  @ApiOkResponse({ type: RecordDetailResponse })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '無い・別のグループの人の記録・グループに入っていない人から見た他人の記録（RECORD_NOT_FOUND。存在を教えない）' })
+  detail(@Session() session: UserSession, @Param('id') id: string) {
+    return this.records.detail(session.user.id, id);
+  }
+
+  @Delete(':id/sets/:setId')
+  @HttpCode(204)
+  @ApiOperation({ operationId: 'deleteSet', summary: 'セットを取り消す。自分のだけ' })
+  @ApiNoContentResponse({ description: '消した' })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '記録が無い・他の人の記録（RECORD_NOT_FOUND）、その記録にセットが無い・もう消した（SET_NOT_FOUND）。存在を教えない' })
+  async deleteSet(@Session() session: UserSession, @Param('id') id: string, @Param('setId') setId: string): Promise<void> {
+    await this.records.deleteSet(session.user.id, id, setId);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @ApiOperation({ operationId: 'deleteRecord', summary: '記録を取り消す。自分のだけ。セット・ランの詳細も一緒に消える' })
+  @ApiNoContentResponse({ description: '消した' })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '無い・他の人の記録・もう消した（RECORD_NOT_FOUND）。存在を教えない' })
+  async deleteRecord(@Session() session: UserSession, @Param('id') id: string): Promise<void> {
+    await this.records.deleteRecord(session.user.id, id);
   }
 }

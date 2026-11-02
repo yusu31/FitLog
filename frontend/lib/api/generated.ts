@@ -283,6 +283,52 @@ export interface SetResponse {
   isPersonalBest: boolean;
 }
 
+export interface RecordedSet {
+  id: string;
+  setNo: number;
+  weightKg: number;
+  reps: number;
+}
+
+export interface RecordedExercise {
+  exerciseId: string;
+  name: string;
+  /** セット番号の昇順 */
+  sets: RecordedSet[];
+}
+
+export type RecordDetailResponseKind = typeof RecordDetailResponseKind[keyof typeof RecordDetailResponseKind];
+
+
+export const RecordDetailResponseKind = {
+  workout: 'workout',
+  run: 'run',
+  rest: 'rest',
+} as const;
+
+export interface RecordDetailResponse {
+  id: string;
+  kind: RecordDetailResponseKind;
+  /** 運動した時刻（UTC） */
+  recordedAt: string;
+  /** 日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す */
+  localDate: string;
+  /** ランの記録だけ。距離と時間 */
+  run?: RunDetail;
+  /** 筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない */
+  exercises?: RecordedExercise[];
+}
+
+export interface RecordListResponse {
+  /** 新しい順（運動した時刻の降順。同じ時刻は id の降順） */
+  items: RecordDetailResponse[];
+  /**
+     * 続きがあるときの印。次の呼び出しの cursor にそのまま渡す。最後のページは null
+     * @nullable
+     */
+  nextCursor: string | null;
+}
+
 /**
  * 記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec
  */
@@ -315,6 +361,30 @@ export type GetPreviousParams = {
  */
 before?: string;
 };
+
+export type ListRecordsParams = {
+/**
+ * 1ページの件数。1〜100。既定 20
+ */
+limit?: string;
+/**
+ * 前の応答の nextCursor をそのまま渡す（続きを読む）
+ */
+cursor?: string;
+/**
+ * 種類で絞る
+ */
+kind?: ListRecordsKind;
+};
+
+export type ListRecordsKind = typeof ListRecordsKind[keyof typeof ListRecordsKind];
+
+
+export const ListRecordsKind = {
+  workout: 'workout',
+  run: 'run',
+  rest: 'rest',
+} as const;
 
 export type GetWeekParams = {
 /**
@@ -1878,6 +1948,140 @@ export const useCreateRecord = <TError = ErrorResponse,
       return useMutation(getCreateRecordMutationOptions(options), queryClient);
     }
 
+export type listRecordsResponse200 = {
+  data: RecordListResponse
+  status: 200
+}
+
+export type listRecordsResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type listRecordsResponseSuccess = (listRecordsResponse200) & {
+  headers: Headers;
+};
+export type listRecordsResponseError = (listRecordsResponse400) & {
+  headers: Headers;
+};
+
+export type listRecordsResponse = (listRecordsResponseSuccess | listRecordsResponseError)
+
+export const getListRecordsUrl = (params?: ListRecordsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/records?${stringifiedParams}` : `/api/records`
+}
+
+/**
+ * @summary 自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む
+ */
+export const listRecords = async (params?: ListRecordsParams, options?: RequestInit): Promise<listRecordsResponse> => {
+
+  const res = await fetch(getListRecordsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listRecordsResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as listRecordsResponse
+}
+
+
+
+
+
+export const getListRecordsQueryKey = (params?: ListRecordsParams,) => {
+    return [
+    `/api/records`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListRecordsQueryOptions = <TData = Awaited<ReturnType<typeof listRecords>>, TError = ErrorResponse>(params?: ListRecordsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRecordsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRecords>>> = ({ signal }) => listRecords(params, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListRecordsQueryResult = NonNullable<Awaited<ReturnType<typeof listRecords>>>
+export type ListRecordsQueryError = ErrorResponse
+
+
+export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, TError = ErrorResponse>(
+ params: undefined |  ListRecordsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecords>>,
+          TError,
+          Awaited<ReturnType<typeof listRecords>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, TError = ErrorResponse>(
+ params?: ListRecordsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecords>>,
+          TError,
+          Awaited<ReturnType<typeof listRecords>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, TError = ErrorResponse>(
+ params?: ListRecordsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む
+ */
+
+export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, TError = ErrorResponse>(
+ params?: ListRecordsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListRecordsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export type addSetResponse200 = {
   data: SetResponse
   status: 200
@@ -2006,6 +2210,335 @@ export const useAddSet = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getAddSetMutationOptions(options), queryClient);
+    }
+
+export type getRecordResponse200 = {
+  data: RecordDetailResponse
+  status: 200
+}
+
+export type getRecordResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getRecordResponseSuccess = (getRecordResponse200) & {
+  headers: Headers;
+};
+export type getRecordResponseError = (getRecordResponse404) & {
+  headers: Headers;
+};
+
+export type getRecordResponse = (getRecordResponseSuccess | getRecordResponseError)
+
+export const getGetRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}`
+}
+
+/**
+ * @summary 記録の詳細（セット・ラン）。自分か同じグループの人の記録だけ
+ */
+export const getRecord = async (id: string, options?: RequestInit): Promise<getRecordResponse> => {
+
+  const res = await fetch(getGetRecordUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getRecordResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getRecordResponse
+}
+
+
+
+
+
+export const getGetRecordQueryKey = (id: string,) => {
+    return [
+    `/api/records/${id}`
+    ] as const;
+    }
+
+
+export const getGetRecordQueryOptions = <TData = Awaited<ReturnType<typeof getRecord>>, TError = ErrorResponse>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRecordQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRecord>>> = ({ signal }) => getRecord(id, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetRecordQueryResult = NonNullable<Awaited<ReturnType<typeof getRecord>>>
+export type GetRecordQueryError = ErrorResponse
+
+
+export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TError = ErrorResponse>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecord>>,
+          TError,
+          Awaited<ReturnType<typeof getRecord>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecord>>,
+          TError,
+          Awaited<ReturnType<typeof getRecord>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 記録の詳細（セット・ラン）。自分か同じグループの人の記録だけ
+ */
+
+export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetRecordQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type deleteRecordResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteRecordResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteRecordResponseSuccess = (deleteRecordResponse204) & {
+  headers: Headers;
+};
+export type deleteRecordResponseError = (deleteRecordResponse404) & {
+  headers: Headers;
+};
+
+export type deleteRecordResponse = (deleteRecordResponseSuccess | deleteRecordResponseError)
+
+export const getDeleteRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}`
+}
+
+/**
+ * @summary 記録を取り消す。自分のだけ。セット・ランの詳細も一緒に消える
+ */
+export const deleteRecord = async (id: string, options?: RequestInit): Promise<deleteRecordResponse> => {
+
+  const res = await fetch(getDeleteRecordUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteRecordResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as deleteRecordResponse
+}
+
+
+
+
+
+export const getDeleteRecordMutationKey = () => ['deleteRecord'] as const;
+
+export const getDeleteRecordMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRecord>>, TError,DeleteRecordMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteRecord>>, TError,DeleteRecordMutationVariables, TContext> => {
+
+const mutationKey = getDeleteRecordMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteRecord>>, DeleteRecordMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteRecord(id,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteRecordMutationResult = NonNullable<Awaited<ReturnType<typeof deleteRecord>>>
+
+    export type DeleteRecordMutationError = ErrorResponse
+    export type DeleteRecordMutationVariables = {id: string}
+
+    /**
+ * @summary 記録を取り消す。自分のだけ。セット・ランの詳細も一緒に消える
+ */
+export const useDeleteRecord = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRecord>>, TError,DeleteRecordMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteRecord>>,
+        TError,
+        DeleteRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteRecordMutationOptions(options), queryClient);
+    }
+
+export type deleteSetResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteSetResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteSetResponseSuccess = (deleteSetResponse204) & {
+  headers: Headers;
+};
+export type deleteSetResponseError = (deleteSetResponse404) & {
+  headers: Headers;
+};
+
+export type deleteSetResponse = (deleteSetResponseSuccess | deleteSetResponseError)
+
+export const getDeleteSetUrl = (id: string,
+    setId: string,) => {
+
+
+
+
+  return `/api/records/${id}/sets/${setId}`
+}
+
+/**
+ * @summary セットを取り消す。自分のだけ
+ */
+export const deleteSet = async (id: string,
+    setId: string, options?: RequestInit): Promise<deleteSetResponse> => {
+
+  const res = await fetch(getDeleteSetUrl(id,setId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteSetResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as deleteSetResponse
+}
+
+
+
+
+
+export const getDeleteSetMutationKey = () => ['deleteSet'] as const;
+
+export const getDeleteSetMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSet>>, TError,DeleteSetMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSet>>, TError,DeleteSetMutationVariables, TContext> => {
+
+const mutationKey = getDeleteSetMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSet>>, DeleteSetMutationVariables> = (props) => {
+          const {id,setId} = props ?? {};
+
+          return  deleteSet(id,setId,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSetMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSet>>>
+
+    export type DeleteSetMutationError = ErrorResponse
+    export type DeleteSetMutationVariables = {id: string;setId: string}
+
+    /**
+ * @summary セットを取り消す。自分のだけ
+ */
+export const useDeleteSet = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSet>>, TError,DeleteSetMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSet>>,
+        TError,
+        DeleteSetMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteSetMutationOptions(options), queryClient);
     }
 
 export type getWeekResponse200 = {
