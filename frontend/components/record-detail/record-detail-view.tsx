@@ -4,6 +4,7 @@ import { ChevronLeft, Moon, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { SocialSection } from './social-section';
 import { ConfirmDialog } from '@/components/fitlog/confirm-dialog';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
@@ -132,6 +133,7 @@ export function RecordDetailView() {
         {record.kind === 'rest' && (
           <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.restBody}</p>
         )}
+        <SocialSection recordId={record.id} kind={record.kind} />
         {mine && (
           <div className="pt-2">
             <ThickButton tone="coral" size="sm" className="w-full" disabled={!online} onClick={() => setConfirming(true)}>

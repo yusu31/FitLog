@@ -139,4 +139,11 @@ export const FEED_MESSAGES = {
   commentSent: 'コメントを送ったよ',
   commentLength: 'コメントは1〜50字で入れてください',
   commentFailed: 'コメントを送れませんでした。少し待って、もう一度お試しください',
+  stampsHeading: 'スタンプ',
+  commentsHeading: 'コメント',
+  commentsEmpty: 'コメントは まだないよ',
+  commentsLoadFailed: 'コメントを読み込めませんでした。電波の良い所で開き直してください',
+  stampsLoadFailed: 'スタンプを読み込めませんでした。電波の良い所で開き直してください',
+  commentDelete: '消す',
+  commentDeleteFailed: 'コメントを消せませんでした。少し待って、もう一度お試しください',
 } as const;

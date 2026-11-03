@@ -18,6 +18,14 @@ vi.mock('@/lib/auth-client', () => ({
 
 const ok = (body: unknown) => ({ status: 200, body });
 const REC = '/api/records/r1';
+const REACTIONS = '/api/records/r1/reactions';
+const COMMENTS = '/api/records/r1/comments';
+const ME = { id: 'u1', name: 'わたし', avatar: { body: 'normal', hair: 'short', hairColor: 'black', shirtColor: 'navy', pantsColor: 'gray' } };
+const HANAKO = { ...ME, id: 'u2', name: 'はなこ' };
+const comment = (id: string, body: string, author = HANAKO) => ({ id, recordId: 'r1', body, createdAt: '2026-11-02T10:11:00.000Z', author });
+// スタンプ・コメントは空が既定。テストごとに上書きできる
+const install = (routes: Parameters<typeof installFakeApi>[0]) =>
+  installFakeApi({ [REACTIONS]: ok({ items: [] }), [COMMENTS]: ok({ items: [] }), ...routes });
 // workout() は localDate の 03:00Z に記録した扱い。前回の問い合わせは before=その時刻
 const prevUrl = (exercise: string, date = '2026-10-22') =>
   `/api/exercises/${exercise}/previous?before=${encodeURIComponent(`${date}T03:00:00.000Z`)}`;
@@ -40,7 +48,7 @@ afterEach(() => {
 describe('RecordDetailView（S-21 記録の詳細）', () => {
   describe('筋トレ', () => {
     it('種類・日時（日本時間）・種目ごとのセット（重量×回数）を出す', async () => {
-      installFakeApi({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([[60, 10], [60, 8]], 600)) });
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([[60, 10], [60, 8]], 600)) });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByRole('heading', { level: 1, name: '筋トレ' })).toBeInTheDocument();
       expect(screen.getByText('10/22')).toBeInTheDocument();
@@ -53,7 +61,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('自重（0kg）は「自重 × 回数」', async () => {
-      installFakeApi({
+      install({
         [REC]: ok(workout('r1', '2026-10-22', [{ id: 'pu', name: '腕立て', sets: [[0, 15]] }])),
         [prevUrl('pu')]: ok(prev([], null)),
       });
@@ -62,7 +70,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('セットごとにゴーストの結果（上回り・同じ・下回り）と自己ベストを出す', async () => {
-      installFakeApi({
+      install({
         [REC]: ok(workout('r1', '2026-10-22', [{ id: 'sq', name: 'スクワット', sets: [[60, 12], [60, 10], [60, 8]] }])),
         // 前回は 60×10 を3セット。過去の最大は 600
         [prevUrl('sq')]: ok(prev([[60, 10], [60, 10], [60, 10]], 600)),
@@ -75,20 +83,20 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('前回が無い種目は「記録したよ」（比べる相手がいない）', async () => {
-      installFakeApi({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findAllByText('記録したよ')).toHaveLength(2);
     });
 
     it('セットが0件でも崩れず、案内を出す', async () => {
-      installFakeApi({ [REC]: ok(workout('r1', '2026-10-22', [])) });
+      install({ [REC]: ok(workout('r1', '2026-10-22', [])) });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByText('セットは まだありません')).toBeInTheDocument();
     });
 
     it('セットが多数（10件）でも、そのぶんだけ並ぶ', async () => {
       const many = Array.from({ length: 10 }, (_, i) => [20 + i, 10] as [number, number]);
-      installFakeApi({
+      install({
         [REC]: ok(workout('r1', '2026-10-22', [{ id: 'sq', name: 'スクワット', sets: many }])),
         [prevUrl('sq')]: ok(prev([], null)),
       });
@@ -98,7 +106,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('セットが1件でも、そのぶんだけ並ぶ', async () => {
-      installFakeApi({
+      install({
         [REC]: ok(workout('r1', '2026-10-22', [{ id: 'sq', name: 'スクワット', sets: [[60, 10]] }])),
         [prevUrl('sq')]: ok(prev([], null)),
       });
@@ -108,7 +116,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('前回の取得が失敗しても、セットの値は出す（結果だけ出さない）', async () => {
-      installFakeApi({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: { status: 500, body: {} } });
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: { status: 500, body: {} } });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByText('60kg × 10')).toBeInTheDocument();
       expect(screen.queryByText('記録したよ')).not.toBeInTheDocument();
@@ -116,10 +124,10 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
 
     it('自分の記録でない（from=me が無い）ときは、前回を取りに行かず結果も出さない', async () => {
       search = 'id=r1';
-      installFakeApi({ [REC]: ok(workout('r1', '2026-10-22', [squat])) });
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])) });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByText('60kg × 10')).toBeInTheDocument();
-      expect(calls).toEqual([`GET ${REC}`]);
+      expect(calls.filter((c) => c.includes("/previous"))).toEqual([]);
       expect(screen.queryByText('ベスト')).not.toBeInTheDocument();
     });
   });
@@ -130,7 +138,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
       ['下限（0.1km・1分）', 100, 60, '0.1km', '1:00', '10:00/km'],
       ['上限（200km・24時間）', 200000, 86400, '200.0km', '24:00:00', '7:12/km'],
     ])('%s: 距離・時間・ペースを出す', async (_n, d, t, dist, dur, pace) => {
-      installFakeApi({ [REC]: ok(runRecord('r1', '2026-10-22', d, t)) });
+      install({ [REC]: ok(runRecord('r1', '2026-10-22', d, t)) });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByRole('heading', { level: 1, name: 'ラン' })).toBeInTheDocument();
       expect(screen.getByText(dist)).toBeInTheDocument();
@@ -139,14 +147,14 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('距離が 0 のような壊れた値でも落ちず、ペースは「—」', async () => {
-      installFakeApi({ [REC]: ok(runRecord('r1', '2026-10-22', 0, 600)) });
+      install({ [REC]: ok(runRecord('r1', '2026-10-22', 0, 600)) });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByText('—')).toBeInTheDocument();
     });
   });
 
   it('休みは「おやすみ」と責めない一言', async () => {
-    installFakeApi({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+    install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
     renderWithQuery(<RecordDetailView />);
     expect(await screen.findByRole('heading', { level: 1, name: 'おやすみ' })).toBeInTheDocument();
     expect(screen.getByText(/休むのも 記録のひとつ/)).toBeInTheDocument();
@@ -154,13 +162,13 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
 
   describe('読み込めないとき', () => {
     it('読み込み中は仮の表示を出す', () => {
-      installFakeApi({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
       renderWithQuery(<RecordDetailView />);
       expect(screen.getByLabelText('読み込み中')).toHaveAttribute('aria-busy', 'true');
     });
 
     it('404（無い・他人の記録）は、責めない文言の画面。もどるリンクつき', async () => {
-      installFakeApi({ [REC]: { status: 404, body: { code: 'RECORD_NOT_FOUND', message: 'x', details: null } } });
+      install({ [REC]: { status: 404, body: { code: 'RECORD_NOT_FOUND', message: 'x', details: null } } });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByRole('heading', { name: '記録が見つかりませんでした' })).toBeInTheDocument();
       expect(screen.getAllByRole('link', { name: '自分にもどる' })[0]).toHaveAttribute('href', '/me');
@@ -169,7 +177,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
 
     it('id が無いときも 404 の画面（APIは呼ばない）。from=me が無ければ戻り先は仲間', async () => {
       search = '';
-      installFakeApi({});
+      install({});
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByRole('heading', { name: '記録が見つかりませんでした' })).toBeInTheDocument();
       expect(calls).toEqual([]);
@@ -177,14 +185,14 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('5xx は「読み込めませんでした」（内部の事情を出さない）', async () => {
-      installFakeApi({ [REC]: { status: 500, body: { code: 'X', message: 'stack trace', details: null } } });
+      install({ [REC]: { status: 500, body: { code: 'X', message: 'stack trace', details: null } } });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByRole('alert')).toHaveTextContent('読み込めませんでした');
       expect(screen.queryByText('stack trace')).not.toBeInTheDocument();
     });
 
     it('通信できないときも「読み込めませんでした」', async () => {
-      installFakeApi({});
+      install({});
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByRole('alert')).toHaveTextContent('読み込めませんでした');
     });
@@ -199,7 +207,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     };
 
     it('自分の記録（from=me）に入口がある。押すと確認が出て、ここでは何も送らない', async () => {
-      installFakeApi({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
       renderWithQuery(<RecordDetailView />);
       await open();
       expect(screen.getByRole('alertdialog')).toHaveTextContent('この記録を 消しますか？');
@@ -207,7 +215,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('筋トレの確認には「中のセットも一緒に消えます」を添える', async () => {
-      installFakeApi({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
       renderWithQuery(<RecordDetailView />);
       await open();
       expect(screen.getByRole('alertdialog')).toHaveTextContent('中のセットも一緒に消えます');
@@ -215,14 +223,14 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
 
     it('from=me が無い記録（仲間の記録など）には入口を出さない', async () => {
       search = 'id=r1';
-      installFakeApi({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
       renderWithQuery(<RecordDetailView />);
       await screen.findByRole('heading', { level: 1, name: 'おやすみ' });
       expect(screen.queryByRole('button', { name: /消す/ })).not.toBeInTheDocument();
     });
 
     it('「やめる」で閉じる。何も送らない', async () => {
-      installFakeApi({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
       renderWithQuery(<RecordDetailView />);
       const user = await open();
       await user.click(screen.getByRole('button', { name: 'やめる' }));
@@ -231,7 +239,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('「削除する」で DELETE を送り、成功したら自分タブへ戻る', async () => {
-      installFakeApi({ [REC]: ok(restRecord('r1', '2026-10-22')), [DEL]: { status: 204 }, '/api/records?limit=20': ok({ items: [], nextCursor: null }) });
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')), [DEL]: { status: 204 }, '/api/records?limit=20': ok({ items: [], nextCursor: null }) });
       renderWithQuery(<RecordDetailView />);
       const user = await open();
       await user.click(screen.getByRole('button', { name: '削除する' }));
@@ -240,7 +248,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('消せなかったら（5xx）画面に残り、責めない文言を出す', async () => {
-      installFakeApi({ [REC]: ok(restRecord('r1', '2026-10-22')), [DEL]: { status: 500, body: { code: 'X', message: 'boom', details: null } } });
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')), [DEL]: { status: 500, body: { code: 'X', message: 'boom', details: null } } });
       renderWithQuery(<RecordDetailView />);
       const user = await open();
       await user.click(screen.getByRole('button', { name: '削除する' }));
@@ -250,7 +258,7 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
 
     it('電波が無いときは押せず、理由を言う', async () => {
-      installFakeApi({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
       renderWithQuery(<RecordDetailView />);
       await screen.findByRole('heading', { level: 1, name: 'おやすみ' });
       onlineManager.setOnline(false);
@@ -259,8 +267,178 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
   });
 
+  describe('スタンプとコメント', () => {
+    const rest = { [REC]: ok(restRecord('r1', '2026-10-22')) };
+
+    it('スタンプの数と自分が付けたものをサーバーの値で出す。休みには休み用の2つだけ', async () => {
+      install({ ...rest, [REACTIONS]: ok({ items: [{ stampKey: 'rest_slow', count: 2, mine: 'x1' }] }) });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByRole('button', { name: 'ゆっくりね 2' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: 'またあした' })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.queryByRole('button', { name: 'ナイス' })).not.toBeInTheDocument();
+    });
+
+    it('筋トレには4つのスタンプ。空（だれも付けていない）なら数を出さない', async () => {
+      install({ [REC]: ok(workout('r1', '2026-10-22', [])) });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByRole('button', { name: 'ナイス' })).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByRole('list', { name: 'スタンプ' }).querySelectorAll('button')).toHaveLength(4);
+    });
+
+    it('押すと POST で付け、取り直した値を出す', async () => {
+      install({
+        ...rest,
+        [REACTIONS]: [ok({ items: [] }), ok({ items: [{ stampKey: 'rest_again', count: 1, mine: 'rx' }] })],
+        ['POST ' + REACTIONS]: { status: 201, body: { id: 'rx', recordId: 'r1', stampKey: 'rest_again' } },
+      });
+      renderWithQuery(<RecordDetailView />);
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole('button', { name: 'またあした' }));
+      expect(await screen.findByRole('button', { name: 'またあした 1' })).toHaveAttribute('aria-pressed', 'true');
+      expect(calls).toContain('POST ' + REACTIONS);
+    });
+
+    it('付けているスタンプを押すと DELETE で外す', async () => {
+      install({
+        ...rest,
+        [REACTIONS]: ok({ items: [{ stampKey: 'rest_slow', count: 1, mine: 'x1' }] }),
+        ['DELETE ' + REACTIONS + '/x1']: { status: 204 },
+      });
+      renderWithQuery(<RecordDetailView />);
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole('button', { name: 'ゆっくりね 1' }));
+      await waitFor(() => expect(calls).toContain('DELETE ' + REACTIONS + '/x1'));
+    });
+
+    it('スタンプを送れなかったら（5xx）責めない文言', async () => {
+      install({ ...rest, ['POST ' + REACTIONS]: { status: 500, body: { code: 'X', message: 'boom', details: null } } });
+      renderWithQuery(<RecordDetailView />);
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole('button', { name: 'またあした' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('スタンプを送れませんでした');
+    });
+
+    it('コメントが0件なら「まだないよ」', async () => {
+      install(rest);
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText('コメントは まだないよ')).toBeInTheDocument();
+    });
+
+    it('コメントは API の順（古い順）に出し、削除ボタンは自分のコメントにだけ付く', async () => {
+      install({ ...rest, [COMMENTS]: ok({ items: [comment('c1', 'ナイス！'), comment('c2', 'ありがとう', ME)] }) });
+      renderWithQuery(<RecordDetailView />);
+      const rows = (await screen.findByRole('list', { name: 'コメント一覧' })).querySelectorAll('li');
+      expect(rows).toHaveLength(2);
+      expect(rows[0]).toHaveTextContent('はなこ');
+      expect(rows[0]).toHaveTextContent('ナイス！');
+      expect(rows[0].querySelector('button')).toBeNull();
+      expect(rows[1].querySelector('button')).not.toBeNull();
+    });
+
+    it('自分のコメントの削除は DELETE /comments/{id} のあと一覧を取り直す', async () => {
+      install({
+        ...rest,
+        [COMMENTS]: [ok({ items: [comment('c2', 'ありがとう', ME)] }), ok({ items: [] })],
+        'DELETE /api/comments/c2': { status: 204 },
+      });
+      renderWithQuery(<RecordDetailView />);
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole('button', { name: /消す: ありがとう/ }));
+      expect(await screen.findByText('コメントは まだないよ')).toBeInTheDocument();
+      expect(calls).toContain('DELETE /api/comments/c2');
+    });
+
+    it('削除に失敗したら（404）API の文言を出す', async () => {
+      install({
+        ...rest,
+        [COMMENTS]: ok({ items: [comment('c2', 'ありがとう', ME)] }),
+        'DELETE /api/comments/c2': { status: 404, body: { code: 'COMMENT_NOT_FOUND', message: 'コメントが見つかりません', details: null } },
+      });
+      renderWithQuery(<RecordDetailView />);
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole('button', { name: /消す: ありがとう/ }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('コメントが見つかりません');
+    });
+
+    const send = async (text: string) => {
+      const user = userEvent.setup();
+      const input = await screen.findByLabelText(/自由に書く/);
+      if (text) await user.type(input, text);
+      await user.click(screen.getByRole('button', { name: '送る' }));
+    };
+
+    it.each([
+      ['1字（下限）', 'あ'],
+      ['50字（上限）', 'あ'.repeat(50)],
+    ])('%s は POST で送り、入力欄を空にして一覧を取り直す', async (_n, body) => {
+      install({
+        ...rest,
+        [COMMENTS]: [ok({ items: [] }), ok({ items: [comment('c9', body, ME)] })],
+        ['POST ' + COMMENTS]: { status: 201, body: comment('c9', body, ME) },
+      });
+      renderWithQuery(<RecordDetailView />);
+      await send(body);
+      expect(await screen.findByText('コメントを送ったよ')).toBeInTheDocument();
+      expect(await screen.findByRole('list', { name: 'コメント一覧' })).toHaveTextContent(body);
+      expect(screen.getByLabelText(/自由に書く/)).toHaveValue('');
+    });
+
+    it.each([
+      ['0字', ''],
+      ['空白だけ', '   '],
+    ])('%s は送らず、1〜50字と案内する', async (_n, body) => {
+      install(rest);
+      renderWithQuery(<RecordDetailView />);
+      await send(body);
+      expect(await screen.findByRole('alert')).toHaveTextContent('コメントは1〜50字で入れてください');
+      expect(calls.some((c) => c.startsWith('POST'))).toBe(false);
+    });
+
+    it('51字目は入力できない（maxLength=50）', async () => {
+      install(rest);
+      renderWithQuery(<RecordDetailView />);
+      await userEvent.setup().type(await screen.findByLabelText(/自由に書く/), 'あ'.repeat(51));
+      expect(screen.getByLabelText(/自由に書く/)).toHaveValue('あ'.repeat(50));
+    });
+
+    it('送れなかったら（5xx）責めない文言を出し、入力は残す', async () => {
+      install({ ...rest, ['POST ' + COMMENTS]: { status: 500, body: { code: 'X', message: 'boom', details: null } } });
+      renderWithQuery(<RecordDetailView />);
+      await send('こんにちは');
+      expect(await screen.findByRole('alert')).toHaveTextContent('コメントを送れませんでした');
+      expect(screen.getByLabelText(/自由に書く/)).toHaveValue('こんにちは');
+    });
+
+    it('一覧・スタンプが読み込めなくても、記録の本体は出す。それぞれ案内を出す', async () => {
+      install({
+        ...rest,
+        [COMMENTS]: { status: 404, body: { code: 'RECORD_NOT_FOUND', message: 'x', details: null } },
+        [REACTIONS]: { status: 500, body: {} },
+      });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText(/コメントを読み込めませんでした/)).toBeInTheDocument();
+      expect(await screen.findByText(/スタンプを読み込めませんでした/)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'おやすみ' })).toBeInTheDocument();
+    });
+
+    it('電波が無いときはスタンプも送信も削除も押せず、理由を言う', async () => {
+      install({
+        ...rest,
+        [REACTIONS]: ok({ items: [{ stampKey: 'rest_slow', count: 1, mine: 'x1' }] }),
+        [COMMENTS]: ok({ items: [comment('c2', 'ありがとう', ME)] }),
+      });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('button', { name: /消す: ありがとう/ });
+      onlineManager.setOnline(false);
+      await waitFor(() => expect(screen.getByRole('button', { name: '送る' })).toBeDisabled());
+      expect(screen.getByRole('button', { name: 'ゆっくりね 1' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /消す: ありがとう/ })).toBeDisabled();
+      expect(screen.getByText('電波があるときだけ スタンプとコメントを付けられます')).toBeInTheDocument();
+    });
+  });
+
   it('画面に出る文言は、使ってはいけない語を含まない', async () => {
-    installFakeApi({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([[60, 8], [60, 6]], 500)) });
+    install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([[60, 8], [60, 6]], 500)) });
     const { container } = renderWithQuery(<RecordDetailView />);
     await screen.findByText('60kg × 10');
     await screen.findAllByText('前回超え +2');
