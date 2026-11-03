@@ -3,8 +3,9 @@
 import { Check, Footprints, Moon, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from 'cn';
+import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
 import { useRecordMutations } from '@/lib/mutations';
@@ -66,6 +67,7 @@ export function TodayView() {
           {LOAD_ERROR}
         </p>
       )}
+      <SyncBanner />
 
       <div className="space-y-4 px-4 pt-4">
         {welcomeBack && (
@@ -236,6 +238,15 @@ function RestButton() {
   const { createRecord } = useRecordMutations();
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 送れずに再送待ちになったら（failureCount>0）、待たずに休みの画面へ移る（送信待ちの帯が知らせる）
+  const queuedNow = sending && createRecord.failureCount > 0;
+  const moved = useRef(false);
+  useEffect(() => {
+    if (queuedNow && !moved.current) {
+      moved.current = true;
+      router.push('/rest');
+    }
+  }, [queuedNow, router]);
 
   async function onRest() {
     if (sending) return;
@@ -247,11 +258,12 @@ function RestButton() {
       return;
     }
     setSending(true);
+    moved.current = false;
     try {
       await createRecord.mutateAsync({ data });
-      router.push('/rest');
+      if (!moved.current) router.push('/rest');
     } catch (e) {
-      setError(sendErrorText(e, REST_MESSAGES.sendError));
+      if (!moved.current) setError(sendErrorText(e, REST_MESSAGES.sendError));
       setSending(false);
     }
   }

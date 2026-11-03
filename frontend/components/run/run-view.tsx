@@ -48,6 +48,9 @@ export function RunView() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<Saved | null>(null);
+  // 送っている最中の値。送れずに再送待ちになったら（failureCount>0）、結果の画面へ進む（送信待ちの帯が知らせる）
+  const [inFlight, setInFlight] = useState<Saved | null>(null);
+  const shown = saved ?? (sending && createRecord.failureCount > 0 ? inFlight : null);
 
   const { distanceM, durationS } = toRun(kmText, minText, secText);
   const problem: RunError | null = validateRun(distanceM, durationS);
@@ -73,6 +76,7 @@ export function RunView() {
       return;
     }
     setSending(true);
+    setInFlight({ distanceM, durationS });
     try {
       await createRecord.mutateAsync({ data });
       setSaved({ distanceM, durationS });
@@ -85,8 +89,8 @@ export function RunView() {
 
   if (!signedIn) return <Skeleton />;
 
-  if (saved) {
-    const savedPace = paceSecPerKm(saved.distanceM, saved.durationS);
+  if (shown) {
+    const savedPace = paceSecPerKm(shown.distanceM, shown.durationS);
     return (
       <FullScreen
         footer={
@@ -107,7 +111,7 @@ export function RunView() {
               </span>
               {RUN_MESSAGES.saved}
             </p>
-            <p className="mt-2 text-sm leading-relaxed font-bold">{runSavedMessage(saved.distanceM, saved.durationS)}</p>
+            <p className="mt-2 text-sm leading-relaxed font-bold">{runSavedMessage(shown.distanceM, shown.durationS)}</p>
             <p className="mt-3 flex items-baseline gap-2">
               <span className="text-xs font-extrabold">ペース</span>
               <span data-testid="pace" className="fl-num text-3xl">

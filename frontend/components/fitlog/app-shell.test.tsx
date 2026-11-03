@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithQuery as render } from '@/lib/test/fake-api';
 import { AppShell } from './app-shell';
 
 const replace = vi.fn();
@@ -31,5 +32,15 @@ describe('AppShell（タブのある画面の枠）', () => {
     expect(replace).not.toHaveBeenCalled();
     expect(screen.getByText('中身')).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'メイン' })).toBeInTheDocument();
+  });
+
+  // 送信待ちの帯（F-30）は仲間・自分の上部に出す。今日だけは週の帯の下に自分で置くので、枠では出さない
+  it('送信待ちの帯の置き場を、枠の上部に1つ置く（syncBanner=false なら置かない）', () => {
+    session = { data: { user: { id: 'u1', name: 'たろう' } }, isPending: false };
+    const { unmount } = render(<AppShell>中身</AppShell>);
+    expect(screen.getAllByTestId('sync-banner')).toHaveLength(1);
+    unmount();
+    render(<AppShell syncBanner={false}>中身</AppShell>);
+    expect(screen.queryByTestId('sync-banner')).not.toBeInTheDocument();
   });
 });

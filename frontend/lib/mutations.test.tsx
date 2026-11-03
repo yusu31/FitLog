@@ -14,6 +14,7 @@ import {
 } from '@/lib/api/generated';
 import { ApiError } from '@/lib/api/api-error';
 import { recordScopeId, registerRecordMutations, useRecordMutations } from './mutations';
+import { trackClient } from '@/lib/test/fake-api';
 
 vi.mock('@/lib/auth-client', () => ({
   authClient: { useSession: () => ({ data: { user: { id: 'u1' } }, isPending: false }) },
@@ -30,7 +31,7 @@ const SET2 = '33333333-3333-4333-8333-333333333333';
 const EX = '44444444-4444-4444-8444-444444444444';
 const NOW = '2026-11-02T10:00:00.000Z';
 
-const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+const makeClient = () => trackClient(new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }));
 
 const wrapperFor = (client: QC) =>
   function Wrapper({ children }: { children: ReactNode }) {
@@ -269,5 +270,79 @@ describe('書き込みのあとの取り直し（今日・自分の画面に反�
     const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
     await act(() => result.current.deleteRecord.mutateAsync({ id: REC }).catch(() => {}));
     await waitFor(() => expect(stale(client)).toEqual({ list: true, week: true }));
+  });
+});
+
+// F-30: 作成系だけが再送の設定を持つ。削除は電波があるときだけなので、送れなければそのまま失敗を返す
+describe('再送の設定（lib/offline/retry-policy.ts）', () => {
+  it('記録を作る・セットを足すには retry と retryDelay があり、削除の2つには無い', () => {
+    const client = makeClient();
+    registerRecordMutations(client, 'u1');
+    for (const key of [getCreateRecordMutationKey(), getAddSetMutationKey()]) {
+      const d = client.getMutationDefaults(key);
+      expect(d.retry, String(key)).toBeTypeOf('function');
+      expect(d.retryDelay, String(key)).toBeTypeOf('function');
+    }
+    for (const key of [getDeleteSetMutationKey(), getDeleteRecordMutationKey()]) {
+      const d = client.getMutationDefaults(key);
+      expect(d.retry, String(key)).toBeUndefined();
+    }
+  });
+
+  it('削除は 500 のとき再送せず、そのまま失敗を返す（電波があるときだけの操作）', async () => {
+    respond = () => ({ status: 500, body: { code: 'INTERNAL', message: 'x' } });
+    const client = makeClient();
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    await act(async () => {
+      await expect(result.current.deleteRecord.mutateAsync({ id: REC })).rejects.toBeInstanceOf(ApiError);
+    });
+    expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
+  });
+});
+
+// 週の帯（今日の画面の7マス）への先取り反映。電波が無くても「記録した」に見える（screen-design.md）
+describe('記録を作ったとき、週の帯に先に反映する（楽観的更新）', () => {
+  const DAY = '2026-11-02'; // NOW（UTC 10:00）の日本時間の日付は 11-02
+  const seedWeek = (client: QC, status: 'none' | 'rec' | 'rest' = 'none') =>
+    client.setQueryData(getGetWeekQueryKey({ date: DAY }), {
+      status: 200,
+      data: {
+        weekStart: DAY,
+        days: ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08'].map((date) => ({
+          date,
+          status: date === DAY ? status : 'none',
+        })),
+      },
+      headers: new Headers(),
+    });
+  const dayStatus = (client: QC) =>
+    client.getQueryData<{ data: { days: { date: string; status: string }[] } }>(getGetWeekQueryKey({ date: DAY }))?.data.days.map(
+      (d) => d.status,
+    );
+
+  it.each([
+    ['workout', 'none', 'rec'],
+    ['run', 'none', 'rec'],
+    ['rest', 'none', 'rest'],
+    ['rest', 'rec', 'rec'], // 記録がある日は、休みを足しても rec のまま（design.md）
+    ['workout', 'rest', 'rec'], // 休みの日に記録すると rec
+  ])('%s を作ると、%s の日が %s になる。ほかの日は変わらない', async (kind, before, after) => {
+    onlineManager.setOnline(false); // 送らずに、先取りだけを見る
+    const client = makeClient();
+    seedWeek(client, before as 'none');
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    act(() => void result.current.createRecord.mutate({ data: { id: REC, kind: kind as 'rest', recordedAt: NOW } }));
+    await waitFor(() => expect(detailOf(client)?.kind).toBe(kind)); // 先取りが終わるのを待つ（元の値と同じでも通らないように）
+    expect(dayStatus(client)?.[0]).toBe(after);
+    expect(dayStatus(client)?.slice(1)).toEqual(['none', 'none', 'none', 'none', 'none', 'none']);
+  });
+
+  it('週の帯がまだ読み込まれていなければ、何もしない（落ちない）', async () => {
+    onlineManager.setOnline(false);
+    const client = makeClient();
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    act(() => void result.current.createRecord.mutate({ data: { id: REC, kind: 'workout', recordedAt: NOW } }));
+    await waitFor(() => expect(detailOf(client)?.kind).toBe('workout'));
+    expect(dayStatus(client)).toBeUndefined();
   });
 });

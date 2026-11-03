@@ -10,6 +10,7 @@ import { ApiError } from '@/lib/api/api-error';
 import { useGetPrevious, useGetRecord, useListExercises } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import { activeRecordId, recordForNextSet } from '@/lib/current-workout';
+import { SYNC_MESSAGES } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
 import {
   clampReps,
@@ -122,7 +123,7 @@ export function RecordView() {
     const diff = ghost ? ghostDiff(ghost, value) : 0;
     setNotice(null);
     setOutcomes((o) => ({ ...o, [setId]: provisional }));
-    setSheet({ setId, ...provisional, diff, summary: summaryOf });
+    setSheet({ setId, ...provisional, diff, summary: summaryOf, ...(online ? {} : { note: SYNC_MESSAGES.sheetNote }) });
 
     // 画面の仮の結果で先に見せ、API の応答が違えば直す（API が正）
     mutations.addSet

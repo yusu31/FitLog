@@ -3,11 +3,13 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { SyncBanner } from './sync-banner';
 import { TabBar } from './tab-bar';
 
 // タブのある画面（今日・仲間・自分）の枠。ログインしていなければ、戻り先つきでログイン画面へ移す。
 // 静的書き出しなのでサーバーでは確かめられない。本当の守りは API 側のログイン必須（design.md 2章）で、ここは画面の案内。
-export function AppShell({ children }: { children: ReactNode }) {
+// syncBanner: 送信待ちの帯を枠の上部に出すか。今日の画面は「週の帯のすぐ下」に自分で置くので false
+export function AppShell({ children, syncBanner = true }: { children: ReactNode; syncBanner?: boolean }) {
   const router = useRouter();
   const pathname = usePathname() ?? '/today';
   const { data: session, isPending } = authClient.useSession();
@@ -21,7 +23,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh bg-[#e9ecef]">
       <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-white">
         {session ? (
-          <main className="flex-1 pb-28">{children}</main>
+          <main className="flex-1 pb-28">
+            {syncBanner && <SyncBanner />}
+            {children}
+          </main>
         ) : (
           <main aria-busy="true" aria-label="読み込み中" className="flex-1 space-y-4 px-4 pt-8">
             <div className="h-8 w-28 animate-pulse rounded-lg bg-face" />

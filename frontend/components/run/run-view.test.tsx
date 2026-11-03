@@ -176,18 +176,15 @@ describe('RunView（S-13 記録（ラン））', () => {
       expect(push).toHaveBeenCalledWith('/today');
     });
 
-    it('送れなかったときは、結果を出さず、日本語の文言を出す。入力は残り、もう一度押せる（5xx の内部の事情は出さない）', async () => {
+    it('サーバーの不具合（5xx）では、送信待ちに残して結果を出す。内部の事情は出さず、入力画面には戻らない（F-30）', async () => {
       installFakeApi({ [POST]: { status: 500, body: { code: 'INTERNAL', message: 'stack trace' } } });
       const user = userEvent.setup();
       renderWithQuery(<RunView />);
       await fill(user, '5', '25');
       await user.click(save());
-      expect(await screen.findByRole('alert')).toHaveTextContent(RUN_MESSAGES.sendError);
+      expect(await screen.findByText(RUN_MESSAGES.saved)).toBeInTheDocument();
       expect(document.body.textContent).not.toContain('stack trace');
-      expect(screen.queryByText(RUN_MESSAGES.saved)).not.toBeInTheDocument();
-      expect(km()).toHaveValue('5');
-      expect(min()).toHaveValue('25');
-      expect(save()).toBeEnabled();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
 
     it('API が 400 で返した文言は、そのまま出す', async () => {

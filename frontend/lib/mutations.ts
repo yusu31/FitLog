@@ -5,7 +5,9 @@
 //   ① 楽観的更新（onMutate で先に画面の元データを更新し、失敗したら戻す）
 //   ② mutationKey ＋ setMutationDefaults（送信処理を登録する。再読み込みしても再送できる「形」）
 //      ＋ scope.id（同じ scope の送信は1本ずつ順に実行される＝記録の作成 → セットの追加の順を守る）
-// 端末への保存（IndexedDB）・送信待ちの帯・Serwist は 02-4 で足す。ここでは形だけを整える。
+// ③ 作成系（記録を作る・セットを足す）は、送れなかったときの扱い（lib/offline/retry-policy.ts）で retry を付け、
+//    送信待ちとして残す。端末への保存は lib/offline/persister.ts、再読み込み後の再送は lib/offline/resume.ts。
+// 削除は電波があるときだけ（features.md 2.11）なので、retry は付けず、失敗はそのまま画面へ返す。
 import { useMutation, useQueryClient, type QueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { unwrap } from '@/lib/api/api-error';
@@ -28,14 +30,19 @@ import {
   type DeleteSetMutationVariables,
   type ExerciseResponse,
   type getRecordResponseSuccess,
+  type getWeekResponseSuccess,
   type RecordDetailResponse,
   type RecordedExercise,
 } from '@/lib/api/generated';
 import { authClient } from '@/lib/auth-client';
+import { addRejectedSend } from '@/lib/offline/rejected';
+import { classifyFailure, SendCancelled, sendRetryDelay, shouldRetrySend } from '@/lib/offline/retry-policy';
+import { scopeIdOf } from '@/lib/offline/resume';
 import { toLocalDate } from '@/lib/shared/local-date';
+import { ApiError } from '@/lib/api/api-error';
 
 // 利用者ごとに1つの scope。同じ人の書き込みは、作った順に1本ずつ送られる
-export const recordScopeId = (userId: string): string => `records:${userId}`;
+export const recordScopeId = scopeIdOf;
 
 // 失敗したときに戻すための、更新前の記録の詳細（無かったときは undefined）
 type Snapshot = { previous: RecordDetailResponse | undefined };
@@ -83,6 +90,35 @@ function refreshLists(client: QueryClient): void {
   void client.invalidateQueries({ queryKey: getGetWeekQueryKey() });
 }
 
+// 記録を作った日を、週の帯（今日の画面の7マス）に先に反映する。サーバーの応答が正で、書き込みの後に取り直す（refreshLists）。
+// 休みは「何もない日」のときだけ休みにし、記録（rec）がある日は rec のまま
+function markWeekDay(client: QueryClient, localDate: string, kind: 'workout' | 'run' | 'rest'): void {
+  client.setQueriesData<getWeekResponseSuccess>({ queryKey: getGetWeekQueryKey() }, (old) => {
+    if (!old || old.status !== 200) return old;
+    const next = kind === 'rest' ? 'rest' : 'rec';
+    return {
+      ...old,
+      data: {
+        ...old.data,
+        days: old.data.days.map((d) =>
+          d.date === localDate && d.status !== 'rec' && !(d.status === 'rest' && next === 'rest') ? { ...d, status: next } : d,
+        ),
+      },
+    };
+  });
+}
+
+// 作成系が送れず外された（再送しても直らない）とき、帯が1回だけ知らせるために控える（lib/offline/rejected.ts）
+function noteRejected(error: unknown): void {
+  if (error instanceof ApiError && classifyFailure(error) !== 'auth') addRejectedSend(error.status);
+}
+
+// 再送の順番が回ってきたとき、その送信待ちがまだキャッシュにあるか確かめる（取り除かれたものは送らない）
+function assertQueued(client: QueryClient, mutationKey: readonly unknown[], vars: unknown): void {
+  const still = client.getMutationCache().find({ mutationKey, predicate: (m) => m.state.variables === vars });
+  if (!still) throw new SendCancelled();
+}
+
 // 書き込み4つの送信処理と楽観的更新を、QueryClient に登録する。何度呼んでも同じ結果（登録し直すだけ）。
 // 送信処理そのものは端末に保存できないので、再読み込みのあとは、保存した状態を戻す前にこれを呼ぶ（02-4）
 export function registerRecordMutations(client: QueryClient, userId: string): void {
@@ -90,28 +126,43 @@ export function registerRecordMutations(client: QueryClient, userId: string): vo
 
   client.setMutationDefaults(getCreateRecordMutationKey(), {
     scope,
+    retry: shouldRetrySend('record'),
+    retryDelay: sendRetryDelay,
     onSettled: () => refreshLists(client),
-    mutationFn: async (vars: CreateRecordMutationVariables) => unwrap(await createRecord(vars.data)),
+    mutationFn: async (vars: CreateRecordMutationVariables) => {
+      assertQueued(client, getCreateRecordMutationKey(), vars);
+      return unwrap(await createRecord(vars.data));
+    },
     onMutate: async (vars: CreateRecordMutationVariables): Promise<Snapshot> => {
       const snap = await snapshot(client, vars.data.id);
       const { id, kind, recordedAt, run } = vars.data;
+      const localDate = toLocalDate(new Date(recordedAt));
+      markWeekDay(client, localDate, kind);
       writeDetail(client, id, {
         id,
         kind,
         recordedAt,
-        localDate: toLocalDate(new Date(recordedAt)),
+        localDate,
         ...(run ? { run } : {}),
         ...(kind === 'workout' ? { exercises: [] } : {}),
       });
       return snap;
     },
-    onError: (_e: unknown, vars: CreateRecordMutationVariables, snap: Snapshot | undefined) => restore(client, vars.data.id, snap),
+    onError: (e: unknown, vars: CreateRecordMutationVariables, snap: Snapshot | undefined) => {
+      restore(client, vars.data.id, snap);
+      noteRejected(e);
+    },
   });
 
   client.setMutationDefaults(getAddSetMutationKey(), {
     scope,
+    retry: shouldRetrySend('set'),
+    retryDelay: sendRetryDelay,
     onSettled: () => refreshLists(client),
-    mutationFn: async (vars: AddSetMutationVariables) => unwrap(await addSet(vars.id, vars.data)),
+    mutationFn: async (vars: AddSetMutationVariables) => {
+      assertQueued(client, getAddSetMutationKey(), vars);
+      return unwrap(await addSet(vars.id, vars.data));
+    },
     onMutate: async (vars: AddSetMutationVariables): Promise<Snapshot> => {
       const snap = await snapshot(client, vars.id);
       const { id: setId, exerciseId, setNo, weightKg, reps } = vars.data;
@@ -130,7 +181,10 @@ export function registerRecordMutations(client: QueryClient, userId: string): vo
       });
       return snap;
     },
-    onError: (_e: unknown, vars: AddSetMutationVariables, snap: Snapshot | undefined) => restore(client, vars.id, snap),
+    onError: (e: unknown, vars: AddSetMutationVariables, snap: Snapshot | undefined) => {
+      restore(client, vars.id, snap);
+      noteRejected(e);
+    },
   });
 
   client.setMutationDefaults(getDeleteSetMutationKey(), {

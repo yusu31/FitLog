@@ -14,6 +14,8 @@ export type SheetData = {
   diff: number;
   isPersonalBest: boolean;
   summary: string;
+  // 電波なしで押したとき、直後に添える1行（保存したこと・あとで送ること）
+  note?: string;
 };
 
 // 結果シート（features.md 2.6）。「できた」の直後に 0.8秒出し、タップで飛ばせる。
@@ -38,7 +40,7 @@ export function ResultSheet({ sheet, onDismiss }: { sheet: SheetData | null; onD
 }
 
 function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolean; onDismiss: () => void }) {
-  const { result, diff, isPersonalBest, summary } = sheet;
+  const { result, diff, isPersonalBest, summary, note } = sheet;
   const gold = result === 'up' || isPersonalBest;
   const [upLabel, upAmount] = ghostUpMessage(diff).split(' ');
   return (
@@ -69,6 +71,7 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
         )}
       </p>
       <p className="mt-1 text-sm opacity-85">{summary}</p>
+      {note && <p className="mt-1 text-xs font-bold opacity-85">{note}</p>}
     </button>
   );
 }
