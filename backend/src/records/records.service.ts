@@ -1,14 +1,14 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, asc, between, desc, eq, exists, inArray, isNull, lt, or, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
+import { and, asc, between, desc, eq, inArray, isNull, lt, or } from 'drizzle-orm';
 import { compareSet, isPersonalBest } from '../common/ghost.js';
 import { cellStatus, weekDates, weekStartOf } from '../common/week.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
-import { exercises, groupMembers, records, runDetails, workoutSets } from '../db/schema.js';
+import { exercises, records, runDetails, workoutSets } from '../db/schema.js';
 import { findPrevious, pastMaxVolume } from './ghost-queries.js';
 import { encodeCursor, parseListQuery } from './list-input.js';
+import { visibleToMe } from './record-access.js';
 import { parseRecordInput, type RunInput } from './record-input.js';
 import type { RecordDetailResponse, RecordedExercise, RecordListResponse, RecordResponse, SetResponse, WeekResponse } from './records.response.js';
 import { parseSetInput } from './set-input.js';
@@ -28,20 +28,6 @@ const toResponse = (row: Row, run?: RunInput): RecordResponse => ({
 type SetRow = typeof workoutSets.$inferSelect;
 
 const recordNotFound = () => new NotFoundException({ code: 'RECORD_NOT_FOUND', message: '記録が見つかりません', details: null });
-
-// 記録の持ち主が、userId と同じグループにいる、という条件（自分の記録かどうかは別に判定する）。
-// group_members.user_id は UNIQUE（1人1グループ）なので、同じ group_id に載っている行を引けば仲間が分かる。
-// 人の見える範囲は、この1か所で決める（design.md 6章。足跡・スタンプ・コメントもここを通す）
-const mine = alias(groupMembers, 'mine');
-const theirs = alias(groupMembers, 'theirs');
-const ownerInMyGroup = (db: Db, userId: string) =>
-  exists(
-    db
-      .select({ one: sql`1` })
-      .from(theirs)
-      .innerJoin(mine, eq(mine.groupId, theirs.groupId))
-      .where(and(eq(theirs.userId, records.userId), eq(mine.userId, userId))),
-  );
 
 @Injectable()
 export class RecordsService {
@@ -139,7 +125,7 @@ export class RecordsService {
       .where(
         and(
           eq(records.id, recordId.toLowerCase()),
-          or(eq(records.userId, userId), ownerInMyGroup(this.db, userId)),
+          visibleToMe(this.db, userId),
         ),
       );
     if (!row) throw recordNotFound();

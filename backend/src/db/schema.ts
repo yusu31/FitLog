@@ -212,3 +212,45 @@ export const workoutSets = pgTable(
     check('workout_sets_reps_ck', sql`${t.reps} between 1 and 999`),
   ],
 );
+
+// ── スタンプとコメント（docs/database-design.md reactions・comments） ─────────────
+// どちらも id は端末で作る UUID（再送しても二重にならない。F-30）。記録を消すと一緒に消える（ON DELETE CASCADE）。
+// stamp_key の一覧は DB に持たず、コードの定数（src/feed/stamps.ts）にする（増やすたびにマイグレーションを要さないため）
+export const reactions = pgTable(
+  'reactions',
+  {
+    id: uuid('id').primaryKey(),
+    recordId: uuid('record_id')
+      .notNull()
+      .references(() => records.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    stampKey: text('stamp_key').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // 同じ人が同じ記録に同じスタンプを二重に付けられない（記録ごとの一覧にも使う）
+    uniqueIndex('reactions_record_user_stamp_uq').on(t.recordId, t.userId, t.stampKey),
+  ],
+);
+
+// 本文は 1〜50 字。数え方は Unicode のコードポイント数（PostgreSQL の char_length と、API の Array.from(text).length が一致する）
+export const comments = pgTable(
+  'comments',
+  {
+    id: uuid('id').primaryKey(),
+    recordId: uuid('record_id')
+      .notNull()
+      .references(() => records.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('comments_record_created_at_idx').on(t.recordId, t.createdAt),
+    check('comments_body_ck', sql`char_length(${t.body}) between 1 and 50`),
+  ],
+);
