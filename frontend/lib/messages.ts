@@ -86,6 +86,14 @@ export const RUN_MESSAGES = {
   sendError: '送れませんでした。電波の良い所でもう一度ためしてください',
 } as const;
 
+// GPX の取り込み（F-14）。読めないときも責めず、事実と次にできることだけを書く
+export const GPX_MESSAGES = {
+  TOO_LARGE: 'ファイルが大きすぎます（5MBまで）。短いルートのファイルで ためしてね',
+  INVALID_XML: 'このファイルは GPX として読めませんでした。別のファイルを選んでね',
+  NO_TRACK: 'ルートの線が見つかりませんでした。走った道のあるファイルを選んでね',
+  OUT_OF_RANGE: '距離が 0.1〜200km の間に入っていません。手で入力して記録できます',
+} as const;
+
 // 保存したあとの結果の一言（距離と時間を添える）
 export const runSavedMessage = (distanceM: number, durationS: number): string =>
   `${formatDistance(distanceM)} を ${formatDuration(durationS)} で。${RUN_MESSAGES.tail}`;
