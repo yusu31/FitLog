@@ -14,7 +14,7 @@ import {
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { ErrorResponse } from '../common/error-response.js';
-import { CommentResponse, CreateCommentRequest, CreateReactionRequest, FeedResponse, ReactionResponse } from './feed.response.js';
+import { CommentListResponse, CommentResponse, CreateCommentRequest, CreateReactionRequest, FeedResponse, ReactionListResponse, ReactionResponse } from './feed.response.js';
 import { FeedService } from './feed.service.js';
 import { SocialService } from './social.service.js';
 
@@ -40,6 +40,22 @@ export class FeedController {
 @Controller()
 export class SocialController {
   constructor(private readonly social: SocialService) {}
+
+  @Get('records/:id/comments')
+  @ApiOperation({ operationId: 'listComments', summary: '記録のコメント一覧（古い順・全件）' })
+  @ApiOkResponse({ type: CommentListResponse })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）。存在を教えない' })
+  listComments(@Session() session: UserSession, @Param('id') recordId: string): Promise<CommentListResponse> {
+    return this.social.listComments(session.user.id, recordId);
+  }
+
+  @Get('records/:id/reactions')
+  @ApiOperation({ operationId: 'listReactions', summary: '記録のスタンプの集計（スタンプごとの数と、自分のスタンプの id）' })
+  @ApiOkResponse({ type: ReactionListResponse })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）。存在を教えない' })
+  listReactions(@Session() session: UserSession, @Param('id') recordId: string): Promise<ReactionListResponse> {
+    return this.social.listReactions(session.user.id, recordId);
+  }
 
   @Post('records/:id/reactions')
   @ApiOperation({ operationId: 'addReaction', summary: '記録にスタンプを付ける。冪等（同じ人が同じスタンプを2回付けても1件のまま）' })

@@ -13,3 +13,17 @@ export const isStampKey = (value: unknown): value is StampKey => (STAMP_KEYS as 
 // そのスタンプを付けられる記録の種類。休みの記録には休み用だけ、筋トレ・ランには通常のスタンプだけ（testing-design.md T-STP-06）
 export const stampFitsKind = (stampKey: StampKey, kind: 'workout' | 'run' | 'rest'): boolean =>
   (REST_STAMPS as readonly string[]).includes(stampKey) === (kind === 'rest');
+
+// 1つの記録に付いたスタンプの行を「スタンプごとの数」にまとめる。付いたものだけ、スタンプの一覧の順に並べる。
+// mine は自分が付けているスタンプの id（外すときに使う。付けていなければ null）。足跡（GET /feed）と一覧（GET /records/{id}/reactions）で同じ形にするため、ここに1つだけ置く
+export const summarizeStamps = (
+  rows: ReadonlyArray<{ id: string; userId: string; stampKey: string }>,
+  userId: string,
+): Array<{ stampKey: StampKey; count: number; mine: string | null }> => {
+  const list: Array<{ stampKey: StampKey; count: number; mine: string | null }> = [];
+  for (const stampKey of STAMP_KEYS) {
+    const same = rows.filter((r) => r.stampKey === stampKey);
+    if (same.length > 0) list.push({ stampKey, count: same.length, mine: same.find((r) => r.userId === userId)?.id ?? null });
+  }
+  return list;
+};

@@ -884,7 +884,156 @@
         ]
       }
     },
+    "/api/records/{id}/comments": {
+      "get": {
+        "operationId": "listComments",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）。存在を教えない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録のコメント一覧（古い順・全件）",
+        "tags": [
+          "feed"
+        ]
+      },
+      "post": {
+        "operationId": "addComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "すでにある（同じ id の再送）。1回目の内容を返す",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "新しく付けた",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "id が UUID でない・body が空／空白だけ／51字以上（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）、他の人のコメントと同じ id（COMMENT_NOT_FOUND）。存在を教えない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録にコメント（1〜50字）を付ける。冪等",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
     "/api/records/{id}/reactions": {
+      "get": {
+        "operationId": "listReactions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReactionListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）。存在を教えない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録のスタンプの集計（スタンプごとの数と、自分のスタンプの id）",
+        "tags": [
+          "feed"
+        ]
+      },
       "post": {
         "operationId": "addReaction",
         "parameters": [
@@ -1012,77 +1161,6 @@
           }
         },
         "summary": "自分のスタンプを外す",
-        "tags": [
-          "feed"
-        ]
-      }
-    },
-    "/api/records/{id}/comments": {
-      "post": {
-        "operationId": "addComment",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCommentRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "すでにある（同じ id の再送）。1回目の内容を返す",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommentResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "新しく付けた",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommentResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "id が UUID でない・body が空／空白だけ／51字以上（VALIDATION_ERROR）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）、他の人のコメントと同じ id（COMMENT_NOT_FOUND）。存在を教えない",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "記録にコメント（1〜50字）を付ける。冪等",
         "tags": [
           "feed"
         ]
@@ -2061,6 +2139,72 @@
           "totals"
         ]
       },
+      "CommentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string",
+            "example": "ナイス！"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "author": {
+            "description": "書いた人",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "recordId",
+          "body",
+          "createdAt",
+          "author"
+        ]
+      },
+      "CommentListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "その記録のコメント。古い順（付けた時刻の昇順。同じ時刻は id の昇順）。全件（記録ごとに仲間は最大5人なので、ページ分けはしない）。自分のコメントも含む",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommentResponse"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ReactionListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "その記録に付いているスタンプの集計（付いたものだけ。スタンプの一覧の順）。mine は自分のスタンプの id（外すときに使う）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedStamp"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
       "CreateReactionRequest": {
         "type": "object",
         "properties": {
@@ -2136,42 +2280,6 @@
         "required": [
           "id",
           "body"
-        ]
-      },
-      "CommentResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "recordId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "body": {
-            "type": "string",
-            "example": "ナイス！"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "author": {
-            "description": "書いた人",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MemberResponse"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "recordId",
-          "body",
-          "createdAt",
-          "author"
         ]
       }
     }

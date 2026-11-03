@@ -113,3 +113,13 @@ export class CommentResponse {
   @ApiProperty({ type: MemberResponse, description: '書いた人' })
   author!: MemberResponse;
 }
+
+export class CommentListResponse {
+  @ApiProperty({ type: [CommentResponse], description: 'その記録のコメント。古い順（付けた時刻の昇順。同じ時刻は id の昇順）。全件（記録ごとに仲間は最大5人なので、ページ分けはしない）。自分のコメントも含む' })
+  items!: CommentResponse[];
+}
+
+export class ReactionListResponse {
+  @ApiProperty({ type: [FeedStamp], description: 'その記録に付いているスタンプの集計（付いたものだけ。スタンプの一覧の順）。mine は自分のスタンプの id（外すときに使う）' })
+  items!: FeedStamp[];
+}

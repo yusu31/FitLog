@@ -107,6 +107,8 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 
 | メソッド | パス | 説明 | 備考 |
 |----------|------|------|------|
+| GET | `/records/{id}/comments` | その記録のコメント一覧。応答は `{ items: [{ id, recordId, body, createdAt, author }] }` | 古い順（`createdAt` の昇順・同時刻は `id` の昇順）・全件（仲間は最大5人なのでページ分けしない）。自分のコメントも入る。コメントが無ければ `items: []`。見られない記録（無い・別グループ・UUID でない）は 404 `RECORD_NOT_FOUND`（無い記録と同じ応答） |
+| GET | `/records/{id}/reactions` | その記録のスタンプの集計。応答は `{ items: [{ stampKey, count, mine }] }`（足跡 `/feed` の `stamps` と同じ形） | 付いたものだけ、スタンプの一覧の順。`mine` は自分が付けたスタンプの `id`（外すとき `DELETE` へ渡す。付けていなければ `null`）。スタンプが無ければ `items: []`。見られない記録は 404 `RECORD_NOT_FOUND` |
 | POST | `/records/{id}/reactions` | スタンプを付ける（`id`・`stampKey`）。応答は `{ id, recordId, stampKey }` | **冪等**。同じ `id` の再送も、同じスタンプの別 `id` での二重付与も 200 で、付いているスタンプ（1回目の `id`）を返し1件のまま。`stampKey` は `nice`・`fire`・`clap`・`smile`（筋トレ・ラン用）と `rest_slow`・`rest_again`（休み用）だけで、ほかは 400。種類に合わないもの（休みに通常のスタンプ・筋トレ／ランに休み用）は 409 `RECORD_KIND_MISMATCH`。見られない記録は 404 `RECORD_NOT_FOUND`、他の人のスタンプと同じ `id` は 404 `REACTION_NOT_FOUND` |
 | DELETE | `/records/{id}/reactions/{reactionId}` | 自分のスタンプを外す | 成功は 204。見られない記録は 404 `RECORD_NOT_FOUND`、その記録に無い・もう外した（二重削除）は 404 `REACTION_NOT_FOUND`、他の人のは 403 `FORBIDDEN` |
 | POST | `/records/{id}/comments` | コメントを付ける（`id`・`body` 1〜50字）。応答は `{ id, recordId, body, createdAt, author }` | **冪等**（同じ `id` の再送は 200 で1回目の内容）。空白だけは 400。見られない記録は 404 `RECORD_NOT_FOUND`、他の人のコメントと同じ `id` は 404 `COMMENT_NOT_FOUND`。本文はそのまま保存する |

@@ -622,6 +622,113 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
     });
   });
 
+  describe('GET /records/{id}/comments・/reactions（記録ごとの一覧。S-21）', () => {
+    const get = (cookie: string | undefined, path: string) => {
+      const r = http().get(`/api${path}`);
+      return cookie ? r.set('Cookie', cookie) : r;
+    };
+    const stamp = (cookie: string, rec: string, stampKey: string, id = randomUUID()) =>
+      http().post(`/api/records/${rec}/reactions`).set('Cookie', cookie).send({ id, stampKey }).expect(201).then(() => id);
+    const say = (cookie: string, rec: string, body: string, id = randomUUID()) =>
+      http().post(`/api/records/${rec}/comments`).set('Cookie', cookie).send({ id, body }).expect(201).then(() => id);
+
+    it.each(['comments', 'reactions'])('%s: Cookie なしでは 401', async (kind) => {
+      await get(undefined, `/records/${randomUUID()}/${kind}`).expect(401);
+    });
+
+    it('コメントが無い記録は空の配列（200）', async () => {
+      const { a1 } = await world();
+      const rec = await createRecord(a1);
+      expect((await get(a1, `/records/${rec}/comments`).expect(200)).body).toEqual({ items: [] });
+    });
+
+    it('スタンプが無い記録は空の配列（200）', async () => {
+      const { a1 } = await world();
+      const rec = await createRecord(a1);
+      expect((await get(a1, `/records/${rec}/reactions`).expect(200)).body).toEqual({ items: [] });
+    });
+
+    it('コメントは古い順に、本文・書いた人・時刻つきで返る。自分のコメントも仲間のコメントも入る', async () => {
+      const { a1, a2 } = await world();
+      const rec = await createRecord(a1);
+      const c1 = await say(a2, rec, '1つ目');
+      const c2 = await say(a1, rec, '2つ目');
+      const c3 = await say(a2, rec, '3つ目');
+      const res = await get(a1, `/records/${rec}/comments`).expect(200);
+      expect(res.body.items.map((c: { id: string }) => c.id)).toEqual([c1, c2, c3]);
+      expect(res.body.items[0]).toMatchObject({ recordId: rec, body: '1つ目', author: { name: 'A2' } });
+      expect(res.body.items[1].author.name).toBe('A1');
+      expect(typeof res.body.items[0].createdAt).toBe('string');
+    });
+
+    it('コメントは別の記録のものが混ざらない', async () => {
+      const { a1, a2 } = await world();
+      const r1 = await createRecord(a1);
+      const r2 = await createRecord(a1, 'workout', TUE_NOON);
+      await say(a2, r1, '1の方');
+      await say(a2, r2, '2の方');
+      const res = await get(a1, `/records/${r1}/comments`).expect(200);
+      expect(res.body.items.map((c: { body: string }) => c.body)).toEqual(['1の方']);
+    });
+
+    it('スタンプはスタンプごとの数にまとまり、スタンプの一覧の順に並ぶ。自分が付けたものだけ mine に id が入る', async () => {
+      const { a1, a2 } = await world();
+      const rec = await createRecord(a1);
+      const mineFire = await stamp(a1, rec, 'fire');
+      await stamp(a2, rec, 'fire');
+      await stamp(a2, rec, 'nice');
+      const res = await get(a1, `/records/${rec}/reactions`).expect(200);
+      expect(res.body.items).toEqual([
+        { stampKey: 'nice', count: 1, mine: null },
+        { stampKey: 'fire', count: 2, mine: mineFire },
+      ]);
+      // 仲間から見ると、mine は逆になる
+      const other = await get(a2, `/records/${rec}/reactions`).expect(200);
+      expect(other.body.items.find((s: { stampKey: string }) => s.stampKey === 'nice').mine).not.toBeNull();
+      expect(other.body.items.find((s: { stampKey: string }) => s.stampKey === 'fire').mine).not.toBe(mineFire);
+    });
+
+    it('外したスタンプ・消したコメントは一覧から消える', async () => {
+      const { a1 } = await world();
+      const rec = await createRecord(a1);
+      const sid = await stamp(a1, rec, 'nice');
+      const cid = await say(a1, rec, 'あ');
+      await http().delete(`/api/records/${rec}/reactions/${sid}`).set('Cookie', a1).expect(204);
+      await http().delete(`/api/comments/${cid}`).set('Cookie', a1).expect(204);
+      expect((await get(a1, `/records/${rec}/reactions`).expect(200)).body.items).toEqual([]);
+      expect((await get(a1, `/records/${rec}/comments`).expect(200)).body.items).toEqual([]);
+    });
+
+    it('休みの記録のスタンプ（休み用）も集計される', async () => {
+      const { a1, a2 } = await world();
+      const rec = await createRecord(a1, 'rest');
+      await stamp(a2, rec, 'rest_slow');
+      const res = await get(a1, `/records/${rec}/reactions`).expect(200);
+      expect(res.body.items).toEqual([{ stampKey: 'rest_slow', count: 1, mine: null }]);
+    });
+
+    // 見られない記録は、無い記録と同じ 404（存在を教えない）。testing-design.md 6章の表
+    it.each(['comments', 'reactions'])('%s: 別のグループの人の記録・グループに入っていない人から見た他人の記録・存在しない id・UUID でない id は、どれも同じ 404', async (kind) => {
+      const { a1, b1, n1 } = await world();
+      const rec = await createRecord(a1);
+      await say(a1, rec, 'ひみつ');
+      const missing = (await get(a1, `/records/${randomUUID()}/${kind}`).expect(404)).body;
+      expect(missing.code).toBe('RECORD_NOT_FOUND');
+      for (const cookie of [b1, n1]) {
+        const res = await get(cookie, `/records/${rec}/${kind}`).expect(404);
+        expect(res.body).toEqual(missing);
+      }
+      await get(a1, `/records/not-a-uuid/${kind}`).expect(404);
+    });
+
+    it('グループに入っていない人は、自分の記録なら見られる', async () => {
+      const { n1 } = await world();
+      const rec = await createRecord(n1);
+      await say(n1, rec, 'ひとり');
+      expect((await get(n1, `/records/${rec}/comments`).expect(200)).body.items).toHaveLength(1);
+    });
+  });
+
   describe('記録を消したとき', () => {
     it('記録を消すと、付いていたスタンプとコメントも一緒に消える（ON DELETE CASCADE）', async () => {
       const { a1, a2 } = await world();

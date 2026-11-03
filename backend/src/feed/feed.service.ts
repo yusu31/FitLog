@@ -7,7 +7,7 @@ import { encodeCursor } from '../records/list-input.js';
 import { ownerInMyGroup } from '../records/record-access.js';
 import { FEED_PAGE_SIZE, parseFeedQuery } from './feed-input.js';
 import type { FeedItem, FeedResponse, FeedStamp, FeedTotals } from './feed.response.js';
-import { STAMP_KEYS } from './stamps.js';
+import { summarizeStamps } from './stamps.js';
 
 // 仲間の足跡と週の合計（F-09。docs/design.md 3章 GET /feed・6章）。
 
@@ -106,11 +106,7 @@ export class FeedService {
       .where(inArray(reactions.recordId, ids));
     for (const recordId of new Set(rows.map((r) => r.recordId))) {
       const of = rows.filter((r) => r.recordId === recordId);
-      const list: FeedStamp[] = [];
-      for (const stampKey of STAMP_KEYS) {
-        const same = of.filter((r) => r.stampKey === stampKey);
-        if (same.length > 0) list.push({ stampKey, count: same.length, mine: same.find((r) => r.userId === userId)?.id ?? null });
-      }
+      const list: FeedStamp[] = summarizeStamps(of, userId);
       result.set(recordId, list);
     }
     return result;

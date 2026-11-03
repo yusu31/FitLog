@@ -429,6 +429,25 @@ export interface FeedResponse {
   totals: FeedTotals;
 }
 
+export interface CommentResponse {
+  id: string;
+  recordId: string;
+  body: string;
+  createdAt: string;
+  /** 書いた人 */
+  author: MemberResponse;
+}
+
+export interface CommentListResponse {
+  /** その記録のコメント。古い順（付けた時刻の昇順。同じ時刻は id の昇順）。全件（記録ごとに仲間は最大5人なので、ページ分けはしない）。自分のコメントも含む */
+  items: CommentResponse[];
+}
+
+export interface ReactionListResponse {
+  /** その記録に付いているスタンプの集計（付いたものだけ。スタンプの一覧の順）。mine は自分のスタンプの id（外すときに使う） */
+  items: FeedStamp[];
+}
+
 /**
  * 筋トレ・ランには nice/fire/clap/smile、休みには rest_slow/rest_again
  */
@@ -479,15 +498,6 @@ export interface CreateCommentRequest {
      * @maxLength 50
      */
   body: string;
-}
-
-export interface CommentResponse {
-  id: string;
-  recordId: string;
-  body: string;
-  createdAt: string;
-  /** 書いた人 */
-  author: MemberResponse;
 }
 
 export type GetPreviousParams = {
@@ -2955,6 +2965,385 @@ export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError =
 
 
 
+export type listCommentsResponse200 = {
+  data: CommentListResponse
+  status: 200
+}
+
+export type listCommentsResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type listCommentsResponseSuccess = (listCommentsResponse200) & {
+  headers: Headers;
+};
+export type listCommentsResponseError = (listCommentsResponse404) & {
+  headers: Headers;
+};
+
+export type listCommentsResponse = (listCommentsResponseSuccess | listCommentsResponseError)
+
+export const getListCommentsUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}/comments`
+}
+
+/**
+ * @summary 記録のコメント一覧（古い順・全件）
+ */
+export const listComments = async (id: string, options?: RequestInit): Promise<listCommentsResponse> => {
+
+  const res = await fetch(getListCommentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listCommentsResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as listCommentsResponse
+}
+
+
+
+
+
+export const getListCommentsQueryKey = (id: string,) => {
+    return [
+    `/api/records/${id}/comments`
+    ] as const;
+    }
+
+
+export const getListCommentsQueryOptions = <TData = Awaited<ReturnType<typeof listComments>>, TError = ErrorResponse>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCommentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listComments>>> = ({ signal }) => listComments(id, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListCommentsQueryResult = NonNullable<Awaited<ReturnType<typeof listComments>>>
+export type ListCommentsQueryError = ErrorResponse
+
+
+export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = ErrorResponse>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listComments>>,
+          TError,
+          Awaited<ReturnType<typeof listComments>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listComments>>,
+          TError,
+          Awaited<ReturnType<typeof listComments>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 記録のコメント一覧（古い順・全件）
+ */
+
+export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListCommentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type addCommentResponse200 = {
+  data: CommentResponse
+  status: 200
+}
+
+export type addCommentResponse201 = {
+  data: CommentResponse
+  status: 201
+}
+
+export type addCommentResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type addCommentResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type addCommentResponseSuccess = (addCommentResponse200 | addCommentResponse201) & {
+  headers: Headers;
+};
+export type addCommentResponseError = (addCommentResponse400 | addCommentResponse404) & {
+  headers: Headers;
+};
+
+export type addCommentResponse = (addCommentResponseSuccess | addCommentResponseError)
+
+export const getAddCommentUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}/comments`
+}
+
+/**
+ * @summary 記録にコメント（1〜50字）を付ける。冪等
+ */
+export const addComment = async (id: string,
+    createCommentRequest: CreateCommentRequest, options?: RequestInit): Promise<addCommentResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAddCommentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createCommentRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: addCommentResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as addCommentResponse
+}
+
+
+
+
+
+export const getAddCommentMutationKey = () => ['addComment'] as const;
+
+export const getAddCommentMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext> => {
+
+const mutationKey = getAddCommentMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addComment>>, AddCommentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addComment(id,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddCommentMutationResult = NonNullable<Awaited<ReturnType<typeof addComment>>>
+    export type AddCommentMutationBody = CreateCommentRequest
+    export type AddCommentMutationError = ErrorResponse
+    export type AddCommentMutationVariables = {id: string;data: CreateCommentRequest}
+
+    /**
+ * @summary 記録にコメント（1〜50字）を付ける。冪等
+ */
+export const useAddComment = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addComment>>,
+        TError,
+        AddCommentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddCommentMutationOptions(options), queryClient);
+    }
+
+export type listReactionsResponse200 = {
+  data: ReactionListResponse
+  status: 200
+}
+
+export type listReactionsResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type listReactionsResponseSuccess = (listReactionsResponse200) & {
+  headers: Headers;
+};
+export type listReactionsResponseError = (listReactionsResponse404) & {
+  headers: Headers;
+};
+
+export type listReactionsResponse = (listReactionsResponseSuccess | listReactionsResponseError)
+
+export const getListReactionsUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}/reactions`
+}
+
+/**
+ * @summary 記録のスタンプの集計（スタンプごとの数と、自分のスタンプの id）
+ */
+export const listReactions = async (id: string, options?: RequestInit): Promise<listReactionsResponse> => {
+
+  const res = await fetch(getListReactionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listReactionsResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as listReactionsResponse
+}
+
+
+
+
+
+export const getListReactionsQueryKey = (id: string,) => {
+    return [
+    `/api/records/${id}/reactions`
+    ] as const;
+    }
+
+
+export const getListReactionsQueryOptions = <TData = Awaited<ReturnType<typeof listReactions>>, TError = ErrorResponse>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReactionsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReactions>>> = ({ signal }) => listReactions(id, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListReactionsQueryResult = NonNullable<Awaited<ReturnType<typeof listReactions>>>
+export type ListReactionsQueryError = ErrorResponse
+
+
+export function useListReactions<TData = Awaited<ReturnType<typeof listReactions>>, TError = ErrorResponse>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReactions>>,
+          TError,
+          Awaited<ReturnType<typeof listReactions>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReactions<TData = Awaited<ReturnType<typeof listReactions>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReactions>>,
+          TError,
+          Awaited<ReturnType<typeof listReactions>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReactions<TData = Awaited<ReturnType<typeof listReactions>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 記録のスタンプの集計（スタンプごとの数と、自分のスタンプの id）
+ */
+
+export function useListReactions<TData = Awaited<ReturnType<typeof listReactions>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListReactionsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export type addReactionResponse200 = {
   data: ReactionResponse
   status: 200
@@ -3190,131 +3579,6 @@ export const useDeleteReaction = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getDeleteReactionMutationOptions(options), queryClient);
-    }
-
-export type addCommentResponse200 = {
-  data: CommentResponse
-  status: 200
-}
-
-export type addCommentResponse201 = {
-  data: CommentResponse
-  status: 201
-}
-
-export type addCommentResponse400 = {
-  data: ErrorResponse
-  status: 400
-}
-
-export type addCommentResponse404 = {
-  data: ErrorResponse
-  status: 404
-}
-
-export type addCommentResponseSuccess = (addCommentResponse200 | addCommentResponse201) & {
-  headers: Headers;
-};
-export type addCommentResponseError = (addCommentResponse400 | addCommentResponse404) & {
-  headers: Headers;
-};
-
-export type addCommentResponse = (addCommentResponseSuccess | addCommentResponseError)
-
-export const getAddCommentUrl = (id: string,) => {
-
-
-
-
-  return `/api/records/${id}/comments`
-}
-
-/**
- * @summary 記録にコメント（1〜50字）を付ける。冪等
- */
-export const addComment = async (id: string,
-    createCommentRequest: CreateCommentRequest, options?: RequestInit): Promise<addCommentResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getAddCommentUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(createCommentRequest)
-  }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: addCommentResponse['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as addCommentResponse
-}
-
-
-
-
-
-export const getAddCommentMutationKey = () => ['addComment'] as const;
-
-export const getAddCommentMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext>, fetch?: RequestInit}
-): UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext> => {
-
-const mutationKey = getAddCommentMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addComment>>, AddCommentMutationVariables> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  addComment(id,data,fetchOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AddCommentMutationResult = NonNullable<Awaited<ReturnType<typeof addComment>>>
-    export type AddCommentMutationBody = CreateCommentRequest
-    export type AddCommentMutationError = ErrorResponse
-    export type AddCommentMutationVariables = {id: string;data: CreateCommentRequest}
-
-    /**
- * @summary 記録にコメント（1〜50字）を付ける。冪等
- */
-export const useAddComment = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext>, fetch?: RequestInit}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof addComment>>,
-        TError,
-        AddCommentMutationVariables,
-        TContext
-      > => {
-      return useMutation(getAddCommentMutationOptions(options), queryClient);
     }
 
 export type deleteCommentResponse204 = {
