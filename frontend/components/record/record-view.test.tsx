@@ -5,6 +5,7 @@ import { resetCurrentWorkout } from '@/lib/current-workout';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { GHOST_MESSAGES } from '@/lib/messages';
 import { RecordView } from './record-view';
+import { trackClient } from '@/lib/test/fake-api';
 
 let search = 'exercise=e-bench';
 vi.mock('next/navigation', () => ({
@@ -80,7 +81,7 @@ afterEach(() => {
 });
 
 const renderView = () => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const client = trackClient(new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }));
   return render(
     <QueryClientProvider client={client}>
       <RecordView />
@@ -462,7 +463,16 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     });
   });
 
-  describe('電波が無いとき（F-30 の形。端末への保存は 02-4）', () => {
+  describe('電波が無いとき（F-30。端末への保存・再送は lib/offline/offline-flow.test.tsx）', () => {
+    it('電波があるときは、結果のシートに「この端末に保存したよ」を足さない', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      expect(sheet()).toBeInTheDocument();
+      expect(sheet()).not.toHaveTextContent('この端末に保存したよ');
+    });
+
     it('押した瞬間に画面へ反映し、何も送らず待つ。戻ると 記録 → セット の順に送る', async () => {
       const user = userEvent.setup();
       renderView();
@@ -471,6 +481,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await user.click(doneButton());
       expect(screen.getByRole('list', { name: 'できたセット' })).toHaveTextContent('40kg × 10回');
       expect(sheet()).toBeInTheDocument();
+      expect(sheet()).toHaveTextContent('この端末に保存したよ。電波が戻ったら送るね');
       expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
 
       act(() => onlineManager.setOnline(true));

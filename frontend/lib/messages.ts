@@ -105,3 +105,18 @@ export const DETAIL_MESSAGES = {
   backMe: '自分にもどる',
   backFriends: '仲間にもどる',
 } as const;
+
+// 送信待ちの帯（screen-design.md「送信待ちの表示（F-30）」）。電波や通信のせいで、本人の落ち度ではない。責めない
+export const SYNC_MESSAGES = {
+  pending: (n: number): string => `送信待ち ${n}件`,
+  savedNote: 'この端末に保存ずみ。つながったら自動で送るよ',
+  retryNote: 'この端末に保存ずみ。順番に送りなおしているよ',
+  authNote: '記録は残ってるよ。ログインで送るね',
+  login: 'ログイン',
+  sent: (n: number): string => `${n}件 送ったよ`,
+  rejected: '送れなかった記録があります',
+  rejectedNote: '内容が受け付けられませんでした。もう一度記録してください',
+  dismiss: 'とじる',
+  // 電波なしで「できた」を押した直後のシートに足す1行
+  sheetNote: 'この端末に保存したよ。電波が戻ったら送るね',
+} as const;

@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
-import { HOME_MESSAGES, REST_MESSAGES } from '@/lib/messages';
+import { HOME_MESSAGES } from '@/lib/messages';
 import { calls, installFakeApi, renderWithQuery, restRecord, weekOf, workout } from '@/lib/test/fake-api';
 import { TodayView } from './today-view';
 
@@ -254,12 +254,19 @@ describe('TodayView（S-10 今日）', () => {
       await waitFor(() => expect(push).toHaveBeenCalledWith('/rest'));
     });
 
-    it('送れなかったときは、おやすみ画面へ移らず、日本語の文言を出して、もう一度押せる', async () => {
+    it('サーバーの不具合（5xx）では、送信待ちに残して、待たずにおやすみ画面へ移る（F-30）', async () => {
       installFakeApi({ ...base, [REST_POST]: { status: 500, body: { code: 'INTERNAL', message: 'stack trace' } } });
       renderWithQuery(<TodayView />);
       await userEvent.setup().click(await screen.findByRole('button', { name: /今日は休む/ }));
-      expect(await screen.findByRole('alert')).toHaveTextContent(REST_MESSAGES.sendError);
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/rest'));
       expect(document.body.textContent).not.toContain('stack trace');
+    });
+
+    it('API が 400 で拒否したときは、おやすみ画面へ移らず、日本語の文言を出して、もう一度押せる', async () => {
+      installFakeApi({ ...base, [REST_POST]: { status: 400, body: { code: 'VALIDATION_ERROR', message: '記録の時刻が正しくありません' } } });
+      renderWithQuery(<TodayView />);
+      await userEvent.setup().click(await screen.findByRole('button', { name: /今日は休む/ }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('記録の時刻が正しくありません');
       expect(push).not.toHaveBeenCalled();
       expect(screen.getByRole('button', { name: /今日は休む/ })).toBeEnabled();
     });
@@ -295,8 +302,18 @@ describe('TodayView（S-10 今日）', () => {
       await userEvent.setup().click(button);
       await waitFor(() => expect(push).toHaveBeenCalledWith('/rest'));
       expect(posts()).toHaveLength(0);
+      // 画面の上に「送信待ち 1件」の帯が出て（週の帯のすぐ下）、今日のマスは休みに見える（楽観的更新）
+      expect(screen.getByTestId('sync-banner')).toHaveTextContent('送信待ち 1件');
       onlineManager.setOnline(true);
       await waitFor(() => expect(posts()).toHaveLength(1));
+      await waitFor(() => expect(screen.getByTestId('sync-banner')).toHaveTextContent('1件 送ったよ'));
+    });
+
+    it('送信待ちが無いときは、帯に何も出さない', async () => {
+      installFakeApi(base);
+      renderWithQuery(<TodayView />);
+      await screen.findByRole('button', { name: /今日は休む/ });
+      expect(screen.getByTestId('sync-banner')).toBeEmptyDOMElement();
     });
 
     it('今日がもう休みなら、「今日は休む」は出さない', async () => {

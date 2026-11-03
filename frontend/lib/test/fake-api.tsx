@@ -24,8 +24,18 @@ export function installFakeApi(routes: Record<string, Reply | Reply[]>) {
   );
 }
 
+// テストで作った QueryClient。1件ごとに送信待ちを片づける（再送待ちの送信が、次のテストの偽 API に届かないように）
+const clients: QueryClient[] = [];
+export function trackClient(client: QueryClient): QueryClient {
+  clients.push(client);
+  return client;
+}
+export function disposeClients(): void {
+  for (const c of clients.splice(0)) c.getMutationCache().clear();
+}
+
 export function renderWithQuery(ui: ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = trackClient(new QueryClient({ defaultOptions: { queries: { retry: false } } }));
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
