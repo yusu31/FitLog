@@ -120,3 +120,23 @@ export const SYNC_MESSAGES = {
   // 電波なしで「できた」を押した直後のシートに足す1行
   sheetNote: 'この端末に保存したよ。電波が戻ったら送るね',
 } as const;
+
+// 仲間タブの足跡・週の合計・スタンプ・コメント（S-20。screen-design.md「スタンプと定型コメント（F-10）」）。
+// 順位・連続日数・数を競う言い方は入れない。付け外しは電波があるときだけ（F-30）
+export const FEED_MESSAGES = {
+  weekHeading: '今週のグループ',
+  totalsEmpty: '今週は まだ だれも記録していないよ',
+  volumeLabel: '総重量',
+  distanceLabel: '走った',
+  empty: '今週の足跡は まだないよ。最初の1つを どうぞ',
+  loadFailed: '足跡を読み込めませんでした。電波の良い所で開き直してください',
+  loadMore: 'もっと見る',
+  stampFailed: 'スタンプを送れませんでした。少し待って、もう一度お試しください',
+  offlineNote: '電波があるときだけ スタンプとコメントを付けられます',
+  commentsOpen: (n: number): string => (n > 0 ? `コメント ${n}` : 'コメント'),
+  commentInputLabel: '自由に書く（50字まで）',
+  commentSend: '送る',
+  commentSent: 'コメントを送ったよ',
+  commentLength: 'コメントは1〜50字で入れてください',
+  commentFailed: 'コメントを送れませんでした。少し待って、もう一度お試しください',
+} as const;

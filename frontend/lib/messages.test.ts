@@ -1,6 +1,7 @@
 import { FORBIDDEN_WORDS } from './forbidden-words';
 import {
   DETAIL_MESSAGES,
+  FEED_MESSAGES,
   GHOST_MESSAGES,
   GROUP_ERROR_BY_CODE,
   GROUP_MESSAGES,
@@ -43,6 +44,9 @@ describe('文言の定数', () => {
     ...collect(RUN_MESSAGES),
     ...collect(DETAIL_MESSAGES),
     ...collect(SYNC_MESSAGES),
+    ...collect(FEED_MESSAGES),
+    FEED_MESSAGES.commentsOpen(0),
+    FEED_MESSAGES.commentsOpen(3),
     SYNC_MESSAGES.pending(1),
     SYNC_MESSAGES.pending(99),
     SYNC_MESSAGES.sent(1),

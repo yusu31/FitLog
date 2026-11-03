@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { PageTitle } from '@/components/fitlog/app-shell';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { GROUP_MESSAGES } from '@/lib/messages';
+import { FeedSection } from './feed-section';
 import { GroupSummary, MemberList } from './member-list';
 import { NoGroupGuide } from './no-group-guide';
 
 // S-20 仲間（docs/screen-design.md 4章）。グループがないときは「作る」と「招待リンクで参加する」の2つだけ（NoGroupGuide）。
-// 足跡・週の合計・スタンプは、記録の機能（02-4）ができてから足す。招待・グループを出るは S-32（/settings/group）にある
+// 足跡・週の合計・スタンプ・コメントは FeedSection（feed-section.tsx）。招待・グループを出るは S-32（/settings/group）にある
 export function FriendsView() {
   const { data, isPending, isError } = useGetCurrentGroup();
 
@@ -27,6 +28,7 @@ export function FriendsView() {
       ) : (
         <div className="space-y-4 px-4 pt-3">
           <GroupSummary group={data.data} />
+          <FeedSection />
           <MemberList group={data.data} />
           <Link
             href="/settings/group"

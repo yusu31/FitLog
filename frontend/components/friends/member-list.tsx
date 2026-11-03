@@ -7,7 +7,7 @@ import type { GroupDetailResponse } from '@/lib/api/generated';
 export const GROUP_MEMBER_MAX = 5;
 
 // キャラの服の色から、名前の頭文字を置く丸の色を決める（白文字が読める濃い色に寄せる）
-const AVATAR_BG: Record<string, string> = {
+export const AVATAR_BG: Record<string, string> = {
   teal: '#0e7f83',
   navy: '#1e2a3a',
   coral: '#c23b2d',
