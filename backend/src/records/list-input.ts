@@ -14,7 +14,7 @@ export type ListQuery = { limit: number; cursor: ListCursor | undefined; kind: R
 // ページ番号（offset）にしないのは、読んでいる間に記録が増えても重複・抜けが出ないようにするため
 export const encodeCursor = (recordedAt: Date, id: string): string => Buffer.from(JSON.stringify({ t: recordedAt.getTime(), id })).toString('base64url');
 
-function decodeCursor(raw: string): ListCursor | undefined {
+export function decodeCursor(raw: string): ListCursor | undefined {
   try {
     const parsed: unknown = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return undefined;

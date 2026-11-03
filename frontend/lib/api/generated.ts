@@ -355,6 +355,141 @@ export interface WeekResponse {
   days: WeekDay[];
 }
 
+export type FeedStampStampKey = typeof FeedStampStampKey[keyof typeof FeedStampStampKey];
+
+
+export const FeedStampStampKey = {
+  nice: 'nice',
+  fire: 'fire',
+  clap: 'clap',
+  smile: 'smile',
+  rest_slow: 'rest_slow',
+  rest_again: 'rest_again',
+} as const;
+
+export interface FeedStamp {
+  stampKey: FeedStampStampKey;
+  /** このスタンプを付けた人の数 */
+  count: number;
+  /**
+     * 自分が付けているときは、そのスタンプの id（外すときに DELETE /records/{id}/reactions/{reactionId} へ渡す）。付けていなければ null
+     * @nullable
+     */
+  mine: string | null;
+}
+
+export type FeedItemKind = typeof FeedItemKind[keyof typeof FeedItemKind];
+
+
+export const FeedItemKind = {
+  workout: 'workout',
+  run: 'run',
+  rest: 'rest',
+} as const;
+
+export interface FeedItem {
+  id: string;
+  kind: FeedItemKind;
+  /** 運動した時刻（UTC） */
+  recordedAt: string;
+  /** 日本時間の日付（YYYY-MM-DD） */
+  localDate: string;
+  /** 書いた人（自分の記録も入る） */
+  author: MemberResponse;
+  /** 筋トレの種目名（重複なし・最初にセットを足した順）。筋トレ以外は空の配列。セットの中身は記録の詳細で見る */
+  exerciseNames: string[];
+  /** ランの記録だけ。距離と時間 */
+  run?: RunDetail;
+  /** 付いているスタンプ（付いたものだけ。スタンプの一覧の順） */
+  stamps: FeedStamp[];
+  /** コメントの数 */
+  commentCount: number;
+}
+
+export interface FeedTotals {
+  /** その週に筋トレかランを記録した人の数（休みだけの人は数えない） */
+  recordedUserCount: number;
+  /** 筋トレの総重量（kg。重量×回数の合計） */
+  totalVolumeKg: number;
+  /** ランの総距離（m） */
+  totalDistanceM: number;
+}
+
+export interface FeedResponse {
+  /** その週の月曜の日付（指定した日を含む週） */
+  weekStart: string;
+  /** 新しい順（運動した時刻の降順。同じ時刻は id の降順）。1回に 20 件。自分の記録も含む。グループに入っていなければ空 */
+  items: FeedItem[];
+  /**
+     * 続きがあるときの印。次の呼び出しの cursor にそのまま渡す。最後のページは null
+     * @nullable
+     */
+  nextCursor: string | null;
+  /** その週のグループ合計（ページに関係なく週全体）。順位・連続日数は持たない。グループに入っていなければすべて 0 */
+  totals: FeedTotals;
+}
+
+/**
+ * 筋トレ・ランには nice/fire/clap/smile、休みには rest_slow/rest_again
+ */
+export type CreateReactionRequestStampKey = typeof CreateReactionRequestStampKey[keyof typeof CreateReactionRequestStampKey];
+
+
+export const CreateReactionRequestStampKey = {
+  nice: 'nice',
+  fire: 'fire',
+  clap: 'clap',
+  smile: 'smile',
+  rest_slow: 'rest_slow',
+  rest_again: 'rest_again',
+} as const;
+
+export interface CreateReactionRequest {
+  /** 端末で作る ID。同じ ID を送り直しても、スタンプは1件のまま（冪等） */
+  id: string;
+  /** 筋トレ・ランには nice/fire/clap/smile、休みには rest_slow/rest_again */
+  stampKey: CreateReactionRequestStampKey;
+}
+
+export type ReactionResponseStampKey = typeof ReactionResponseStampKey[keyof typeof ReactionResponseStampKey];
+
+
+export const ReactionResponseStampKey = {
+  nice: 'nice',
+  fire: 'fire',
+  clap: 'clap',
+  smile: 'smile',
+  rest_slow: 'rest_slow',
+  rest_again: 'rest_again',
+} as const;
+
+export interface ReactionResponse {
+  /** スタンプの id。すでに同じスタンプを付けていたときは、そのときの id */
+  id: string;
+  recordId: string;
+  stampKey: ReactionResponseStampKey;
+}
+
+export interface CreateCommentRequest {
+  /** 端末で作る ID。同じ ID を送り直しても、コメントは1件のまま（冪等） */
+  id: string;
+  /**
+     * 本文。1〜50 字（Unicode のコードポイント数。絵文字1つも1字）。空白だけは不可
+     * @minLength 1
+     * @maxLength 50
+     */
+  body: string;
+}
+
+export interface CommentResponse {
+  id: string;
+  recordId: string;
+  body: string;
+  createdAt: string;
+  /** 書いた人 */
+  author: MemberResponse;
+}
+
 export type GetPreviousParams = {
 /**
  * この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す
@@ -391,6 +526,17 @@ export type GetWeekParams = {
  * 日本時間の日付（YYYY-MM-DD）
  */
 date: string;
+};
+
+export type GetFeedParams = {
+/**
+ * 日本時間の日付（YYYY-MM-DD）。この日を含む週（月曜〜日曜）を返す
+ */
+weekStart: string;
+/**
+ * 前の応答の nextCursor をそのまま渡す（続きを読む）
+ */
+cursor?: string;
 };
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
@@ -2668,3 +2814,610 @@ export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError =
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+
+export type getFeedResponse200 = {
+  data: FeedResponse
+  status: 200
+}
+
+export type getFeedResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getFeedResponseSuccess = (getFeedResponse200) & {
+  headers: Headers;
+};
+export type getFeedResponseError = (getFeedResponse400) & {
+  headers: Headers;
+};
+
+export type getFeedResponse = (getFeedResponseSuccess | getFeedResponseError)
+
+export const getGetFeedUrl = (params: GetFeedParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/feed?${stringifiedParams}` : `/api/feed`
+}
+
+/**
+ * @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す
+ */
+export const getFeed = async (params: GetFeedParams, options?: RequestInit): Promise<getFeedResponse> => {
+
+  const res = await fetch(getGetFeedUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getFeedResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getFeedResponse
+}
+
+
+
+
+
+export const getGetFeedQueryKey = (params?: GetFeedParams,) => {
+    return [
+    `/api/feed`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetFeedQueryOptions = <TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFeedQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFeed>>> = ({ signal }) => getFeed(params, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetFeedQueryResult = NonNullable<Awaited<ReturnType<typeof getFeed>>>
+export type GetFeedQueryError = ErrorResponse
+
+
+export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
+ params: GetFeedParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFeed>>,
+          TError,
+          Awaited<ReturnType<typeof getFeed>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
+ params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFeed>>,
+          TError,
+          Awaited<ReturnType<typeof getFeed>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
+ params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す
+ */
+
+export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
+ params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetFeedQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type addReactionResponse200 = {
+  data: ReactionResponse
+  status: 200
+}
+
+export type addReactionResponse201 = {
+  data: ReactionResponse
+  status: 201
+}
+
+export type addReactionResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type addReactionResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type addReactionResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type addReactionResponseSuccess = (addReactionResponse200 | addReactionResponse201) & {
+  headers: Headers;
+};
+export type addReactionResponseError = (addReactionResponse400 | addReactionResponse404 | addReactionResponse409) & {
+  headers: Headers;
+};
+
+export type addReactionResponse = (addReactionResponseSuccess | addReactionResponseError)
+
+export const getAddReactionUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}/reactions`
+}
+
+/**
+ * @summary 記録にスタンプを付ける。冪等（同じ人が同じスタンプを2回付けても1件のまま）
+ */
+export const addReaction = async (id: string,
+    createReactionRequest: CreateReactionRequest, options?: RequestInit): Promise<addReactionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAddReactionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createReactionRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: addReactionResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as addReactionResponse
+}
+
+
+
+
+
+export const getAddReactionMutationKey = () => ['addReaction'] as const;
+
+export const getAddReactionMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addReaction>>, TError,AddReactionMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof addReaction>>, TError,AddReactionMutationVariables, TContext> => {
+
+const mutationKey = getAddReactionMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addReaction>>, AddReactionMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addReaction(id,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddReactionMutationResult = NonNullable<Awaited<ReturnType<typeof addReaction>>>
+    export type AddReactionMutationBody = CreateReactionRequest
+    export type AddReactionMutationError = ErrorResponse
+    export type AddReactionMutationVariables = {id: string;data: CreateReactionRequest}
+
+    /**
+ * @summary 記録にスタンプを付ける。冪等（同じ人が同じスタンプを2回付けても1件のまま）
+ */
+export const useAddReaction = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addReaction>>, TError,AddReactionMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addReaction>>,
+        TError,
+        AddReactionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddReactionMutationOptions(options), queryClient);
+    }
+
+export type deleteReactionResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteReactionResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteReactionResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteReactionResponseSuccess = (deleteReactionResponse204) & {
+  headers: Headers;
+};
+export type deleteReactionResponseError = (deleteReactionResponse403 | deleteReactionResponse404) & {
+  headers: Headers;
+};
+
+export type deleteReactionResponse = (deleteReactionResponseSuccess | deleteReactionResponseError)
+
+export const getDeleteReactionUrl = (id: string,
+    reactionId: string,) => {
+
+
+
+
+  return `/api/records/${id}/reactions/${reactionId}`
+}
+
+/**
+ * @summary 自分のスタンプを外す
+ */
+export const deleteReaction = async (id: string,
+    reactionId: string, options?: RequestInit): Promise<deleteReactionResponse> => {
+
+  const res = await fetch(getDeleteReactionUrl(id,reactionId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteReactionResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as deleteReactionResponse
+}
+
+
+
+
+
+export const getDeleteReactionMutationKey = () => ['deleteReaction'] as const;
+
+export const getDeleteReactionMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReaction>>, TError,DeleteReactionMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteReaction>>, TError,DeleteReactionMutationVariables, TContext> => {
+
+const mutationKey = getDeleteReactionMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteReaction>>, DeleteReactionMutationVariables> = (props) => {
+          const {id,reactionId} = props ?? {};
+
+          return  deleteReaction(id,reactionId,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteReactionMutationResult = NonNullable<Awaited<ReturnType<typeof deleteReaction>>>
+
+    export type DeleteReactionMutationError = ErrorResponse
+    export type DeleteReactionMutationVariables = {id: string;reactionId: string}
+
+    /**
+ * @summary 自分のスタンプを外す
+ */
+export const useDeleteReaction = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReaction>>, TError,DeleteReactionMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteReaction>>,
+        TError,
+        DeleteReactionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteReactionMutationOptions(options), queryClient);
+    }
+
+export type addCommentResponse200 = {
+  data: CommentResponse
+  status: 200
+}
+
+export type addCommentResponse201 = {
+  data: CommentResponse
+  status: 201
+}
+
+export type addCommentResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type addCommentResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type addCommentResponseSuccess = (addCommentResponse200 | addCommentResponse201) & {
+  headers: Headers;
+};
+export type addCommentResponseError = (addCommentResponse400 | addCommentResponse404) & {
+  headers: Headers;
+};
+
+export type addCommentResponse = (addCommentResponseSuccess | addCommentResponseError)
+
+export const getAddCommentUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}/comments`
+}
+
+/**
+ * @summary 記録にコメント（1〜50字）を付ける。冪等
+ */
+export const addComment = async (id: string,
+    createCommentRequest: CreateCommentRequest, options?: RequestInit): Promise<addCommentResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAddCommentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createCommentRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: addCommentResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as addCommentResponse
+}
+
+
+
+
+
+export const getAddCommentMutationKey = () => ['addComment'] as const;
+
+export const getAddCommentMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext> => {
+
+const mutationKey = getAddCommentMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addComment>>, AddCommentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addComment(id,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddCommentMutationResult = NonNullable<Awaited<ReturnType<typeof addComment>>>
+    export type AddCommentMutationBody = CreateCommentRequest
+    export type AddCommentMutationError = ErrorResponse
+    export type AddCommentMutationVariables = {id: string;data: CreateCommentRequest}
+
+    /**
+ * @summary 記録にコメント（1〜50字）を付ける。冪等
+ */
+export const useAddComment = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addComment>>,
+        TError,
+        AddCommentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddCommentMutationOptions(options), queryClient);
+    }
+
+export type deleteCommentResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteCommentResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type deleteCommentResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteCommentResponseSuccess = (deleteCommentResponse204) & {
+  headers: Headers;
+};
+export type deleteCommentResponseError = (deleteCommentResponse403 | deleteCommentResponse404) & {
+  headers: Headers;
+};
+
+export type deleteCommentResponse = (deleteCommentResponseSuccess | deleteCommentResponseError)
+
+export const getDeleteCommentUrl = (id: string,) => {
+
+
+
+
+  return `/api/comments/${id}`
+}
+
+/**
+ * @summary 自分のコメントを消す
+ */
+export const deleteComment = async (id: string, options?: RequestInit): Promise<deleteCommentResponse> => {
+
+  const res = await fetch(getDeleteCommentUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteCommentResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as deleteCommentResponse
+}
+
+
+
+
+
+export const getDeleteCommentMutationKey = () => ['deleteComment'] as const;
+
+export const getDeleteCommentMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,DeleteCommentMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,DeleteCommentMutationVariables, TContext> => {
+
+const mutationKey = getDeleteCommentMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteComment>>, DeleteCommentMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteComment(id,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCommentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteComment>>>
+
+    export type DeleteCommentMutationError = ErrorResponse
+    export type DeleteCommentMutationVariables = {id: string}
+
+    /**
+ * @summary 自分のコメントを消す
+ */
+export const useDeleteComment = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,DeleteCommentMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteComment>>,
+        TError,
+        DeleteCommentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteCommentMutationOptions(options), queryClient);
+    }

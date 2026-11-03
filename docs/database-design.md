@@ -277,7 +277,7 @@ erDiagram
 | group_members | UNIQUE `(user_id)`・`(group_id)` | 1人1グループ・グループのメンバー一覧 |
 | invitations | UNIQUE `(token_hash)`・`(group_id)` | 招待リンクの検索 |
 | reactions | UNIQUE `(record_id, user_id, stamp_key)` | 二重付与の防止・記録ごとの一覧 |
-| comments | `(record_id, created_at)` | 記録ごとのコメント一覧 |
+| comments | `(record_id, created_at)` | 記録ごとのコメント一覧・足跡のコメント数 |
 | exercises | `(created_by)` | 自分が追加した種目の一覧 |
 | exercises | UNIQUE `(created_by, lower(name))` | 自分が追加した種目の同名の防止（大文字小文字は区別しない）。ゴースト対戦の前回値が割れないようにするため |
 | exercises | UNIQUE `(lower(name))` WHERE `created_by IS NULL` | 一覧の種目の同名の防止。**一覧の種目と同じ名前を自分で追加することは、API 側で確かめて 409 にする**（索引だけでは別の行どうしを比べられない） |
@@ -296,7 +296,7 @@ Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次�
 | 2 | groups・group_members・invitations |
 | 3 | body_part・exercises（`0002_exercises.sql`）と、一覧の種目30件・お試しの前回値の投入（`0003_seed_exercises.sql`。固定の ID `00000000-0000-4000-8000-0000000000NN`（NN は一覧の順の 01〜30）。種目を直すときは、この行を書き換えず新しいマイグレーションを足す） |
 | 4 | record_kind・records（`0004_records.sql`。2026-11-01）・workout_sets（`0005_workout_sets.sql`。2026-11-02）・run_details（次の PR 以降。別のマイグレーションに分ける） |
-| 5 | reactions・comments |
+| 5 | reactions・comments（`0007_reactions_comments.sql`。2026-11-03）。`user_id` は `users.id` を参照するだけで ON DELETE CASCADE は付けない（`records.user_id` と同じ。退会は作らない）。記録を消すと `record_id` の CASCADE で一緒に消える |
 | 6 | videos |
 
 テストでは、マイグレーションを空の DB に最初から流して通ること、2回流しても壊れないことを確かめる。

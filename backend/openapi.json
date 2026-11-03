@@ -831,6 +831,306 @@
           "records"
         ]
       }
+    },
+    "/api/feed": {
+      "get": {
+        "operationId": "getFeed",
+        "parameters": [
+          {
+            "name": "weekStart",
+            "required": true,
+            "in": "query",
+            "description": "日本時間の日付（YYYY-MM-DD）。この日を含む週（月曜〜日曜）を返す",
+            "schema": {
+              "example": "2026-10-26",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "前の応答の nextCursor をそのまま渡す（続きを読む）",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "weekStart が実在する YYYY-MM-DD でない・無い、cursor が壊れている（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/api/records/{id}/reactions": {
+      "post": {
+        "operationId": "addReaction",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReactionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "すでに付いている（同じ id の再送、または同じスタンプの二重付与）。付いているスタンプを返す",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReactionResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "新しく付けた",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReactionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "id が UUID でない・stampKey が一覧にない（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）、他の人のスタンプと同じ id（REACTION_NOT_FOUND）。存在を教えない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "記録の種類に合わないスタンプ（休みに通常のスタンプ・筋トレ／ランに休み用のスタンプ。RECORD_KIND_MISMATCH）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録にスタンプを付ける。冪等（同じ人が同じスタンプを2回付けても1件のまま）",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/api/records/{id}/reactions/{reactionId}": {
+      "delete": {
+        "operationId": "deleteReaction",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reactionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "外した"
+          },
+          "403": {
+            "description": "他の人のスタンプ（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）、その記録にそのスタンプが無い・もう外した（REACTION_NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分のスタンプを外す",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/api/records/{id}/comments": {
+      "post": {
+        "operationId": "addComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "すでにある（同じ id の再送）。1回目の内容を返す",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "新しく付けた",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "id が UUID でない・body が空／空白だけ／51字以上（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）、他の人のコメントと同じ id（COMMENT_NOT_FOUND）。存在を教えない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録にコメント（1〜50字）を付ける。冪等",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/api/comments/{id}": {
+      "delete": {
+        "operationId": "deleteComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "消した"
+          },
+          "403": {
+            "description": "他の人のコメント（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "コメントが無い・もう消した・別のグループの人の記録のコメント（COMMENT_NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分のコメントを消す",
+        "tags": [
+          "feed"
+        ]
+      }
     }
   },
   "info": {
@@ -1590,6 +1890,288 @@
         "required": [
           "weekStart",
           "days"
+        ]
+      },
+      "FeedStamp": {
+        "type": "object",
+        "properties": {
+          "stampKey": {
+            "type": "string",
+            "enum": [
+              "nice",
+              "fire",
+              "clap",
+              "smile",
+              "rest_slow",
+              "rest_again"
+            ]
+          },
+          "count": {
+            "type": "number",
+            "example": 2,
+            "description": "このスタンプを付けた人の数"
+          },
+          "mine": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "自分が付けているときは、そのスタンプの id（外すときに DELETE /records/{id}/reactions/{reactionId} へ渡す）。付けていなければ null"
+          }
+        },
+        "required": [
+          "stampKey",
+          "count",
+          "mine"
+        ]
+      },
+      "FeedItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "workout",
+              "run",
+              "rest"
+            ]
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "運動した時刻（UTC）"
+          },
+          "localDate": {
+            "type": "string",
+            "example": "2026-11-02",
+            "description": "日本時間の日付（YYYY-MM-DD）"
+          },
+          "author": {
+            "description": "書いた人（自分の記録も入る）",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberResponse"
+              }
+            ]
+          },
+          "exerciseNames": {
+            "example": [
+              "ベンチプレス",
+              "スクワット"
+            ],
+            "description": "筋トレの種目名（重複なし・最初にセットを足した順）。筋トレ以外は空の配列。セットの中身は記録の詳細で見る",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "run": {
+            "description": "ランの記録だけ。距離と時間",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunDetail"
+              }
+            ]
+          },
+          "stamps": {
+            "description": "付いているスタンプ（付いたものだけ。スタンプの一覧の順）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedStamp"
+            }
+          },
+          "commentCount": {
+            "type": "number",
+            "example": 2,
+            "description": "コメントの数"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "recordedAt",
+          "localDate",
+          "author",
+          "exerciseNames",
+          "stamps",
+          "commentCount"
+        ]
+      },
+      "FeedTotals": {
+        "type": "object",
+        "properties": {
+          "recordedUserCount": {
+            "type": "number",
+            "example": 3,
+            "description": "その週に筋トレかランを記録した人の数（休みだけの人は数えない）"
+          },
+          "totalVolumeKg": {
+            "type": "number",
+            "example": 12400,
+            "description": "筋トレの総重量（kg。重量×回数の合計）"
+          },
+          "totalDistanceM": {
+            "type": "number",
+            "example": 18000,
+            "description": "ランの総距離（m）"
+          }
+        },
+        "required": [
+          "recordedUserCount",
+          "totalVolumeKg",
+          "totalDistanceM"
+        ]
+      },
+      "FeedResponse": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "example": "2026-10-26",
+            "description": "その週の月曜の日付（指定した日を含む週）"
+          },
+          "items": {
+            "description": "新しい順（運動した時刻の降順。同じ時刻は id の降順）。1回に 20 件。自分の記録も含む。グループに入っていなければ空",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedItem"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "続きがあるときの印。次の呼び出しの cursor にそのまま渡す。最後のページは null"
+          },
+          "totals": {
+            "description": "その週のグループ合計（ページに関係なく週全体）。順位・連続日数は持たない。グループに入っていなければすべて 0",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeedTotals"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weekStart",
+          "items",
+          "nextCursor",
+          "totals"
+        ]
+      },
+      "CreateReactionRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "端末で作る ID。同じ ID を送り直しても、スタンプは1件のまま（冪等）"
+          },
+          "stampKey": {
+            "type": "string",
+            "enum": [
+              "nice",
+              "fire",
+              "clap",
+              "smile",
+              "rest_slow",
+              "rest_again"
+            ],
+            "description": "筋トレ・ランには nice/fire/clap/smile、休みには rest_slow/rest_again"
+          }
+        },
+        "required": [
+          "id",
+          "stampKey"
+        ]
+      },
+      "ReactionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "スタンプの id。すでに同じスタンプを付けていたときは、そのときの id"
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stampKey": {
+            "type": "string",
+            "enum": [
+              "nice",
+              "fire",
+              "clap",
+              "smile",
+              "rest_slow",
+              "rest_again"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "recordId",
+          "stampKey"
+        ]
+      },
+      "CreateCommentRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "端末で作る ID。同じ ID を送り直しても、コメントは1件のまま（冪等）"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "ナイス！",
+            "description": "本文。1〜50 字（Unicode のコードポイント数。絵文字1つも1字）。空白だけは不可"
+          }
+        },
+        "required": [
+          "id",
+          "body"
+        ]
+      },
+      "CommentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string",
+            "example": "ナイス！"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "author": {
+            "description": "書いた人",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "recordId",
+          "body",
+          "createdAt",
+          "author"
         ]
       }
     }
