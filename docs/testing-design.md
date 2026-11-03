@@ -368,6 +368,7 @@ design.md の 6 章のとおり、記録を取るクエリは1か所の共通関
 | `GET /records/{id}` | 200 | 200 | **404** | 404 | 401 |
 | `GET /feed` | 自分の分を含む | 仲間の分が出る | **別グループの記録が1件も出ない** | 空 | 401 |
 | `GET /videos/{id}/url` | 200 | 期限内は 200 | **404** | 404 | 401 |
+| `GET /records/{id}/comments`・`GET /records/{id}/reactions` | 200 | 200 | **404** | 404 | 401 |
 | `POST /records/{id}/comments` | 201 | 201 | **404** | 404 | 401 |
 | `POST /records/{id}/reactions` | 201 | 201 | **404** | 404 | 401 |
 | `GET /groups/current` | 自分のグループ | 同じ | 自分のグループだけ | 404 | 401 |

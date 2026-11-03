@@ -1,12 +1,12 @@
 import { ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
 import { comments, reactions, records, users } from '../db/schema.js';
 import { findVisibleRecord, visibleToMe } from '../records/record-access.js';
 import { parseCommentInput, parseReactionInput } from './feed-input.js';
-import type { CommentResponse, ReactionResponse } from './feed.response.js';
-import { stampFitsKind } from './stamps.js';
+import type { CommentListResponse, CommentResponse, ReactionListResponse, ReactionResponse } from './feed.response.js';
+import { stampFitsKind, summarizeStamps } from './stamps.js';
 
 // スタンプとコメント（F-10。docs/design.md 3章）。
 // どの操作も、先に「その記録を見られるか」を record-access.ts の共通の関数で確かめる。
@@ -125,6 +125,38 @@ export class SocialService {
       .returning({ id: comments.id });
     if (deleted.length === 0) throw commentNotFound();
     this.logger.log(`コメントを消した: ${deleted[0].id}`);
+  }
+
+  // 記録のコメント一覧（古い順）。まず記録を見られるか（404。無い・別のグループの人の・グループに入っていない人から見た他人のものは同じ 404）
+  async listComments(userId: string, recordId: string): Promise<CommentListResponse> {
+    const record = await findVisibleRecord(this.db, userId, recordId);
+    if (!record) throw recordNotFound();
+    const rows = await this.db
+      .select({ id: comments.id, recordId: comments.recordId, body: comments.body, createdAt: comments.createdAt, authorId: users.id, authorName: users.name, authorAvatar: users.avatar })
+      .from(comments)
+      .innerJoin(users, eq(users.id, comments.userId))
+      .where(eq(comments.recordId, record.id))
+      .orderBy(asc(comments.createdAt), asc(comments.id));
+    return {
+      items: rows.map((r) => ({
+        id: r.id,
+        recordId: r.recordId,
+        body: r.body,
+        createdAt: r.createdAt.toISOString(),
+        author: { id: r.authorId, name: r.authorName, avatar: r.authorAvatar } as CommentResponse['author'],
+      })),
+    };
+  }
+
+  // 記録のスタンプの集計（足跡の stamps と同じ形。自分のスタンプの id を mine に入れる）
+  async listReactions(userId: string, recordId: string): Promise<ReactionListResponse> {
+    const record = await findVisibleRecord(this.db, userId, recordId);
+    if (!record) throw recordNotFound();
+    const rows = await this.db
+      .select({ id: reactions.id, userId: reactions.userId, stampKey: reactions.stampKey })
+      .from(reactions)
+      .where(eq(reactions.recordId, record.id));
+    return { items: summarizeStamps(rows, userId) };
   }
 
   private async toComment(row: typeof comments.$inferSelect): Promise<CommentResponse> {
