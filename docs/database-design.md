@@ -213,7 +213,7 @@ erDiagram
 | record_id | uuid | PK・FK → records.id・ON DELETE CASCADE | `kind = 'run'` の記録だけ |
 | distance_m | integer | NOT NULL | 100〜200,000（0.1〜200km） |
 | duration_s | integer | NOT NULL | 60〜86,400 |
-| route | jsonb |  | GPX から作った間引き済みのルート（GeoJSON の LineString。上限 3,000 点）。手入力は NULL |
+| route | jsonb | CHECK（`type` が LineString・点の数が 2〜3,000） | GPX から作った間引き済みのルート（GeoJSON の LineString。点は [経度, 緯度]・小数6桁）。手入力は NULL。返すのは詳細だけ（一覧は重いので含めない） |
 | gpx_s3_key | text |  | 元の GPX を S3 に置いたときのキー（置かなければ NULL） |
 
 ### videos（動画）
@@ -295,7 +295,7 @@ Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次�
 | 1 | better-auth の表（users・sessions・accounts・verifications）。`users` に `avatar` を足す |
 | 2 | groups・group_members・invitations |
 | 3 | body_part・exercises（`0002_exercises.sql`）と、一覧の種目30件・お試しの前回値の投入（`0003_seed_exercises.sql`。固定の ID `00000000-0000-4000-8000-0000000000NN`（NN は一覧の順の 01〜30）。種目を直すときは、この行を書き換えず新しいマイグレーションを足す） |
-| 4 | record_kind・records（`0004_records.sql`。2026-11-01）・workout_sets（`0005_workout_sets.sql`。2026-11-02）・run_details（次の PR 以降。別のマイグレーションに分ける） |
+| 4 | record_kind・records（`0004_records.sql`。2026-11-01）・workout_sets（`0005_workout_sets.sql`。2026-11-02）・run_details（`0006_run_details.sql`）・route（`0008_run_details_route.sql`。2026-11-04） |
 | 5 | reactions・comments（`0007_reactions_comments.sql`。2026-11-03）。`user_id` は `users.id` を参照するだけで ON DELETE CASCADE は付けない（`records.user_id` と同じ。退会は作らない）。記録を消すと `record_id` の CASCADE で一緒に消える |
 | 6 | videos |
 

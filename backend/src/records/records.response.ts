@@ -2,7 +2,23 @@ import { ApiProperty } from '@nestjs/swagger';
 import type { GhostResult } from '../common/ghost.js';
 import type { CellStatus } from '../common/week.js';
 import { RECORD_KINDS, type RecordKind } from '../db/schema.js';
-import { CREATABLE_KINDS, DISTANCE_M_MAX, DISTANCE_M_MIN, DURATION_S_MAX, DURATION_S_MIN, type CreatableKind } from './record-input.js';
+import { CREATABLE_KINDS, DISTANCE_M_MAX, DISTANCE_M_MIN, DURATION_S_MAX, DURATION_S_MIN, ROUTE_POINTS_MAX, ROUTE_POINTS_MIN, type CreatableKind } from './record-input.js';
+
+// GPX のルート（GeoJSON の LineString）。点は [経度, 緯度]
+export class RunRoute {
+  @ApiProperty({ enum: ['LineString'] })
+  type!: 'LineString';
+
+  @ApiProperty({
+    type: 'array',
+    items: { type: 'array', items: { type: 'number' }, minItems: 2, maxItems: 2 },
+    minItems: ROUTE_POINTS_MIN,
+    maxItems: ROUTE_POINTS_MAX,
+    example: [[139.7671, 35.6812], [139.7745, 35.6895]],
+    description: '[経度, 緯度] の並び。2〜3,000 点（GPX は取り込み時に間引く）',
+  })
+  coordinates!: [number, number][];
+}
 
 export class RunDetail {
   @ApiProperty({ minimum: DISTANCE_M_MIN, maximum: DISTANCE_M_MAX, example: 5000, description: '距離（m）。100〜200,000（0.1〜200km）の整数' })
@@ -10,6 +26,9 @@ export class RunDetail {
 
   @ApiProperty({ minimum: DURATION_S_MIN, maximum: DURATION_S_MAX, example: 1800, description: '時間（秒）。60〜86,400（1分〜24時間）の整数。ペースは画面が計算する' })
   durationS!: number;
+
+  @ApiProperty({ type: RunRoute, required: false, description: 'GPX を取り込んだランだけ。作成時に送れる。返すのは詳細（GET /records/{id}）だけで、作成の応答と一覧には含めない' })
+  route?: RunRoute;
 }
 
 export class CreateRecordRequest {

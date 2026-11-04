@@ -1616,6 +1616,45 @@
           "bodyPart"
         ]
       },
+      "RunRoute": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "LineString"
+            ]
+          },
+          "coordinates": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "minItems": 2,
+            "maxItems": 3000,
+            "example": [
+              [
+                139.7671,
+                35.6812
+              ],
+              [
+                139.7745,
+                35.6895
+              ]
+            ],
+            "description": "[経度, 緯度] の並び。2〜3,000 点（GPX は取り込み時に間引く）"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ]
+      },
       "RunDetail": {
         "type": "object",
         "properties": {
@@ -1632,6 +1671,14 @@
             "maximum": 86400,
             "example": 1800,
             "description": "時間（秒）。60〜86,400（1分〜24時間）の整数。ペースは画面が計算する"
+          },
+          "route": {
+            "description": "GPX を取り込んだランだけ。作成時に送れる。返すのは詳細（GET /records/{id}）だけで、作成の応答と一覧には含めない",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunRoute"
+              }
+            ]
           }
         },
         "required": [

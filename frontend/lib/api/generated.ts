@@ -173,6 +173,25 @@ export interface CreateExerciseRequest {
   bodyPart: BodyPart;
 }
 
+export type RunRouteType = typeof RunRouteType[keyof typeof RunRouteType];
+
+
+export const RunRouteType = {
+  LineString: 'LineString',
+} as const;
+
+export interface RunRoute {
+  type: RunRouteType;
+  /**
+     * [経度, 緯度] の並び。2〜3,000 点（GPX は取り込み時に間引く）
+     * @minItems 2
+     * @maxItems 3000
+     * @items.minItems 2
+     * @items.maxItems 2
+     */
+  coordinates: number[][];
+}
+
 export interface RunDetail {
   /**
      * 距離（m）。100〜200,000（0.1〜200km）の整数
@@ -186,6 +205,8 @@ export interface RunDetail {
      * @maximum 86400
      */
   durationS: number;
+  /** GPX を取り込んだランだけ。作成時に送れる。返すのは詳細（GET /records/{id}）だけで、作成の応答と一覧には含めない */
+  route?: RunRoute;
 }
 
 /**

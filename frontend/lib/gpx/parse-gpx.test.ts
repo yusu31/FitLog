@@ -15,6 +15,17 @@ const trk = (...segs: string[]): string => `<trk>${segs.map((s) => `<trkseg>${s}
 const twoPoints = (m: number, t0?: string, t1?: string): string => wrap(trk(pt(0, t0) + pt(latFor(m), t1)));
 const parse = (text: string) => parseGpx(text, new TextEncoder().encode(text).length);
 
+describe('parseGpx: 保存するルートの座標', () => {
+  it('座標は小数6桁（約0.1m）に丸める。3,000点を送っても本文が大きくなりすぎないようにするため（距離は丸める前の座標で出す）', () => {
+    const text = wrap(trk(`<trkpt lat="35.123456789012" lon="139.987654321098"></trkpt><trkpt lat="35.133456789012" lon="139.987654321098"></trkpt>`));
+    const r = parse(text);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.route.coordinates).toEqual([[139.987654, 35.123457], [139.987654, 35.133457]]);
+    expect(r.value.distanceM).toBe(1112);
+  });
+});
+
 describe('parseGpx: 正常系', () => {
   it('距離・所要秒・開始日時・経路を返す', () => {
     const r = parse(twoPoints(5000, '2025-05-01T06:00:00Z', '2025-05-01T06:30:00Z'));
@@ -84,7 +95,7 @@ describe('parseGpx: 正常系', () => {
     if (!r.ok) return;
     expect(r.value.route.coordinates).toHaveLength(GPX_MAX_POINTS);
     expect(r.value.route.coordinates[0]).toEqual([0, 0]);
-    expect(r.value.route.coordinates[GPX_MAX_POINTS - 1][1]).toBeCloseTo(latFor(total), 9);
+    expect(r.value.route.coordinates[GPX_MAX_POINTS - 1][1]).toBeCloseTo(latFor(total), 5); // 保存する座標は小数6桁に丸める
     expect(r.value.distanceM).toBe(10_000);
   });
 });

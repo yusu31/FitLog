@@ -14,9 +14,27 @@ export const DISTANCE_M_MAX = 200_000;
 export const DURATION_S_MIN = 60;
 export const DURATION_S_MAX = 86_400;
 
-export type RunInput = { distanceM: number; durationS: number };
+// GPX のルート（GeoJSON の LineString。点は [経度, 緯度]）。点の数は 2〜3,000（docs/database-design.md run_details.route）
+export const ROUTE_POINTS_MIN = 2;
+export const ROUTE_POINTS_MAX = 3000;
+export type RouteInput = { type: 'LineString'; coordinates: [number, number][] };
+
+export type RunInput = { distanceM: number; durationS: number; route?: RouteInput };
 
 const isInt = (v: unknown, min: number, max: number): v is number => typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
+
+const isFiniteIn = (v: unknown, abs: number): v is number => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= abs;
+
+// route の検査。正しければ type と coordinates だけ取り出して返し（余計な項目は捨てる）、正しくなければ undefined
+function parseRoute(raw: unknown): RouteInput | undefined {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
+  const r = raw as Record<string, unknown>;
+  if (r.type !== 'LineString' || !Array.isArray(r.coordinates)) return undefined;
+  const c = r.coordinates as unknown[];
+  if (c.length < ROUTE_POINTS_MIN || c.length > ROUTE_POINTS_MAX) return undefined;
+  const ok = c.every((p) => Array.isArray(p) && p.length === 2 && isFiniteIn(p[0], 180) && isFiniteIn(p[1], 90));
+  return ok ? { type: 'LineString', coordinates: c as [number, number][] } : undefined;
+}
 
 // ISO 8601 の日時（タイムゾーンつき）。日付だけ・空白区切り・数値は受けない
 const ISO = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\.\d{1,3})?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
@@ -59,7 +77,10 @@ export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: st
     } else {
       if (!isInt(r.distanceM, DISTANCE_M_MIN, DISTANCE_M_MAX)) details.push(`run.distanceM: ${DISTANCE_M_MIN}〜${DISTANCE_M_MAX} の整数（m）で指定してください`);
       if (!isInt(r.durationS, DURATION_S_MIN, DURATION_S_MAX)) details.push(`run.durationS: ${DURATION_S_MIN}〜${DURATION_S_MAX} の整数（秒）で指定してください`);
-      if (details.length === 0) run = { distanceM: r.distanceM as number, durationS: r.durationS as number };
+      // route は GPX を取り込んだときだけ付く。付いていて正しくなければ 400
+      const route = r.route === undefined ? undefined : parseRoute(r.route);
+      if (r.route !== undefined && !route) details.push(`run.route: GeoJSON の LineString（点は [経度, 緯度] で ${ROUTE_POINTS_MIN}〜${ROUTE_POINTS_MAX} 点）で指定してください`);
+      if (details.length === 0) run = { distanceM: r.distanceM as number, durationS: r.durationS as number, ...(route ? { route } : {}) };
     }
   } else if (kind && body.run !== undefined) {
     details.push('run: kind が run のときだけ指定できます');

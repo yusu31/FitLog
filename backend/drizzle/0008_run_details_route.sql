@@ -1,0 +1,2 @@
+ALTER TABLE "run_details" ADD COLUMN "route" jsonb;--> statement-breakpoint
+ALTER TABLE "run_details" ADD CONSTRAINT "run_details_route_ck" CHECK ("run_details"."route" is null or ("run_details"."route"->>'type' = 'LineString' and jsonb_array_length("run_details"."route"->'coordinates') between 2 and 3000));

@@ -168,7 +168,7 @@ export const records = pgTable(
 
 // ── ランの詳細（docs/database-design.md run_details） ──────────────────────
 // kind = 'run' の記録に1行。距離は m・時間は秒の整数で持つ（ペースは画面が計算する。DB には持たない）。
-// route（GPX のルート）と gpx_s3_key は GPX の PR で足す
+// route は GPX を取り込んだランだけ（GeoJSON の LineString。点は [経度, 緯度]・2〜3,000 点）。gpx_s3_key は元の GPX を S3 に置くときに足す
 export const runDetails = pgTable(
   'run_details',
   {
@@ -177,10 +177,13 @@ export const runDetails = pgTable(
       .references(() => records.id, { onDelete: 'cascade' }),
     distanceM: integer('distance_m').notNull(),
     durationS: integer('duration_s').notNull(),
+    route: jsonb('route').$type<{ type: 'LineString'; coordinates: [number, number][] }>(),
   },
   (t) => [
     check('run_details_distance_ck', sql`${t.distanceM} between 100 and 200000`),
     check('run_details_duration_ck', sql`${t.durationS} between 60 and 86400`),
+    // API の検査をすり抜けても、LineString でない・点の数が範囲外のものは DB が止める
+    check('run_details_route_ck', sql`${t.route} is null or (${t.route}->>'type' = 'LineString' and jsonb_array_length(${t.route}->'coordinates') between 2 and 3000)`),
   ],
 );
 
