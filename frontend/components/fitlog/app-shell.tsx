@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
-import { authClient } from '@/lib/auth-client';
+import { useAppSession } from '@/lib/use-app-session';
 import { SyncBanner } from './sync-banner';
 import { TabBar } from './tab-bar';
 
@@ -12,7 +12,7 @@ import { TabBar } from './tab-bar';
 export function AppShell({ children, syncBanner = true }: { children: ReactNode; syncBanner?: boolean }) {
   const router = useRouter();
   const pathname = usePathname() ?? '/today';
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useAppSession();
   const signedOut = !isPending && !session;
 
   useEffect(() => {

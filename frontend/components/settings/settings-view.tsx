@@ -8,6 +8,8 @@ import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { authClient } from '@/lib/auth-client';
+import { clearCachedUser } from '@/lib/session-cache';
+import { useAppSession } from '@/lib/use-app-session';
 import { GROUP_MESSAGES } from '@/lib/messages';
 import { useRequireSession } from '@/lib/use-require-session';
 
@@ -17,7 +19,7 @@ import { useRequireSession } from '@/lib/use-require-session';
 export function SettingsView() {
   const router = useRouter();
   const { signedIn } = useRequireSession();
-  const { data: session } = authClient.useSession();
+  const { data: session } = useAppSession();
   const group = useGetCurrentGroup({ query: { enabled: signedIn } });
   const [error, setError] = useState<string | null>(null);
 
@@ -25,6 +27,7 @@ export function SettingsView() {
     setError(null);
     try {
       await authClient.signOut();
+      clearCachedUser();
       router.replace('/login');
     } catch {
       setError(GROUP_MESSAGES.network);

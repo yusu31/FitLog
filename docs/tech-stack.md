@@ -72,6 +72,8 @@
 2. 動かなければ、`@serwist/cli` で書き出し後のフォルダ（`out/`）から Service Worker を作る
 3. 半日で決まらなければ Service Worker を置かず、「タブを開いたままなら記録できる」を既知の制限として README に書く
 
+**スパイクの結果（2026-11-04）**: 1 が成功した（`@serwist/turbopack` は静的書き出しで `out/serwist/sw.js` を出し、画面の HTML 14 件＋ `_next/static` で 56 件・約 2.2MB を保存。電波なしで開き直せた）。方式は `@serwist/turbopack` に決定（却下した案と理由は判断ログ 02-4 F-30③）。守ること: ① 既定の保存対象は `.next/static` と `public` だけなので、HTML は `additionalPrecacheEntries` に手で並べ、漏れはテストで見張る ② `/serwist/sw.js` は既定で `/serwist/` 配下にしか効かないので、CloudFront の応答ヘッダーに `Service-Worker-Allowed: /` と sw.js の `Cache-Control: no-cache` を足す ③ **ログインの状態**: `useSession` は電波なしの開き直しで空になりログイン画面へ飛ばされるため、`lib/use-app-session.ts` が最後に確認できた人（id・名前だけ）を localStorage（`lib/session-cache.ts`）に控え、通信に失敗したときだけ使う。401 のときは控えを捨てる。本当の認可は API 側なので、控えが古くても権限は増えない
+
 ### どの方式でも守る決まり
 
 | 決まり | 内容 |

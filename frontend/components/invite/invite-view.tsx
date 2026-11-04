@@ -8,7 +8,7 @@ import { useState, type ReactNode } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { getGetCurrentGroupQueryKey, useAcceptInvitation, useGetInvitation } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
-import { authClient } from '@/lib/auth-client';
+import { useAppSession } from '@/lib/use-app-session';
 import { withNext } from '@/lib/next-path';
 
 // S-03 招待を受ける（docs/screen-design.md 1章）。グループ名と今の人数はログイン前でも見える。
@@ -67,7 +67,7 @@ export function InviteView() {
 function JoinActions({ token, encoded }: { token: string; encoded: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useAppSession();
   const accept = useAcceptInvitation();
   const [error, setError] = useState<string | null>(null);
   const next = `/invite?token=${encodeURIComponent(token)}`;
