@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { SwRegister } from "@/components/fitlog/sw-register";
 
 export const metadata: Metadata = {
   title: "FitLog",
@@ -13,7 +14,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ja" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        <SwRegister>
+          <Providers>{children}</Providers>
+        </SwRegister>
       </body>
     </html>
   );
