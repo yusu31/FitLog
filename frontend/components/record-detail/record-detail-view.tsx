@@ -4,6 +4,7 @@ import { ChevronLeft, Moon, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { RouteMap } from './route-map';
 import { SocialSection } from './social-section';
 import { ConfirmDialog } from '@/components/fitlog/confirm-dialog';
 import { FullScreen } from '@/components/fitlog/full-screen';
@@ -130,6 +131,7 @@ export function RecordDetailView() {
         )}
         {record.kind === 'workout' && <Workout record={record} mine={mine} />}
         {record.kind === 'run' && record.run && <Run distanceM={record.run.distanceM} durationS={record.run.durationS} />}
+        {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} />}
         {record.kind === 'rest' && (
           <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.restBody}</p>
         )}
