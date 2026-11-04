@@ -97,6 +97,57 @@ describe('parseRecordInput（記録の入力検査）', () => {
     it.each(['workout', 'rest'])('kind=%s に run を付けると 400（run は kind=run のときだけ）', (kind) => {
       expect(() => parse({ ...valid, kind, run })).toThrow(BadRequestException);
     });
+
+    // GPX のルート（F-14）。GeoJSON の LineString・点は [経度, 緯度]・2〜3,000 点
+    describe('route（GPX のルート）', () => {
+      const line = (n: number) => ({ type: 'LineString', coordinates: Array.from({ length: n }, (_v, i) => [139 + i * 0.0001, 35 + i * 0.0001]) });
+      const withRoute = (route: unknown) => parseRun({ route });
+
+      it('route が無ければ run にも付かない（手入力）', () => {
+        expect(parseRun().run).toEqual(run);
+      });
+
+      it('正しい LineString は通り、run.route に入る', () => {
+        const route = line(3);
+        expect(withRoute(route).run?.route).toEqual(route);
+      });
+
+      // 境界値: 点の数 1・2・3,000・3,001
+      it.each<[string, number, boolean]>([
+        ['点が1つ', 1, false],
+        ['点が2つ', 2, true],
+        ['点が3000', 3000, true],
+        ['点が3001', 3001, false],
+      ])('%s', (_name, n, ok) => {
+        if (ok) expect(withRoute(line(n)).run?.route?.coordinates).toHaveLength(n);
+        else expect(() => withRoute(line(n))).toThrow(BadRequestException);
+      });
+
+      it.each<[string, unknown]>([
+        ['null', null],
+        ['文字列', 'x'],
+        ['配列', []],
+        ['type が違う', { type: 'Point', coordinates: [[139, 35], [139.1, 35.1]] }],
+        ['coordinates が配列でない', { type: 'LineString', coordinates: 'x' }],
+        ['点が数の組でない', { type: 'LineString', coordinates: [[139, 35], ['a', 'b']] }],
+        ['点が3要素（標高つき）', { type: 'LineString', coordinates: [[139, 35, 10], [139.1, 35.1, 12]] }],
+        ['緯度が範囲外（90.1）', { type: 'LineString', coordinates: [[139, 35], [139, 90.1]] }],
+        ['経度が範囲外（-180.1）', { type: 'LineString', coordinates: [[139, 35], [-180.1, 35]] }],
+        ['NaN', { type: 'LineString', coordinates: [[139, 35], [NaN, 35]] }],
+      ])('不正な route（%s）は 400', (_name, route) => {
+        expect(() => withRoute(route)).toThrow(BadRequestException);
+      });
+
+      it('緯度 ±90・経度 ±180 ちょうどは通る', () => {
+        const route = { type: 'LineString', coordinates: [[-180, -90], [180, 90]] };
+        expect(withRoute(route).run?.route).toEqual(route);
+      });
+
+      it('余計な項目（properties など）は捨て、type と coordinates だけ残す', () => {
+        const route = { ...line(2), properties: { x: 1 } };
+        expect(withRoute(route).run?.route).toEqual(line(2));
+      });
+    });
   });
 
   describe('入力そのものの型', () => {

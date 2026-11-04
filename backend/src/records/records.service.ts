@@ -16,13 +16,14 @@ import { parseWeekDate } from './week-input.js';
 
 type Row = typeof records.$inferSelect;
 
-// ランの記録だけ run（距離と時間）を付ける。筋トレ・休みには付けない
+// ランの記録だけ run（距離と時間）を付ける。筋トレ・休みには付けない。
+// route（GPX のルート）は大きいので、作成・再送の応答と一覧には入れない（詳細 GET /records/{id} だけ。withDetails の withRoute）
 const toResponse = (row: Row, run?: RunInput): RecordResponse => ({
   id: row.id,
   kind: row.kind,
   recordedAt: row.recordedAt.toISOString(),
   localDate: row.localDate,
-  ...(run ? { run } : {}),
+  ...(run ? { run: { distanceM: run.distanceM, durationS: run.durationS } } : {}),
 });
 
 type SetRow = typeof workoutSets.$inferSelect;
@@ -49,7 +50,7 @@ export class RecordsService {
     // ランは、記録と詳細（距離・時間）を同じトランザクションで入れる（片方だけ残らないように）。記録が「何もしない」になったときは詳細も入れない
     const inserted = await this.db.transaction(async (tx) => {
       const [row] = await tx.insert(records).values({ id, userId, kind, recordedAt, localDate }).onConflictDoNothing().returning();
-      if (row && run) await tx.insert(runDetails).values({ recordId: row.id, distanceM: run.distanceM, durationS: run.durationS });
+      if (row && run) await tx.insert(runDetails).values({ recordId: row.id, distanceM: run.distanceM, durationS: run.durationS, route: run.route ?? null });
       return row;
     });
     if (inserted) {
@@ -129,7 +130,7 @@ export class RecordsService {
         ),
       );
     if (!row) throw recordNotFound();
-    const [detail] = await this.withDetails([row]);
+    const [detail] = await this.withDetails([row], true);
     return detail;
   }
 
@@ -167,15 +168,15 @@ export class RecordsService {
   }
 
   // 記録の行に、ラン（距離と時間）と筋トレのセット（種目ごと）を付ける。ページ分の id をまとめて引く（記録ごとには引かない）
-  private async withDetails(rows: Row[]): Promise<RecordDetailResponse[]> {
+  private async withDetails(rows: Row[], withRoute = false): Promise<RecordDetailResponse[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id);
 
     const runs = await this.db
-      .select({ recordId: runDetails.recordId, distanceM: runDetails.distanceM, durationS: runDetails.durationS })
+      .select({ recordId: runDetails.recordId, distanceM: runDetails.distanceM, durationS: runDetails.durationS, ...(withRoute ? { route: runDetails.route } : {}) })
       .from(runDetails)
       .where(inArray(runDetails.recordId, ids));
-    const runById = new Map(runs.map((r) => [r.recordId, { distanceM: r.distanceM, durationS: r.durationS }]));
+    const runById = new Map(runs.map((r) => [r.recordId, { distanceM: r.distanceM, durationS: r.durationS, ...('route' in r && r.route ? { route: r.route } : {}) }]));
 
     const setRows = await this.db
       .select({
@@ -204,7 +205,10 @@ export class RecordsService {
     }
 
     return rows.map((row) => {
-      const base = toResponse(row, runById.get(row.id));
+      const run = runById.get(row.id);
+      const base = toResponse(row, run);
+      // 詳細だけ route を足す（toResponse は距離と時間だけ）
+      if (base.run && run?.route) base.run.route = run.route;
       if (row.kind !== 'workout') return base;
       const exercisesOfRecord = [...(exercisesByRecord.get(row.id)?.values() ?? [])].map((e) => ({
         exerciseId: e.exerciseId,

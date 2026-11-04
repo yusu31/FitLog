@@ -46,6 +46,10 @@ export function thinCoordinates(coords: Position[], max: number = GPX_MAX_POINTS
   return out;
 }
 
+// 保存する座標は小数6桁（約0.1m）に丸める。GPX は15桁近い小数を持つことがあり、3,000点では本文が API の上限に近づくため。距離は丸める前の座標で出す
+const roundCoord = (n: number): number => Math.round(n * 1e6) / 1e6;
+const roundPosition = (p: Position): Position => [roundCoord(p[0]), roundCoord(p[1])];
+
 const fail = (error: GpxErrorCode): GpxResult => ({ ok: false, error });
 
 const isValidPosition = (p: unknown): p is Position =>
@@ -107,6 +111,6 @@ export function parseGpx(text: string, byteLength: number): GpxResult {
 
   return {
     ok: true,
-    value: { distanceM, durationS, startedAt, route: { type: 'LineString', coordinates: thinCoordinates(coords) } },
+    value: { distanceM, durationS, startedAt, route: { type: 'LineString', coordinates: thinCoordinates(coords).map(roundPosition) } },
   };
 }

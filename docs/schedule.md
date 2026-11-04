@@ -85,7 +85,7 @@
 | 02-1 ③（認証）の前 | 全体のログイン必須ガードに `/health` の例外を足し、`/health/db` はログイン必須にする（design.md 2章）。CI とローカルに PgBouncer（トランザクションモード）のコンテナを足し、結合テストをそこ経由にする（本番は `-pooler` 経由で、SET・セッション単位のロック・SQL の PREPARE が使えない）。Lambda のタイムアウトは既定の3秒では足りない（`connectionTimeoutMillis` 10秒と Neon の起床待ち）ので、15〜30秒に（推測。Terraform で値を書く）。Parameter Store の読み込みは `NestFactory.create` より前に終える（`createPool` が起動時に環境変数を読む）。Neon の接続文字列は `sslmode=verify-full`（pg 8.23 は require だと警告）。ログを構造化（JSON）にする（`ConsoleLogger({ json: true })` で足りるかを比較） | tech-stack.md・infrastructure.md |
 | 02-2 のグループ参加の前 | 人数の上限は `SELECT ... FOR UPDATE` で `groups` の行をロックしてから数える（database-design.md）。T-GRP-04 の「わざと壊す」は**ロックを外す**。better-auth の drizzle アダプターが中で `db` と `tx` をどう使うか読む（`max: 1` で `db` を使うと10秒固まる） | database-design.md・testing-design.md |
 | 02-4 の動画の前 | `videos` の行を作る時期（`pending`/`ready`）と、アップロードに失敗したときのやり直し。署名付き POST のサイズ上限が実際に効くか実機で確かめる。記録を消したときの S3 の実体。**公開（02-3）より前なので、S3 のバケットだけ先に作るか、動画を公開の後に回すかを本人と決める**（バケットを作る apply も直前に本人へ確認） | design.md・database-design.md |
-| 02-4 の GPX の前 | GPX に時刻が無いとき・昔の走りを取り込んだときの日付・距離が範囲外のとき | features.md |
+| 02-4 の GPX の前（**2026-11-04 に決定**。features.md F-14） | GPX に時刻が無いとき・昔の走りを取り込んだときの日付・距離が範囲外のとき | features.md |
 | 02-4 の前 | F-12 ヒートマップの3段階の境目（testing-design は仮の境目で書いた） | features.md |
 
 外部の LLM によるレビュー（second-opinion）は、CLI が入っていないため今回は行っていない。入れるかは本人の判断。

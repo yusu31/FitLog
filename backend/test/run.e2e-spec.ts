@@ -145,6 +145,78 @@ describe('ランの記録（結合: 本物の PostgreSQL・better-auth）', () =
     });
   });
 
+  // GPX のルート（F-14）。作成時に run.route を送る。詳細（GET /records/{id}）だけが返し、作成の応答と一覧には含めない
+  describe('ルート（GPX）', () => {
+    const routeOf = (n: number) => ({
+      type: 'LineString',
+      coordinates: Array.from({ length: n }, (_v, i) => [Number((139.7 + i * 0.00001).toFixed(6)), Number((35.6 + i * 0.00001).toFixed(6))]),
+    });
+    const withRoute = (route: unknown, id = randomUUID()) => ({ id, kind: 'run', recordedAt: AT, run: { distanceM: 5000, durationS: 1800, route } });
+    const get = (cookie: string, path: string) => request(app.getHttpServer()).get(`/api${path}`).set('Cookie', cookie);
+    const routeRow = (): Promise<unknown> =>
+      withPool(url!, async (pool) => (await pool.query('SELECT route FROM run_details')).rows[0]?.route);
+
+    it('route つきで作ると 201。作成の応答には route が付かず、DB に保存される', async () => {
+      const cookie = await signUpAs('たろう');
+      const route = routeOf(3);
+      const res = await post(cookie, withRoute(route)).expect(201);
+      expect(res.body.run).toEqual({ distanceM: 5000, durationS: 1800 });
+      expect(await routeRow()).toEqual(route);
+    });
+
+    it('詳細（GET /records/{id}）は route を返す。一覧（GET /records）は返さない', async () => {
+      const cookie = await signUpAs('たろう');
+      const body = withRoute(routeOf(3));
+      await post(cookie, body).expect(201);
+      const detail = await get(cookie, `/records/${body.id}`).expect(200);
+      expect(detail.body.run).toEqual({ distanceM: 5000, durationS: 1800, route: body.run.route });
+      const list = await get(cookie, '/records').expect(200);
+      expect(list.body.items[0].run).toEqual({ distanceM: 5000, durationS: 1800 });
+    });
+
+    it('手入力のラン（route なし）の詳細には route が付かない', async () => {
+      const cookie = await signUpAs('たろう');
+      const body = run();
+      await post(cookie, body).expect(201);
+      const detail = await get(cookie, `/records/${body.id}`).expect(200);
+      expect(detail.body.run).toEqual({ distanceM: 5000, durationS: 1800 });
+    });
+
+    // 境界値: 点の数 3,000 は通る（本文は約 75KB。サーバーの本文の上限に収まること）・3,001 は 400 で何も残らない
+    it('点が 3000 は 201。3001 は 400 で記録も詳細も残らない', async () => {
+      const cookie = await signUpAs('たろう');
+      await post(cookie, withRoute(routeOf(3000))).expect(201);
+      const before = await recordCount();
+      const res = await post(cookie, withRoute(routeOf(3001))).expect(400);
+      expect(res.body).toMatchObject({ code: 'VALIDATION_ERROR' });
+      expect(await recordCount()).toBe(before);
+    });
+
+    it('route が LineString でない（Point）は 400', async () => {
+      const cookie = await signUpAs('たろう');
+      await post(cookie, withRoute({ type: 'Point', coordinates: [139, 35] })).expect(400);
+      expect(await recordCount()).toBe(0);
+    });
+
+    it('同じ id で route を変えて再送しても、1回目の route が残る', async () => {
+      const cookie = await signUpAs('たろう');
+      const first = withRoute(routeOf(3));
+      await post(cookie, first).expect(201);
+      await post(cookie, withRoute(routeOf(5), first.id)).expect(200);
+      expect(await routeRow()).toEqual(first.run.route);
+    });
+
+    it('DB の CHECK 制約: アプリを通らず、LineString でない・点が1つの route を直接入れても拒否される', async () => {
+      const cookie = await signUpAs('たろう');
+      const body = run();
+      await post(cookie, body).expect(201);
+      await withPool(url!, async (pool) => {
+        await expect(pool.query(`UPDATE run_details SET route = '{"type":"Point","coordinates":[1,2]}' WHERE record_id = $1`, [body.id])).rejects.toMatchObject({ code: '23514' });
+        await expect(pool.query(`UPDATE run_details SET route = '{"type":"LineString","coordinates":[[1,2]]}' WHERE record_id = $1`, [body.id])).rejects.toMatchObject({ code: '23514' });
+      });
+    });
+  });
+
   it('記録を消すと詳細も消える（ON DELETE CASCADE）', async () => {
     const cookie = await signUpAs('たろう');
     const body = run();

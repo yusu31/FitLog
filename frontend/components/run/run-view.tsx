@@ -1,14 +1,15 @@
 'use client';
 
-import { Check, X } from 'lucide-react';
+import { Check, FileUp, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useId, useState } from 'react';
+import { useId, useState, type ChangeEvent } from 'react';
 import { cn } from 'cn';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
-import { RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
+import { parseGpx, type RouteLineString } from '@/lib/gpx/parse-gpx';
+import { GPX_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
 import {
   formatPace,
@@ -23,6 +24,12 @@ import {
 import { useOnline } from '@/lib/use-browser-state';
 import { useRequireSession } from '@/lib/use-require-session';
 
+// 端末の時計は少しずれるので、未来は5分先まで受け付ける（API と同じ。backend の FUTURE_LIMIT_MS）
+const FUTURE_LIMIT_MS = 5 * 60 * 1000;
+
+// 取り込んだ GPX。保存のときに route と開始時刻を使う
+type Gpx = { name: string; route: RouteLineString; startedAt: string | null };
+
 type Saved = { distanceM: number; durationS: number };
 
 // 入力（文字）を、API に送る値（m・秒の整数）にする。読めない欄があれば NaN が入り、validateRun が弾く
@@ -35,7 +42,7 @@ function toRun(kmText: string, minText: string, secText: string) {
 
 // S-13 記録（ラン）（docs/screen-design.md 1章・features.md 2.4 UC-09）。
 // 距離（km）と時間（分・秒）を入れて保存する。ペース（分/km）は画面が計算して見せる（DB には持たない）。
-// GPX の取り込み・地図は、このあとの PR で足す（範囲外）
+// GPX（F-14）は、選ぶと距離・時間を入力欄に入れ、ルートと開始時刻を保存に使う。電波があるときだけ（F-30）。地図は別の PR（F-15）
 export function RunView() {
   const { signedIn } = useRequireSession();
   const router = useRouter();
@@ -47,6 +54,8 @@ export function RunView() {
   const [secText, setSecText] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gpx, setGpx] = useState<Gpx | null>(null);
+  const [gpxMessage, setGpxMessage] = useState<{ text: string; kind: 'error' | 'info' } | null>(null);
   const [saved, setSaved] = useState<Saved | null>(null);
   // 送っている最中の値。送れずに再送待ちになったら（failureCount>0）、結果の画面へ進む（送信待ちの帯が知らせる）
   const [inFlight, setInFlight] = useState<Saved | null>(null);
@@ -60,14 +69,52 @@ export function RunView() {
   const durationProblem = (minText.trim() !== '' || secText.trim() !== '') && validateRun(100, durationS) === 'duration';
   const pace = problem === null ? paceSecPerKm(distanceM, durationS) : null;
 
+  // 距離を手で直したら、GPX のルートとはずれるので外す
+  function onKmChange(next: string) {
+    setKmText(next);
+    if (gpx) clearGpx();
+  }
+
+  function clearGpx() {
+    setGpx(null);
+    setGpxMessage(null);
+  }
+
+  async function onPickGpx(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // 同じファイルをもう一度選べるようにする
+    if (!file) return;
+    setGpxMessage(null);
+    const result = parseGpx(await file.text(), file.size);
+    if (!result.ok) {
+      setGpxMessage({ text: GPX_MESSAGES[result.error], kind: 'error' });
+      return;
+    }
+    const { distanceM: gpxDistanceM, durationS: gpxDurationS, startedAt, route } = result.value;
+    setKmText(String(gpxDistanceM / 1000));
+    if (gpxDurationS !== null) {
+      setMinText(String(Math.floor(gpxDurationS / 60)));
+      setSecText(String(gpxDurationS % 60));
+    }
+    setGpx({ name: file.name, route, startedAt });
+    setGpxMessage(gpxDurationS === null ? { text: GPX_MESSAGES.noTime, kind: 'info' } : null);
+  }
+
+  // 記録の日時: GPX に開始時刻があればそれ（昔の走りも、その日の記録になる）。無い・未来（5分より先）なら今
+  function recordedAtOf(): string {
+    const now = new Date();
+    const started = gpx?.startedAt ? new Date(gpx.startedAt) : null;
+    return started && started.getTime() <= now.getTime() + FUTURE_LIMIT_MS ? started.toISOString() : now.toISOString();
+  }
+
   async function onSave() {
     if (sending || problem !== null) return;
     setError(null);
     const data = {
       id: crypto.randomUUID(),
       kind: 'run' as const,
-      run: { distanceM, durationS },
-      recordedAt: new Date().toISOString(),
+      run: { distanceM, durationS, ...(gpx ? { route: gpx.route } : {}) },
+      recordedAt: recordedAtOf(),
     };
     if (!online) {
       // 電波が無いときは、送信待ちに入れて待たずに結果を出す（F-30）
@@ -145,12 +192,14 @@ export function RunView() {
       <div className="flex flex-1 flex-col gap-5 px-4 pt-2 pb-8">
         <h1 className="text-[32px] leading-tight font-extrabold">ラン</h1>
 
+        <GpxPicker online={online} gpx={gpx} message={gpxMessage} onPick={onPickGpx} onClear={clearGpx} />
+
         <NumberField
           label="距離（km）"
           unit="km"
           inputMode="decimal"
           value={kmText}
-          onChange={setKmText}
+          onChange={onKmChange}
           placeholder="5.2"
           invalid={distanceProblem}
           big
@@ -181,6 +230,50 @@ export function RunView() {
         )}
       </div>
     </FullScreen>
+  );
+}
+
+// GPX を選ぶ入口。電波が無いときは選べない（GPX は電波があるときだけ）
+function GpxPicker({
+  online,
+  gpx,
+  message,
+  onPick,
+  onClear,
+}: {
+  online: boolean;
+  gpx: Gpx | null;
+  message: { text: string; kind: 'error' | 'info' } | null;
+  onPick: (e: ChangeEvent<HTMLInputElement>) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label
+        className={cn(
+          'fl-slab flex min-h-12 items-center gap-2 px-4 py-3 text-base font-extrabold text-sub-strong focus-within:border-teal',
+          online ? 'cursor-pointer' : 'opacity-60',
+        )}
+      >
+        <FileUp aria-hidden className="size-5 shrink-0" />
+        <span>GPX ファイルを選ぶ</span>
+        <input type="file" accept=".gpx,application/gpx+xml" disabled={!online} onChange={onPick} className="sr-only" />
+      </label>
+      {!online && <p className="text-sm font-bold text-sub-strong">{GPX_MESSAGES.offline}</p>}
+      {gpx && (
+        <p className="flex items-center justify-between gap-2 text-sm font-bold text-ink">
+          <span>{gpx.name} を読み取りました</span>
+          <button type="button" onClick={onClear} className="min-h-11 shrink-0 rounded-fl px-3 text-sm font-extrabold text-sub-strong underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+            GPX をはずす
+          </button>
+        </p>
+      )}
+      {message && (
+        <p role={message.kind === 'error' ? 'alert' : 'status'} className={cn('rounded-fl px-4 py-3 text-sm font-bold text-ink', message.kind === 'error' ? 'bg-coral-light' : 'bg-face')}>
+          {message.text}
+        </p>
+      )}
+    </div>
   );
 }
 

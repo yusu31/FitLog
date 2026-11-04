@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
-import { RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
+import { GPX_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
 import { calls, installFakeApi, renderWithQuery } from '@/lib/test/fake-api';
 import { RunView } from './run-view';
 
@@ -58,11 +58,10 @@ describe('RunView（S-13 記録（ラン））', () => {
       expect(save()).toBeDisabled();
     });
 
-    it('GPX の取り込みと地図は、この画面に置かない（範囲外）', () => {
+    it('地図は、この画面に置かない（範囲外。GPX を選ぶ入口だけある）', () => {
       installFakeApi({});
       renderWithQuery(<RunView />);
-      expect(screen.queryByText(/GPX|地図|ファイル/)).not.toBeInTheDocument();
-      expect(document.querySelector('input[type="file"]')).toBeNull();
+      expect(screen.queryByText(/地図/)).not.toBeInTheDocument();
     });
 
     it('ペース（分/km）を、入力に合わせて画面が計算して見せる', async () => {
@@ -131,6 +130,135 @@ describe('RunView（S-13 記録（ラン））', () => {
       renderWithQuery(<RunView />);
       await fill(user, 'abc', '30');
       expect(save()).toBeDisabled();
+    });
+  });
+
+  // GPX の取り込み（F-14）。parseGpx の結果を入力欄に入れ、ルートと開始時刻を保存に使う
+  describe('GPX の取り込み', () => {
+    const gpxText = (t0?: string, t1?: string) =>
+      `<?xml version="1.0"?><gpx version="1.1" creator="t" xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg>` +
+      `<trkpt lat="0" lon="0">${t0 ? `<time>${t0}</time>` : ''}</trkpt><trkpt lat="0.044966" lon="0">${t1 ? `<time>${t1}</time>` : ''}</trkpt>` +
+      `</trkseg></trk></gpx>`;
+    const fileOf = (text: string, name = 'run.gpx') => new File([text], name, { type: 'application/gpx+xml' });
+    const picker = () => document.querySelector('input[type="file"]') as HTMLInputElement;
+    const pick = (user: ReturnType<typeof userEvent.setup>, f: File) => user.upload(picker(), f);
+    const ROUTE = { type: 'LineString', coordinates: [[0, 0], [0, 0.044966]] };
+
+    it('「GPX ファイルを選ぶ」の入口がある（.gpx だけ選べる）', () => {
+      installFakeApi({});
+      renderWithQuery(<RunView />);
+      expect(screen.getByText('GPX ファイルを選ぶ')).toBeInTheDocument();
+      expect(picker()).toHaveAttribute('accept', expect.stringContaining('.gpx'));
+      expect(picker()).toBeEnabled();
+    });
+
+    it('読み取れたら距離・時間を入力欄に入れ、保存すると route と開始時刻（recordedAt）を送る', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await pick(user, fileOf(gpxText('2026-11-03T06:00:00Z', '2026-11-03T06:30:00Z')));
+
+      await waitFor(() => expect(km()).toHaveValue('5'));
+      expect(min()).toHaveValue('30');
+      expect(sec()).toHaveValue('0');
+      expect(screen.getByText('run.gpx を読み取りました')).toBeInTheDocument();
+      expect(save()).toBeEnabled();
+
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      const body = postBody();
+      expect(body.run).toEqual({ distanceM: 5000, durationS: 1800, route: ROUTE });
+      expect(body.recordedAt).toBe('2026-11-03T06:00:00.000Z');
+    });
+
+    it('時刻が無い GPX は、距離だけ入れて時間は空のまま（手で入れてもらう）。記録の日時は今', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await pick(user, fileOf(gpxText()));
+
+      await waitFor(() => expect(km()).toHaveValue('5'));
+      expect(min()).toHaveValue('');
+      expect(screen.getByText(GPX_MESSAGES.noTime)).toBeInTheDocument();
+      expect(save()).toBeDisabled();
+
+      await user.type(min(), '30');
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody().run).toEqual({ distanceM: 5000, durationS: 1800, route: ROUTE });
+      expect(postBody().recordedAt).toBe(NOW);
+    });
+
+    it('開始時刻が未来（5分より先）のときは、記録の日時を今にする', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await pick(user, fileOf(gpxText('2026-11-05T06:00:00Z', '2026-11-05T06:30:00Z')));
+      await waitFor(() => expect(km()).toHaveValue('5'));
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody().recordedAt).toBe(NOW);
+    });
+
+    it.each<[string, string, keyof typeof GPX_MESSAGES]>([
+      ['壊れた XML', '<gpx><trk>', 'INVALID_XML'],
+      ['線が0本', `<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"></gpx>`, 'NO_TRACK'],
+      ['距離が範囲外（3m）', `<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0.00003" lon="0"/></trkseg></trk></gpx>`, 'OUT_OF_RANGE'],
+    ])('読めないファイル（%s）は理由を出し、入力欄は変えず、記録は作らない', async (_name, text, code) => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await user.type(km(), '3');
+      await pick(user, fileOf(text));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(GPX_MESSAGES[code]);
+      expect(km()).toHaveValue('3');
+      expect(calls.filter((c) => c === POST)).toHaveLength(0);
+    });
+
+    it('大きすぎるファイル（5MB 超）は TOO_LARGE の理由を出す', async () => {
+      installFakeApi({});
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await pick(user, fileOf('x'.repeat(5 * 1024 * 1024 + 1)));
+      expect(await screen.findByRole('alert')).toHaveTextContent(GPX_MESSAGES.TOO_LARGE);
+    });
+
+    it('取り込んだあとで距離を手で直したら、ルートは付けない（距離とルートがずれるため）', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await pick(user, fileOf(gpxText('2026-11-03T06:00:00Z', '2026-11-03T06:30:00Z')));
+      await waitFor(() => expect(km()).toHaveValue('5'));
+
+      await user.clear(km());
+      await user.type(km(), '4.9');
+      expect(screen.queryByText('run.gpx を読み取りました')).not.toBeInTheDocument();
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody().run).toEqual({ distanceM: 4900, durationS: 1800 });
+      expect(postBody().recordedAt).toBe(NOW);
+    });
+
+    it('「はずす」でルートを外せる（入力欄はそのまま）', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await pick(user, fileOf(gpxText('2026-11-03T06:00:00Z', '2026-11-03T06:30:00Z')));
+      await waitFor(() => expect(km()).toHaveValue('5'));
+      await user.click(screen.getByRole('button', { name: 'GPX をはずす' }));
+      expect(km()).toHaveValue('5');
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody().run).toEqual({ distanceM: 5000, durationS: 1800 });
+    });
+
+    it('電波が無いときは選べない（GPX は電波があるときだけ。F-30）。理由を出す', async () => {
+      installFakeApi({});
+      onlineManager.setOnline(false);
+      renderWithQuery(<RunView />);
+      await waitFor(() => expect(picker()).toBeDisabled());
+      expect(screen.getByText(GPX_MESSAGES.offline)).toBeInTheDocument();
     });
   });
 
