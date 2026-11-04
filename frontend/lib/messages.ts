@@ -106,6 +106,8 @@ export const DETAIL_MESSAGES = {
   kindRun: 'ラン',
   kindRest: 'おやすみ',
   restBody: '休むのも 記録のひとつ。ちゃんと数えたよ。',
+  mapLabel: 'ランのルートの地図',
+  mapUnavailable: '地図は この端末では出せませんでした。距離とペースは上に出ています',
   noSets: 'セットは まだありません',
   notFoundTitle: '記録が見つかりませんでした',
   notFoundBody: 'すでに消えたか、見られない記録かもしれません',

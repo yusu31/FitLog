@@ -12,6 +12,9 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/record-detail/',
   useSearchParams: () => new URLSearchParams(search),
 }));
+vi.mock('./route-map', () => ({
+  RouteMap: ({ route }: { route: { coordinates: unknown[] } }) => <div data-testid="route-map" data-points={route.coordinates.length} />,
+}));
 vi.mock('@/lib/auth-client', () => ({
   authClient: { useSession: () => ({ data: { user: { id: 'u1' } }, isPending: false }) },
 }));
@@ -144,6 +147,23 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
       expect(screen.getByText(dist)).toBeInTheDocument();
       expect(screen.getByText(dur)).toBeInTheDocument();
       expect(screen.getByText(pace)).toBeInTheDocument();
+    });
+
+    // F-15: GPX から保存したランだけ、ルートの地図を出す（手入力のランには出さない）
+    it('route があるランは、距離・時間・ペースの下にルートの地図を出す', async () => {
+      const route = { type: 'LineString', coordinates: [[139.7, 35.6], [139.8, 35.7], [139.9, 35.8]] };
+      install({ [REC]: ok({ ...runRecord('r1', '2026-10-22', 5200, 1930), run: { distanceM: 5200, durationS: 1930, route } }) });
+      renderWithQuery(<RecordDetailView />);
+      const map = await screen.findByTestId('route-map');
+      expect(map).toHaveAttribute('data-points', '3');
+      expect(screen.getByText('5.2km')).toBeInTheDocument(); // 数字は地図があっても出る
+    });
+
+    it('route が無い（手入力の）ランには、地図を出さない', async () => {
+      install({ [REC]: ok(runRecord('r1', '2026-10-22', 5200, 1930)) });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText('5.2km')).toBeInTheDocument();
+      expect(screen.queryByTestId('route-map')).not.toBeInTheDocument();
     });
 
     it('距離が 0 のような壊れた値でも落ちず、ペースは「—」', async () => {

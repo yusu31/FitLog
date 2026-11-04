@@ -20,7 +20,7 @@
 | データ取得・状態 | TanStack Query（`@tanstack/react-query`） | 5.105.x | 楽観的更新・再試行・キャッシュを1つで持てる。F-30 オフライン記録の中心（[下の節](#オフライン記録f-30)） |
 | 型の共有 | `@nestjs/swagger` が出す OpenAPI から、orval で画面用の型と TanStack Query の部品を生成 | orval 8.x | API の形を NestJS 側の1か所で決め、画面は生成した型を使う。orval は TanStack Query のフックに加えて mutationKey とフックの外で使える送信処理も作るので、F-30 の `setMutationDefaults` にそのまま渡せる（[下の節](#typescript-の版と型の生成)） |
 | 認証（画面側） | `better-auth/react` | 1.7.14（API 側と同じ版で固定） | API 側の better-auth と対になる。baseURL を指定せず、今開いているサイトの `/api/auth` を呼ぶ |
-| 地図 | MapLibre GL JS + PMTiles（`pmtiles`） | 未決 | 地図の画像を自分の S3 + CloudFront から配り、外部の地図サービスに頼らない |
+| 地図 | MapLibre GL JS + PMTiles（`pmtiles`） | `maplibre-gl` 6.15.0（固定。公開から2週間以上の版。2026-11-04）。`pmtiles` は自前配信に切り替えるとき（公開の後）に足す | 地図の画像を自分の S3 + CloudFront から配り、外部の地図サービスに頼らない。**開発中は OpenFreeMap（`positron`）**。スタイルの URL は `lib/map/map-config.ts` の1か所で、環境変数 `NEXT_PUBLIC_MAP_STYLE_URL`（https か同じサイトの相対パス）で切り替える。MapLibre 6 は描画を Worker で行うので、`lib/map/load-maplibre.ts` が Worker のファイルの場所（バンドラーが解決した URL）を `setWorkerUrl` で教える（教え忘れると実ブラウザで「Worker failed to load」になり、地図の中身が描かれない。jsdom のテストでは気づけない） |
 | GPX の読み取り | `@tmcw/togeojson` | 7.1.3（固定） | 依存が無く、地図にそのまま渡せる GeoJSON で出る。壊れた XML・線0本・サイズ上限の検査は自前 |
 | 動画 | MediaRecorder（ブラウザ標準） | - | 画面の中で2秒だけ撮る（720p・MP4/H.264 を優先）。変換サーバーを置かない |
 
