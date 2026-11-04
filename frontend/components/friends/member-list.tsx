@@ -1,7 +1,7 @@
 'use client';
 
 import { Users } from 'lucide-react';
-import { authClient } from '@/lib/auth-client';
+import { useAppSession } from '@/lib/use-app-session';
 import type { GroupDetailResponse } from '@/lib/api/generated';
 
 export const GROUP_MEMBER_MAX = 5;
@@ -34,7 +34,7 @@ export function GroupSummary({ group }: { group: GroupDetailResponse }) {
 
 // メンバーの一覧（参加した順）。自分には「あなた」を付ける
 export function MemberList({ group }: { group: GroupDetailResponse }) {
-  const { data: session } = authClient.useSession();
+  const { data: session } = useAppSession();
   const me = session?.user.id;
 
   return (

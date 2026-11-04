@@ -18,7 +18,7 @@ import {
   type CommentResponse,
   type FeedItemKind,
 } from '@/lib/api/generated';
-import { authClient } from '@/lib/auth-client';
+import { useAppSession } from '@/lib/use-app-session';
 import { COMMENT_MAX, STAMP_KEYS, STAMP_LABELS, normalizeComment, stampState, type StampKey } from '@/lib/feed';
 import { formatJstTime, formatMonthDay } from '@/lib/format';
 import { FEED_MESSAGES } from '@/lib/messages';
@@ -105,7 +105,7 @@ function Stamps({ recordId, kind, online }: { recordId: string; kind: FeedItemKi
 
 function Comments({ recordId, online }: { recordId: string; online: boolean }) {
   const queryClient = useQueryClient();
-  const { data: session } = authClient.useSession();
+  const { data: session } = useAppSession();
   const me = session?.user.id;
   const { data, isError } = useListComments(recordId);
   const addComment = useAddComment();

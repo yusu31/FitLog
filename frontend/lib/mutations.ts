@@ -34,7 +34,7 @@ import {
   type RecordDetailResponse,
   type RecordedExercise,
 } from '@/lib/api/generated';
-import { authClient } from '@/lib/auth-client';
+import { useAppSession } from '@/lib/use-app-session';
 import { addRejectedSend } from '@/lib/offline/rejected';
 import { classifyFailure, SendCancelled, sendRetryDelay, shouldRetrySend } from '@/lib/offline/retry-policy';
 import { scopeIdOf } from '@/lib/offline/resume';
@@ -238,7 +238,7 @@ export function useRecordMutations(): {
   deleteRecord: Mut<typeof deleteRecord, DeleteRecordMutationVariables>;
 } {
   const client = useQueryClient();
-  const { data: session } = authClient.useSession();
+  const { data: session } = useAppSession();
   const userId = session?.user?.id ?? 'anonymous';
   // 登録は何度やっても同じ結果なので、描画の中で（利用者が変わったときだけ）行う
   useMemo(() => registerRecordMutations(client, userId), [client, userId]);
