@@ -242,6 +242,8 @@ Lambda は、同時に来たリクエストの数だけ**別々の実行環境**
 | `secrets.tf` | 秘密情報の「入れ物」だけ（値は入れない。8章） |
 
 - **実装（02-1 ③b 準備②）**: `infra/` に上の5ファイル＋`versions.tf`（版の固定・タグ）・`variables.tf`・`outputs.tf`・`spike-site/index.html`（スパイク用の確認ページ）。ロックファイル（`.terraform.lock.hcl`）はコミットする。**スパイクで作るのは S3A だけ**（動画・GPX 用の S3B と、その権限は 02-4 で足す）。`terraform validate`・Trivy が通る。手順は [infra-spike-runbook.md](./infra-spike-runbook.md)。Trivy の指摘 7 件（Free プランのログなし・WAF・CMK・X-Ray・S3 のログとバージョニング）は、理由と期限つきで `infra/.trivyignore.yaml` に残した（WAF は 11/20 までに P2 で再判断）
+- **本番用への変更（02-3 第1段の準備・Issue #154。判断ログ 2026-11-05 fitlog-02-3-deploy-approach）**: スパイクと本番を分けず、同じ `infra/` を「`fitlog`・`prod`」の名前で2段階に作る（第1段=画面・API・ログイン、第2段=動画用 S3 と CORS）。スパイク用の確認ページ（`spike-site/`）は削除。`/serwist/*` には `Service-Worker-Allowed: /` と `Cache-Control: no-cache` を付ける（置き場所が `/serwist/` の下なのでサイト全体を担当してよいと許す。`cloudfront.tf`）。予約済み同時実行数は設定しない（アカウントの上限が10で、予約できるのは「未予約−100」まで＝設定できない。2026-11-05 に `aws lambda get-account-settings` で確認）。画面は `/api/*` への本文つきリクエストに `x-amz-content-sha256`（本文の SHA-256）を付ける（`frontend/lib/api/body-hash.ts`。`fetch` を1か所で包む。orval の生成物も better-auth も同じ `fetch` を使うため）。**まだ AWS で動かしていない**ので、PATCH・DELETE が通るか、better-auth の POST が通るかは第1段の apply で確かめる
+- **デプロイ手順（手元のスクリプト）**: `scripts/deploy.sh site`（画面を作って S3 へ置き、CloudFront のキャッシュを消す。置く前に確認を取る）／`scripts/deploy.sh api`（API を作り、`terraform apply` で Lambda を更新する。apply が予告を表示して yes を待つ）。置き先が読めない（まだ apply していない）ときは何も変えずに止まる。GitHub Actions での自動化は提出後
 - 状態ファイル（`terraform.tfstate`）には**アカウント ID や設定値が入る**。公開リポジトリに入れないため、`.gitignore` に入れる。置き場は、まずは手元（**仮置き**）。S3 に置く方式は、1人で使う間は不要と見ている
 - 変数のファイル（`*.tfvars`）も `.gitignore` 済みにし、公開してよい `*.tfvars.example` だけを入れる
 
@@ -272,7 +274,7 @@ Lambda は、同時に来たリクエストの数だけ**別々の実行環境**
 
 **値の入れ方:** 値は Terraform に書かず、**AWS の画面か CLI で手で入れる**（Terraform は入れ物だけ作る）。そうしないと値が状態ファイルに残る。Lambda が読めるのは、そのパラメータだけ（4.2章）。ローカル開発では `.gitignore` 済みの `.env` を使う。ログに値を出さない（design.md 6章）。
 
-**実装（02-1 ③b 準備③）**: `backend/src/config/ssm-secrets.ts`。環境変数 `FITLOG_SSM_PREFIX`（例 `/fitlog/spike`）があるときだけ、`database-url`・`better-auth-secret`・`better-auth-url` を読んで `DATABASE_URL`・`BETTER_AUTH_SECRET`・`BETTER_AUTH_URL` に入れる（`lambda.ts` の起動の最初・1実行環境につき1回）。すでに環境変数があればそちらを優先し、読みにも行かない（手元・テストは AWS を呼ばない）。仮の文字（`CHANGE_ME`）のまま・足りない・読めないときは、名前だけを出して起動を止める。`@aws-sdk/client-ssm` 3.1152.0 を固定（公開から2週間以上経った版）。一式は 50.4 MB（予算 100 MB）。
+**実装（02-1 ③b 準備③）**: `backend/src/config/ssm-secrets.ts`。環境変数 `FITLOG_SSM_PREFIX`（例 `/fitlog/prod`）があるときだけ、`database-url`・`better-auth-secret`・`better-auth-url` を読んで `DATABASE_URL`・`BETTER_AUTH_SECRET`・`BETTER_AUTH_URL` に入れる（`lambda.ts` の起動の最初・1実行環境につき1回）。すでに環境変数があればそちらを優先し、読みにも行かない（手元・テストは AWS を呼ばない）。仮の文字（`CHANGE_ME`）のまま・足りない・読めないときは、名前だけを出して起動を止める。`@aws-sdk/client-ssm` 3.1152.0 を固定（公開から2週間以上経った版）。一式は 50.4 MB（予算 100 MB）。
 
 ---
 

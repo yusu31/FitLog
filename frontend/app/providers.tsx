@@ -4,9 +4,14 @@ import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider, type Persister } from '@tanstack/react-query-persist-client';
 import { useState, type ReactNode } from 'react';
 import { QueueOwner } from '@/components/fitlog/queue-owner';
+import { installBodyHash } from '@/lib/api/body-hash';
 import { registerRecordMutations } from '@/lib/mutations';
 import { createQueuePersister, queueDehydrateOptions, QUEUE_MAX_AGE_MS } from '@/lib/offline/persister';
 import { markQueueRestored } from '@/lib/offline/resume';
+
+// 画面を開いた時点で、/api/* への本文つきリクエストに SHA-256 を付ける仕組みを入れる（公開環境の Lambda が要求する。lib/api/body-hash.ts）。
+// 子の部品の effect（最初の通信）より先に済ませる必要があるので、読み込み時に行う
+installBodyHash();
 
 // 画面全体を包む入れ物。TanStack Query の QueryClient をここで1つ作り、
 // 送信待ち（まだ API に届いていない書き込み）を IndexedDB に保存・復元する（F-30。docs/tech-stack.md）。

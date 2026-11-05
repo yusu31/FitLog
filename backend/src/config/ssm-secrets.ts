@@ -2,7 +2,7 @@ import { GetParametersCommand, SSMClient } from '@aws-sdk/client-ssm';
 
 // 秘密情報を AWS の Parameter Store から読んで、環境変数に入れる（docs/infrastructure.md 8章）。
 // Lambda の環境変数に値を直接書くと、Terraform の状態ファイルや AWS の画面に残る。だから値は手で Parameter Store に入れ、起動時に読む。
-// 印の環境変数 FITLOG_SSM_PREFIX（例: /fitlog/spike）があるときだけ動く。手元・テストには付けないので、AWS を呼ばない。
+// 印の環境変数 FITLOG_SSM_PREFIX（例: /fitlog/prod）があるときだけ動く。手元・テストには付けないので、AWS を呼ばない。
 
 // Parameter Store の名前（prefix の下）→ 入れる環境変数
 const PARAMETERS = {

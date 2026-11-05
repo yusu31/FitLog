@@ -2,6 +2,8 @@
 
 使い捨ての公開（半日）で、[infrastructure.md 3.2章](./infrastructure.md)の確認項目を実機で確かめる手順。**課金の発生しうる操作は、手順の中の「⚠ 課金」の印の所だけ**で、実行の直前に必ず確認してから行う。作るものは `infra/` の Terraform（[7章](./infrastructure.md#7-デプロイ手順)）。
 
+> **【2026-11-05 方針変更】** スパイクと本番を分けず、`infra/` を本番の名前（`fitlog`・`prod`）で作る（判断ログ 2026-11-05 fitlog-02-3-deploy-approach）。下の手順の `/fitlog/spike/…` は `/fitlog/prod/…` に、`destroy` で消す前提の記述は「本番なので消す前に必ず確認」に読み替える。第1段のあとに動画用の S3 を足す。画面と API を置くのは `scripts/deploy.sh`。
+
 > **状態**: Terraform の下書き（`terraform validate`・Trivy が通る）と、Lambda が起動時に Parameter Store の3値を読む実装（`backend/src/config/ssm-secrets.ts`）まで済んでいる。**実際に AWS で動くかは、公開スパイクで初めて確かめる**（時間待ちではなく、`apply` が要る＝本人確認が要る）。Neon のプロジェクト（`fitlog`・シンガポール・Postgres 17）は作成済み。接続文字列は控えず、手順5で Neon の画面（Connect）から直接コピーする。
 
 ## 0. 先に済ませること（本人の操作）

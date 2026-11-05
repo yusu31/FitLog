@@ -47,6 +47,26 @@ resource "aws_cloudfront_function" "index_html" {
   JS
 }
 
+# Service Worker のファイル（/serwist/sw.js）に付けるヘッダー。
+# ① Service-Worker-Allowed: / … 置き場所が /serwist/ の下なので、サイト全体（/）を担当してよいと許す。無いと登録が失敗する
+# ② Cache-Control: no-cache … 古い Service Worker が端末に居座らないよう、毎回 CloudFront と端末が更新を確かめる
+resource "aws_cloudfront_response_headers_policy" "service_worker" {
+  name = "${var.name_prefix}-service-worker"
+
+  custom_headers_config {
+    items {
+      header   = "Service-Worker-Allowed"
+      value    = "/"
+      override = true
+    }
+    items {
+      header   = "Cache-Control"
+      value    = "no-cache"
+      override = true
+    }
+  }
+}
+
 locals {
   # Function URL は https://xxxx.lambda-url.<region>.on.aws/ の形。CloudFront の origin には、https:// と末尾の / を除いたホスト名を渡す
   lambda_url_host = replace(replace(aws_lambda_function_url.api.function_url, "https://", ""), "/", "")
@@ -93,7 +113,19 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
-  # API: キャッシュしない。GET/POST/PATCH/DELETE をすべて通す（スパイクで PATCH・DELETE が通るか確かめる。infrastructure.md 3.2章）
+  # Service Worker: キャッシュせず、上のヘッダーを付ける。/serwist/ の下には sw.js 以外も出る（読み込む部品）が、同じ扱いで困らない
+  ordered_cache_behavior {
+    path_pattern               = "/serwist/*"
+    target_origin_id           = "site"
+    viewer_protocol_policy     = "redirect-to-https"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    cache_policy_id            = data.aws_cloudfront_cache_policy.disabled.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.service_worker.id
+    compress                   = true
+  }
+
+  # API: キャッシュしない。GET/POST/PATCH/DELETE をすべて通す（公開の第1段で PATCH・DELETE が通るか確かめる。infrastructure.md 3.2章）
   ordered_cache_behavior {
     path_pattern             = "/api/*"
     target_origin_id         = "api"

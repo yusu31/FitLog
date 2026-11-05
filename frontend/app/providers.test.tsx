@@ -29,3 +29,10 @@ describe('Providers（TanStack Query の入れ物）', () => {
     expect(screen.getByText('子')).toBeInTheDocument();
   });
 });
+
+describe('Providers の読み込み', () => {
+  // 公開環境の Lambda は、本文つきの通信に SHA-256 のヘッダーを要求する。読み込んだだけで fetch が包まれていること
+  it('読み込むと fetch が SHA-256 付与の仕組みで包まれる', () => {
+    expect((globalThis.fetch as unknown as Record<symbol, boolean>)[Symbol.for('fitlog.bodyHash')]).toBe(true);
+  });
+});
