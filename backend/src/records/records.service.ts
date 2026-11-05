@@ -5,7 +5,7 @@ import { cellStatus, weekDates, weekStartOf } from '../common/week.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
-import { exercises, records, runDetails, workoutSets } from '../db/schema.js';
+import { exercises, records, runDetails, videos, workoutSets } from '../db/schema.js';
 import { findPrevious, pastMaxVolume } from './ghost-queries.js';
 import { encodeCursor, parseListQuery } from './list-input.js';
 import { visibleToMe } from './record-access.js';
@@ -204,9 +204,18 @@ export class RecordsService {
       entry.sets.push({ id: s.id, setNo: s.setNo, weightKg: Number(s.weightKg), reps: s.reps });
     }
 
+    // 動画の id は詳細だけ付ける（一覧には付けない。1記録に1本）
+    const videoByRecord = new Map<string, string>();
+    if (withRoute) {
+      const videoRows = await this.db.select({ id: videos.id, recordId: videos.recordId }).from(videos).where(inArray(videos.recordId, ids));
+      for (const v of videoRows) videoByRecord.set(v.recordId, v.id);
+    }
+
     return rows.map((row) => {
       const run = runById.get(row.id);
       const base = toResponse(row, run);
+      const videoId = videoByRecord.get(row.id);
+      if (videoId) Object.assign(base, { videoId });
       // 詳細だけ route を足す（toResponse は距離と時間だけ）
       if (base.run && run?.route) base.run.route = run.route;
       if (row.kind !== 'workout') return base;

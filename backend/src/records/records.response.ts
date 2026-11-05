@@ -96,6 +96,14 @@ export class RecordDetailResponse extends RecordResponse {
     description: '筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない',
   })
   exercises?: RecordedExercise[];
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    required: false,
+    description: '動画があるときだけ（詳細 GET /records/{id} のみ）。見るときの GET /videos/{id}/url に使う',
+  })
+  videoId?: string;
 }
 
 export class RecordListResponse {

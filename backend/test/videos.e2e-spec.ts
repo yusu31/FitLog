@@ -184,4 +184,28 @@ describe('動画の署名付き URL（結合: 本物の PostgreSQL・better-auth
       expect(await videoRows()).toHaveLength(0);
     });
   });
+
+  describe('GET /records/{id} の videoId（記録の詳細から動画を再生するための印）', () => {
+    it('動画が無い記録には付かない。発行した後は videoId が付く（本人も仲間も同じ値）', async () => {
+      const [a, b] = await groupOfTwo();
+      const recordId = await createRecord(a);
+      const before = (await http().get(`/api/records/${recordId}`).set('Cookie', a).expect(200)).body as { videoId?: string };
+      expect(before.videoId).toBeUndefined();
+
+      const videoId = ((await issue(a, recordId).expect(201)).body as UploadResponse).id;
+      const mine = (await http().get(`/api/records/${recordId}`).set('Cookie', a).expect(200)).body as { videoId?: string };
+      const friends = (await http().get(`/api/records/${recordId}`).set('Cookie', b).expect(200)).body as { videoId?: string };
+      expect(mine.videoId).toBe(videoId);
+      expect(friends.videoId).toBe(videoId);
+    });
+
+    it('やり直しで同じ記録に再度発行しても、videoId は変わらない', async () => {
+      const cookie = await signUpAs('me');
+      const recordId = await createRecord(cookie);
+      const first = ((await issue(cookie, recordId).expect(201)).body as UploadResponse).id;
+      await issue(cookie, recordId).expect(200);
+      const detail = (await http().get(`/api/records/${recordId}`).set('Cookie', cookie).expect(200)).body as { videoId?: string };
+      expect(detail.videoId).toBe(first);
+    });
+  });
 });

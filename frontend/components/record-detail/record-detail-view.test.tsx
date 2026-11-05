@@ -135,6 +135,25 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
   });
 
+  describe('2秒動画（F-13）', () => {
+    it('videoId がある記録には動画を出し、無い記録には出さない', async () => {
+      install({
+        [REC]: ok({ ...workout('r1', '2026-10-22', [squat]), videoId: 'v1' }),
+        [prevUrl('sq')]: ok(prev([], null)),
+        '/api/videos/v1/url': ok({ url: 'https://s3.example/v', expiresInSeconds: 300 }),
+      });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByLabelText('2秒ラストレップの動画')).toBeInTheDocument();
+    });
+
+    it('videoId が無い記録では、動画の URL を取りに行かない', async () => {
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('heading', { level: 1, name: '筋トレ' });
+      expect(calls.some((c) => c.includes('/api/videos/'))).toBe(false);
+    });
+  });
+
   describe('ラン', () => {
     it.each([
       ['通常', 5200, 1930, '5.2km', '32:10', '6:11/km'],
