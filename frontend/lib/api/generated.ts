@@ -521,6 +521,56 @@ export interface CreateCommentRequest {
   body: string;
 }
 
+/**
+ * 撮影できた形式。";codecs=..." は付けない基本の形式だけ
+ */
+export type CreateVideoUploadRequestContentType = typeof CreateVideoUploadRequestContentType[keyof typeof CreateVideoUploadRequestContentType];
+
+
+export const CreateVideoUploadRequestContentType = {
+  'video/mp4': 'video/mp4',
+  'video/webm': 'video/webm',
+} as const;
+
+export interface CreateVideoUploadRequest {
+  /** 撮影できた形式。";codecs=..." は付けない基本の形式だけ */
+  contentType: CreateVideoUploadRequestContentType;
+  /**
+     * 動画の大きさ（バイト）。署名の条件に「ちょうどこの大きさ」として入る。上限 10MB（10,485,760）
+     * @minimum 1
+     * @maximum 10485760
+     */
+  sizeBytes: number;
+}
+
+/**
+ * フォームに入れる項目（key・Content-Type・Policy・署名など）。順序と中身を変えない
+ */
+export type PresignedPostResponseFields = {[key: string]: string};
+
+export interface PresignedPostResponse {
+  url: string;
+  /** フォームに入れる項目（key・Content-Type・Policy・署名など）。順序と中身を変えない */
+  fields: PresignedPostResponseFields;
+}
+
+export interface VideoUploadResponse {
+  /** 動画の id。見るときの GET /videos/{id}/url に使う */
+  id: string;
+  upload: PresignedPostResponse;
+  /** 署名付き POST の有効期限（秒） */
+  expiresInSeconds: number;
+  /** 仲間に見える期限（記録の週の日曜 24:00 日本時間）。本人はこれを過ぎても見られる */
+  visibleUntil: string;
+}
+
+export interface VideoUrlResponse {
+  /** 動画を見る署名付き URL（短い期限）。ログに出さない */
+  url: string;
+  /** URL の有効期限（秒） */
+  expiresInSeconds: number;
+}
+
 export type GetPreviousParams = {
 /**
  * この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す
@@ -3706,3 +3756,259 @@ export const useDeleteComment = <TError = ErrorResponse,
       > => {
       return useMutation(getDeleteCommentMutationOptions(options), queryClient);
     }
+
+export type issueVideoUploadResponse200 = {
+  data: VideoUploadResponse
+  status: 200
+}
+
+export type issueVideoUploadResponse201 = {
+  data: VideoUploadResponse
+  status: 201
+}
+
+export type issueVideoUploadResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type issueVideoUploadResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type issueVideoUploadResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type issueVideoUploadResponseSuccess = (issueVideoUploadResponse200 | issueVideoUploadResponse201) & {
+  headers: Headers;
+};
+export type issueVideoUploadResponseError = (issueVideoUploadResponse400 | issueVideoUploadResponse404 | issueVideoUploadResponse409) & {
+  headers: Headers;
+};
+
+export type issueVideoUploadResponse = (issueVideoUploadResponseSuccess | issueVideoUploadResponseError)
+
+export const getIssueVideoUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}/video`
+}
+
+/**
+ * @summary 筋トレの記録に付ける動画を置く署名付き POST を発行する。やり直しは同じ記録にもう一度呼ぶ
+ */
+export const issueVideoUpload = async (id: string,
+    createVideoUploadRequest: CreateVideoUploadRequest, options?: RequestInit): Promise<issueVideoUploadResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getIssueVideoUploadUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createVideoUploadRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: issueVideoUploadResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as issueVideoUploadResponse
+}
+
+
+
+
+
+export const getIssueVideoUploadMutationKey = () => ['issueVideoUpload'] as const;
+
+export const getIssueVideoUploadMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueVideoUpload>>, TError,IssueVideoUploadMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof issueVideoUpload>>, TError,IssueVideoUploadMutationVariables, TContext> => {
+
+const mutationKey = getIssueVideoUploadMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof issueVideoUpload>>, IssueVideoUploadMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  issueVideoUpload(id,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IssueVideoUploadMutationResult = NonNullable<Awaited<ReturnType<typeof issueVideoUpload>>>
+    export type IssueVideoUploadMutationBody = CreateVideoUploadRequest
+    export type IssueVideoUploadMutationError = ErrorResponse
+    export type IssueVideoUploadMutationVariables = {id: string;data: CreateVideoUploadRequest}
+
+    /**
+ * @summary 筋トレの記録に付ける動画を置く署名付き POST を発行する。やり直しは同じ記録にもう一度呼ぶ
+ */
+export const useIssueVideoUpload = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueVideoUpload>>, TError,IssueVideoUploadMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof issueVideoUpload>>,
+        TError,
+        IssueVideoUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getIssueVideoUploadMutationOptions(options), queryClient);
+    }
+
+export type getVideoUrlResponse200 = {
+  data: VideoUrlResponse
+  status: 200
+}
+
+export type getVideoUrlResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
+export type getVideoUrlResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getVideoUrlResponseSuccess = (getVideoUrlResponse200) & {
+  headers: Headers;
+};
+export type getVideoUrlResponseError = (getVideoUrlResponse403 | getVideoUrlResponse404) & {
+  headers: Headers;
+};
+
+export type getVideoUrlResponse = (getVideoUrlResponseSuccess | getVideoUrlResponseError)
+
+export const getGetVideoUrlUrl = (id: string,) => {
+
+
+
+
+  return `/api/videos/${id}/url`
+}
+
+/**
+ * @summary 動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ
+ */
+export const getVideoUrl = async (id: string, options?: RequestInit): Promise<getVideoUrlResponse> => {
+
+  const res = await fetch(getGetVideoUrlUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getVideoUrlResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getVideoUrlResponse
+}
+
+
+
+
+
+export const getGetVideoUrlQueryKey = (id: string,) => {
+    return [
+    `/api/videos/${id}/url`
+    ] as const;
+    }
+
+
+export const getGetVideoUrlQueryOptions = <TData = Awaited<ReturnType<typeof getVideoUrl>>, TError = ErrorResponse>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVideoUrlQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVideoUrl>>> = ({ signal }) => getVideoUrl(id, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetVideoUrlQueryResult = NonNullable<Awaited<ReturnType<typeof getVideoUrl>>>
+export type GetVideoUrlQueryError = ErrorResponse
+
+
+export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, TError = ErrorResponse>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getVideoUrl>>,
+          TError,
+          Awaited<ReturnType<typeof getVideoUrl>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getVideoUrl>>,
+          TError,
+          Awaited<ReturnType<typeof getVideoUrl>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ
+ */
+
+export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetVideoUrlQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
