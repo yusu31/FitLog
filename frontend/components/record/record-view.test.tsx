@@ -490,6 +490,42 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     });
   });
 
+  describe('2秒動画の入口（F-13）', () => {
+    const stubCamera = () => {
+      vi.stubGlobal('MediaRecorder', { isTypeSupported: (m: string) => m === 'video/mp4' });
+      Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: vi.fn() } });
+    };
+    const entry = () => screen.queryByRole('button', { name: '2秒ラストレップを撮る' });
+
+    it('撮れる端末で、1セット できた後に出る。最初は出ない', async () => {
+      stubCamera();
+      renderView();
+      await ready();
+      expect(entry()).not.toBeInTheDocument();
+      await userEvent.click(doneButton());
+      expect(await screen.findByRole('button', { name: '2秒ラストレップを撮る' })).toBeInTheDocument();
+    });
+
+    it('撮れない端末（MediaRecorder なし）では出さない', async () => {
+      vi.stubGlobal('MediaRecorder', undefined);
+      renderView();
+      await ready();
+      await userEvent.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      expect(entry()).not.toBeInTheDocument();
+    });
+
+    it('電波がないときは出さない（署名付き URL をもらえないため）', async () => {
+      stubCamera();
+      renderView();
+      await ready();
+      await userEvent.click(doneButton());
+      await screen.findByRole('button', { name: '2秒ラストレップを撮る' });
+      act(() => onlineManager.setOnline(false));
+      await waitFor(() => expect(entry()).not.toBeInTheDocument());
+    });
+  });
+
   it('責める言葉（禁止語）を画面に出さない（T-DATE-13・T-GHOST-13）', async () => {
     const user = userEvent.setup();
     const { container } = renderView();

@@ -3,7 +3,7 @@
 import { X } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
@@ -30,6 +30,9 @@ import { DoneSets, type DoneSet } from './done-sets';
 import { GhostBar } from './ghost-bar';
 import { ResultSheet, type SheetData } from './result-sheet';
 import { StepperField } from './stepper-field';
+import { VideoRecorder, canRecordVideo } from './video-recorder';
+
+const noSubscribe = () => () => {};
 
 type Outcome = { result: GhostResult | null; isPersonalBest: boolean };
 
@@ -80,6 +83,9 @@ export function RecordView() {
   const [sheet, setSheet] = useState<SheetData | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const dismissSheet = useCallback(() => setSheet(null), []);
+  // 2秒動画（F-13）。撮れる端末で、電波があり、1セット以上できた後だけ入口を出す（署名付き URL をもらうには API に届く必要がある）
+  const videoCapable = useSyncExternalStore(noSubscribe, canRecordVideo, () => false);
+  const [filming, setFilming] = useState(false);
 
   if (!signedIn || exercisesPending) return <Skeleton />;
   if (!exercise) {
@@ -223,11 +229,17 @@ export function RecordView() {
         )}
 
         <DoneSets sets={sets} bestIds={bestIds} online={online} onDelete={onDelete} />
+        {videoCapable && online && recordId && sets.length > 0 && (
+          <ThickButton tone="white" size="sm" className="w-full" onClick={() => setFilming(true)}>
+            2秒ラストレップを撮る
+          </ThickButton>
+        )}
         {/* 結果シートが重なる分の余白 */}
         <div aria-hidden className="h-24" />
       </div>
 
       <ResultSheet sheet={sheet} onDismiss={dismissSheet} />
+      {filming && recordId && <VideoRecorder recordId={recordId} onClose={() => setFilming(false)} />}
     </FullScreen>
   );
 }
