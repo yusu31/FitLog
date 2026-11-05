@@ -5,15 +5,15 @@ variable "aws_region" {
 }
 
 variable "stage" {
-  description = "何の環境か。スパイクは使い捨て（spike）。本番（02-3）は別の値にする"
+  description = "何の環境か。02-3 は本番（prod）1つだけ。Parameter Store の名前の頭（/fitlog/prod）にも使う"
   type        = string
-  default     = "spike"
+  default     = "prod"
 }
 
 variable "name_prefix" {
   description = "作るものの名前の頭に付ける文字"
   type        = string
-  default     = "fitlog-spike"
+  default     = "fitlog"
 }
 
 variable "lambda_package_dir" {
@@ -23,7 +23,7 @@ variable "lambda_package_dir" {
 }
 
 variable "lambda_memory_mb" {
-  description = "Lambda のメモリ。CPU はメモリに比例する。スパイクで 512 と 1024 の起動時間を比べる（infrastructure.md 3.2章）"
+  description = "Lambda のメモリ。CPU はメモリに比例する。公開の第1段で 512 と 1024 の起動時間を比べる（infrastructure.md 3.2章）"
   type        = number
   default     = 512
 }
