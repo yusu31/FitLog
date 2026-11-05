@@ -257,3 +257,25 @@ export const comments = pgTable(
     check('comments_body_ck', sql`char_length(${t.body}) between 1 and 50`),
   ],
 );
+
+// ── 動画（docs/database-design.md videos） ─────────────────────────────────────
+// 1記録に1本（record_id が UNIQUE）。行は署名付き POST を発行するときに作る（置き終わった印は持たない。やり直しは同じキーで署名し直す）。
+// s3_key は記録ごとに決まる（videos/{record_id}）ので、撮り直しは同じ場所を上書きする。
+// size_bytes は画面の申告で、署名の条件（サイズは申告値ちょうど）にも入れるので、S3 に置かれたものと一致する。
+// visible_until は仲間に見える期限（記録の週の日曜 24:00 日本時間。本人は期限に関係なく見られる）
+export const videos = pgTable(
+  'videos',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    recordId: uuid('record_id')
+      .notNull()
+      .unique()
+      .references(() => records.id, { onDelete: 'cascade' }),
+    s3Key: text('s3_key').notNull(),
+    contentType: text('content_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    visibleUntil: timestamp('visible_until', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check('videos_size_ck', sql`${t.sizeBytes} between 1 and 10485760`)],
+);
