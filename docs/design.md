@@ -175,6 +175,8 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 
 ### GET /api/records（記録の一覧）と GET /api/records/{id}（詳細）
 
+詳細 `GET /api/records/{id}` だけ、動画があるとき `videoId`（uuid）が付く（見るときは `GET /videos/{videoId}/url`。一覧には付けない）。動画の行は署名付き POST を発行するときに作るので、S3 への送信が失敗した記録にも `videoId` は付く。画面は再生に失敗したら「再生できませんでした」とだけ出す。
+
 `GET /api/records?kind=workout&limit=1` の応答（一覧。詳細は `items` の1件と同じ形）:
 
 ```json

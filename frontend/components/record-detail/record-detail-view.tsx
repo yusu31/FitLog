@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { RouteMap } from './route-map';
 import { SocialSection } from './social-section';
+import { VideoPlayer } from './video-player';
 import { ConfirmDialog } from '@/components/fitlog/confirm-dialog';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
@@ -130,6 +131,7 @@ export function RecordDetailView() {
           </p>
         )}
         {record.kind === 'workout' && <Workout record={record} mine={mine} />}
+        {record.videoId && <VideoPlayer videoId={record.videoId} />}
         {record.kind === 'run' && record.run && <Run distanceM={record.run.distanceM} durationS={record.run.durationS} />}
         {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} />}
         {record.kind === 'rest' && (
