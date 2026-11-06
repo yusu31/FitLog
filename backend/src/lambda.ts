@@ -29,11 +29,13 @@ async function bootstrap(): Promise<LambdaHandler> {
   return configure({ app: app.getHttpAdapter().getInstance() as Parameters<typeof configure>[0]['app'] });
 }
 
-export const handler: Handler = async (event, context, callback) => {
+// 引数は (event, context) の2つだけにする。3つ目に callback を受けると、Node.js 24 の Lambda はコールバック形式とみなして
+// 起動を拒否する（Runtime.CallbackHandlerDeprecated）。serverless-express は Promise を返し callback を使わないので、渡さなくてよい
+export const handler: Handler = async (event, context) => {
   cached ??= bootstrap().catch((error: unknown) => {
     cached = undefined;
     throw error;
   });
   const server = await cached;
-  return server(event, context, callback);
+  return server(event, context, () => undefined);
 };
