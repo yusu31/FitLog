@@ -141,4 +141,11 @@ describe('Lambda の入口（結合: 本物の PostgreSQL・Function URL 形式�
     const second = performance.now() - t1;
     expect(second).toBeLessThan(first / 2);
   });
+
+  // T-LAMBDA-08: Node.js 24 の Lambda は、引数が3つ以上の handler をコールバック形式とみなして起動を拒否する
+  // （Runtime.CallbackHandlerDeprecated。公開の第1段で /api/health が 502 になった）。引数は (event, context) の2つまで
+  it('handler の引数は2つまで（Node.js 24 はコールバック形式を拒否する）', async () => {
+    const handler = await freshHandler();
+    expect(handler.length).toBeLessThanOrEqual(2);
+  });
 });
