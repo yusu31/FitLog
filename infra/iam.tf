@@ -24,8 +24,10 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 
 data "aws_iam_policy_document" "lambda_secrets" {
   statement {
-    sid       = "ReadOwnParameters"
-    actions   = ["ssm:GetParameter"]
+    sid = "ReadOwnParameters"
+    # GetParameters（まとめて読む）: backend/src/config/ssm-secrets.ts が起動時に3つを1回で読むために使う。
+    # GetParameter（1件ずつ）だけでは、まとめて読む呼び出しが拒否される（IAM シミュレーターで implicitDeny を確認）
+    actions   = ["ssm:GetParameter", "ssm:GetParameters"]
     resources = [for p in aws_ssm_parameter.secret : p.arn]
   }
 }
