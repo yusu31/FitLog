@@ -605,7 +605,7 @@ design.md の 6 章のとおり、記録を取るクエリは1か所の共通関
 - **バックエンド**: lint（oxlint）・型（tsc）・単体（Vitest）・結合（本物の PostgreSQL。02-1 ③a で PgBouncer のトランザクションモード経由に）・OpenAPI の古さ・ビルド
 - **画面**: orval の生成物の古さ・lint（ESLint）・型・単体（Vitest＋Testing Library）・静的書き出しのビルド
 
-まだ無いのは 6-2 の 7（E2E）と、依存の自動検査（`npm audit`・OSV-Scanner。ハーネス計画の P2）。使う Actions とコンテナは SHA・ダイジェストで固定している（[dev-harness.md](./dev-harness.md) 4章）。
+6-2 の 7（E2E）は、スモーク1本（登録 → 今日の画面。`frontend/e2e/`・`npm run test:e2e`）を入れた（Issue #166。必須にはしていない）。まだ無いのは依存の自動検査（`npm audit`・OSV-Scanner。ハーネス計画の P2）。使う Actions とコンテナは SHA・ダイジェストで固定している（[dev-harness.md](./dev-harness.md) 4章）。
 
 ### 6-2. 目指す段階
 
