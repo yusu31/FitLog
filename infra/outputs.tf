@@ -22,3 +22,8 @@ output "ssm_prefix" {
   description = "秘密情報を手で入れるときの名前の頭"
   value       = local.ssm_prefix
 }
+
+output "video_bucket" {
+  description = "動画用 S3 のバケット名（Lambda の環境変数 VIDEO_BUCKET に入る）"
+  value       = aws_s3_bucket.videos.id
+}

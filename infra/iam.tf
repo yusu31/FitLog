@@ -37,3 +37,19 @@ resource "aws_iam_role_policy" "lambda_secrets" {
   role   = aws_iam_role.lambda.id
   policy = data.aws_iam_policy_document.lambda_secrets.json
 }
+
+# 動画の署名付き URL（POST/GET）を発行する人（このロール）が、その操作の権限を持っている必要がある。
+# 許すのは動画用バケットの videos/ の下だけ（キーは videos/{id}。backend/src/videos）。ListBucket・削除は許さない
+data "aws_iam_policy_document" "lambda_videos" {
+  statement {
+    sid       = "VideoObjects"
+    actions   = ["s3:PutObject", "s3:GetObject"]
+    resources = ["${aws_s3_bucket.videos.arn}/videos/*"]
+  }
+}
+
+resource "aws_iam_role_policy" "lambda_videos" {
+  name   = "videos-objects"
+  role   = aws_iam_role.lambda.id
+  policy = data.aws_iam_policy_document.lambda_videos.json
+}

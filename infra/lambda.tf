@@ -34,6 +34,8 @@ resource "aws_lambda_function" "api" {
       LOG_LEVEL = "INFO"
       # 秘密情報の置き場の名前の頭（値ではない）。読む実装は次の PR で入れる（secrets.tf・runbook）
       FITLOG_SSM_PREFIX = local.ssm_prefix
+      # 動画の置き場（バケット名。秘密ではない）。無いと動画 API は 503 を返す
+      VIDEO_BUCKET = aws_s3_bucket.videos.id
     }
   }
 
