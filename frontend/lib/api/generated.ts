@@ -574,25 +574,17 @@ export interface VideoUrlResponse {
 }
 
 export type GetPreviousParams = {
-/**
- * この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す
- */
-before?: string;
+  /** この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す */
+  before?: string;
 };
 
 export type ListRecordsParams = {
-/**
- * 1ページの件数。1〜100。既定 20
- */
-limit?: string;
-/**
- * 前の応答の nextCursor をそのまま渡す（続きを読む）
- */
-cursor?: string;
-/**
- * 種類で絞る
- */
-kind?: ListRecordsKind;
+  /** 1ページの件数。1〜100。既定 20 */
+  limit?: string;
+  /** 前の応答の nextCursor をそのまま渡す（続きを読む） */
+  cursor?: string;
+  /** 種類で絞る */
+  kind?: ListRecordsKind;
 };
 
 export type ListRecordsKind = typeof ListRecordsKind[keyof typeof ListRecordsKind];
@@ -605,21 +597,15 @@ export const ListRecordsKind = {
 } as const;
 
 export type GetWeekParams = {
-/**
- * 日本時間の日付（YYYY-MM-DD）
- */
-date: string;
+  /** 日本時間の日付（YYYY-MM-DD） */
+  date: string;
 };
 
 export type GetFeedParams = {
-/**
- * 日本時間の日付（YYYY-MM-DD）。この日を含む週（月曜〜日曜）を返す
- */
-weekStart: string;
-/**
- * 前の応答の nextCursor をそのまま渡す（続きを読む）
- */
-cursor?: string;
+  /** 日本時間の日付（YYYY-MM-DD）。この日を含む週（月曜〜日曜）を返す */
+  weekStart: string;
+  /** 前の応答の nextCursor をそのまま渡す（続きを読む） */
+  cursor?: string;
 };
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
