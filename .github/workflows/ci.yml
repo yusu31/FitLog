@@ -190,3 +190,50 @@ jobs:
       - name: セキュリティ検査（Trivy）
         run: |
           docker run --rm -v "$PWD:/work:ro" aquasec/trivy@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa             config --skip-dirs /work/.terraform --skip-version-check --ignorefile /work/.trivyignore.yaml             --severity LOW,MEDIUM,HIGH,CRITICAL --exit-code 1 /work
+
+  # E2E スモーク（本物のブラウザで 画面 → API → DB を通す）。localhost の使い捨て DB だけにつなぐ（frontend/e2e/guard.ts が公開 URL を拒否する）。
+  # 最初は必須チェックにしない（docs/testing-design.md 6章: 安定して数回通ることを確かめてから必須に加える）
+  e2e:
+    name: E2E スモーク（Playwright）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    services:
+      postgres:
+        image: postgres:17@sha256:31ba9c94a03ada9988f2bb493a22a75eef3a185884533e5cdbcd498ea835b08f
+        env:
+          POSTGRES_USER: fitlog
+          POSTGRES_PASSWORD: fitlog
+          POSTGRES_DB: fitlog
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fitlog -d fitlog"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      # CI の DB は使い捨てなので、PgBouncer なしの直接接続で足りる（API の窓口の検査は backend ジョブがやる）
+      E2E_DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
+      E2E_MIGRATION_DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+
+      - name: 依存を入れる（画面・API。lock どおり）
+        run: |
+          npm ci
+          npm ci --prefix ../backend
+
+      - name: ブラウザ（Chromium）を入れる
+        run: npx playwright install --with-deps chromium
+
+      # 実行件数はログの "N passed" で見る（0件なら失敗する）
+      - name: E2E スモーク
+        run: npm run test:e2e
