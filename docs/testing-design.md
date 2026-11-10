@@ -605,7 +605,7 @@ design.md の 6 章のとおり、記録を取るクエリは1か所の共通関
 - **バックエンド**: lint（oxlint）・型（tsc）・単体（Vitest）・結合（本物の PostgreSQL。02-1 ③a で PgBouncer のトランザクションモード経由に）・OpenAPI の古さ・ビルド
 - **画面**: orval の生成物の古さ・lint（ESLint）・型・単体（Vitest＋Testing Library）・静的書き出しのビルド
 
-6-2 の 7（E2E）は、スモーク1本（登録 → 今日の画面。`frontend/e2e/`・`npm run test:e2e`）を入れた（Issue #166。必須にはしていない）。まだ無いのは依存の自動検査（`npm audit`・OSV-Scanner。ハーネス計画の P2）。使う Actions とコンテナは SHA・ダイジェストで固定している（[dev-harness.md](./dev-harness.md) 4章）。
+6-2 の 7（E2E）は、スモーク1本（登録 → 今日の画面。`frontend/e2e/`・`npm run test:e2e`）を入れた（Issue #166。必須にはしていない）。アクセシビリティ検査（`@axe-core/playwright` 4.14.0・WCAG 2.1 A/AA・8画面。Issue #179）を同じ E2E に足した。**色の差は、背景に擬似要素の飾りがある画面（ログイン等）で axe が「判定不能」に回し、合格にも数えられない**ため、色は screen-design.md の実測表で別に守る。E2E を必須チェックにするのは、本数を増やして数回安定して通ったあと（RaiseTimeLine は必須にしている）。まだ無いのは依存の自動検査（`npm audit`・OSV-Scanner。ハーネス計画の P2）。使う Actions とコンテナは SHA・ダイジェストで固定している（[dev-harness.md](./dev-harness.md) 4章）。
 
 ### 6-2. 目指す段階
 
