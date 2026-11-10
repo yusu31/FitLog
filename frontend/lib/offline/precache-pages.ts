@@ -14,6 +14,7 @@ export const PRECACHE_PAGES: readonly string[] = [
   '/run/',
   '/settings/',
   '/settings/group/',
+  '/settings/credits/',
   '/signup/',
   '/today/',
 ];

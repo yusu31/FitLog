@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from 'cn';
+import { Sprite } from '@/components/fitlog/sprite';
 import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
@@ -20,6 +21,7 @@ import {
 import { formatSet } from '@/lib/format';
 import { HOME_MESSAGES, REST_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
+import { todayPose } from '@/lib/today-pose';
 import { buildMenu, type MenuItem, type TodayMenu } from '@/lib/today-menu';
 import { shouldWelcomeBack } from '@/lib/welcome-back';
 import { WeekStrip } from './week-strip';
@@ -83,6 +85,13 @@ export function TodayView() {
           </p>
         ) : (
           <>
+            {/* キャラは次の1枚の右上に立つ（足が少しカードに重なる）。飾りなので読み上げない */}
+            <div className="relative z-10 -mb-7 flex justify-end pr-3">
+              <Sprite
+                pose={todayPose({ restToday: todayStatus === 'rest', allDone: menu.allDone, welcomeBack, now: new Date() })}
+                size={112}
+              />
+            </div>
             <NextCard menu={menu} todayStatus={todayStatus} />
             {menu.items.length > 0 && <Menu items={menu.items} />}
           </>

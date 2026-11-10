@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FullScreen } from '@/components/fitlog/full-screen';
+import { Sprite } from '@/components/fitlog/sprite';
 import { REST_MESSAGES } from '@/lib/messages';
 import { useRequireSession } from '@/lib/use-require-session';
 
@@ -29,41 +30,13 @@ export function RestView() {
   );
 }
 
-// くつろぐ姿（ビーズクッションに座って、月を見ている）。飾りなので読み上げからは外す。
-// 眠気の「z」はゆっくり浮かぶ。「動きを減らす」設定のときは止める（screen-design.md 6章）
+// くつろぐ姿（F-31 の「くつろぎ」ポーズ。prototype/v8）。飾りなので読み上げからは外す。
+// コマの切り替えは Sprite が行い、「動きを減らす」設定のときは1コマ目で止める（screen-design.md 6章）
 function RelaxFigure() {
   return (
     <div data-testid="rest-figure" aria-hidden="true" className="relative mb-2 leading-none">
-      <span className="absolute bottom-3 left-1/2 -z-0 h-10 w-56 -translate-x-1/2 rounded-[50%] bg-[#ece8fd]" />
-      <svg viewBox="0 0 200 170" width="220" height="187" className="relative">
-        {/* 月 */}
-        <path d="M150 18a26 26 0 1 0 22 40a21 21 0 0 1-22-40z" fill="#ffc21a" />
-        {/* クッション */}
-        <ellipse cx="86" cy="138" rx="62" ry="22" fill="#8e7cf0" />
-        <ellipse cx="86" cy="132" rx="52" ry="16" fill="#a99cf5" />
-        {/* 足 */}
-        <rect x="88" y="112" width="52" height="16" rx="8" fill="#1e2a3a" />
-        <rect x="132" y="116" width="16" height="12" rx="6" fill="#ffd9b8" />
-        {/* 体 */}
-        <rect x="58" y="74" width="44" height="52" rx="16" fill="#17a2a6" />
-        {/* 腕（ひざの上でのんびり） */}
-        <rect x="86" y="92" width="40" height="12" rx="6" fill="#0e7f83" />
-        {/* 頭 */}
-        <circle cx="76" cy="54" r="22" fill="#ffd9b8" />
-        <path d="M54 50a22 22 0 0 1 44-6c-8-2-14-8-18-14c-6 10-16 14-26 20z" fill="#1e2a3a" />
-        {/* 閉じた目と口 */}
-        <path d="M66 56q4 4 8 0M80 56q4 4 8 0" fill="none" stroke="#1e2a3a" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M74 66q5 4 10 0" fill="none" stroke="#1e2a3a" strokeWidth="2.5" strokeLinecap="round" />
-        {/* z z */}
-        <g fill="#6a57cf" fontWeight="800" fontStyle="italic" fontFamily="sans-serif">
-          <text x="108" y="38" fontSize="20" className="motion-safe:animate-pulse">
-            z
-          </text>
-          <text x="124" y="26" fontSize="14" className="motion-safe:animate-pulse">
-            z
-          </text>
-        </g>
-      </svg>
+      <span className="absolute bottom-2 left-1/2 -z-0 h-10 w-56 -translate-x-1/2 rounded-[50%] bg-[#ece8fd]" />
+      <Sprite pose="relax" size={192} className="relative" />
     </div>
   );
 }

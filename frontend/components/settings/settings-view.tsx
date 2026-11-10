@@ -15,7 +15,7 @@ import { useRequireSession } from '@/lib/use-require-session';
 
 // S-31 設定（docs/screen-design.md 1章）。タブの無い全画面。
 // ユーザー情報・グループ（S-32 へ）・キャラ（S-33）・クレジット（S-34）・ログアウト。
-// キャラとクレジットは「できれば」の範囲なので、押せない見た目だけ置く
+// キャラの編集は「できれば」の範囲なので、押せない見た目だけ置く（クレジットは F-31 を出すので S-34 へ）
 export function SettingsView() {
   const router = useRouter();
   const { signedIn } = useRequireSession();
@@ -95,7 +95,16 @@ export function SettingsView() {
               <ComingSoonRow icon={<Palette aria-hidden className="size-5" />} label="キャラの編集" />
             </li>
             <li>
-              <ComingSoonRow icon={<Info aria-hidden className="size-5" />} label="クレジット" />
+              <Link
+                href="/settings/credits"
+                className="fl-slab flex min-h-16 items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+              >
+                <RowIcon>
+                  <Info aria-hidden className="size-5" />
+                </RowIcon>
+                <span className="min-w-0 flex-1 truncate font-extrabold">クレジット</span>
+                <ChevronRight aria-hidden className="size-5 shrink-0 text-sub" />
+              </Link>
             </li>
           </ul>
         </section>

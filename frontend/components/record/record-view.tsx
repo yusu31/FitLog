@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
+import { Sprite } from '@/components/fitlog/sprite';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
 import { useGetPrevious, useGetRecord, useListExercises } from '@/lib/api/generated';
@@ -182,6 +183,7 @@ export function RecordView() {
             style={{ width: `${Math.max(pct, 6)}%` }}
           />
         </div>
+        <Sprite pose="train" size={64} />
       </header>
 
       <div className="flex flex-1 flex-col items-center gap-4 px-4 pt-4 pb-6">

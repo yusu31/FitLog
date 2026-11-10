@@ -3,6 +3,7 @@
 import { Settings } from 'lucide-react';
 import Link from 'next/link';
 import { PageTitle } from '@/components/fitlog/app-shell';
+import { Sprite } from '@/components/fitlog/sprite';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { GROUP_MESSAGES } from '@/lib/messages';
 import { FeedSection } from './feed-section';
@@ -15,8 +16,9 @@ export function FriendsView() {
   const { data, isPending, isError } = useGetCurrentGroup();
 
   return (
-    <>
+    <div className="relative">
       <PageTitle>なかま</PageTitle>
+      <Sprite pose="idle" size={72} className="absolute top-0 right-4" />
       {isPending ? (
         <div aria-busy="true" aria-label="読み込み中" className="mx-4 mt-3 h-40 animate-pulse rounded-fl bg-face" />
       ) : isError || !data || (data.status !== 200 && data.status !== 404) ? (
@@ -39,6 +41,6 @@ export function FriendsView() {
           </Link>
         </div>
       )}
-    </>
+    </div>
   );
 }
