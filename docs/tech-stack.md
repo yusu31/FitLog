@@ -154,7 +154,7 @@ TypeScript の最新は 7.0（Go で書き直された新しいコンパイラ�
 |------|------|
 | 雛形 | `create-next-app` 16.4.3（`frontend/`）。TypeScript は雛形が 5 系なので **6.0.3 に直した**（決定どおり） |
 | 静的書き出し | `output: "export"`・`trailingSlash: true`・`images.unoptimized`。**雛形の `cacheComponents`・`partialPrefetching` は静的書き出しと併用できず（`Invariant: PPR cannot be enabled in export mode`）外した**（実際のビルドで確認） |
-| フォント | Google Fonts は使わない（ビルドが通信に頼らず、利用者の端末が外部へ問い合わせない）。システムの標準フォント。shadcn の初期化が戻したものも外した。`out/` に外部フォントの参照が無いことを確認 |
+| フォント | Google Fonts は使わない（ビルドが通信に頼らず、利用者の端末が外部へ問い合わせない）。システムの標準フォント。shadcn の初期化が戻したものも外した。`out/` に外部フォントの参照が無いことを確認。**例外（2026-11-10・02-2b）**: 数字・札用に `@fontsource/barlow-condensed`（italic 800・OFL。アプリに同梱し外部へは問い合わせない）だけ足す。日本語はシステムの字のまま。却下: 何も足さない（v8 との差が最も目立つ）・日本語の丸ゴシックも同梱（字体が大きく 11/11 に重い） |
 | UI 部品 | shadcn/ui 4.23（base-nova・neutral）。追加された `cn` は shadcn 本人の公式パッケージ（clsx と tailwind-merge の置き換え。メンテナー・リポジトリを npm と GitHub で確認）。`@base-ui/react`・`class-variance-authority`・`lucide-react`・`tw-animate-css` も入った |
 | 型チェック | `next typegen && tsc --noEmit`。`LayoutProps` などの型は Next.js がビルド・開発のときに生成する。手元は `.next/` が残っているので通るが、**きれいな状態の CI では `Cannot find name 'LayoutProps'` で落ちた**（まっさらなクローンで再現し、`next typegen` を先に走らせて解消）|
 | 画面のテスト | Vitest 4（backend と同じ）＋ Testing Library ＋ jsdom。`tsconfig.json` の `types` に `vitest/globals` |
