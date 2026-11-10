@@ -1,8 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 
 // 利用者の流れ（docs/testing-design.md 3-9・3-10 の E2E 指定）。認証まわりと、登録直後の最初の1セット。
 const PASSWORD = 'e2e-password-1234';
-const newEmail = (tag: string) => `e2e-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
+const newEmail = (tag: string) => `e2e-${tag}-${randomUUID().slice(0, 8)}@example.com`;
 
 async function signUp(page: Page, email: string): Promise<void> {
   await page.goto('/signup/');
