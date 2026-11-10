@@ -71,14 +71,17 @@ describe('SettingsView（S-31 設定）', () => {
     expect(screen.getByLabelText('グループを読み込み中')).toHaveAttribute('aria-busy', 'true');
   });
 
-  it('キャラ（S-33）とクレジット（S-34）は、押せない見た目だけ（リンクにしない）', () => {
+  it('キャラの編集（S-33）は、押せない見た目だけ（リンクにしない）', () => {
     renderView();
-    for (const name of ['キャラの編集', 'クレジット']) {
-      const row = screen.getByRole('button', { name: new RegExp(name) });
-      expect(row).toBeDisabled();
-      expect(screen.queryByRole('link', { name: new RegExp(name) })).not.toBeInTheDocument();
-    }
-    expect(screen.getAllByText('準備中')).toHaveLength(2);
+    const row = screen.getByRole('button', { name: /キャラの編集/ });
+    expect(row).toBeDisabled();
+    expect(screen.queryByRole('link', { name: /キャラの編集/ })).not.toBeInTheDocument();
+    expect(screen.getAllByText('準備中')).toHaveLength(1);
+  });
+
+  it('クレジット（S-34）は /settings/credits へのリンク（素材の作者表示のため必ず開ける）', () => {
+    renderView();
+    expect(screen.getByRole('link', { name: /クレジット/ })).toHaveAttribute('href', '/settings/credits');
   });
 
   it('ログアウトを押すと signOut を呼び、ログイン画面へ移す', async () => {

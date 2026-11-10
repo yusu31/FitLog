@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { cn } from 'cn';
+import { Sprite } from '@/components/fitlog/sprite';
 import { GHOST_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from '@/lib/messages';
 import { usePrefersReducedMotion } from '@/lib/use-browser-state';
 import type { GhostResult } from '@/lib/shared/ghost';
@@ -50,12 +51,13 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
       data-motion={reduced ? 'reduced' : 'full'}
       onClick={onDismiss}
       className={cn(
-        'pointer-events-auto block w-full rounded-t-2xl px-4 pt-5 pb-6 text-left text-ink outline-none',
+        'pointer-events-auto relative block w-full rounded-t-2xl px-4 pt-5 pb-6 text-left text-ink outline-none',
         'focus-visible:ring-4 focus-visible:ring-teal/40',
         gold ? 'bg-gold' : 'bg-teal-light',
         !reduced && 'animate-in slide-in-from-bottom duration-300',
       )}
     >
+      <Sprite pose={isPersonalBest ? 'pb' : 'cheer'} size={80} className="absolute right-3 -top-16" />
       {isPersonalBest && <span className="fl-tag mb-2 bg-ink text-white">{RECORD_MESSAGES.best}</span>}
       <p className="text-[26px] leading-tight font-extrabold">
         {result === 'up' ? (
