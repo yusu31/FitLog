@@ -129,11 +129,11 @@ function NextCard({ menu, todayStatus }: { menu: TodayMenu; todayStatus: string 
 function NextExercise({ item }: { item: MenuItem }) {
   return (
     <CardFrame label="次の1枚" tone="teal" tag="NEXT">
-      <h2 className="mt-3 text-2xl leading-snug font-extrabold">{item.name}</h2>
+      <h2 className="mt-2.5 text-[30px] leading-[1.15] font-extrabold">{item.name}</h2>
       {item.previous && (
         <p className="mt-2 flex items-baseline gap-2">
           <span className="text-xs font-extrabold">前回</span>
-          <span className="fl-num text-3xl">{formatSet(item.previous)}</span>
+          <span className="fl-num text-5xl leading-none">{formatSet(item.previous)}</span>
         </p>
       )}
       <LinkButton href={recordHref(item.exerciseId)}>はじめる</LinkButton>
