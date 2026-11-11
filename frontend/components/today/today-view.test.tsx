@@ -83,6 +83,12 @@ describe('TodayView（S-10 今日）', () => {
       expect(names[4]).toBe('11/6 金曜');
     });
 
+    it('前回の記録がある日も、メニューの下の「種目を足す」から種目の一覧へ行ける', async () => {
+      renderWithQuery(<TodayView />);
+      await screen.findByRole('list', { name: '今日のメニュー' });
+      expect(screen.getByRole('link', { name: '種目を足す' })).toHaveAttribute('href', '/exercises');
+    });
+
     it('連続日数は出さない', async () => {
       renderWithQuery(<TodayView />);
       await screen.findByRole('region', { name: '次の1枚' });
@@ -120,6 +126,8 @@ describe('TodayView（S-10 今日）', () => {
       expect(await screen.findByRole('heading', { name: '今日の分は できた' })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: 'はじめる' })).not.toBeInTheDocument();
       expect(screen.getAllByText('できた')).toHaveLength(2);
+      // 全部できた日も、別の種目を足せる
+      expect(screen.getByRole('link', { name: '種目を足す' })).toHaveAttribute('href', '/exercises');
     });
   });
 
@@ -162,6 +170,8 @@ describe('TodayView（S-10 今日）', () => {
       renderWithQuery(<TodayView />);
       await screen.findByRole('region', { name: '次の1枚' });
       expect(screen.queryByRole('list', { name: '今日のメニュー' })).not.toBeInTheDocument();
+      // 入口は次の1枚の「種目を選ぶ」1つだけ（同じ行き先のリンクを2つ並べない）
+      expect(screen.queryByRole('link', { name: '種目を足す' })).not.toBeInTheDocument();
     });
 
     it('お試しの値が取れなくても、「種目を選ぶ」は出る', async () => {

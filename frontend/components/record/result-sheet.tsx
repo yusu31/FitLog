@@ -7,7 +7,9 @@ import { GHOST_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from '@/lib/messages'
 import { usePrefersReducedMotion } from '@/lib/use-browser-state';
 import type { GhostResult } from '@/lib/shared/ghost';
 
-export const SHEET_MS = 800;
+// 0.8秒だと文字が読めず、キャラの動き（ガッツポーズは 320ms で2コマ）も分からなかった（公開版で本人が確認・2026-11-11）。
+// 主な1行（約16字）を読め、キャラが数回動く長さにする。タップで飛ばせるので、急ぐ人は待たなくてよい
+export const SHEET_MS = 3000;
 
 export type SheetData = {
   setId: string;
@@ -19,7 +21,7 @@ export type SheetData = {
   note?: string;
 };
 
-// 結果シート（features.md 2.6）。「できた」の直後に 0.8秒出し、タップで飛ばせる。
+// 結果シート（features.md 2.6）。「できた」の直後に 3秒出し、タップで飛ばせる。
 // 動きを減らす設定のときは、動かさず表示だけにする。責める言葉・悪い色は使わない（下回りも同じ明るい面）
 export function ResultSheet({ sheet, onDismiss }: { sheet: SheetData | null; onDismiss: () => void }) {
   const reduced = usePrefersReducedMotion();
@@ -29,7 +31,7 @@ export function ResultSheet({ sheet, onDismiss }: { sheet: SheetData | null; onD
     if (!key) return;
     const timer = setTimeout(onDismiss, SHEET_MS);
     return () => clearTimeout(timer);
-    // 同じセットの結果が応答で直されても、0.8秒は数え直さない
+    // 同じセットの結果が応答で直されても、3秒は数え直さない
   }, [key, onDismiss]);
 
   // 読み上げ用の領域は常に置き、中身だけ出し入れする（あとから挿入された領域は読まれないことがあるため）

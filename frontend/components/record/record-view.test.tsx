@@ -274,7 +274,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     });
   });
 
-  describe('結果シート（F-06。0.8秒・タップで飛ばせる）', () => {
+  describe('結果シート（F-06。3秒・タップで飛ばせる）', () => {
     it('上回ったら「前回超え +N」を、API の応答を待たずに仮表示する', async () => {
       handlers['POST /api/records/:id/sets'] = () => new Promise(() => {});
       const user = userEvent.setup();
@@ -300,16 +300,18 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       expect(sheet()).toHaveTextContent(GHOST_MESSAGES.down);
     });
 
-    it('0.8秒たつと消える', async () => {
+    it('読める長さ（2秒）はまだ出ていて、3秒たつと消える', async () => {
       const user = userEvent.setup();
       renderView();
       await ready();
       await user.click(doneButton());
       expect(sheet()).toBeInTheDocument();
+      await new Promise((r) => setTimeout(r, 2000));
+      expect(sheet()).toBeInTheDocument();
       await waitFor(() => expect(sheet()).not.toBeInTheDocument(), { timeout: 2000 });
-    });
+    }, 10_000);
 
-    it('タップすると、0.8秒を待たずに消える', async () => {
+    it('タップすると、3秒を待たずに消える', async () => {
       const user = userEvent.setup();
       renderView();
       await ready();
