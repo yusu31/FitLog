@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Footprints, Moon, Sparkles } from 'lucide-react';
+import { Check, Footprints, Moon, Plus, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -195,7 +195,8 @@ function LinkButton({ href, children }: { href: string; children: ReactNode }) {
   );
 }
 
-// 今日のメニュー: 前回と同じ種目が同じ順で並ぶ。できた種目は黄のチェック
+// 今日のメニュー: 前回と同じ種目が同じ順で並ぶ。できた種目は黄のチェック。
+// 下の「種目を足す」から一覧（S-11）で選んだ種目は、記録すると末尾に並ぶ（buildMenu）。外す・並べ替えは未実装
 function Menu({ items }: { items: MenuItem[] }) {
   return (
     <section>
@@ -233,6 +234,13 @@ function Menu({ items }: { items: MenuItem[] }) {
           );
         })}
       </ul>
+      <Link
+        href="/exercises"
+        className="mt-2 flex min-h-12 items-center justify-center gap-1.5 rounded-fl border-2 border-dashed border-line-dark text-[15px] font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+      >
+        <Plus aria-hidden className="size-5" strokeWidth={3} />
+        種目を足す
+      </Link>
     </section>
   );
 }
