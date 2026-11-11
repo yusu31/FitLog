@@ -18,7 +18,6 @@ import {
   COMMENT_MAX,
   QUICK_COMMENTS,
   STAMP_KEYS,
-  STAMP_LABELS,
   describeItem,
   normalizeComment,
   stampState,
@@ -28,6 +27,7 @@ import { formatJstTime, formatMonthDay } from '@/lib/format';
 import { FEED_MESSAGES } from '@/lib/messages';
 import { useOnline } from '@/lib/use-browser-state';
 import { AVATAR_BG } from './member-list';
+import { StampButton } from './stamp-button';
 
 // 足跡の1件。スタンプ（付け外し）とコメント（定型4つ／休みは2つ＋自由入力 50字まで）。
 // 付け外しは電波があるときだけ（F-30）。送ったあとは足跡を取り直すので、数と「自分が付けた」はサーバーの値になる。
@@ -84,20 +84,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
           const { count, mine } = stampState(item.stamps, key);
           return (
             <li key={key}>
-              <button
-                type="button"
-                aria-pressed={mine !== null}
-                aria-label={count > 0 ? `${STAMP_LABELS[key]} ${count}` : STAMP_LABELS[key]}
-                disabled={!online || busy}
-                onClick={() => void toggle(key)}
-                className={cn(
-                  'flex min-h-11 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60',
-                  mine !== null ? 'border-teal-dark bg-teal-light text-teal-dark' : 'border-line bg-white text-sub-strong',
-                )}
-              >
-                {STAMP_LABELS[key]}
-                {count > 0 && <span className="fl-num text-base">{count}</span>}
-              </button>
+              <StampButton stampKey={key} count={count} pressed={mine !== null} disabled={!online || busy} onClick={() => void toggle(key)} />
             </li>
           );
         })}

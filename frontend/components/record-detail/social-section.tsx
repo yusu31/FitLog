@@ -19,7 +19,8 @@ import {
   type FeedItemKind,
 } from '@/lib/api/generated';
 import { useAppSession } from '@/lib/use-app-session';
-import { COMMENT_MAX, STAMP_KEYS, STAMP_LABELS, normalizeComment, stampState, type StampKey } from '@/lib/feed';
+import { StampButton } from '@/components/friends/stamp-button';
+import { COMMENT_MAX, STAMP_KEYS, normalizeComment, stampState, type StampKey } from '@/lib/feed';
 import { formatJstTime, formatMonthDay } from '@/lib/format';
 import { FEED_MESSAGES } from '@/lib/messages';
 import { useOnline } from '@/lib/use-browser-state';
@@ -75,20 +76,13 @@ function Stamps({ recordId, kind, online }: { recordId: string; kind: FeedItemKi
             const { count, mine } = stampState(stamps, key);
             return (
               <li key={key}>
-                <button
-                  type="button"
-                  aria-pressed={mine !== null}
-                  aria-label={count > 0 ? `${STAMP_LABELS[key]} ${count}` : STAMP_LABELS[key]}
+                <StampButton
+                  stampKey={key}
+                  count={count}
+                  pressed={mine !== null}
                   disabled={!online || busy || data === undefined}
                   onClick={() => void toggle(key)}
-                  className={cn(
-                    'flex min-h-11 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60',
-                    mine !== null ? 'border-teal-dark bg-teal-light text-teal-dark' : 'border-line bg-white text-sub-strong',
-                  )}
-                >
-                  {STAMP_LABELS[key]}
-                  {count > 0 && <span className="fl-num text-base">{count}</span>}
-                </button>
+                />
               </li>
             );
           })}

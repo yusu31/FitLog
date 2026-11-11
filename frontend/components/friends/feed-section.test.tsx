@@ -148,8 +148,8 @@ describe('スタンプ', () => {
     ];
     renderFeed();
     const lists = await screen.findAllByRole('list', { name: /へのスタンプ$/ });
-    expect(within(lists[0]).getAllByRole('button').map((b) => b.textContent)).toEqual(['ナイス', 'すごい', 'おつかれ', 'いいね', 'コメント']);
-    expect(within(lists[1]).getAllByRole('button').map((b) => b.textContent)).toEqual(['ゆっくりね', 'またあした', 'コメント']);
+    expect(within(lists[0]).getAllByRole('button').map((b) => b.textContent)).toEqual(['👍ナイス', '🔥すごい', '👏おつかれ', '❤️いいね', 'コメント']);
+    expect(within(lists[1]).getAllByRole('button').map((b) => b.textContent)).toEqual(['😌ゆっくりね', '👋またあした', 'コメント']);
   });
 
   it('付いた数を出し、自分が付けたものは押された状態で表す', async () => {
