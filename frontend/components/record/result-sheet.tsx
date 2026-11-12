@@ -25,6 +25,8 @@ export type SheetData = {
   note?: string;
   // 今日の記録で使った部位（F-19）。祝福の中で体の図を光らせる。無ければ出さない
   parts?: readonly BodyPart[];
+  // 今月の何日目か（F-20）。分からないとき（まだ読み込めていない・電波なし）は出さない
+  monthDay?: number;
 };
 
 // 結果シート（features.md 2.6）。「できた」の直後に 3秒出し、タップで飛ばせる。
@@ -49,7 +51,7 @@ export function ResultSheet({ sheet, onDismiss }: { sheet: SheetData | null; onD
 }
 
 function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolean; onDismiss: () => void }) {
-  const { result, diff, isPersonalBest, summary, note, parts } = sheet;
+  const { result, diff, isPersonalBest, summary, note, parts, monthDay } = sheet;
   const gold = result === 'up' || isPersonalBest;
   const [upLabel, upAmount] = ghostUpMessage(diff).split(' ');
   return (
@@ -81,6 +83,11 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
         )}
       </p>
       <p className="mt-1 text-sm opacity-85">{summary}</p>
+      {monthDay !== undefined && (
+        <p data-testid="month-day" className="mt-1 text-sm font-bold">
+          今月 <span className="fl-num text-xl">{monthDay}</span> 日目
+        </p>
+      )}
       {note && <p className="mt-1 text-xs font-bold opacity-85">{note}</p>}
       {parts && parts.length > 0 && <TodayParts parts={parts} />}
     </button>

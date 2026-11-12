@@ -1,6 +1,7 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, asc, between, count, desc, eq, inArray, isNull, lt, or } from 'drizzle-orm';
+import { and, asc, between, count, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { compareSet, isPersonalBest } from '../common/ghost.js';
+import { buildStats, type DayAgg } from '../common/stats.js';
 import { cellStatus, weekDates, weekStartOf } from '../common/week.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isUuid } from '../common/uuid.js';
@@ -10,7 +11,7 @@ import { findPrevious, pastMaxVolume } from './ghost-queries.js';
 import { encodeCursor, parseListQuery } from './list-input.js';
 import { visibleToMe } from './record-access.js';
 import { parseRecordInput, type RunInput } from './record-input.js';
-import type { HeatmapResponse, RecordDetailResponse, RecordedExercise, RecordListResponse, RecordResponse, SetResponse, WeekResponse } from './records.response.js';
+import type { HeatmapResponse, RecordDetailResponse, RecordedExercise, RecordListResponse, RecordResponse, SetResponse, StatsResponse, WeekResponse } from './records.response.js';
 import { parseSetInput } from './set-input.js';
 import { parseWeekDate } from './week-input.js';
 
@@ -107,6 +108,40 @@ export class RecordsService {
     const setsByPart = new Map(rows.map((r) => [r.bodyPart, r.sets]));
 
     return { weekStart, parts: BODY_PARTS.map((bodyPart) => ({ bodyPart, sets: setsByPart.get(bodyPart) ?? 0 })) };
+  }
+
+  // 記録をくわしく（F-22・F-26・F-27・F-29）。date（日本時間の今日）を基準に、自分の記録を全期間から日ごとにまとめて、
+  // 1年分のマス・今月の数字・直近12週・スタンプを共通の関数 buildStats で出す。他の人の記録は入らない
+  async stats(userId: string, dateRaw: unknown): Promise<StatsResponse> {
+    const today = parseWeekDate(dateRaw);
+
+    const kindRows = await this.db.select({ localDate: records.localDate, kind: records.kind }).from(records).where(eq(records.userId, userId));
+    const weightRows = await this.db
+      .select({ localDate: records.localDate, total: sql<string>`sum(${workoutSets.weightKg} * ${workoutSets.reps})` })
+      .from(workoutSets)
+      .innerJoin(records, eq(records.id, workoutSets.recordId))
+      .where(eq(records.userId, userId))
+      .groupBy(records.localDate);
+    const runRows = await this.db
+      .select({ localDate: records.localDate, distanceM: runDetails.distanceM })
+      .from(runDetails)
+      .innerJoin(records, eq(records.id, runDetails.recordId))
+      .where(eq(records.userId, userId));
+
+    const days = new Map<string, DayAgg & { kinds: ('workout' | 'run' | 'rest')[] }>();
+    const dayOf = (date: string) => {
+      let d = days.get(date);
+      if (!d) days.set(date, (d = { date, status: 'none', weightKg: 0, runM: 0, maxRunM: 0, kinds: [] }));
+      return d;
+    };
+    for (const r of kindRows) dayOf(r.localDate).kinds.push(r.kind);
+    for (const r of weightRows) dayOf(r.localDate).weightKg = Number(r.total);
+    for (const r of runRows) {
+      const d = dayOf(r.localDate);
+      d.runM += r.distanceM;
+      d.maxRunM = Math.max(d.maxRunM, r.distanceM);
+    }
+    return buildStats([...days.values()].map((d) => ({ ...d, status: cellStatus(d.kinds) })), today);
   }
 
   // 自分の記録の一覧（新しい順）。運動した時刻の降順、同じ時刻は id の降順で並べ、cursor は「最後に読んだ1件」の（時刻, id）。

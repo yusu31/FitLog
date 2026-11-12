@@ -118,15 +118,11 @@ describe('MeView（S-30 自分）', () => {
       expect(screen.queryByRole('button', { name: /設定/ })).not.toBeInTheDocument();
     });
 
-    it('ヒートマップと「記録をくわしく」は押せない状態で置いてあり、押しても API を呼ばない', async () => {
+    it('「記録をくわしく」は /me/stats（S-35）へのリンク。ヒートマップも置いてある', async () => {
       renderWithQuery(<MeView />);
       await screen.findByText('まだ記録がありません');
-      const more = screen.getByRole('button', { name: /記録をくわしく/ });
-      expect(more).toBeDisabled();
+      expect(screen.getByRole('link', { name: /記録をくわしく/ })).toHaveAttribute('href', '/me/stats');
       expect(screen.getByText('今週きたえたところ')).toBeInTheDocument();
-      const before = calls.length;
-      await userEvent.setup().click(more);
-      expect(calls).toHaveLength(before);
     });
 
     it('名前の表示とログアウトの導線は残っている', async () => {

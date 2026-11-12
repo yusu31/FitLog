@@ -102,6 +102,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | GET | `/week?date=YYYY-MM-DD` | その日を含む週の、自分の7マス。応答は `{ weekStart, days: [{ date, status }] × 7 }`（月曜から日曜の順。`status` は `rec`・`rest`・`none`） | 週は月曜〜日曜（日本時間）。同じ日に記録と休みがあれば `rec`。`date` が実在する日付でない・無いときは 400 |
 | GET | `/feed?weekStart=YYYY-MM-DD&cursor=` | 同じグループの足跡（新しい順・20件ずつ）と、その週の合計 | `weekStart` は必須で、その日を含む週（月曜〜日曜）を返す（水曜を渡しても月曜に直す）。応答は `{ weekStart, items, nextCursor, totals }`。`items` の1件は `id`・`kind`・`recordedAt`・`localDate`・`author`（`id`・`name`・`avatar`）・`exerciseNames`（筋トレの種目名。重複なし）・`run`（ランだけ）・`stamps`（付いたものだけ。`stampKey`・`count`・`mine`＝自分のスタンプの id か `null`）・`commentCount`。`totals` は `recordedUserCount`（筋トレかランを記録した人。休みだけの人は数えない）・`totalVolumeKg`・`totalDistanceM`（ページに関係なく週全体）。**自分の記録も含む**。グループに入っていなければ 200 で `items` は空・`totals` は 0。`weekStart` が日付でない・`cursor` が壊れていれば 400 |
 | GET | `/me/heatmap?weekStart=YYYY-MM-DD` | その週の部位ごとのセット数 | F-12 |
+| GET | `/me/stats?date=YYYY-MM-DD` | 記録をくわしく。応答は `{ today, calendar: [{ date, status }] × 365, month: { month, activeDays, restDays, totalWeightKg, runDistanceM }, weekly: [{ weekStart, totalWeightKg, runDistanceM }] × 12, stamps: [{ key, earned }] × 13 }`。`date` は今日（日本時間）。自分の記録だけを全期間から日ごとにまとめる（共通の関数 `common/stats.ts`）。不正な `date` は 400 | F-20・F-22・F-26・F-27・F-29 |
 
 ### スタンプ・コメント（F-10）
 

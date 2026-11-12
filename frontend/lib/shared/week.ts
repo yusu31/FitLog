@@ -17,6 +17,11 @@ export function weekStartOf(date: string): string {
   return fromUtcMs(ms - ((day + 6) % 7) * DAY_MS);
 }
 
+// 日付に n 日足す（引くときは負の数）
+export function addDays(date: string, n: number): string {
+  return fromUtcMs(toUtcMs(date) + n * DAY_MS);
+}
+
 // 月曜から7日分の日付
 export function weekDates(weekStart: string): string[] {
   const ms = toUtcMs(weekStart);

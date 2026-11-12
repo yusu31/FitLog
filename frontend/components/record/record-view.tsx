@@ -8,10 +8,12 @@ import { FullScreen } from '@/components/fitlog/full-screen';
 import { Sprite } from '@/components/fitlog/sprite';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
-import { useGetPrevious, useGetRecord, useListExercises } from '@/lib/api/generated';
+import { useGetPrevious, useGetRecord, useGetStats, useListExercises } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import { activeRecordId, recordForNextSet } from '@/lib/current-workout';
 import { SYNC_MESSAGES } from '@/lib/messages';
+import { toLocalDate } from '@/lib/shared/local-date';
+import { monthDayCount } from '@/lib/stats';
 import { useRecordMutations } from '@/lib/mutations';
 import {
   clampReps,
@@ -60,6 +62,10 @@ export function RecordView() {
     { query: { enabled: signedIn && !!exercise } },
   );
   const previous = previousData?.status === 200 ? previousData.data : undefined;
+
+  // 祝福の「今月◯日目」（F-20）。画面を開いたときの集計を使う。取れていなければ出さない
+  const { data: statsData } = useGetStats({ date: toLocalDate(new Date()) }, { query: { enabled: signedIn } });
+  const monthDay = statsData?.status === 200 ? monthDayCount(statsData.data) : undefined;
 
   const [recordId, setRecordId] = useState<string | null>(() => activeRecordId(Date.now()));
   // キャッシュの記録の詳細（楽観的更新の置き場所）を見るだけ。取りに行かない
@@ -139,7 +145,7 @@ export function RecordView() {
         ),
       ),
     ];
-    setSheet({ setId, ...provisional, diff, summary: summaryOf, parts: todayParts, ...(online ? {} : { note: SYNC_MESSAGES.sheetNote }) });
+    setSheet({ setId, ...provisional, diff, summary: summaryOf, parts: todayParts, ...(monthDay === undefined ? {} : { monthDay }), ...(online ? {} : { note: SYNC_MESSAGES.sheetNote }) });
 
     // 画面の仮の結果で先に見せ、API の応答が違えば直す（API が正）
     mutations.addSet

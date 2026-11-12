@@ -875,6 +875,49 @@
         ]
       }
     },
+    "/api/me/stats": {
+      "get": {
+        "operationId": "getStats",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "今日の日付（日本時間。YYYY-MM-DD）",
+            "schema": {
+              "example": "2026-11-12",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "date が実在する YYYY-MM-DD でない・無い（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "1年分のマス・今月の数字・直近12週・スタンプを、自分の記録から返す",
+        "tags": [
+          "records"
+        ]
+      }
+    },
     "/api/feed": {
       "get": {
         "operationId": "getFeed",
@@ -2238,6 +2281,167 @@
         "required": [
           "weekStart",
           "parts"
+        ]
+      },
+      "StatsCalendarDay": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-11-12"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "rec",
+              "rest",
+              "none"
+            ],
+            "description": "記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec"
+          }
+        },
+        "required": [
+          "date",
+          "status"
+        ]
+      },
+      "StatsMonth": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "2026-11",
+            "description": "今日を含む月（日本時間）"
+          },
+          "activeDays": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今月、筋トレかランを記録した日の数"
+          },
+          "restDays": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今月、休みだけを記録した日の数（同じ日に記録があれば数えない）"
+          },
+          "totalWeightKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今月の総重量（重量×回数の合計。kg。小数1桁）"
+          },
+          "runDistanceM": {
+            "type": "number",
+            "minimum": 0,
+            "description": "今月のランの合計距離（m）"
+          }
+        },
+        "required": [
+          "month",
+          "activeDays",
+          "restDays",
+          "totalWeightKg",
+          "runDistanceM"
+        ]
+      },
+      "StatsWeek": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "example": "2026-11-09",
+            "description": "その週の月曜の日付"
+          },
+          "totalWeightKg": {
+            "type": "number",
+            "minimum": 0
+          },
+          "runDistanceM": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "weekStart",
+          "totalWeightKg",
+          "runDistanceM"
+        ]
+      },
+      "StampKey": {
+        "type": "string",
+        "enum": [
+          "first-record",
+          "first-run",
+          "first-5k",
+          "first-10k",
+          "days-10",
+          "days-30",
+          "days-100",
+          "weight-1t",
+          "weight-10t",
+          "weight-100t",
+          "run-50k",
+          "run-100k",
+          "run-500k"
+        ]
+      },
+      "StatsStamp": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StampKey"
+              }
+            ]
+          },
+          "earned": {
+            "type": "boolean",
+            "description": "獲得済みか（初めて・累計だけで決まる。連続日数の型は無い）"
+          }
+        },
+        "required": [
+          "key",
+          "earned"
+        ]
+      },
+      "StatsResponse": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "example": "2026-11-12",
+            "description": "集計の基準にした今日（日本時間）"
+          },
+          "calendar": {
+            "description": "今日を最後にした365日分のマス（日付の昇順）。週・月・年の切替はこれを画面で切り出す",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsCalendarDay"
+            }
+          },
+          "month": {
+            "$ref": "#/components/schemas/StatsMonth"
+          },
+          "weekly": {
+            "description": "今週を最後にした直近12週（月曜の昇順）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsWeek"
+            }
+          },
+          "stamps": {
+            "description": "スタンプ帳。全期間の記録から毎回計算する",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsStamp"
+            }
+          }
+        },
+        "required": [
+          "today",
+          "calendar",
+          "month",
+          "weekly",
+          "stamps"
         ]
       },
       "FeedStamp": {
