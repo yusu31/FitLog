@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { GhostResult } from '../common/ghost.js';
+import { STAMP_KEYS, type StampKey } from '../common/stats.js';
 import type { CellStatus } from '../common/week.js';
 import { BODY_PARTS, RECORD_KINDS, type BodyPart, type RecordKind } from '../db/schema.js';
 import { CREATABLE_KINDS, DISTANCE_M_MAX, DISTANCE_M_MIN, DURATION_S_MAX, DURATION_S_MIN, ROUTE_POINTS_MAX, ROUTE_POINTS_MIN, type CreatableKind } from './record-input.js';
@@ -187,3 +188,64 @@ export class HeatmapResponse {
   parts!: HeatmapPart[];
 }
 
+
+export class StatsCalendarDay {
+  @ApiProperty({ example: '2026-11-12' })
+  date!: string;
+
+  @ApiProperty({ enum: ['rec', 'rest', 'none'], description: '記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec' })
+  status!: CellStatus;
+}
+
+export class StatsMonth {
+  @ApiProperty({ example: '2026-11', description: '今日を含む月（日本時間）' })
+  month!: string;
+
+  @ApiProperty({ minimum: 0, description: '今月、筋トレかランを記録した日の数' })
+  activeDays!: number;
+
+  @ApiProperty({ minimum: 0, description: '今月、休みだけを記録した日の数（同じ日に記録があれば数えない）' })
+  restDays!: number;
+
+  @ApiProperty({ minimum: 0, description: '今月の総重量（重量×回数の合計。kg。小数1桁）' })
+  totalWeightKg!: number;
+
+  @ApiProperty({ minimum: 0, description: '今月のランの合計距離（m）' })
+  runDistanceM!: number;
+}
+
+export class StatsWeek {
+  @ApiProperty({ example: '2026-11-09', description: 'その週の月曜の日付' })
+  weekStart!: string;
+
+  @ApiProperty({ minimum: 0 })
+  totalWeightKg!: number;
+
+  @ApiProperty({ minimum: 0 })
+  runDistanceM!: number;
+}
+
+export class StatsStamp {
+  @ApiProperty({ enum: STAMP_KEYS, enumName: 'StampKey' })
+  key!: StampKey;
+
+  @ApiProperty({ description: '獲得済みか（初めて・累計だけで決まる。連続日数の型は無い）' })
+  earned!: boolean;
+}
+
+export class StatsResponse {
+  @ApiProperty({ example: '2026-11-12', description: '集計の基準にした今日（日本時間）' })
+  today!: string;
+
+  @ApiProperty({ type: [StatsCalendarDay], description: '今日を最後にした365日分のマス（日付の昇順）。週・月・年の切替はこれを画面で切り出す' })
+  calendar!: StatsCalendarDay[];
+
+  @ApiProperty({ type: StatsMonth })
+  month!: StatsMonth;
+
+  @ApiProperty({ type: [StatsWeek], description: '今週を最後にした直近12週（月曜の昇順）' })
+  weekly!: StatsWeek[];
+
+  @ApiProperty({ type: [StatsStamp], description: 'スタンプ帳。全期間の記録から毎回計算する' })
+  stamps!: StatsStamp[];
+}

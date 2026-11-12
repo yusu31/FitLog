@@ -8,6 +8,7 @@ export const PRECACHE_PAGES: readonly string[] = [
   '/invite/',
   '/login/',
   '/me/',
+  '/me/stats/',
   '/record-detail/',
   '/record/',
   '/rest/',

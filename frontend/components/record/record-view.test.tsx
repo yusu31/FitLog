@@ -1,5 +1,5 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resetCurrentWorkout } from '@/lib/current-workout';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
@@ -33,6 +33,17 @@ const PREVIOUS = {
   personalBest: { weightKg: 40, reps: 10, volume: 400 },
 };
 const NO_PREVIOUS = { previous: null, personalBest: null };
+// 集計（F-20 の「今月◯日目」の材料）。今月3日動いていて、今日はまだ数えられていない
+const STATS = {
+  today: '2026-11-02',
+  calendar: [
+    { date: '2026-11-01', status: 'rec' },
+    { date: '2026-11-02', status: 'none' },
+  ],
+  month: { month: '2026-11', activeDays: 3, restDays: 0, totalWeightKg: 0, runDistanceM: 0 },
+  weekly: [],
+  stamps: [],
+};
 
 type Call = { method: string; url: string; body?: Record<string, unknown> };
 type Reply = { status: number; body?: unknown };
@@ -53,6 +64,7 @@ beforeEach(() => {
   setReply = echoSet('same');
   handlers = {
     'GET /api/exercises': () => ({ status: 200, body: EXERCISES }),
+    'GET /api/me/stats': () => ({ status: 200, body: STATS }),
     'GET /api/exercises/e-bench/previous': () => ({ status: 200, body: PREVIOUS }),
     'GET /api/exercises/e-mine/previous': () => ({ status: 200, body: NO_PREVIOUS }),
     'POST /api/records': (call) => ({ status: 201, body: { id: call.body?.id, kind: 'workout', recordedAt: call.body?.recordedAt, localDate: '2026-11-02' } }),
@@ -285,6 +297,23 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await user.click(doneButton());
       expect(sheet()).toHaveTextContent('前回超え +1');
       expect(sheet()).toHaveTextContent('ベンチプレス 40kg × 11回');
+    });
+
+    it('F-20 祝福に「今月 N 日目」を重ねる（今月3日動いていて今日が未計上なら 4 日目）。集計が取れなければ出さない', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      await waitFor(() => expect(sheet()).toHaveTextContent('今月 4 日目'));
+      await user.click(sheet()!);
+
+      handlers['GET /api/me/stats'] = () => ({ status: 500, body: { code: 'X', message: 'x', details: null } });
+      cleanup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      expect(sheet()).toBeInTheDocument();
+      expect(screen.queryByTestId('month-day')).not.toBeInTheDocument();
     });
 
     it('同じなら「前回と おなじ」、下回っても責めずに「ちゃんと 記録したよ。むりしない日もOK」', async () => {

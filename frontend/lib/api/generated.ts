@@ -394,6 +394,95 @@ export interface HeatmapResponse {
   parts: HeatmapPart[];
 }
 
+/**
+ * 記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec
+ */
+export type StatsCalendarDayStatus = typeof StatsCalendarDayStatus[keyof typeof StatsCalendarDayStatus];
+
+
+export const StatsCalendarDayStatus = {
+  rec: 'rec',
+  rest: 'rest',
+  none: 'none',
+} as const;
+
+export interface StatsCalendarDay {
+  date: string;
+  /** 記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec */
+  status: StatsCalendarDayStatus;
+}
+
+export interface StatsMonth {
+  /** 今日を含む月（日本時間） */
+  month: string;
+  /**
+     * 今月、筋トレかランを記録した日の数
+     * @minimum 0
+     */
+  activeDays: number;
+  /**
+     * 今月、休みだけを記録した日の数（同じ日に記録があれば数えない）
+     * @minimum 0
+     */
+  restDays: number;
+  /**
+     * 今月の総重量（重量×回数の合計。kg。小数1桁）
+     * @minimum 0
+     */
+  totalWeightKg: number;
+  /**
+     * 今月のランの合計距離（m）
+     * @minimum 0
+     */
+  runDistanceM: number;
+}
+
+export interface StatsWeek {
+  /** その週の月曜の日付 */
+  weekStart: string;
+  /** @minimum 0 */
+  totalWeightKg: number;
+  /** @minimum 0 */
+  runDistanceM: number;
+}
+
+export type StampKey = typeof StampKey[keyof typeof StampKey];
+
+
+export const StampKey = {
+  'first-record': 'first-record',
+  'first-run': 'first-run',
+  'first-5k': 'first-5k',
+  'first-10k': 'first-10k',
+  'days-10': 'days-10',
+  'days-30': 'days-30',
+  'days-100': 'days-100',
+  'weight-1t': 'weight-1t',
+  'weight-10t': 'weight-10t',
+  'weight-100t': 'weight-100t',
+  'run-50k': 'run-50k',
+  'run-100k': 'run-100k',
+  'run-500k': 'run-500k',
+} as const;
+
+export interface StatsStamp {
+  key: StampKey;
+  /** 獲得済みか（初めて・累計だけで決まる。連続日数の型は無い） */
+  earned: boolean;
+}
+
+export interface StatsResponse {
+  /** 集計の基準にした今日（日本時間） */
+  today: string;
+  /** 今日を最後にした365日分のマス（日付の昇順）。週・月・年の切替はこれを画面で切り出す */
+  calendar: StatsCalendarDay[];
+  month: StatsMonth;
+  /** 今週を最後にした直近12週（月曜の昇順） */
+  weekly: StatsWeek[];
+  /** スタンプ帳。全期間の記録から毎回計算する */
+  stamps: StatsStamp[];
+}
+
 export type FeedStampStampKey = typeof FeedStampStampKey[keyof typeof FeedStampStampKey];
 
 
@@ -620,6 +709,11 @@ export type GetWeekParams = {
 export type GetHeatmapParams = {
   /** 日本時間の日付（YYYY-MM-DD）。月曜でなくても、その日を含む週に直す */
   weekStart: string;
+};
+
+export type GetStatsParams = {
+  /** 今日の日付（日本時間。YYYY-MM-DD） */
+  date: string;
 };
 
 export type GetFeedParams = {
@@ -3033,6 +3127,140 @@ export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TE
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetHeatmapQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type getStatsResponse200 = {
+  data: StatsResponse
+  status: 200
+}
+
+export type getStatsResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getStatsResponseSuccess = (getStatsResponse200) & {
+  headers: Headers;
+};
+export type getStatsResponseError = (getStatsResponse400) & {
+  headers: Headers;
+};
+
+export type getStatsResponse = (getStatsResponseSuccess | getStatsResponseError)
+
+export const getGetStatsUrl = (params: GetStatsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/me/stats?${stringifiedParams}` : `/api/me/stats`
+}
+
+/**
+ * @summary 1年分のマス・今月の数字・直近12週・スタンプを、自分の記録から返す
+ */
+export const getStats = async (params: GetStatsParams, options?: RequestInit): Promise<getStatsResponse> => {
+
+  const res = await fetch(getGetStatsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getStatsResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getStatsResponse
+}
+
+
+
+
+
+export const getGetStatsQueryKey = (params?: GetStatsParams,) => {
+    return [
+    `/api/me/stats`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetStatsQueryOptions = <TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorResponse>(params: GetStatsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStatsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStats>>> = ({ signal }) => getStats(params, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getStats>>>
+export type GetStatsQueryError = ErrorResponse
+
+
+export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorResponse>(
+ params: GetStatsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStats>>,
+          TError,
+          Awaited<ReturnType<typeof getStats>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorResponse>(
+ params: GetStatsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStats>>,
+          TError,
+          Awaited<ReturnType<typeof getStats>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorResponse>(
+ params: GetStatsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 1年分のマス・今月の数字・直近12週・スタンプを、自分の記録から返す
+ */
+
+export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorResponse>(
+ params: GetStatsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetStatsQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

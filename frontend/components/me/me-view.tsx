@@ -12,7 +12,7 @@ import { useAppSession } from '@/lib/use-app-session';
 import { HeatmapSection } from './heatmap-section';
 import { RecordsList } from './records-list';
 
-// S-30 自分（docs/screen-design.md 4章）。記録の一覧には「…」から削除がある。「記録をくわしく」はまだなので、導線は見た目だけ（押せない）。
+// S-30 自分（docs/screen-design.md 4章）。記録の一覧には「…」から削除がある。「記録をくわしく」は /me/stats（S-35）へのリンク。
 // 「設定」は /settings へのリンク。ログアウトは本来 S-31 設定に置くが、設定の画面ができるまでここに置く
 export function MeView() {
   const router = useRouter();
@@ -58,11 +58,14 @@ export function MeView() {
 
         <RecordsList />
 
-        {/* 記録の詳細・削除はまだない。押せない */}
-        <ThickButton tone="white" disabled>
+        {/* S-35 記録をくわしく。ThickButton（white・lg）と同じ見た目のリンク */}
+        <Link
+          href="/me/stats"
+          className="fl-thick inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-white px-5 text-lg font-extrabold tracking-wider text-teal-dark outline-none [--thick:#b8e3e4] focus-visible:ring-4 focus-visible:ring-teal/40 [&_svg]:size-5 [&_svg]:shrink-0"
+        >
           <ListChecks aria-hidden />
           記録をくわしく
-        </ThickButton>
+        </Link>
 
         <ThickButton tone="white" onClick={onSignOut}>
           <LogOut aria-hidden />

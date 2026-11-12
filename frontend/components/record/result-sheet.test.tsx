@@ -24,3 +24,16 @@ describe('ResultSheet（今日きたえたところ F-19）', () => {
     expect(screen.queryByTestId('today-parts')).not.toBeInTheDocument();
   });
 });
+
+// F-20: 祝福に「今月◯日目」を重ねる。分からないとき（まだ読み込めていない・電波なし）は出さない
+describe('ResultSheet（今月◯日目 F-20）', () => {
+  it('monthDay があれば「今月 N 日目」を出す', () => {
+    render(<ResultSheet sheet={{ ...base, monthDay: 4 }} onDismiss={() => {}} />);
+    expect(screen.getByTestId('month-day')).toHaveTextContent('今月 4 日目');
+  });
+
+  it('monthDay が無ければ出さない（0 日目と間違えない）', () => {
+    render(<ResultSheet sheet={base} onDismiss={() => {}} />);
+    expect(screen.queryByTestId('month-day')).not.toBeInTheDocument();
+  });
+});
