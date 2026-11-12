@@ -2,7 +2,11 @@
 
 import { useEffect } from 'react';
 import { cn } from 'cn';
+import { BodyFigure } from '@/components/me/body-figure';
 import { Sprite } from '@/components/fitlog/sprite';
+import type { BodyPart } from '@/lib/api/generated';
+import { BODY_PART_LABEL, BODY_PART_ORDER } from '@/lib/body-parts';
+import { levelsOf } from '@/lib/heatmap';
 import { GHOST_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from '@/lib/messages';
 import { usePrefersReducedMotion } from '@/lib/use-browser-state';
 import type { GhostResult } from '@/lib/shared/ghost';
@@ -19,6 +23,8 @@ export type SheetData = {
   summary: string;
   // 電波なしで押したとき、直後に添える1行（保存したこと・あとで送ること）
   note?: string;
+  // 今日の記録で使った部位（F-19）。祝福の中で体の図を光らせる。無ければ出さない
+  parts?: readonly BodyPart[];
 };
 
 // 結果シート（features.md 2.6）。「できた」の直後に 3秒出し、タップで飛ばせる。
@@ -43,7 +49,7 @@ export function ResultSheet({ sheet, onDismiss }: { sheet: SheetData | null; onD
 }
 
 function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolean; onDismiss: () => void }) {
-  const { result, diff, isPersonalBest, summary, note } = sheet;
+  const { result, diff, isPersonalBest, summary, note, parts } = sheet;
   const gold = result === 'up' || isPersonalBest;
   const [upLabel, upAmount] = ghostUpMessage(diff).split(' ');
   return (
@@ -76,6 +82,23 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
       </p>
       <p className="mt-1 text-sm opacity-85">{summary}</p>
       {note && <p className="mt-1 text-xs font-bold opacity-85">{note}</p>}
+      {parts && parts.length > 0 && <TodayParts parts={parts} />}
     </button>
   );
 }
+
+// 今日きたえた部位（F-19）。ヒートマップ（F-12）と同じ体の図で、使った部位だけを一番濃い色にする。色だけに頼らず、部位名も書く
+function TodayParts({ parts }: { parts: readonly BodyPart[] }) {
+  const levels = levelsOf(parts.map((bodyPart) => ({ bodyPart, sets: 4 })));
+  const names = BODY_PART_ORDER.filter((p) => parts.includes(p)).map((p) => BODY_PART_LABEL[p]);
+  return (
+    <div data-testid="today-parts" className="mt-3 flex items-center gap-3">
+      <div className="flex gap-2 rounded-lg bg-white px-3 py-2">
+        <BodyFigure view="front" levels={levels} size={36} />
+        <BodyFigure view="back" levels={levels} size={36} />
+      </div>
+      <p className="text-sm font-bold">今日きたえたところ: {names.join('・')}</p>
+    </div>
+  );
+}
+

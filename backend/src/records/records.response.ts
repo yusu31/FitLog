@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { GhostResult } from '../common/ghost.js';
 import type { CellStatus } from '../common/week.js';
-import { RECORD_KINDS, type RecordKind } from '../db/schema.js';
+import { BODY_PARTS, RECORD_KINDS, type BodyPart, type RecordKind } from '../db/schema.js';
 import { CREATABLE_KINDS, DISTANCE_M_MAX, DISTANCE_M_MIN, DURATION_S_MAX, DURATION_S_MIN, ROUTE_POINTS_MAX, ROUTE_POINTS_MIN, type CreatableKind } from './record-input.js';
 
 // GPX のルート（GeoJSON の LineString）。点は [経度, 緯度]
@@ -169,5 +169,21 @@ export class WeekResponse {
 
   @ApiProperty({ type: [WeekDay], description: '月曜から日曜までの7日分（日付の昇順）' })
   days!: WeekDay[];
+}
+
+export class HeatmapPart {
+  @ApiProperty({ enum: BODY_PARTS, enumName: 'BodyPart' })
+  bodyPart!: BodyPart;
+
+  @ApiProperty({ minimum: 0, example: 3, description: 'その週に記録したセットのうち、この部位の種目のセット数' })
+  sets!: number;
+}
+
+export class HeatmapResponse {
+  @ApiProperty({ example: '2026-10-26', description: 'その週の月曜の日付' })
+  weekStart!: string;
+
+  @ApiProperty({ type: [HeatmapPart], description: 'すべての部位（0セットの部位も入る）。並びは部位の一覧の順' })
+  parts!: HeatmapPart[];
 }
 

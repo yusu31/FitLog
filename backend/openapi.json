@@ -832,6 +832,49 @@
         ]
       }
     },
+    "/api/me/heatmap": {
+      "get": {
+        "operationId": "getHeatmap",
+        "parameters": [
+          {
+            "name": "weekStart",
+            "required": true,
+            "in": "query",
+            "description": "日本時間の日付（YYYY-MM-DD）。月曜でなくても、その日を含む週に直す",
+            "schema": {
+              "example": "2026-10-26",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeatmapResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "weekStart が実在する YYYY-MM-DD でない・無い（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "その日を含む週（月曜〜日曜）の、自分のセット数を部位ごとに返す",
+        "tags": [
+          "records"
+        ]
+      }
+    },
     "/api/feed": {
       "get": {
         "operationId": "getFeed",
@@ -2152,6 +2195,49 @@
         "required": [
           "weekStart",
           "days"
+        ]
+      },
+      "HeatmapPart": {
+        "type": "object",
+        "properties": {
+          "bodyPart": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BodyPart"
+              }
+            ]
+          },
+          "sets": {
+            "type": "number",
+            "minimum": 0,
+            "example": 3,
+            "description": "その週に記録したセットのうち、この部位の種目のセット数"
+          }
+        },
+        "required": [
+          "bodyPart",
+          "sets"
+        ]
+      },
+      "HeatmapResponse": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "example": "2026-10-26",
+            "description": "その週の月曜の日付"
+          },
+          "parts": {
+            "description": "すべての部位（0セットの部位も入る）。並びは部位の一覧の順",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeatmapPart"
+            }
+          }
+        },
+        "required": [
+          "weekStart",
+          "parts"
         ]
       },
       "FeedStamp": {

@@ -130,7 +130,16 @@ export function RecordView() {
     const diff = ghost ? ghostDiff(ghost, value) : 0;
     setNotice(null);
     setOutcomes((o) => ({ ...o, [setId]: provisional }));
-    setSheet({ setId, ...provisional, diff, summary: summaryOf, ...(online ? {} : { note: SYNC_MESSAGES.sheetNote }) });
+    // 今日の記録で使った部位（F-19）。この記録に入っている種目と、いまの種目の部位
+    const bodyPartOf = (id: string) => (exerciseData?.status === 200 ? exerciseData.data.find((e) => e.id === id)?.bodyPart : undefined);
+    const todayParts = [
+      ...new Set(
+        [...(detailData?.status === 200 ? (detailData.data.exercises ?? []).map((e) => bodyPartOf(e.exerciseId)) : []), exercise.bodyPart].filter(
+          (p): p is NonNullable<typeof p> => !!p,
+        ),
+      ),
+    ];
+    setSheet({ setId, ...provisional, diff, summary: summaryOf, parts: todayParts, ...(online ? {} : { note: SYNC_MESSAGES.sheetNote }) });
 
     // 画面の仮の結果で先に見せ、API の応答が違えば直す（API が正）
     mutations.addSet

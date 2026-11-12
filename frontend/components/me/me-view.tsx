@@ -9,9 +9,10 @@ import { ThickButton } from '@/components/fitlog/thick-button';
 import { authClient } from '@/lib/auth-client';
 import { clearCachedUser } from '@/lib/session-cache';
 import { useAppSession } from '@/lib/use-app-session';
+import { HeatmapSection } from './heatmap-section';
 import { RecordsList } from './records-list';
 
-// S-30 自分（docs/screen-design.md 4章）。記録の一覧には「…」から削除がある。ヒートマップ（02-4）・「記録をくわしく」はまだなので、導線は見た目だけ（押せない）。
+// S-30 自分（docs/screen-design.md 4章）。記録の一覧には「…」から削除がある。「記録をくわしく」はまだなので、導線は見た目だけ（押せない）。
 // 「設定」は /settings へのリンク。ログアウトは本来 S-31 設定に置くが、設定の画面ができるまでここに置く
 export function MeView() {
   const router = useRouter();
@@ -53,15 +54,7 @@ export function MeView() {
           </Link>
         </section>
 
-        {/* ヒートマップは 02-4 で作る。場所と見出しだけ置く */}
-        <section aria-labelledby="heat-heading" className="fl-slab px-4 py-3">
-          <h2 id="heat-heading" className="text-sm font-extrabold text-sub-strong">
-            今週きたえたところ
-          </h2>
-          <p className="mt-2 rounded-lg bg-face px-3 py-6 text-center text-sm font-bold text-sub-strong">
-            体の図は、もうすぐ出ます
-          </p>
-        </section>
+        <HeatmapSection />
 
         <RecordsList />
 

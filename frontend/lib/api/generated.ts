@@ -378,6 +378,22 @@ export interface WeekResponse {
   days: WeekDay[];
 }
 
+export interface HeatmapPart {
+  bodyPart: BodyPart;
+  /**
+     * その週に記録したセットのうち、この部位の種目のセット数
+     * @minimum 0
+     */
+  sets: number;
+}
+
+export interface HeatmapResponse {
+  /** その週の月曜の日付 */
+  weekStart: string;
+  /** すべての部位（0セットの部位も入る）。並びは部位の一覧の順 */
+  parts: HeatmapPart[];
+}
+
 export type FeedStampStampKey = typeof FeedStampStampKey[keyof typeof FeedStampStampKey];
 
 
@@ -599,6 +615,11 @@ export const ListRecordsKind = {
 export type GetWeekParams = {
   /** 日本時間の日付（YYYY-MM-DD） */
   date: string;
+};
+
+export type GetHeatmapParams = {
+  /** 日本時間の日付（YYYY-MM-DD）。月曜でなくても、その日を含む週に直す */
+  weekStart: string;
 };
 
 export type GetFeedParams = {
@@ -2878,6 +2899,140 @@ export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError =
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetWeekQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type getHeatmapResponse200 = {
+  data: HeatmapResponse
+  status: 200
+}
+
+export type getHeatmapResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getHeatmapResponseSuccess = (getHeatmapResponse200) & {
+  headers: Headers;
+};
+export type getHeatmapResponseError = (getHeatmapResponse400) & {
+  headers: Headers;
+};
+
+export type getHeatmapResponse = (getHeatmapResponseSuccess | getHeatmapResponseError)
+
+export const getGetHeatmapUrl = (params: GetHeatmapParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/me/heatmap?${stringifiedParams}` : `/api/me/heatmap`
+}
+
+/**
+ * @summary その日を含む週（月曜〜日曜）の、自分のセット数を部位ごとに返す
+ */
+export const getHeatmap = async (params: GetHeatmapParams, options?: RequestInit): Promise<getHeatmapResponse> => {
+
+  const res = await fetch(getGetHeatmapUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getHeatmapResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getHeatmapResponse
+}
+
+
+
+
+
+export const getGetHeatmapQueryKey = (params?: GetHeatmapParams,) => {
+    return [
+    `/api/me/heatmap`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetHeatmapQueryOptions = <TData = Awaited<ReturnType<typeof getHeatmap>>, TError = ErrorResponse>(params: GetHeatmapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHeatmapQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHeatmap>>> = ({ signal }) => getHeatmap(params, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetHeatmapQueryResult = NonNullable<Awaited<ReturnType<typeof getHeatmap>>>
+export type GetHeatmapQueryError = ErrorResponse
+
+
+export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TError = ErrorResponse>(
+ params: GetHeatmapParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHeatmap>>,
+          TError,
+          Awaited<ReturnType<typeof getHeatmap>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TError = ErrorResponse>(
+ params: GetHeatmapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHeatmap>>,
+          TError,
+          Awaited<ReturnType<typeof getHeatmap>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TError = ErrorResponse>(
+ params: GetHeatmapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary その日を含む週（月曜〜日曜）の、自分のセット数を部位ごとに返す
+ */
+
+export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TError = ErrorResponse>(
+ params: GetHeatmapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetHeatmapQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
