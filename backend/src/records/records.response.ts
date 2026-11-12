@@ -44,6 +44,9 @@ export class CreateRecordRequest {
 
   @ApiProperty({ format: 'date-time', example: '2026-11-01T09:00:00+09:00', description: '運動した時刻（ISO 8601）。未来は5分先まで' })
   recordedAt!: string;
+
+  @ApiProperty({ required: false, description: 'あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。休みには付けられない（400）' })
+  late?: boolean;
 }
 
 export class RecordResponse {
@@ -58,6 +61,9 @@ export class RecordResponse {
 
   @ApiProperty({ example: '2026-11-01', description: '日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す' })
   localDate!: string;
+
+  @ApiProperty({ required: false, description: 'あとから記録した記録だけ true（「遅れて記録」の札。F-21）。いつもの記録には付かない' })
+  late?: boolean;
 
   @ApiProperty({ type: RunDetail, required: false, description: 'ランの記録だけ。距離と時間' })
   run?: RunDetail;

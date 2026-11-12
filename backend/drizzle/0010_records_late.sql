@@ -1,0 +1,1 @@
+ALTER TABLE "records" ADD COLUMN "late" boolean DEFAULT false NOT NULL;

@@ -51,7 +51,7 @@ export function parseIso(text: string): Date | undefined {
 }
 
 // 記録を作るときの入力検査（docs/design.md 4章 POST /records）。理由は項目ごとに集めて、1回で直せるようにする
-export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: string; kind: CreatableKind; recordedAt: Date; run?: RunInput } {
+export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: string; kind: CreatableKind; recordedAt: Date; run?: RunInput; late?: true } {
   const body = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
   const details: string[] = [];
 
@@ -86,8 +86,14 @@ export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: st
     details.push('run: kind が run のときだけ指定できます');
   }
 
+  // late（あとから記録。F-21）は端末が保存の時点で決める。サーバーは日付を確かめない（オフラインで何日もあとに届く記録があるため）。
+  // 休みはその日のうちに決めるものなので、あとから付けられない
+  if (body.late !== undefined && typeof body.late !== 'boolean') details.push('late: true か false で指定してください');
+  else if (body.late === true && kind === 'rest') details.push('late: 休みはあとから記録できません');
+  const late = body.late === true;
+
   if (!id || !kind || !recordedAt || details.length > 0) {
     throw new BadRequestException({ code: 'VALIDATION_ERROR', message: '入力が正しくありません', details });
   }
-  return run ? { id, kind, recordedAt, run } : { id, kind, recordedAt };
+  return { id, kind, recordedAt, ...(run ? { run } : {}), ...(late ? { late: true as const } : {}) };
 }

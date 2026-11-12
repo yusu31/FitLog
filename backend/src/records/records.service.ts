@@ -24,6 +24,7 @@ const toResponse = (row: Row, run?: RunInput): RecordResponse => ({
   kind: row.kind,
   recordedAt: row.recordedAt.toISOString(),
   localDate: row.localDate,
+  ...(row.late ? { late: true } : {}),
   ...(run ? { run: { distanceM: run.distanceM, durationS: run.durationS } } : {}),
 });
 
@@ -43,14 +44,14 @@ export class RecordsService {
   //  ・同じ id が他の人の記録にある → 404（存在を教えない。T-OFF-04）
   //  ・休みを、同じ日に別の id で送った → すでにある休みを返す（休みは1日1件）
   async create(userId: string, raw: unknown): Promise<{ created: boolean; record: RecordResponse }> {
-    const { id, kind, recordedAt, run } = parseRecordInput(raw);
+    const { id, kind, recordedAt, run, late } = parseRecordInput(raw);
     const localDate = toLocalDate(recordedAt);
 
     // ON CONFLICT DO NOTHING（対象を決めない）は、主キー（id）の衝突も、休みの部分一意索引の衝突も、エラーにせず「何もしない」にする。
     // 同時に2つ届いても、後から来た方は先の方の確定を待って「何もしない」になるので、どちらも成功する（T-OFF-06・T-REST-06）
     // ランは、記録と詳細（距離・時間）を同じトランザクションで入れる（片方だけ残らないように）。記録が「何もしない」になったときは詳細も入れない
     const inserted = await this.db.transaction(async (tx) => {
-      const [row] = await tx.insert(records).values({ id, userId, kind, recordedAt, localDate }).onConflictDoNothing().returning();
+      const [row] = await tx.insert(records).values({ id, userId, kind, recordedAt, localDate, late: late ?? false }).onConflictDoNothing().returning();
       if (row && run) await tx.insert(runDetails).values({ recordId: row.id, distanceM: run.distanceM, durationS: run.durationS, route: run.route ?? null });
       return row;
     });

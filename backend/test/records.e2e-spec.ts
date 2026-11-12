@@ -159,6 +159,56 @@ describe('記録を作る（結合: 本物の PostgreSQL・better-auth）', () =
   });
 
   // 休み（F-08）: 1日1件。docs/testing-design.md のデシジョンテーブル（休み）
+  // F-21 あとから記録（docs/testing-design.md T-LATE-05〜08）
+  describe('あとから記録（late。F-21）', () => {
+    const lateRows = (): Promise<{ id: string; late: boolean }[]> =>
+      withPool(url!, async (pool) => (await pool.query('SELECT id, late FROM records ORDER BY created_at, id')).rows);
+
+    it('late: true で作ると 201 で late: true を返し、DB にも true が入る。付けなければ応答に late は無く DB は false', async () => {
+      const cookie = await signUpAs('たろう');
+      const late = { ...workout(SUN_LAST), late: true };
+      const usual = workout(MON_FIRST);
+      const res = await post(cookie, late).expect(201);
+      const usualRes = await post(cookie, usual).expect(201);
+
+      expect(res.body).toEqual({ id: late.id, kind: 'workout', recordedAt: SUN_LAST, localDate: '2026-10-25', late: true });
+      expect(usualRes.body).not.toHaveProperty('late');
+      expect(await lateRows()).toEqual([
+        { id: late.id, late: true },
+        { id: usual.id, late: false },
+      ]);
+    });
+
+    it('同じ id で late を変えて送り直しても、1回目の late のまま（オフラインの再送で札が変わらない）', async () => {
+      const cookie = await signUpAs('たろう');
+      const body = { ...workout(SUN_LAST), late: true };
+      await post(cookie, body).expect(201);
+      const second = await post(cookie, { ...body, late: false }).expect(200);
+
+      expect(second.body.late).toBe(true);
+      expect(await lateRows()).toEqual([{ id: body.id, late: true }]);
+    });
+
+    it('休みを late: true で送ると 400 で、DB に入らない', async () => {
+      const cookie = await signUpAs('たろう');
+      const res = await post(cookie, { ...rest(SUN_LAST), late: true }).expect(400);
+
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(await rows()).toEqual([]);
+    });
+
+    it('一覧と詳細にも late: true が出る', async () => {
+      const cookie = await signUpAs('たろう');
+      const body = { ...workout(SUN_LAST), late: true };
+      await post(cookie, body).expect(201);
+
+      const list = await request(app.getHttpServer()).get('/api/records').set('Cookie', cookie).expect(200);
+      const detail = await request(app.getHttpServer()).get(`/api/records/${body.id}`).set('Cookie', cookie).expect(200);
+      expect(list.body.items[0].late).toBe(true);
+      expect(detail.body.late).toBe(true);
+    });
+  });
+
   describe('休みの記録（同じ日に1件）', () => {
     it('ケース1: その日に休みも運動も無いと 201。休みが1件', async () => {
       const cookie = await signUpAs('たろう');
