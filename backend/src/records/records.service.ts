@@ -1,16 +1,16 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, asc, between, desc, eq, inArray, isNull, lt, or } from 'drizzle-orm';
+import { and, asc, between, count, desc, eq, inArray, isNull, lt, or } from 'drizzle-orm';
 import { compareSet, isPersonalBest } from '../common/ghost.js';
 import { cellStatus, weekDates, weekStartOf } from '../common/week.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
-import { exercises, records, runDetails, videos, workoutSets } from '../db/schema.js';
+import { BODY_PARTS, exercises, records, runDetails, videos, workoutSets } from '../db/schema.js';
 import { findPrevious, pastMaxVolume } from './ghost-queries.js';
 import { encodeCursor, parseListQuery } from './list-input.js';
 import { visibleToMe } from './record-access.js';
 import { parseRecordInput, type RunInput } from './record-input.js';
-import type { RecordDetailResponse, RecordedExercise, RecordListResponse, RecordResponse, SetResponse, WeekResponse } from './records.response.js';
+import type { HeatmapResponse, RecordDetailResponse, RecordedExercise, RecordListResponse, RecordResponse, SetResponse, WeekResponse } from './records.response.js';
 import { parseSetInput } from './set-input.js';
 import { parseWeekDate } from './week-input.js';
 
@@ -89,6 +89,24 @@ export class RecordsService {
       weekStart,
       days: dates.map((date) => ({ date, status: cellStatus(rows.filter((r) => r.localDate === date).map((r) => r.kind)) })),
     };
+  }
+
+  // 筋肉ヒートマップ（F-12）。weekStart（日本時間の日付）を含む週（月曜〜日曜）の、自分のセット数を部位ごとに数える。
+  // 週は記録の local_date で決める（T-HEAT-05）。セットの無い記録（休み・ラン）は数に入らない（T-HEAT-06）。0セットの部位も返す
+  async heatmap(userId: string, weekStartRaw: unknown): Promise<HeatmapResponse> {
+    const weekStart = weekStartOf(parseWeekDate(weekStartRaw, 'weekStart'));
+    const dates = weekDates(weekStart);
+
+    const rows = await this.db
+      .select({ bodyPart: exercises.bodyPart, sets: count(workoutSets.id) })
+      .from(workoutSets)
+      .innerJoin(records, eq(records.id, workoutSets.recordId))
+      .innerJoin(exercises, eq(exercises.id, workoutSets.exerciseId))
+      .where(and(eq(records.userId, userId), between(records.localDate, dates[0], dates[6])))
+      .groupBy(exercises.bodyPart);
+    const setsByPart = new Map(rows.map((r) => [r.bodyPart, r.sets]));
+
+    return { weekStart, parts: BODY_PARTS.map((bodyPart) => ({ bodyPart, sets: setsByPart.get(bodyPart) ?? 0 })) };
   }
 
   // 自分の記録の一覧（新しい順）。運動した時刻の降順、同じ時刻は id の降順で並べ、cursor は「最後に読んだ1件」の（時刻, id）。
