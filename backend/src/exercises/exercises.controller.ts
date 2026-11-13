@@ -21,11 +21,12 @@ export class ExercisesController {
   @Get(':id/previous')
   @ApiOperation({ operationId: 'getPrevious', summary: '前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト）' })
   @ApiQuery({ name: 'before', required: false, description: 'この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す' })
+  @ApiQuery({ name: 'friendId', required: false, description: '同じグループの仲間の userId。付けると、その人の前回を返す（F-16）。自己ベストは返さない（null）。自作の種目は名前が同じ種目だけ突き合わせる' })
   @ApiOkResponse({ type: PreviousResponse, description: '前回がなければ previous が null' })
   @ApiBadRequestResponse({ type: ErrorResponse, description: 'before が ISO 8601 の日時でない（VALIDATION_ERROR）' })
-  @ApiNotFoundResponse({ type: ErrorResponse, description: '種目が無い・他の人が追加した種目（EXERCISE_NOT_FOUND。存在を教えない）' })
-  previous(@Session() session: UserSession, @Param('id') id: string, @Query('before') before?: string) {
-    return this.exercises.previous(session.user.id, id, before);
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '種目が無い・他の人が追加した種目（EXERCISE_NOT_FOUND）／friendId が同じグループの仲間でない（FRIEND_NOT_FOUND）。どちらも存在を教えない' })
+  previous(@Session() session: UserSession, @Param('id') id: string, @Query('before') before?: string, @Query('friendId') friendId?: string) {
+    return this.exercises.previous(session.user.id, id, before, friendId);
   }
 
   @Post()

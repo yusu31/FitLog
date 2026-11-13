@@ -172,3 +172,17 @@ export const FEED_MESSAGES = {
   commentDelete: '消す',
   commentDeleteFailed: 'コメントを消せませんでした。少し待って、もう一度お試しください',
 } as const;
+
+// 仲間のゴースト（F-16）とメニューのコピー（F-24）
+export const FRIEND_MESSAGES = {
+  heading: '仲間と くらべる',
+  none: 'まだ記録なし',
+  rowLabel: '仲間',
+  open: 'くわしく見る',
+  copyButton: 'コピーして始める',
+  copying: 'じゅんびしています',
+  copyFailed: 'コピーできませんでした。電波の良い所でもう一度ためしてください',
+  copyOffline: '電波があるときにコピーできます',
+  planFrom: (name: string | null) => (name ? `${name}さんの メニューから` : '仲間の メニューから'),
+  copiedTag: (name: string | null) => (name ? `${name}さんから` : '仲間から'),
+} as const;

@@ -458,12 +458,13 @@ describe('記録の取り消し・一覧・詳細（結合: 本物の PostgreSQL
             {
               exerciseId: SQUAT_ID,
               name: names[SQUAT_ID],
+              bodyPart: 'legs',
               sets: [
                 { id: squat1, setNo: 1, weightKg: 70, reps: 8 },
                 { id: squat2, setNo: 2, weightKg: 80, reps: 5 },
               ],
             },
-            { exerciseId: BENCH_PRESS_ID, name: names[BENCH_PRESS_ID], sets: [{ id: bench1, setNo: 1, weightKg: 40, reps: 10 }] },
+            { exerciseId: BENCH_PRESS_ID, name: names[BENCH_PRESS_ID], bodyPart: 'chest', sets: [{ id: bench1, setNo: 1, weightKg: 40, reps: 10 }] },
           ],
         },
         { id: run, kind: 'run', recordedAt: '2026-10-27T03:00:00.000Z', localDate: '2026-10-27', run: { distanceM: 5000, durationS: 1800 } },

@@ -232,6 +232,16 @@ export interface CreateRecordRequest {
   recordedAt: string;
   /** あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。休みには付けられない（400） */
   late?: boolean;
+  /** メニューのコピー（F-24）。仲間の記録をコピーして始めた筋トレだけに付ける、コピー元の人の userId。筋トレ以外は 409、同じグループの仲間でなければ 404 */
+  copiedFromUserId?: string;
+}
+
+export interface CopiedFrom {
+  /**
+     * コピー元の名前。見る人と同じグループにいなければ null
+     * @nullable
+     */
+  name: string | null;
 }
 
 export type RecordResponseKind = typeof RecordResponseKind[keyof typeof RecordResponseKind];
@@ -252,6 +262,8 @@ export interface RecordResponse {
   localDate: string;
   /** あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない */
   late?: boolean;
+  /** メニューをコピーして始めた記録だけ（「◯◯さんから」の札。F-24）。コピー元が今も見る人と同じグループなら name、抜けていれば name が null（画面は「仲間から」） */
+  copiedFrom?: CopiedFrom;
   /** ランの記録だけ。距離と時間 */
   run?: RunDetail;
 }
@@ -315,9 +327,27 @@ export interface RecordedSet {
   reps: number;
 }
 
+/**
+ * 種目の部位。仲間の自作種目をコピーするとき、自分の種目として作る際に使う（F-24）。応答には必ず入る。端末が楽観的更新で作る仮の行には無い
+ */
+export type RecordedExerciseBodyPart = typeof RecordedExerciseBodyPart[keyof typeof RecordedExerciseBodyPart];
+
+
+export const RecordedExerciseBodyPart = {
+  chest: 'chest',
+  back: 'back',
+  shoulders: 'shoulders',
+  arms: 'arms',
+  abs: 'abs',
+  glutes: 'glutes',
+  legs: 'legs',
+} as const;
+
 export interface RecordedExercise {
   exerciseId: string;
   name: string;
+  /** 種目の部位。仲間の自作種目をコピーするとき、自分の種目として作る際に使う（F-24）。応答には必ず入る。端末が楽観的更新で作る仮の行には無い */
+  bodyPart?: RecordedExerciseBodyPart;
   /** セット番号の昇順 */
   sets: RecordedSet[];
 }
@@ -340,6 +370,8 @@ export interface RecordDetailResponse {
   localDate: string;
   /** あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない */
   late?: boolean;
+  /** メニューをコピーして始めた記録だけ（「◯◯さんから」の札。F-24）。コピー元が今も見る人と同じグループなら name、抜けていれば name が null（画面は「仲間から」） */
+  copiedFrom?: CopiedFrom;
   /** ランの記録だけ。距離と時間 */
   run?: RunDetail;
   /** 筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない */
@@ -689,6 +721,8 @@ export interface VideoUrlResponse {
 export type GetPreviousParams = {
   /** この時刻（ISO 8601）より前の記録だけを見る。記録中の自分の記録を前回にしないために、今の記録の時刻を渡す */
   before?: string;
+  /** 同じグループの仲間の userId。付けると、その人の前回を返す（F-16）。自己ベストは返さない（null）。自作の種目は名前が同じ種目だけ突き合わせる */
+  friendId?: string;
 };
 
 export type ListRecordsParams = {

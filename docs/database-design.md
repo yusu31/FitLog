@@ -61,6 +61,7 @@ erDiagram
         timestamptz recorded_at
         date local_date
         boolean late
+        text copied_from_user_id FK
     }
     workout_sets {
         uuid id PK
@@ -192,6 +193,7 @@ erDiagram
 | recorded_at | timestamptz | NOT NULL | 端末の時刻。未来の時刻（5分より先）は 400 |
 | local_date | date | NOT NULL | 日本時間の日付。サーバーが `recorded_at` から出す |
 | late | boolean | NOT NULL・DEFAULT false | あとから記録（F-21）。`true` のとき、画面は時刻を出さず札を出す。動画は付けられない |
+| copied_from_user_id | text | FK → users.id・NULL可 | メニューのコピー（F-24）。仲間のメニューをコピーして始めた筋トレだけ、コピー元の人の id。コピー元が抜けても消さない（画面は「仲間から」） |
 | created_at | timestamptz | NOT NULL | サーバーが保存した時刻 |
 
 制約: `kind = 'rest'` のとき、同じ `user_id`・`local_date` の組は1件だけ（部分一意インデックス。休みは1日1件）。

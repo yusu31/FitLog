@@ -9,9 +9,9 @@ import { DB, type Db } from '../db/db.module.js';
 import { BODY_PARTS, exercises, records, runDetails, videos, workoutSets } from '../db/schema.js';
 import { findPrevious, pastMaxVolume } from './ghost-queries.js';
 import { encodeCursor, parseListQuery } from './list-input.js';
-import { visibleToMe } from './record-access.js';
+import { findGroupMates, visibleToMe } from './record-access.js';
 import { parseRecordInput, type RunInput } from './record-input.js';
-import type { HeatmapResponse, RecordDetailResponse, RecordedExercise, RecordListResponse, RecordResponse, SetResponse, StatsResponse, WeekResponse } from './records.response.js';
+import type { CopiedFrom, HeatmapResponse, RecordDetailResponse, RecordedExercise, RecordListResponse, RecordResponse, SetResponse, StatsResponse, WeekResponse } from './records.response.js';
 import { parseSetInput } from './set-input.js';
 import { parseWeekDate } from './week-input.js';
 
@@ -19,12 +19,13 @@ type Row = typeof records.$inferSelect;
 
 // ランの記録だけ run（距離と時間）を付ける。筋トレ・休みには付けない。
 // route（GPX のルート）は大きいので、作成・再送の応答と一覧には入れない（詳細 GET /records/{id} だけ。withDetails の withRoute）
-const toResponse = (row: Row, run?: RunInput): RecordResponse => ({
+const toResponse = (row: Row, run?: RunInput, copiedFrom?: CopiedFrom): RecordResponse => ({
   id: row.id,
   kind: row.kind,
   recordedAt: row.recordedAt.toISOString(),
   localDate: row.localDate,
   ...(row.late ? { late: true } : {}),
+  ...(copiedFrom ? { copiedFrom } : {}),
   ...(run ? { run: { distanceM: run.distanceM, durationS: run.durationS } } : {}),
 });
 
@@ -44,26 +45,36 @@ export class RecordsService {
   //  ・同じ id が他の人の記録にある → 404（存在を教えない。T-OFF-04）
   //  ・休みを、同じ日に別の id で送った → すでにある休みを返す（休みは1日1件）
   async create(userId: string, raw: unknown): Promise<{ created: boolean; record: RecordResponse }> {
-    const { id, kind, recordedAt, run, late } = parseRecordInput(raw);
+    const { id, kind, recordedAt, run, late, copiedFromUserId } = parseRecordInput(raw);
     const localDate = toLocalDate(recordedAt);
+
+    // メニューのコピー（F-24）: 筋トレだけ（409）、コピー元は今も同じグループの仲間だけ（404。グループ外・自分自身・無い id は同じ）。
+    // 同じ id を送り直す再送は、コピー元が抜けたあとでも成功させたいので、自分の記録がすでにあるときは仲間の確認を飛ばす
+    if (copiedFromUserId) {
+      if (kind !== 'workout') throw new ConflictException({ code: 'RECORD_KIND_MISMATCH', message: '筋トレの記録だけコピーして始められます', details: null });
+      const [already] = await this.db.select({ id: records.id }).from(records).where(and(eq(records.id, id), eq(records.userId, userId)));
+      if (!already && !(await findGroupMates(this.db, userId, [copiedFromUserId])).has(copiedFromUserId)) {
+        throw new NotFoundException({ code: 'FRIEND_NOT_FOUND', message: '仲間が見つかりません', details: null });
+      }
+    }
 
     // ON CONFLICT DO NOTHING（対象を決めない）は、主キー（id）の衝突も、休みの部分一意索引の衝突も、エラーにせず「何もしない」にする。
     // 同時に2つ届いても、後から来た方は先の方の確定を待って「何もしない」になるので、どちらも成功する（T-OFF-06・T-REST-06）
     // ランは、記録と詳細（距離・時間）を同じトランザクションで入れる（片方だけ残らないように）。記録が「何もしない」になったときは詳細も入れない
     const inserted = await this.db.transaction(async (tx) => {
-      const [row] = await tx.insert(records).values({ id, userId, kind, recordedAt, localDate, late: late ?? false }).onConflictDoNothing().returning();
+      const [row] = await tx.insert(records).values({ id, userId, kind, recordedAt, localDate, late: late ?? false, copiedFromUserId: copiedFromUserId ?? null }).onConflictDoNothing().returning();
       if (row && run) await tx.insert(runDetails).values({ recordId: row.id, distanceM: run.distanceM, durationS: run.durationS, route: run.route ?? null });
       return row;
     });
     if (inserted) {
       this.logger.log(`記録を作成: ${inserted.id}（${kind}）`);
-      return { created: true, record: toResponse(inserted, run) };
+      return { created: true, record: toResponse(inserted, run, (await this.copiedFromOf(userId, [inserted])).get(inserted.id)) };
     }
 
     const [sameId] = await this.db.select().from(records).where(eq(records.id, id));
     if (sameId) {
       if (sameId.userId !== userId) throw new NotFoundException({ code: 'RECORD_NOT_FOUND', message: '記録が見つかりません', details: null });
-      return { created: false, record: toResponse(sameId, await this.runOf(sameId)) };
+      return { created: false, record: toResponse(sameId, await this.runOf(sameId), (await this.copiedFromOf(userId, [sameId])).get(sameId.id)) };
     }
 
     const [sameDayRest] = await this.db
@@ -165,7 +176,7 @@ export class RecordsService {
     const page = rows.slice(0, limit);
     const last = page[page.length - 1];
     return {
-      items: await this.withDetails(page),
+      items: await this.withDetails(userId, page),
       nextCursor: rows.length > limit && last ? encodeCursor(last.recordedAt, last.id) : null,
     };
   }
@@ -184,7 +195,7 @@ export class RecordsService {
         ),
       );
     if (!row) throw recordNotFound();
-    const [detail] = await this.withDetails([row], true);
+    const [detail] = await this.withDetails(userId, [row], true);
     return detail;
   }
 
@@ -222,9 +233,10 @@ export class RecordsService {
   }
 
   // 記録の行に、ラン（距離と時間）と筋トレのセット（種目ごと）を付ける。ページ分の id をまとめて引く（記録ごとには引かない）
-  private async withDetails(rows: Row[], withRoute = false): Promise<RecordDetailResponse[]> {
+  private async withDetails(viewerId: string, rows: Row[], withRoute = false): Promise<RecordDetailResponse[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id);
+    const copiedFrom = await this.copiedFromOf(viewerId, rows);
 
     const runs = await this.db
       .select({ recordId: runDetails.recordId, distanceM: runDetails.distanceM, durationS: runDetails.durationS, ...(withRoute ? { route: runDetails.route } : {}) })
@@ -238,6 +250,7 @@ export class RecordsService {
         id: workoutSets.id,
         exerciseId: workoutSets.exerciseId,
         exerciseName: exercises.name,
+        bodyPart: exercises.bodyPart,
         setNo: workoutSets.setNo,
         weightKg: workoutSets.weightKg,
         reps: workoutSets.reps,
@@ -253,7 +266,7 @@ export class RecordsService {
     for (const s of setRows) {
       const perRecord = exercisesByRecord.get(s.recordId) ?? new Map<string, RecordedExercise>();
       exercisesByRecord.set(s.recordId, perRecord);
-      const entry = perRecord.get(s.exerciseId) ?? { exerciseId: s.exerciseId, name: s.exerciseName, sets: [] };
+      const entry = perRecord.get(s.exerciseId) ?? { exerciseId: s.exerciseId, name: s.exerciseName, bodyPart: s.bodyPart, sets: [] };
       perRecord.set(s.exerciseId, entry);
       entry.sets.push({ id: s.id, setNo: s.setNo, weightKg: Number(s.weightKg), reps: s.reps });
     }
@@ -267,7 +280,7 @@ export class RecordsService {
 
     return rows.map((row) => {
       const run = runById.get(row.id);
-      const base = toResponse(row, run);
+      const base = toResponse(row, run, copiedFrom.get(row.id));
       const videoId = videoByRecord.get(row.id);
       if (videoId) Object.assign(base, { videoId });
       // 詳細だけ route を足す（toResponse は距離と時間だけ）
@@ -276,10 +289,18 @@ export class RecordsService {
       const exercisesOfRecord = [...(exercisesByRecord.get(row.id)?.values() ?? [])].map((e) => ({
         exerciseId: e.exerciseId,
         name: e.name,
+        bodyPart: e.bodyPart,
         sets: e.sets.toSorted((a, b) => a.setNo - b.setNo),
       }));
       return Object.assign(base, { exercises: exercisesOfRecord });
     });
+  }
+
+  // 「◯◯さんから」の札（F-24）。コピー元が、見る人（viewerId）と今も同じグループなら名前、抜けていれば null（画面は「仲間から」）
+  private async copiedFromOf(viewerId: string, rows: Row[]): Promise<Map<string, CopiedFrom>> {
+    const sourceIds = [...new Set(rows.flatMap((r) => (r.copiedFromUserId ? [r.copiedFromUserId] : [])))];
+    const mates = await findGroupMates(this.db, viewerId, sourceIds);
+    return new Map(rows.flatMap((r) => (r.copiedFromUserId ? [[r.id, { name: mates.get(r.copiedFromUserId) ?? null }] as const] : [])));
   }
 
   // すでにある記録がランなら、1回目に入れた距離と時間を読む（再送の応答は1回目と同じ内容にする）

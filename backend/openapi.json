@@ -427,6 +427,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "friendId",
+            "required": false,
+            "in": "query",
+            "description": "同じグループの仲間の userId。付けると、その人の前回を返す（F-16）。自己ベストは返さない（null）。自作の種目は名前が同じ種目だけ突き合わせる",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -451,7 +460,7 @@
             }
           },
           "404": {
-            "description": "種目が無い・他の人が追加した種目（EXERCISE_NOT_FOUND。存在を教えない）",
+            "description": "種目が無い・他の人が追加した種目（EXERCISE_NOT_FOUND）／friendId が同じグループの仲間でない（FRIEND_NOT_FOUND）。どちらも存在を教えない",
             "content": {
               "application/json": {
                 "schema": {
@@ -1938,12 +1947,30 @@
           "late": {
             "type": "boolean",
             "description": "あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。休みには付けられない（400）"
+          },
+          "copiedFromUserId": {
+            "type": "string",
+            "description": "メニューのコピー（F-24）。仲間の記録をコピーして始めた筋トレだけに付ける、コピー元の人の userId。筋トレ以外は 409、同じグループの仲間でなければ 404"
           }
         },
         "required": [
           "id",
           "kind",
           "recordedAt"
+        ]
+      },
+      "CopiedFrom": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "example": "ゆうすけ",
+            "description": "コピー元の名前。見る人と同じグループにいなければ null"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "RecordResponse": {
@@ -1974,6 +2001,14 @@
           "late": {
             "type": "boolean",
             "description": "あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない"
+          },
+          "copiedFrom": {
+            "description": "メニューをコピーして始めた記録だけ（「◯◯さんから」の札。F-24）。コピー元が今も見る人と同じグループなら name、抜けていれば name が null（画面は「仲間から」）",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CopiedFrom"
+              }
+            ]
           },
           "run": {
             "description": "ランの記録だけ。距離と時間",
@@ -2116,6 +2151,19 @@
             "type": "string",
             "example": "ベンチプレス"
           },
+          "bodyPart": {
+            "type": "string",
+            "enum": [
+              "chest",
+              "back",
+              "shoulders",
+              "arms",
+              "abs",
+              "glutes",
+              "legs"
+            ],
+            "description": "種目の部位。仲間の自作種目をコピーするとき、自分の種目として作る際に使う（F-24）。応答には必ず入る。端末が楽観的更新で作る仮の行には無い"
+          },
           "sets": {
             "description": "セット番号の昇順",
             "type": "array",
@@ -2158,6 +2206,14 @@
           "late": {
             "type": "boolean",
             "description": "あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない"
+          },
+          "copiedFrom": {
+            "description": "メニューをコピーして始めた記録だけ（「◯◯さんから」の札。F-24）。コピー元が今も見る人と同じグループなら name、抜けていれば name が null（画面は「仲間から」）",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CopiedFrom"
+              }
+            ]
           },
           "run": {
             "description": "ランの記録だけ。距離と時間",

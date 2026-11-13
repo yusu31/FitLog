@@ -11,7 +11,8 @@ import { ConfirmDialog } from '@/components/fitlog/confirm-dialog';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
-import { useGetPrevious, useGetRecord, type RecordDetailResponse, type RecordedExercise } from '@/lib/api/generated';
+import { useCreateExercise, useGetCurrentGroup, useGetPrevious, useGetRecord, useListExercises, type RecordDetailResponse, type RecordedExercise } from '@/lib/api/generated';
+import { setCopyPlan } from '@/lib/copy-plan';
 import {
   formatDistance,
   formatDuration,
@@ -22,8 +23,9 @@ import {
   WEEKDAYS,
   weekdayIndex,
 } from '@/lib/format';
+import { CopiedTag } from '@/components/fitlog/copied-tag';
 import { LateTag } from '@/components/fitlog/late-tag';
-import { DETAIL_MESSAGES, GHOST_MESSAGES, ME_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from '@/lib/messages';
+import { DETAIL_MESSAGES, FRIEND_MESSAGES, GHOST_MESSAGES, ME_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
 import { setOutcomes } from '@/lib/record-detail';
 import { useOnline } from '@/lib/use-browser-state';
@@ -37,6 +39,8 @@ export function RecordDetailView() {
   const params = useSearchParams();
   const id = params.get('id') ?? '';
   const mine = params.get('from') === 'me';
+  // 仲間の足跡から来たとき、書いた人の userId（メニューのコピーのコピー元。サーバーが同じグループかを確かめる）
+  const by = params.get('by') ?? '';
   const router = useRouter();
   const online = useOnline();
   const { deleteRecord } = useRecordMutations();
@@ -132,6 +136,7 @@ export function RecordDetailView() {
           </p>
         )}
         {record.kind === 'workout' && <Workout record={record} mine={mine} />}
+        {record.kind === 'workout' && !mine && by !== '' && (record.exercises?.length ?? 0) > 0 && <CopyButton record={record} fromUserId={by} />}
         {record.videoId && <VideoPlayer videoId={record.videoId} />}
         {record.kind === 'run' && record.run && <Run distanceM={record.run.distanceM} durationS={record.run.durationS} />}
         {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} />}
@@ -183,7 +188,58 @@ function Heading({ record }: { record: RecordDetailResponse }) {
         <span className="fl-num text-base text-ink">{formatMonthDay(record.localDate)}</span>（{WEEKDAYS[weekdayIndex(record.localDate)]}）
         {' '}
         {record.late ? <LateTag /> : formatJstTime(record.recordedAt)}
+        {record.copiedFrom && <>{' '}<CopiedTag name={record.copiedFrom.name} /></>}
       </p>
+    </div>
+  );
+}
+
+// 仲間のメニューをコピーして始める（F-24）。種目と回数・重さを、今日の記録画面に「やる予定」として渡す。
+// 記録はここでは作らない（「できた」を押したときに初めて作る）。自分の一覧に無い種目は、同じ名前の種目があればそれ、無ければ自分の種目として作る（仮置き）
+function CopyButton({ record, fromUserId }: { record: RecordDetailResponse; fromUserId: string }) {
+  const router = useRouter();
+  const online = useOnline();
+  const createExercise = useCreateExercise();
+  const { data: exerciseData } = useListExercises();
+  const { data: groupData } = useGetCurrentGroup();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const mine = exerciseData?.status === 200 ? exerciseData.data : [];
+  const fromName = groupData?.status === 200 ? (groupData.data.members.find((m) => m.id === fromUserId)?.name ?? null) : null;
+
+  async function onCopy() {
+    setBusy(true);
+    setError(null);
+    try {
+      const items = [];
+      for (const e of record.exercises ?? []) {
+        let id = mine.find((m) => m.id === e.exerciseId)?.id ?? mine.find((m) => m.name.toLowerCase() === e.name.toLowerCase())?.id;
+        if (!id) {
+          const res = await createExercise.mutateAsync({ data: { name: e.name, bodyPart: e.bodyPart ?? 'chest' } });
+          if (res.status !== 201) throw new Error('create');
+          id = res.data.id;
+        }
+        items.push({ exerciseId: id, name: e.name, sets: e.sets.map((s) => ({ weightKg: s.weightKg, reps: s.reps })) });
+      }
+      setCopyPlan({ fromUserId, fromName, items });
+      router.push(`/record?exercise=${encodeURIComponent(items[0].exerciseId)}&plan=1`);
+    } catch (e) {
+      setBusy(false);
+      setError(sendErrorText(e, FRIEND_MESSAGES.copyFailed));
+    }
+  }
+
+  return (
+    <div>
+      <ThickButton size="sm" className="w-full" disabled={!online || busy} onClick={() => void onCopy()}>
+        {busy ? FRIEND_MESSAGES.copying : FRIEND_MESSAGES.copyButton}
+      </ThickButton>
+      {!online && <p className="mt-2 text-center text-xs text-sub-strong">{FRIEND_MESSAGES.copyOffline}</p>}
+      {error && (
+        <p role="alert" className="mt-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
