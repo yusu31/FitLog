@@ -23,6 +23,16 @@ describe('いま記録している筋トレの記録', () => {
     expect(d.recordId).not.toBe(b.recordId);
   });
 
+  it('きのうの分は、今日の記録とは別に持つ（きのうの入力中に今日の記録へセットが継ぎ足されない。F-21）', () => {
+    const today = recordForNextSet(t0);
+    const yesterday = recordForNextSet(t0 + 60_000, 'yesterday');
+    expect(yesterday.isNew).toBe(true);
+    expect(yesterday.recordId).not.toBe(today.recordId);
+    expect(recordForNextSet(t0 + 120_000, 'yesterday')).toEqual({ recordId: yesterday.recordId, isNew: false });
+    expect(recordForNextSet(t0 + 180_000)).toEqual({ recordId: today.recordId, isNew: false });
+    expect(activeRecordId(t0 + 200_000, 'yesterday')).toBe(yesterday.recordId);
+  });
+
   it('画面を開いたとき、3時間以内なら続きの記録があり、過ぎていれば無い', () => {
     expect(activeRecordId(t0)).toBeNull();
     const a = recordForNextSet(t0);

@@ -59,6 +59,7 @@ export class FeedService {
       kind: record.kind,
       recordedAt: record.recordedAt.toISOString(),
       localDate: record.localDate,
+      ...(record.late ? { late: true } : {}),
       author: { id: authorId, name: authorName, avatar: authorAvatar as FeedItem['author']['avatar'] },
       exerciseNames: exerciseNames.get(record.id) ?? [],
       ...(runs.has(record.id) ? { run: runs.get(record.id) } : {}),

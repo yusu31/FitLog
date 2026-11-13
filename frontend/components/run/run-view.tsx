@@ -2,14 +2,15 @@
 
 import { Check, FileUp, X } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useId, useState, type ChangeEvent } from 'react';
 import { cn } from 'cn';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
+import { parseDayMode, recordedAtFor } from '@/lib/day-mode';
 import { parseGpx, type RouteLineString } from '@/lib/gpx/parse-gpx';
-import { GPX_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
+import { GPX_MESSAGES, LATE_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
 import {
   formatPace,
@@ -21,6 +22,7 @@ import {
   validateRun,
   type RunError,
 } from '@/lib/run';
+import { toLocalDate } from '@/lib/shared/local-date';
 import { useOnline } from '@/lib/use-browser-state';
 import { useRequireSession } from '@/lib/use-require-session';
 
@@ -48,6 +50,8 @@ export function RunView() {
   const router = useRouter();
   const online = useOnline();
   const { createRecord } = useRecordMutations();
+  // きのうの分（F-21）。?day=yesterday のとき、きのうの12:00（日本時間）の記録として late つきで送る
+  const day = parseDayMode(useSearchParams().get('day'));
 
   const [kmText, setKmText] = useState('');
   const [minText, setMinText] = useState('');
@@ -100,21 +104,27 @@ export function RunView() {
     setGpxMessage(gpxDurationS === null ? { text: GPX_MESSAGES.noTime, kind: 'info' } : null);
   }
 
-  // 記録の日時: GPX に開始時刻があればそれ（昔の走りも、その日の記録になる）。無い・未来（5分より先）なら今
-  function recordedAtOf(): string {
+  // 記録の日時: GPX に開始時刻があればそれ（昔の走りも、その日の記録になる）。無い・未来（5分より先）なら今（きのうの分はきのうの12:00）。
+  // あとから記録（late）は、きのうの分、または GPX の開始が今日（日本時間）より前のとき
+  function recordedAtOf(): { recordedAt: string; late: boolean } {
     const now = new Date();
     const started = gpx?.startedAt ? new Date(gpx.startedAt) : null;
-    return started && started.getTime() <= now.getTime() + FUTURE_LIMIT_MS ? started.toISOString() : now.toISOString();
+    if (started && started.getTime() <= now.getTime() + FUTURE_LIMIT_MS) {
+      return { recordedAt: started.toISOString(), late: toLocalDate(started) < toLocalDate(now) };
+    }
+    return { recordedAt: recordedAtFor(day, now), late: day === 'yesterday' };
   }
 
   async function onSave() {
     if (sending || problem !== null) return;
     setError(null);
+    const { recordedAt, late } = recordedAtOf();
     const data = {
       id: crypto.randomUUID(),
       kind: 'run' as const,
       run: { distanceM, durationS, ...(gpx ? { route: gpx.route } : {}) },
-      recordedAt: recordedAtOf(),
+      recordedAt,
+      ...(late ? { late: true } : {}),
     };
     if (!online) {
       // 電波が無いときは、送信待ちに入れて待たずに結果を出す（F-30）
@@ -191,6 +201,9 @@ export function RunView() {
 
       <div className="flex flex-1 flex-col gap-5 px-4 pt-2 pb-8">
         <h1 className="text-[32px] leading-tight font-extrabold">ラン</h1>
+        {day === 'yesterday' && (
+          <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">{LATE_MESSAGES.banner}</p>
+        )}
 
         <GpxPicker online={online} gpx={gpx} message={gpxMessage} onPick={onPickGpx} onClear={clearGpx} />
 

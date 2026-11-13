@@ -117,6 +117,15 @@ describe('動画の署名付き URL（結合: 本物の PostgreSQL・better-auth
       }
     });
 
+    it('あとから記録（late）の筋トレには 409 RECORD_LATE。行はできない（公開期限が登録の週とずれるため。F-21）', async () => {
+      const cookie = await signUpAs('me');
+      const id = randomUUID();
+      await http().post('/api/records').set('Cookie', cookie).send({ id, kind: 'workout', recordedAt: RECORDED_AT, late: true }).expect(201);
+      const res = await issue(cookie, id).expect(409);
+      expect((res.body as { code: string }).code).toBe('RECORD_LATE');
+      expect(await videoRows()).toHaveLength(0);
+    });
+
     it('他の人の記録・無い記録・UUID でない id は、どれも 404 RECORD_NOT_FOUND（仲間の記録でも付けられない）', async () => {
       const [a, b] = await groupOfTwo();
       const aRecord = await createRecord(a);

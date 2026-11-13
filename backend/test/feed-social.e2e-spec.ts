@@ -291,6 +291,19 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       expect(asA2.commentCount).toBe(2);
     });
 
+    // T-LATE-08: 仲間の足跡に「あとから記録」の札（late）が出る
+    it('あとから記録した仲間の記録は late: true、いつもの記録には late が無い', async () => {
+      const { a1, a2 } = await world();
+      const lateId = randomUUID();
+      await http().post('/api/records').set('Cookie', a2).send({ id: lateId, kind: 'workout', recordedAt: MON_NOON, late: true }).expect(201);
+      const usualId = await createRecord(a2, 'workout', WED_NOON);
+
+      const { items } = await getFeed(a1);
+      const byId = new Map(items.map((i) => [i.id, i as Record<string, unknown>]));
+      expect(byId.get(lateId)?.late).toBe(true);
+      expect(byId.get(usualId)).not.toHaveProperty('late');
+    });
+
     it('スタンプもコメントも無い記録は、stamps が空の配列・commentCount が 0', async () => {
       const { a1 } = await world();
       await createRecord(a1);

@@ -62,6 +62,16 @@ export function groupErrorMessage(body: unknown, fallback: string, status?: numb
 }
 
 // おやすみ画面（S-14）。休むのも記録のひとつ。責めない
+// あとから記録（F-21）。「遅れた」を責めない言い方にする（T-DATE-13）
+export const LATE_MESSAGES = {
+  today: '今日',
+  yesterday: 'きのう',
+  switchLabel: '記録する日',
+  banner: 'きのうの分を 記録しています',
+  tag: 'あとから記録',
+  noVideo: '動画は、その日のうちの記録にだけ付けられます',
+} as const;
+
 export const REST_MESSAGES = {
   title: 'おやすみ',
   body: '休むのも 記録のひとつ。今週の「休み」に ちゃんと数えたよ。',

@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
-import { HOME_MESSAGES } from '@/lib/messages';
+import { HOME_MESSAGES, LATE_MESSAGES } from '@/lib/messages';
 import { calls, installFakeApi, renderWithQuery, restRecord, weekOf, workout } from '@/lib/test/fake-api';
 import { TodayView } from './today-view';
 
@@ -343,6 +343,50 @@ describe('TodayView（S-10 今日）', () => {
       installFakeApi({ [WEEK]: ok(weekOf(TODAY)), [WORKOUTS]: list(PREV), [LATEST]: list(PREV) });
       renderWithQuery(<TodayView />);
       expect(await screen.findByRole('link', { name: /ランを記録/ })).toHaveAttribute('href', '/run');
+    });
+  });
+
+  describe('「今日 / きのう」の切り替え（F-21 あとから記録）', () => {
+    beforeEach(() => {
+      installFakeApi({ [WEEK]: ok(weekOf(TODAY, { '2026-11-02': 'rec' })), [WORKOUTS]: list(PREV), [LATEST]: list(PREV) });
+    });
+    const dayGroup = () => screen.findByRole('group', { name: '記録する日' });
+
+    it('最初は「今日」が選ばれている。「きのう」を押すと切り替わる', async () => {
+      renderWithQuery(<TodayView />);
+      const group = await dayGroup();
+      expect(within(group).getByRole('button', { name: '今日' })).toHaveAttribute('aria-pressed', 'true');
+      expect(within(group).getByRole('button', { name: 'きのう' })).toHaveAttribute('aria-pressed', 'false');
+      await userEvent.click(within(group).getByRole('button', { name: 'きのう' }));
+      expect(within(group).getByRole('button', { name: 'きのう' })).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('きのうでは、種目・種目を足す・ランのリンクに day=yesterday が付く', async () => {
+      renderWithQuery(<TodayView />);
+      await userEvent.click(within(await dayGroup()).getByRole('button', { name: 'きのう' }));
+      const menu = await screen.findByRole('list', { name: '今日のメニュー' });
+      expect(within(menu).getByRole('link', { name: /スクワット/ })).toHaveAttribute('href', '/record?exercise=sq&day=yesterday');
+      expect(screen.getByRole('link', { name: /種目を足す/ })).toHaveAttribute('href', '/exercises?day=yesterday');
+      expect(screen.getByRole('link', { name: /ランを記録/ })).toHaveAttribute('href', '/run?day=yesterday');
+    });
+
+    it('きのうでは、「次の1枚」と「今日は休む」を出さない（きのうの休みは作れない）', async () => {
+      renderWithQuery(<TodayView />);
+      expect(await screen.findByRole('region', { name: '次の1枚' })).toBeInTheDocument();
+      await userEvent.click(within(await dayGroup()).getByRole('button', { name: 'きのう' }));
+      expect(screen.queryByRole('region', { name: '次の1枚' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /今日は休む/ })).not.toBeInTheDocument();
+      expect(screen.getByText(LATE_MESSAGES.banner)).toBeInTheDocument();
+    });
+
+    it('「今日」へ戻すと、元の画面とリンクに戻る', async () => {
+      renderWithQuery(<TodayView />);
+      const group = await dayGroup();
+      await userEvent.click(within(group).getByRole('button', { name: 'きのう' }));
+      await userEvent.click(within(group).getByRole('button', { name: '今日' }));
+      expect(await screen.findByRole('region', { name: '次の1枚' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /今日は休む/ })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /ランを記録/ })).toHaveAttribute('href', '/run');
     });
   });
 

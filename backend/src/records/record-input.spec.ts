@@ -57,6 +57,30 @@ describe('parseRecordInput（記録の入力検査）', () => {
     });
   });
 
+  // F-21 あとから記録。late は「端末で保存を押した日より前の日の記録」の札（T-LATE-01〜04）
+  describe('late（あとから記録。F-21）', () => {
+    it('付けなければ late は入らない（いつもの記録）', () => {
+      expect(parse(valid)).not.toHaveProperty('late');
+    });
+
+    it('筋トレ・ランは late: true で通り、late: true が入る', () => {
+      expect(parse({ ...valid, late: true }).late).toBe(true);
+      expect(parse({ ...valid, kind: 'run', run: { distanceM: 5000, durationS: 1800 }, late: true }).late).toBe(true);
+    });
+
+    it('late: false は付けないのと同じ', () => {
+      expect(parse({ ...valid, late: false })).not.toHaveProperty('late');
+    });
+
+    it('休みは late: true にできない（休みはその日のうちに決めるもの）', () => {
+      expect(() => parse({ ...valid, kind: 'rest', late: true })).toThrow(BadRequestException);
+    });
+
+    it.each([['true'], [1], [null]])('late が %j（真偽値でない）は 400', (late) => {
+      expect(() => parse({ ...valid, late })).toThrow(BadRequestException);
+    });
+  });
+
   describe('ラン（kind=run。F-04）', () => {
     const run = { distanceM: 5000, durationS: 1800 };
     const parseRun = (override: Record<string, unknown> = {}) => parse({ ...valid, kind: 'run', run: { ...run, ...override } });

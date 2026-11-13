@@ -478,6 +478,19 @@ describe('記録の取り消し・一覧・詳細（結合: 本物の PostgreSQL
       expect(res.body.items).toEqual([{ id: workout, kind: 'workout', recordedAt: RECORDED_AT, localDate: '2026-10-26', exercises: [] }]);
     });
 
+    // T-LATE-03: あとから記録（F-21）の札は、一覧・詳細にも late:true のときだけ付く
+    it('あとから記録（late）は一覧・詳細に late: true が付く。いつもの記録には付かない', async () => {
+      const cookie = await signUpAs('たろう');
+      const lateId = randomUUID();
+      await http().post('/api/records').set('Cookie', cookie).send({ id: lateId, kind: 'workout', recordedAt: '2026-10-25T03:00:00.000Z', late: true }).expect(201);
+      const usual = await createRecord(cookie, 'workout', '2026-10-26T03:00:00.000Z');
+      const items = (await list(cookie).expect(200)).body.items as { id: string; late?: boolean }[];
+      expect(items.find((r) => r.id === lateId)?.late).toBe(true);
+      expect(items.find((r) => r.id === usual)).not.toHaveProperty('late');
+      expect((await http().get(`/api/records/${lateId}`).set('Cookie', cookie).expect(200)).body.late).toBe(true);
+      expect((await http().get(`/api/records/${usual}`).set('Cookie', cookie).expect(200)).body).not.toHaveProperty('late');
+    });
+
     it('kind=workout&limit=1 は、いちばん新しい筋トレ（今日のメニューの材料）', async () => {
       const cookie = await signUpAs('たろう');
       await createRecord(cookie, 'workout', '2026-10-24T03:00:00.000Z');

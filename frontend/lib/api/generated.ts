@@ -230,6 +230,8 @@ export interface CreateRecordRequest {
   run?: RunDetail;
   /** 運動した時刻（ISO 8601）。未来は5分先まで */
   recordedAt: string;
+  /** あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。休みには付けられない（400） */
+  late?: boolean;
 }
 
 export type RecordResponseKind = typeof RecordResponseKind[keyof typeof RecordResponseKind];
@@ -248,6 +250,8 @@ export interface RecordResponse {
   recordedAt: string;
   /** 日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す */
   localDate: string;
+  /** あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない */
+  late?: boolean;
   /** ランの記録だけ。距離と時間 */
   run?: RunDetail;
 }
@@ -334,6 +338,8 @@ export interface RecordDetailResponse {
   recordedAt: string;
   /** 日本時間の日付（YYYY-MM-DD）。サーバーが recordedAt から出す */
   localDate: string;
+  /** あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない */
+  late?: boolean;
   /** ランの記録だけ。距離と時間 */
   run?: RunDetail;
   /** 筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない */
@@ -522,6 +528,8 @@ export interface FeedItem {
   recordedAt: string;
   /** 日本時間の日付（YYYY-MM-DD） */
   localDate: string;
+  /** あとから記録した記録だけ true（「あとから記録」の札。F-21） */
+  late?: boolean;
   /** 書いた人（自分の記録も入る） */
   author: MemberResponse;
   /** 筋トレの種目名（重複なし・最初にセットを足した順）。筋トレ以外は空の配列。セットの中身は記録の詳細で見る */

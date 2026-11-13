@@ -18,8 +18,9 @@ import {
   useListRecords,
   type WeekDay,
 } from '@/lib/api/generated';
+import { dayDateOf, withDay, type DayMode } from '@/lib/day-mode';
 import { formatSet } from '@/lib/format';
-import { HOME_MESSAGES, REST_MESSAGES } from '@/lib/messages';
+import { HOME_MESSAGES, LATE_MESSAGES, REST_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { todayPose } from '@/lib/today-pose';
 import { buildMenu, type MenuItem, type TodayMenu } from '@/lib/today-menu';
@@ -35,6 +36,8 @@ const recordHref = (exerciseId: string) => `/record?exercise=${encodeURIComponen
 export function TodayView() {
   // 日付は日本時間。端末のタイムゾーンを使わない（T-DATE-11）
   const today = toLocalDate(new Date());
+  // 記録する日（F-21 あとから記録）。きのうを選ぶと、記録・ラン・種目一覧のリンクに day=yesterday が付く
+  const [day, setDay] = useState<DayMode>('today');
   const week = useGetWeek({ date: today });
   // 今日の分（今日の日付の記録）と前回（それより前の一番新しい記録）の両方を取るため、少し多めに読む
   const workouts = useListRecords({ kind: ListRecordsKind.workout, limit: '5' });
@@ -57,7 +60,7 @@ export function TodayView() {
   const items = workouts.data?.status === 200 ? workouts.data.data.items : null;
   const lastDate = latest.data?.status === 200 ? (latest.data.data.items[0]?.localDate ?? null) : null;
   const welcomeBack = shouldWelcomeBack(lastDate, today);
-  const menu = items ? buildMenu(items, today) : null;
+  const menu = items ? buildMenu(items, dayDateOf(day, new Date())) : null;
 
   return (
     <>
@@ -72,7 +75,11 @@ export function TodayView() {
       <SyncBanner />
 
       <div className="space-y-4 px-4 pt-4">
-        {welcomeBack && (
+        <DaySwitch day={day} onChange={setDay} />
+        {day === 'yesterday' && (
+          <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">{LATE_MESSAGES.banner}</p>
+        )}
+        {day === 'today' && welcomeBack && (
           <p className="flex items-center gap-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-ink">
             <Sparkles aria-hidden className="size-5 shrink-0 text-teal-dark" />
             {HOME_MESSAGES.welcomeBack}
@@ -83,6 +90,13 @@ export function TodayView() {
           <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
             {LOAD_ERROR}
           </p>
+        ) : day === 'yesterday' ? (
+          // きのうの分: 次の1枚と休みは出さず、種目を選んで記録する（きのうの休みは作れない）
+          menu.items.length > 0 ? (
+            <Menu items={menu.items} day={day} />
+          ) : (
+            <LinkButton href={withDay('/exercises', day)}>種目を選ぶ</LinkButton>
+          )
         ) : (
           <>
             {/* キャラは次の1枚の右上に立つ（足が少しカードに重なる）。飾りなので読み上げない */}
@@ -93,14 +107,40 @@ export function TodayView() {
               />
             </div>
             <NextCard menu={menu} todayStatus={todayStatus} />
-            {menu.items.length > 0 && <Menu items={menu.items} />}
+            {menu.items.length > 0 && <Menu items={menu.items} day={day} />}
           </>
         )}
 
-        <RunLink />
-        {todayStatus !== 'rest' && <RestButton />}
+        <RunLink day={day} />
+        {day === 'today' && todayStatus !== 'rest' && <RestButton />}
       </div>
     </>
+  );
+}
+
+// 「今日 / きのう」の切り替え（F-21）。きのうの分を、あとから記録するときに使う
+function DaySwitch({ day, onChange }: { day: DayMode; onChange: (next: DayMode) => void }) {
+  const options: { value: DayMode; label: string }[] = [
+    { value: 'today', label: LATE_MESSAGES.today },
+    { value: 'yesterday', label: LATE_MESSAGES.yesterday },
+  ];
+  return (
+    <div role="group" aria-label={LATE_MESSAGES.switchLabel} className="flex gap-1 rounded-fl bg-face p-1">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          aria-pressed={day === o.value}
+          onClick={() => onChange(o.value)}
+          className={cn(
+            'min-h-11 flex-1 rounded-lg text-[15px] font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+            day === o.value ? 'bg-white text-ink shadow-sm' : 'text-sub-strong',
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -197,7 +237,7 @@ function LinkButton({ href, children }: { href: string; children: ReactNode }) {
 
 // 今日のメニュー: 前回と同じ種目が同じ順で並ぶ。できた種目は黄のチェック。
 // 下の「種目を足す」から一覧（S-11）で選んだ種目は、記録すると末尾に並ぶ（buildMenu）。外す・並べ替えは未実装
-function Menu({ items }: { items: MenuItem[] }) {
+function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
   return (
     <section>
       <h2 className="mb-2 text-sm font-extrabold text-sub-strong">ほかの種目（今日のメニュー）</h2>
@@ -207,7 +247,7 @@ function Menu({ items }: { items: MenuItem[] }) {
           return (
             <li key={item.exerciseId}>
               <Link
-                href={recordHref(item.exerciseId)}
+                href={withDay(recordHref(item.exerciseId), day)}
                 className={cn(
                   'fl-slab flex min-h-16 items-center gap-3 px-3 outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
                   item.done && 'bg-face',
@@ -235,7 +275,7 @@ function Menu({ items }: { items: MenuItem[] }) {
         })}
       </ul>
       <Link
-        href="/exercises"
+        href={withDay('/exercises', day)}
         className="mt-2 flex min-h-12 items-center justify-center gap-1.5 rounded-fl border-2 border-dashed border-line-dark text-[15px] font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
       >
         <Plus aria-hidden className="size-5" strokeWidth={3} />
@@ -301,10 +341,10 @@ function RestButton() {
 }
 
 // ランの記録（S-13）への入口。休みの日でも出す（休みを残したまま、走った日の記録を足せる。UC-13）
-function RunLink() {
+function RunLink({ day }: { day: DayMode }) {
   return (
     <Link
-      href="/run"
+      href={withDay('/run', day)}
       className="fl-slab flex min-h-14 items-center justify-center gap-2 px-4 text-base font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
     >
       <Footprints aria-hidden className="size-5" />

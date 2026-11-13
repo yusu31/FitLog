@@ -154,6 +154,8 @@ export const records = pgTable(
     kind: recordKind('kind').notNull(),
     recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
     localDate: date('local_date').notNull(),
+    // あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。端末が保存の時点で決めるので、オフラインで翌日に届いても変わらない
+    late: boolean('late').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

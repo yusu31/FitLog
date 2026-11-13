@@ -555,6 +555,29 @@ design.md の 6 章のとおり、記録を取るクエリは1か所の共通関
 | T-STATS-13 | 今月 N 日目 | 今月3日・今日が未計上／計上済み／今月0日／今日は休みだけ | 4／3→同じ数のまま／1／足す。集計が取れなければ出さない | 境 | 単・画 |
 | T-STATS-14 | 画面の文言 | 獲得済み・まだ・記録なし | 「あと」を出さない。獲得済みを文字でも区別。記録が無くても責めない | 同 | 画 |
 
+### 3-15. あとから記録（F-21。実装と同じ PR で書いた）
+
+純粋な計算は `backend/src/records/record-input.spec.ts`・`frontend/lib/day-mode.test.ts`・`current-workout.test.ts`、API は `backend/test/records.e2e-spec.ts`・`records-read-delete.e2e-spec.ts`・`feed-social.e2e-spec.ts`・`videos.e2e-spec.ts`、画面は `today-view`・`record-view`・`run-view`・`exercises-view`・`feed-section`・`record-detail-view`・`me-view` の各テスト。
+
+| ID | ケース | 入力 | 期待 | 技法 | 層 |
+|----|--------|------|------|------|----|
+| T-LATE-01 | 付けない | `late` なし | 結果に late は入らない（いつもの記録） | 同 | 単 |
+| T-LATE-02 | 筋トレ・ランに true | `late:true` | 通り、late:true が入る | 同 | 単 |
+| T-LATE-03 | false | `late:false` | 付けないのと同じ。一覧・詳細の応答にも、いつもの記録には late が付かない（late は一覧・詳細にも付く） | 同 | 単・結 |
+| T-LATE-04 | 真偽値でない・休み | "true"・1・null／`kind=rest` に true | 400（休みはその日のうちに決める） | デ | 単 |
+| T-LATE-05 | 作成 | `late:true` で作る／付けずに作る | 201 で late:true を返し、DB も true。付けなければ応答に late は無く DB は false | 同 | 結 |
+| T-LATE-06 | 再送 | 同じ id を late を変えて送る | 1回目の値が残る（オフラインの再送で札が変わらない） | 同 | 結 |
+| T-LATE-07 | 休みに late | `kind=rest` と `late:true` | 400。DB に入らない | デ | 結 |
+| T-LATE-08 | 仲間の足跡 | 仲間が late の記録を作る | 足跡に late:true。いつもの記録には無い | 同 | 結 |
+| T-LATE-09 | 動画 | late の筋トレに署名付き URL を求める | 409 `RECORD_LATE`。行はできない。ふつうの筋トレは 201 | デ | 結 |
+| T-LATE-10 | きのうの日付（日本時間） | 日本時間 11/13 0:00／23:59／12/1 9:00 | きのうは 11/12／11/12／11/30（UTC の日付ではない） | 境 | 単 |
+| T-LATE-11 | きのうの日時 | 日本時間 11/13 09:00 | recordedAt＝11/12 12:00 JST（03:00Z）、`late:true`。今日は late を付けない。前回は「きのうの12:00より前」から探す | 同 | 単・画 |
+| T-LATE-12 | 記録 ID を分ける | 今日のセット後に、きのうのセットを足す | きのうは別の記録（今日の記録に継ぎ足さない）。きのうの中では同じ記録を続ける | 同 | 単 |
+| T-LATE-13 | 画面の切り替え | 「きのう」を押す／「今日」へ戻す | きのう: 帯・リンクに day=yesterday・次の1枚と休みが消える。今日: 元に戻る | 状 | 画 |
+| T-LATE-14 | ラン | きのうの手入力／GPX の開始が今日より前／今日の GPX | late:true（きのうは 12:00）／late:true（GPX の時刻）／late なし | 境・デ | 画 |
+| T-LATE-15 | 札の表示 | late の足跡・詳細・自分の一覧 | 時刻の代わりに「あとから記録」。ふつうの記録は時刻のまま | 同 | 画 |
+| T-LATE-16 | 動画の入口 | きのうの記録画面で1セット後 | 撮影の入口を出さない | デ | 画 |
+
 ## 4. 実行件数の確認と、テストが本当に効いているかの確認
 
 ### 4-1. 0件でも成功になる罠

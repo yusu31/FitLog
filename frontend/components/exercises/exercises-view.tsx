@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 import { cn } from 'cn';
 import { FullScreen } from '@/components/fitlog/full-screen';
@@ -18,6 +19,7 @@ import {
   type ExerciseResponse,
 } from '@/lib/api/generated';
 import { BODY_PART_LABEL, BODY_PART_ORDER } from '@/lib/body-parts';
+import { parseDayMode, withDay, type DayMode } from '@/lib/day-mode';
 import { useRequireSession } from '@/lib/use-require-session';
 
 const NAME_MAX = 30;
@@ -29,6 +31,8 @@ const normalize = (text: string) => text.trim().toLowerCase();
 // 選ぶと S-12 記録（/record?exercise=）へ移る。静的書き出しなので、種目の ID はクエリで運ぶ
 export function ExercisesView() {
   const { signedIn } = useRequireSession();
+  // きのうの分（F-21）から来たときは、選んだ先の記録画面にも引き継ぐ
+  const day = parseDayMode(useSearchParams().get('day'));
   const { data, isPending, isError } = useListExercises({ query: { enabled: signedIn } });
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
@@ -137,7 +141,7 @@ export function ExercisesView() {
               <ul className="flex flex-col gap-2 px-4">
                 {items.map((e) => (
                   <li key={e.id}>
-                    <ExerciseRow exercise={e} />
+                    <ExerciseRow exercise={e} day={day} />
                   </li>
                 ))}
               </ul>
@@ -149,11 +153,11 @@ export function ExercisesView() {
   );
 }
 
-function ExerciseRow({ exercise }: { exercise: ExerciseResponse }) {
+function ExerciseRow({ exercise, day }: { exercise: ExerciseResponse; day: DayMode }) {
   const { id, name, bodyPart, isCustom, trialWeightKg, trialReps } = exercise;
   return (
     <Link
-      href={`/record?exercise=${encodeURIComponent(id)}`}
+      href={withDay(`/record?exercise=${encodeURIComponent(id)}`, day)}
       className={cn(
         'fl-slab flex min-h-14 items-center gap-3 py-1.5 pr-3 pl-2.5 outline-none',
         'transition-transform active:translate-y-0.5 focus-visible:ring-4 focus-visible:ring-teal/40 motion-reduce:transition-none',

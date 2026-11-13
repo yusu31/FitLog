@@ -33,6 +33,15 @@ describe('MeView（S-30 自分）', () => {
       expect(within(rows[1]).getByRole('link')).toHaveAttribute('href', '/record-detail?id=r1&from=me');
     });
 
+    it('あとから記録（late）の行にだけ「あとから記録」の札が付く（F-21）', async () => {
+      installFakeApi({ [FIRST]: page([{ ...workout('r3', '2026-10-22', [squat]), late: true }, workout('r2', '2026-10-21', [curl])]) });
+      renderWithQuery(<MeView />);
+      await screen.findByText('スクワット');
+      const rows = within(screen.getByRole('list', { name: '記録' })).getAllByRole('listitem');
+      expect(within(rows[0]).getByText('あとから記録')).toBeInTheDocument();
+      expect(within(rows[1]).queryByText('あとから記録')).not.toBeInTheDocument();
+    });
+
     it('筋トレは種目の要約、ランは距離と時間、休みは「おやすみ」で、新しい順に並ぶ', async () => {
       installFakeApi({
         [FIRST]: page([

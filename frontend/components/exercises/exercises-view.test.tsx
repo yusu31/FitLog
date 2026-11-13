@@ -4,7 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { ExercisesView } from './exercises-view';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }), usePathname: () => '/exercises/' }));
+let search = '';
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: vi.fn() }),
+  usePathname: () => '/exercises/',
+  useSearchParams: () => new URLSearchParams(search),
+}));
 let session: { data: unknown; isPending: boolean } = { data: { user: { id: 'u1' } }, isPending: false };
 vi.mock('@/lib/auth-client', () => ({ authClient: { useSession: () => session } }));
 
@@ -57,6 +62,12 @@ describe('ExercisesView（S-11 種目を選ぶ）', () => {
     expect(screen.getByRole('heading', { name: 'お尻' })).toBeInTheDocument();
     // 使っていない部位の見出しは出さない
     expect(screen.queryByRole('heading', { name: '腕' })).not.toBeInTheDocument();
+  });
+
+  it('きのうの分（?day=yesterday）から来たときは、記録画面へのリンクにも day=yesterday を引き継ぐ（F-21）', async () => {
+    search = 'day=yesterday';
+    renderView();
+    expect(await screen.findByRole('link', { name: /ベンチプレス/ })).toHaveAttribute('href', '/record?exercise=e-bench&day=yesterday');
   });
 
   it('自分で追加した種目には「じぶんの」の印が付く', async () => {
