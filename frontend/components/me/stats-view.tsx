@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { useGetStats, type StatsResponse, type StatsWeek } from '@/lib/api/generated';
 import { formatDistance, formatMonthDay } from '@/lib/format';
-import { JAPAN_ROUTE, locateOnRoute, trekText } from '@/lib/japan-route';
+import { JAPAN_ROUTE, locateOnRoute, nextText, trekText } from '@/lib/japan-route';
 import { STAMP_LABEL, STATS_VIEWS, barRatios, buildGrid, weightEquivalent, type StatsView } from '@/lib/stats';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useRequireSession } from '@/lib/use-require-session';
@@ -181,7 +181,11 @@ function JapanTrek({ totalMeters }: { totalMeters: number }) {
       <h2 id="stats-trek" className="text-sm font-extrabold text-sub-strong">
         日本縦断
       </h2>
+      <p className="mt-1 text-center" data-testid="trek-total">
+        <span className="text-xs text-sub-strong">これまでの合計</span> <span className="fl-num text-3xl">{(totalMeters / 1000).toFixed(1)}</span> <span className="text-sm font-bold">km</span>
+      </p>
       <p className="mt-1 text-sm font-bold">{trekText(totalMeters, pos)}</p>
+      <p className="text-sm font-bold text-teal-dark">{nextText(pos)}</p>
       <svg viewBox="0 0 220 300" role="img" aria-label={`走った距離ぶん、鹿児島から北へ進んだ位置。いまは${pos.name}のあたり`} className="mx-auto mt-2 h-72">
         <polyline points={all} fill="none" strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" className="stroke-line" />
         <polyline points={done} fill="none" strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal" />

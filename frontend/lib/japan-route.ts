@@ -24,6 +24,7 @@ export type RoutePosition = {
   y: number;
   passed: number; // その周で通った地点の数（出発点を含む）
   lap: number; // 何周目か（1から）
+  kmInLap: number; // その周の中で進んだ距離（km）
 };
 
 export function locateOnRoute(totalMeters: number): RoutePosition {
@@ -34,7 +35,14 @@ export function locateOnRoute(totalMeters: number): RoutePosition {
   while (km >= JAPAN_ROUTE[i + 1].km) i++;
   const [a, b] = [JAPAN_ROUTE[i], JAPAN_ROUTE[i + 1]];
   const t = (km - a.km) / (b.km - a.km);
-  return { name: a.name, x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, passed: i + 1, lap };
+  return { name: a.name, x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, passed: i + 1, lap, kmInLap: km };
+}
+
+// 次の地点までの距離（F-28）。ゴールまでの残りは出さない。0.1km 単位に切り上げる（手前なのに 0.0km と出さないため）
+export function nextText(pos: RoutePosition): string {
+  const next = JAPAN_ROUTE[pos.passed];
+  const rest = Math.ceil((next.km - pos.kmInLap) * 10 - 1e-9) / 10;
+  return `次の${next.name}まで ${rest.toFixed(1)}km`;
 }
 
 export function trekText(totalMeters: number, pos: RoutePosition): string {

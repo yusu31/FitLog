@@ -88,6 +88,8 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
     const trek = (await screen.findByText('日本縦断')).closest('section')!;
     expect(trek).toHaveTextContent('300km');
     expect(trek).toHaveTextContent('福岡');
+    expect(within(trek).getByTestId('trek-total')).toHaveTextContent('300.0 km'); // 合計の走行距離
+    expect(trek).toHaveTextContent('次の広島まで 260.0km'); // 福岡(270km)の次は広島(560km)
     expect(trek.textContent).not.toMatch(/あと|残り/);
     expect(within(trek).getByRole('img', { name: /福岡/ })).toBeInTheDocument();
   });
@@ -95,7 +97,7 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
   it('日本縦断: まだ走っていなくても出発点（鹿児島）で出す。3000km を超えたら2周目', async () => {
     stubStats(statsOf({ totalRunDistanceM: 0 }));
     const first = renderWithQuery(<StatsPage />);
-    expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('鹿児島');
+    expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('次の福岡まで 270.0km');
     first.unmount();
     stubStats(statsOf({ totalRunDistanceM: 3_500_000 }));
     renderWithQuery(<StatsPage />);

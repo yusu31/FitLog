@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { JAPAN_ROUTE, TOTAL_KM, locateOnRoute, trekText } from '@/lib/japan-route';
+import { JAPAN_ROUTE, TOTAL_KM, locateOnRoute, nextText, trekText } from '@/lib/japan-route';
 
 // 日本縦断（F-28。docs/testing-design.md 3-17）の現在地の計算。ルートは鹿児島から稚内まで、累計 km の昇順
 
@@ -60,6 +60,25 @@ describe('locateOnRoute（累計距離から今いる場所を出す）', () => 
   it('通った地点の数（passed）は、出発点を含めて今いる区間の手前まで', () => {
     expect(locateOnRoute(0).passed).toBe(1);
     expect(locateOnRoute(JAPAN_ROUTE[1].km * 1000).passed).toBe(2);
+  });
+});
+
+describe('nextText（次の地点まで。ゴールまでの残りは出さない）', () => {
+  it('次の地点の名前と、そこまでの距離（km、小数1桁）を言う', () => {
+    expect(nextText(locateOnRoute(12300))).toBe('次の福岡まで 257.7km');
+  });
+  it('地点ちょうどに着いたら、そのひとつ先の地点を言う（0km とは言わない）', () => {
+    expect(nextText(locateOnRoute(270_000))).toBe('次の広島まで 290.0km');
+  });
+  it('1周の最後の区間では稚内、1周したら2周目の最初の地点（福岡）を言う', () => {
+    expect(nextText(locateOnRoute(2_900_000))).toContain('次の稚内まで');
+    expect(nextText(locateOnRoute(3_000_000))).toBe('次の福岡まで 270.0km');
+  });
+  it('「あと」「残り」「ゴール」は言わない', () => {
+    expect(nextText(locateOnRoute(500_000))).not.toMatch(/あと|残り|ゴール/);
+  });
+  it('距離は0.1kmの単位に切り上げる（手前なのに 0.0km と出さない）', () => {
+    expect(nextText(locateOnRoute(269_990))).toBe('次の福岡まで 0.1km');
   });
 });
 
