@@ -15,28 +15,31 @@ export const JAPAN_ROUTE: readonly RoutePoint[] = [
   { name: '稚内', km: 3000, x: 174, y: 26 },
 ];
 
+// 1周ぶんの距離（km）。稚内に着いたら鹿児島に戻って2周目、3周目…と何周でも続ける
+export const TOTAL_KM = JAPAN_ROUTE[JAPAN_ROUTE.length - 1].km;
+
 export type RoutePosition = {
-  name: string; // 今いる場所（最後に通った地点の名前）
+  name: string; // 今いる場所（その周で最後に通った地点の名前）
   x: number;
   y: number;
-  passed: number; // 通った地点の数（出発点を含む）
-  reached: boolean; // 終点（稚内）に着いたか
+  passed: number; // その周で通った地点の数（出発点を含む）
+  lap: number; // 何周目か（1から）
 };
 
 export function locateOnRoute(totalMeters: number): RoutePosition {
-  const km = Number.isFinite(totalMeters) && totalMeters > 0 ? totalMeters / 1000 : 0;
-  const last = JAPAN_ROUTE.length - 1;
-  if (km >= JAPAN_ROUTE[last].km) return { name: JAPAN_ROUTE[last].name, x: JAPAN_ROUTE[last].x, y: JAPAN_ROUTE[last].y, passed: JAPAN_ROUTE.length, reached: true };
+  const total = Number.isFinite(totalMeters) && totalMeters > 0 ? totalMeters / 1000 : 0;
+  const lap = Math.floor(total / TOTAL_KM) + 1;
+  const km = total - (lap - 1) * TOTAL_KM; // その周の中での距離（0以上・TOTAL_KM 未満）
   let i = 0;
   while (km >= JAPAN_ROUTE[i + 1].km) i++;
   const [a, b] = [JAPAN_ROUTE[i], JAPAN_ROUTE[i + 1]];
   const t = (km - a.km) / (b.km - a.km);
-  return { name: a.name, x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, passed: i + 1, reached: false };
+  return { name: a.name, x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, passed: i + 1, lap };
 }
 
 export function trekText(totalMeters: number, pos: RoutePosition): string {
   const km = Math.round(Math.max(0, totalMeters) / 100) / 10;
-  return pos.reached
-    ? `これまでに走ったのは ${km}km。鹿児島から稚内まで、日本縦断おつかれさま！`
-    : `これまでに走ったのは ${km}km。鹿児島から北へ進んで、いまは${pos.name}のあたり。`;
+  return pos.lap === 1
+    ? `これまでに走ったのは ${km}km。鹿児島から北へ進んで、いまは${pos.name}のあたり。`
+    : `これまでに走ったのは ${km}km。日本縦断を${pos.lap - 1}回達成して、いまは${pos.lap}周目の${pos.name}のあたり。`;
 }

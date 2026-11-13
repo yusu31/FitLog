@@ -92,14 +92,16 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
     expect(within(trek).getByRole('img', { name: /福岡/ })).toBeInTheDocument();
   });
 
-  it('日本縦断: まだ走っていなくても出発点（鹿児島）で出す。終点を超えたら縦断達成', async () => {
+  it('日本縦断: まだ走っていなくても出発点（鹿児島）で出す。3000km を超えたら2周目', async () => {
     stubStats(statsOf({ totalRunDistanceM: 0 }));
     const first = renderWithQuery(<StatsPage />);
     expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('鹿児島');
     first.unmount();
     stubStats(statsOf({ totalRunDistanceM: 3_500_000 }));
     renderWithQuery(<StatsPage />);
-    expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('縦断');
+    const second = (await screen.findByText('日本縦断')).closest('section')!;
+    expect(second).toHaveTextContent('1回達成');
+    expect(second).toHaveTextContent('2周目');
   });
 
   it('グラフは、読み上げ用に週ごとの数字も持つ（直近12週）', async () => {
