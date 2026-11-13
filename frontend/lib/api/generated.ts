@@ -352,6 +352,23 @@ export interface RecordedExercise {
   sets: RecordedSet[];
 }
 
+export interface PreviousRun {
+  /** 前回のランの記録 id */
+  recordId: string;
+  recordedAt: string;
+  /**
+     * @minimum 100
+     * @maximum 200000
+     */
+  distanceM: number;
+  /**
+     * @minimum 60
+     * @maximum 86400
+     */
+  durationS: number;
+  route: RunRoute;
+}
+
 export type RecordDetailResponseKind = typeof RecordDetailResponseKind[keyof typeof RecordDetailResponseKind];
 
 
@@ -378,6 +395,8 @@ export interface RecordDetailResponse {
   exercises?: RecordedExercise[];
   /** 動画があるときだけ（詳細 GET /records/{id} のみ）。見るときの GET /videos/{id}/url に使う */
   videoId?: string;
+  /** 地図ゴースト（F-17）。ルート付きのランの詳細を持ち主本人が開いたときだけ、本人の「ひとつ前のルート付きラン」を返す（手入力のランは飛ばす）。前回が無い・仲間が見たときは付かない */
+  previousRun?: PreviousRun;
 }
 
 export interface RecordListResponse {

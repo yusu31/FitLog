@@ -15,7 +15,9 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(search),
 }));
 vi.mock('./route-map', () => ({
-  RouteMap: ({ route }: { route: { coordinates: unknown[] } }) => <div data-testid="route-map" data-points={route.coordinates.length} />,
+  RouteMap: ({ route, ghost }: { route: { coordinates: unknown[] }; ghost?: { coordinates: unknown[] } }) => (
+    <div data-testid="route-map" data-points={route.coordinates.length} data-ghost-points={ghost?.coordinates.length} />
+  ),
 }));
 vi.mock('@/lib/auth-client', () => ({
   authClient: { useSession: () => ({ data: { user: { id: 'u1' } }, isPending: false }) },
@@ -265,6 +267,26 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
       const map = await screen.findByTestId('route-map');
       expect(map).toHaveAttribute('data-points', '3');
       expect(screen.getByText('5.2km')).toBeInTheDocument(); // 数字は地図があっても出る
+    });
+
+    // F-17: 自分のルート付きランに、前回のルートを点線で重ね、凡例を出す
+    it('previousRun があれば、地図に前回のルートを渡し、凡例（日付・距離・ペース）を出す', async () => {
+      const route = { type: 'LineString', coordinates: [[139.7, 35.6], [139.8, 35.7], [139.9, 35.8]] };
+      const previousRun = { recordId: 'r0', recordedAt: '2026-10-20T03:00:00.000Z', distanceM: 4200, durationS: 1800, route: { type: 'LineString', coordinates: [[139.7, 35.6], [139.75, 35.65]] } };
+      install({ [REC]: ok({ ...runRecord('r1', '2026-10-22', 5200, 1930), run: { distanceM: 5200, durationS: 1930, route }, previousRun }) });
+      renderWithQuery(<RecordDetailView />);
+      const map = await screen.findByTestId('route-map');
+      expect(map).toHaveAttribute('data-ghost-points', '2');
+      expect(screen.getByText('点線は前回（10/20・4.2km・7:09/km）')).toBeInTheDocument();
+    });
+
+    it('previousRun が無ければ、前回の線も凡例も出さない', async () => {
+      const route = { type: 'LineString', coordinates: [[139.7, 35.6], [139.8, 35.7], [139.9, 35.8]] };
+      install({ [REC]: ok({ ...runRecord('r1', '2026-10-22', 5200, 1930), run: { distanceM: 5200, durationS: 1930, route } }) });
+      renderWithQuery(<RecordDetailView />);
+      const map = await screen.findByTestId('route-map');
+      expect(map).not.toHaveAttribute('data-ghost-points');
+      expect(screen.queryByText(/点線は前回/)).not.toBeInTheDocument();
     });
 
     it('route が無い（手入力の）ランには、地図を出さない', async () => {

@@ -32,6 +32,24 @@ export class RunDetail {
   route?: RunRoute;
 }
 
+// 地図ゴースト（F-17）。自分のルート付きランの詳細にだけ付く、自分の「ひとつ前のルート付きラン」
+export class PreviousRun {
+  @ApiProperty({ format: 'uuid', description: '前回のランの記録 id' })
+  recordId!: string;
+
+  @ApiProperty({ format: 'date-time', example: '2026-10-20T03:00:00.000Z' })
+  recordedAt!: string;
+
+  @ApiProperty({ minimum: DISTANCE_M_MIN, maximum: DISTANCE_M_MAX, example: 4200 })
+  distanceM!: number;
+
+  @ApiProperty({ minimum: DURATION_S_MIN, maximum: DURATION_S_MAX, example: 1800 })
+  durationS!: number;
+
+  @ApiProperty({ type: RunRoute })
+  route!: RunRoute;
+}
+
 export class CreateRecordRequest {
   @ApiProperty({ format: 'uuid', description: '端末で作る ID。同じ ID を送り直しても、記録は1件のまま（冪等）' })
   id!: string;
@@ -125,6 +143,14 @@ export class RecordDetailResponse extends RecordResponse {
     description: '動画があるときだけ（詳細 GET /records/{id} のみ）。見るときの GET /videos/{id}/url に使う',
   })
   videoId?: string;
+
+  @ApiProperty({
+    type: PreviousRun,
+    required: false,
+    description:
+      '地図ゴースト（F-17）。ルート付きのランの詳細を持ち主本人が開いたときだけ、本人の「ひとつ前のルート付きラン」を返す（手入力のランは飛ばす）。前回が無い・仲間が見たときは付かない',
+  })
+  previousRun?: PreviousRun;
 }
 
 export class RecordListResponse {

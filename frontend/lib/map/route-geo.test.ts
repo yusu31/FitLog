@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { routeBounds, routeEnds, routeLine } from './route-geo';
+import { mergeBounds, routeBounds, routeEnds, routeLine } from './route-geo';
 
 // 地図に渡す形（GeoJSON）と、表示範囲の計算。純粋な関数だけ（地図の部品は route-map.tsx）
 const route = (coordinates: [number, number][]) => ({ type: 'LineString' as const, coordinates });
@@ -24,6 +24,18 @@ describe('routeBounds（ルートが全部入る範囲）', () => {
       [-70.5, -33.5],
       [-70.4, -33.4],
     ]);
+  });
+});
+
+describe('mergeBounds（2つの範囲が両方入る範囲。地図ゴースト F-17）', () => {
+  it('西・南は小さいほう、東・北は大きいほうを取る', () => {
+    expect(mergeBounds([[139.7, 35.6], [139.8, 35.7]], [[139.65, 35.62], [139.75, 35.8]])).toEqual([
+      [139.65, 35.6],
+      [139.8, 35.8],
+    ]);
+  });
+  it('片方がもう片方を含むなら、大きいほうと同じ', () => {
+    expect(mergeBounds([[139, 35], [140, 36]], [[139.2, 35.2], [139.3, 35.3]])).toEqual([[139, 35], [140, 36]]);
   });
 });
 

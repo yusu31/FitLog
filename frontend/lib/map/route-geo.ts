@@ -29,6 +29,12 @@ export function routeBounds(route: RouteLike): Bounds {
   ];
 }
 
+// 2つの範囲がどちらも入る範囲（今回のルートと前回のルートを1画面に収める。F-17）
+export const mergeBounds = (a: Bounds, b: Bounds): Bounds => [
+  [Math.min(a[0][0], b[0][0]), Math.min(a[0][1], b[0][1])],
+  [Math.max(a[1][0], b[1][0]), Math.max(a[1][1], b[1][1])],
+];
+
 export const routeLine = (route: RouteLike): RouteLineFeature => ({ type: 'Feature', properties: {}, geometry: route });
 
 // スタート（最初の点）とゴール（最後の点）

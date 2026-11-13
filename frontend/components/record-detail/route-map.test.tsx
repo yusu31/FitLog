@@ -12,7 +12,7 @@ const h = vi.hoisted(() => {
     static failWith: Error | null = null;
     handlers: Record<string, () => void> = {};
     sources: Record<string, unknown> = {};
-    layers: { id: string; source: string; type: string }[] = [];
+    layers: { id: string; source: string; type: string; paint?: Record<string, unknown> }[] = [];
     controls: unknown[] = [];
     fitBounds = vi.fn();
     remove = vi.fn();
@@ -27,7 +27,7 @@ const h = vi.hoisted(() => {
     addSource(id: string, source: unknown) {
       this.sources[id] = source;
     }
-    addLayer(layer: { id: string; source: string; type: string }) {
+    addLayer(layer: { id: string; source: string; type: string; paint?: Record<string, unknown> }) {
       this.layers.push(layer);
     }
     addControl(control: unknown) {
@@ -81,6 +81,49 @@ describe('RouteMap（ランのルートの地図）', () => {
     ]);
     // 点が少ない・短いルートで寄りすぎない（maxZoom）。余白（padding）がある
     expect(map.fitBounds.mock.calls[0][1]).toMatchObject({ maxZoom: expect.any(Number), padding: expect.any(Number), animate: false });
+  });
+
+  describe('地図ゴースト（F-17: 前回のルートを点線で重ねる）', () => {
+    const GHOST = { type: 'LineString' as const, coordinates: [[139.65, 35.62], [139.7, 35.75], [139.72, 35.8]] as [number, number][] };
+
+    it('前回のルートの線を、今回の線より下（先）に足す。点線で、スタート・ゴールの点は今回だけ', async () => {
+      render(<RouteMap route={ROUTE} ghost={GHOST} />);
+      await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
+      const map = lastMap();
+      map.handlers.load();
+      expect(map.sources['ghost']).toMatchObject({ type: 'geojson', data: { type: 'Feature', geometry: GHOST } });
+      expect(map.layers.map((l) => [l.id, l.source])).toEqual([
+        ['ghost-line', 'ghost'],
+        ['route-line', 'route'],
+        ['route-ends', 'route-ends'],
+      ]);
+      expect(map.layers[0]).toMatchObject({ paint: { 'line-dasharray': expect.any(Array) } });
+    });
+
+    it('今回と前回の両方が入る範囲に合わせる', async () => {
+      render(<RouteMap route={ROUTE} ghost={GHOST} />);
+      await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
+      const map = lastMap();
+      map.handlers.load();
+      expect(map.fitBounds.mock.calls[0][0]).toEqual([
+        [139.65, 35.6],
+        [139.8, 35.8],
+      ]);
+    });
+
+    it('前回がなければ、前回の線は足さない（従来どおり）', async () => {
+      render(<RouteMap route={ROUTE} />);
+      await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
+      const map = lastMap();
+      map.handlers.load();
+      expect(map.sources['ghost']).toBeUndefined();
+      expect(map.layers.map((l) => l.id)).toEqual(['route-line', 'route-ends']);
+    });
+
+    it('地図の名前（aria-label）に、点線が前回だと書く', async () => {
+      render(<RouteMap route={ROUTE} ghost={GHOST} />);
+      expect(await screen.findByRole('img', { name: DETAIL_MESSAGES.mapLabelWithGhost })).toBeInTheDocument();
+    });
   });
 
   it('画面を離れるときに地図を片付ける（remove）。入れ物ごと残さない', async () => {

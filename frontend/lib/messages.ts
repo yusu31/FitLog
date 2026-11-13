@@ -117,6 +117,7 @@ export const DETAIL_MESSAGES = {
   kindRest: 'おやすみ',
   restBody: '休むのも 記録のひとつ。ちゃんと数えたよ。',
   mapLabel: 'ランのルートの地図',
+  mapLabelWithGhost: 'ランのルートの地図。点線は前回のルート',
   mapUnavailable: '地図は この端末では出せませんでした。距離とペースは上に出ています',
   noSets: 'セットは まだありません',
   videoLabel: '2秒ラストレップの動画',

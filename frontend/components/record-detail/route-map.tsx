@@ -4,19 +4,20 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef, useState } from 'react';
 import { loadMapLibre } from '@/lib/map/load-maplibre';
 import { MAP_STYLE_URL } from '@/lib/map/map-config';
-import { routeBounds, routeEnds, routeLine, type RouteLike } from '@/lib/map/route-geo';
+import { mergeBounds, routeBounds, routeEnds, routeLine, type RouteLike } from '@/lib/map/route-geo';
 import { DETAIL_MESSAGES } from '@/lib/messages';
 
 // 色は app/globals.css のトークンと同じ値（地図の描画は CSS の変数を読めないため、値で持つ）
 const TEAL_DARK = '#0e7f83';
 const TEAL = '#17a2a6';
 const CORAL = '#ff6b5b';
+const GHOST_GRAY = '#8a9aa0'; // 前回のルート（点線）。今回の線より控えめな色
 const WHITE = '#ffffff';
 
 // S-21 のランに出すルートの地図（F-15・docs/features.md 2.10）。ルートの線とスタート・ゴールの点を描き、全体が入るよう範囲を合わせる。
 // MapLibre は大きく、WebGL が要るので、画面に出るときに読み込む（動的 import。静的書き出しの最初の読み込みを重くしない）。
 // 地図を出せない環境では、地図の代わりに理由を一言出す（距離・ペースの数字は上に出ている。削る順④の形）
-export function RouteMap({ route }: { route: RouteLike }) {
+export function RouteMap({ route, ghost }: { route: RouteLike; ghost?: RouteLike }) {
   const container = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
 
@@ -38,6 +39,17 @@ export function RouteMap({ route }: { route: RouteLike }) {
         map = m;
         m.addControl(new NavigationControl({ showCompass: false }), 'top-right');
         m.on('load', () => {
+          // 前回のルート（F-17）は今回の線より先に足す＝下に描く。点線の灰色で、スタート・ゴールの点は付けない
+          if (ghost) {
+            m.addSource('ghost', { type: 'geojson', data: routeLine(ghost) });
+            m.addLayer({
+              id: 'ghost-line',
+              type: 'line',
+              source: 'ghost',
+              layout: { 'line-cap': 'butt', 'line-join': 'round' },
+              paint: { 'line-color': GHOST_GRAY, 'line-width': 4, 'line-dasharray': [2, 2] },
+            });
+          }
           m.addSource('route', { type: 'geojson', data: routeLine(route) });
           m.addLayer({
             id: 'route-line',
@@ -59,7 +71,7 @@ export function RouteMap({ route }: { route: RouteLike }) {
             },
           });
           // 点が少ない・短いルートで寄りすぎないよう maxZoom を決める
-          m.fitBounds(routeBounds(route), { padding: 32, maxZoom: 16, animate: false });
+          m.fitBounds(ghost ? mergeBounds(routeBounds(route), routeBounds(ghost)) : routeBounds(route), { padding: 32, maxZoom: 16, animate: false });
         });
       } catch {
         if (!cancelled) setFailed(true);
@@ -70,7 +82,7 @@ export function RouteMap({ route }: { route: RouteLike }) {
       cancelled = true;
       map?.remove();
     };
-  }, [route]);
+  }, [route, ghost]);
 
   if (failed) {
     return (
@@ -79,5 +91,5 @@ export function RouteMap({ route }: { route: RouteLike }) {
       </p>
     );
   }
-  return <div ref={container} role="img" aria-label={DETAIL_MESSAGES.mapLabel} className="fl-slab h-56 overflow-hidden" />;
+  return <div ref={container} role="img" aria-label={ghost ? DETAIL_MESSAGES.mapLabelWithGhost : DETAIL_MESSAGES.mapLabel} className="fl-slab h-56 overflow-hidden" />;
 }

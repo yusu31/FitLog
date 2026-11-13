@@ -4,6 +4,7 @@ import { ChevronLeft, Moon, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { ghostLegend } from '@/lib/map/ghost-legend';
 import { RouteMap } from './route-map';
 import { SocialSection } from './social-section';
 import { VideoPlayer } from './video-player';
@@ -139,7 +140,10 @@ export function RecordDetailView() {
         {record.kind === 'workout' && !mine && by !== '' && (record.exercises?.length ?? 0) > 0 && <CopyButton record={record} fromUserId={by} />}
         {record.videoId && <VideoPlayer videoId={record.videoId} />}
         {record.kind === 'run' && record.run && <Run distanceM={record.run.distanceM} durationS={record.run.durationS} />}
-        {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} />}
+        {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} ghost={record.previousRun?.route} />}
+        {record.kind === 'run' && record.run?.route && record.previousRun && (
+          <p className="text-center text-xs font-bold text-sub-strong">{ghostLegend(record.previousRun)}</p>
+        )}
         {record.kind === 'rest' && (
           <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.restBody}</p>
         )}
