@@ -2502,6 +2502,11 @@
             "items": {
               "$ref": "#/components/schemas/StatsStamp"
             }
+          },
+          "totalRunDistanceM": {
+            "type": "number",
+            "minimum": 0,
+            "description": "全期間のランの累計距離（m）。日本縦断（F-28）の進み具合に使う。今日より後の日付は数えない"
           }
         },
         "required": [
@@ -2509,7 +2514,8 @@
           "calendar",
           "month",
           "weekly",
-          "stamps"
+          "stamps",
+          "totalRunDistanceM"
         ]
       },
       "FeedStamp": {

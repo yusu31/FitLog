@@ -268,4 +268,7 @@ export class StatsResponse {
 
   @ApiProperty({ type: [StatsStamp], description: 'スタンプ帳。全期間の記録から毎回計算する' })
   stamps!: StatsStamp[];
+
+  @ApiProperty({ minimum: 0, description: '全期間のランの累計距離（m）。日本縦断（F-28）の進み具合に使う。今日より後の日付は数えない' })
+  totalRunDistanceM!: number;
 }

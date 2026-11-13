@@ -74,6 +74,7 @@ describe('記録をくわしく（結合: 本物の PostgreSQL・better-auth）'
     expect(res.body.month).toEqual({ month: '2026-11', activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 });
     expect(res.body.weekly).toHaveLength(12);
     expect(res.body.stamps.every((s: { earned: boolean }) => !s.earned)).toBe(true);
+    expect(res.body.totalRunDistanceM).toBe(0);
   });
 
   it('筋トレ・ラン・休みを日ごとにまとめ、今月の数字・週ごとの合計・スタンプを返す', async () => {
@@ -88,6 +89,7 @@ describe('記録をくわしく（結合: 本物の PostgreSQL・better-auth）'
     expect([at('2026-11-12'), at('2026-11-11'), at('2026-11-10'), at('2026-11-09')]).toEqual(['rec', 'rec', 'rest', 'none']);
     expect(res.body.month).toEqual({ month: '2026-11', activeDays: 2, restDays: 1, totalWeightKg: 1200, runDistanceM: 5000 });
     expect(res.body.weekly[11]).toEqual({ weekStart: '2026-11-09', totalWeightKg: 1200, runDistanceM: 5000 });
+    expect(res.body.totalRunDistanceM).toBe(5000); // 日本縦断（F-28）の累計
     const earned = res.body.stamps.filter((s: { earned: boolean }) => s.earned).map((s: { key: string }) => s.key);
     expect(earned).toEqual(['first-record', 'first-run', 'first-5k', 'weight-1t']);
   });

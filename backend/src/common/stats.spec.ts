@@ -107,3 +107,17 @@ describe('stamps（スタンプ帳。F-29。初めて・累計だけ）', () => 
     expect(earned([day('2020-01-01', { weightKg: 1000 })], 'weight-1t')).toBe(true);
   });
 });
+
+describe('totalRunDistanceM（累計のラン距離。F-28 日本縦断）', () => {
+  it('記録がなければ 0', () => {
+    expect(buildStats([], '2026-11-12').totalRunDistanceM).toBe(0);
+  });
+  it('1年より前も含めて、全期間のランの距離を足す', () => {
+    const days = [day('2020-01-01', { runM: 5000, maxRunM: 5000 }), day('2026-11-01', { runM: 3000, maxRunM: 3000 })];
+    expect(buildStats(days, '2026-11-12').totalRunDistanceM).toBe(8000);
+  });
+  it('今日より後の日付は数えない', () => {
+    const days = [day('2026-11-12', { runM: 1000, maxRunM: 1000 }), day('2026-11-13', { runM: 9000, maxRunM: 9000 })];
+    expect(buildStats(days, '2026-11-12').totalRunDistanceM).toBe(1000);
+  });
+});

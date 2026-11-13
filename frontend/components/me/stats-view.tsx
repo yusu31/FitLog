@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { useGetStats, type StatsResponse, type StatsWeek } from '@/lib/api/generated';
 import { formatDistance, formatMonthDay } from '@/lib/format';
+import { JAPAN_ROUTE, locateOnRoute, trekText } from '@/lib/japan-route';
 import { STAMP_LABEL, STATS_VIEWS, barRatios, buildGrid, weightEquivalent, type StatsView } from '@/lib/stats';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useRequireSession } from '@/lib/use-require-session';
@@ -40,6 +41,7 @@ export function StatsPage() {
             <MonthNumbers data={data} />
             <WeeklyChart title="週ごとの総重量" weeks={data.weekly} pick={(w) => w.totalWeightKg} format={(v) => `${v}kg`} />
             <WeeklyChart title="週ごとのラン" weeks={data.weekly} pick={(w) => w.runDistanceM} format={formatDistance} />
+            <JapanTrek totalMeters={data.totalRunDistanceM} />
             <Stamps data={data} />
           </>
         ) : (
@@ -165,6 +167,35 @@ function WeeklyChart({
         ))}
       </ul>
       <p className="text-center text-xs text-sub-strong">右が今週</p>
+    </section>
+  );
+}
+
+// 日本縦断（F-28）。ランの累計距離で、鹿児島から北へ進む略図。今いる場所だけを見せ、「あと◯km」は出さない。形と距離は目安
+function JapanTrek({ totalMeters }: { totalMeters: number }) {
+  const pos = locateOnRoute(totalMeters);
+  const all = JAPAN_ROUTE.map((r) => `${r.x},${r.y}`).join(' ');
+  const done = [...JAPAN_ROUTE.slice(0, pos.passed).map((r) => `${r.x},${r.y}`), `${pos.x},${pos.y}`].join(' ');
+  return (
+    <section aria-labelledby="stats-trek" className="fl-slab px-4 py-3">
+      <h2 id="stats-trek" className="text-sm font-extrabold text-sub-strong">
+        日本縦断
+      </h2>
+      <p className="mt-1 text-sm font-bold">{trekText(totalMeters, pos)}</p>
+      <svg viewBox="0 0 220 300" role="img" aria-label={`走った距離ぶん、鹿児島から北へ進んだ位置。いまは${pos.name}のあたり`} className="mx-auto mt-2 h-72">
+        <polyline points={all} fill="none" strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" className="stroke-line" />
+        <polyline points={done} fill="none" strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal" />
+        {JAPAN_ROUTE.map((r) => (
+          <g key={r.name}>
+            <circle cx={r.x} cy={r.y} r={3.5} strokeWidth={1.5} className="fill-white stroke-sub" />
+            <text x={r.x + 10} y={r.y + 4} fontSize={11} fontWeight={700} className="fill-sub-strong">
+              {r.name}
+            </text>
+          </g>
+        ))}
+        <circle cx={pos.x} cy={pos.y} r={8} strokeWidth={3} className="fill-gold stroke-white" />
+      </svg>
+      <p className="text-center text-[11px] font-bold text-sub-strong">形と距離は目安です</p>
     </section>
   );
 }

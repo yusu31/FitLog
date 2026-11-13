@@ -519,6 +519,11 @@ export interface StatsResponse {
   weekly: StatsWeek[];
   /** スタンプ帳。全期間の記録から毎回計算する */
   stamps: StatsStamp[];
+  /**
+     * 全期間のランの累計距離（m）。日本縦断（F-28）の進み具合に使う。今日より後の日付は数えない
+     * @minimum 0
+     */
+  totalRunDistanceM: number;
 }
 
 export type FeedStampStampKey = typeof FeedStampStampKey[keyof typeof FeedStampStampKey];
