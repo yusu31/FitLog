@@ -7,6 +7,7 @@ import { cn } from 'cn';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
 import { useListRecords, type RecordDetailResponse } from '@/lib/api/generated';
+import { CopiedTag } from '@/components/fitlog/copied-tag';
 import { LateTag } from '@/components/fitlog/late-tag';
 import { formatDistance, formatDuration, formatMonthDay, WEEKDAYS, weekdayIndex } from '@/lib/format';
 import { ME_MESSAGES } from '@/lib/messages';
@@ -154,6 +155,7 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
           )}
           {title}
           {record.late && <LateTag />}
+          {record.copiedFrom && <CopiedTag name={record.copiedFrom.name} />}
         </p>
         {detail && <p className="mt-0.5 text-xs font-bold text-sub">{detail}</p>}
       </div>

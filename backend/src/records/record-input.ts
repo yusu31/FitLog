@@ -51,7 +51,7 @@ export function parseIso(text: string): Date | undefined {
 }
 
 // 記録を作るときの入力検査（docs/design.md 4章 POST /records）。理由は項目ごとに集めて、1回で直せるようにする
-export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: string; kind: CreatableKind; recordedAt: Date; run?: RunInput; late?: true } {
+export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: string; kind: CreatableKind; recordedAt: Date; run?: RunInput; late?: true; copiedFromUserId?: string } {
   const body = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
   const details: string[] = [];
 
@@ -92,8 +92,15 @@ export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: st
   else if (body.late === true && kind === 'rest') details.push('late: 休みはあとから記録できません');
   const late = body.late === true;
 
+  // copiedFromUserId（メニューのコピー。F-24）はコピー元の人の id。筋トレだけ・同じグループの仲間だけは、サーバー側（RecordsService）で確かめる
+  let copiedFromUserId: string | undefined;
+  if (body.copiedFromUserId !== undefined) {
+    if (typeof body.copiedFromUserId !== 'string' || body.copiedFromUserId.length === 0 || body.copiedFromUserId.length > 100) details.push('copiedFromUserId: 1〜100字の文字列で指定してください');
+    else copiedFromUserId = body.copiedFromUserId;
+  }
+
   if (!id || !kind || !recordedAt || details.length > 0) {
     throw new BadRequestException({ code: 'VALIDATION_ERROR', message: '入力が正しくありません', details });
   }
-  return { id, kind, recordedAt, ...(run ? { run } : {}), ...(late ? { late: true as const } : {}) };
+  return { id, kind, recordedAt, ...(run ? { run } : {}), ...(late ? { late: true as const } : {}), ...(copiedFromUserId ? { copiedFromUserId } : {}) };
 }

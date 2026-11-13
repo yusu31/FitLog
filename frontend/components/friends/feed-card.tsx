@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { MessageCircle } from 'lucide-react';
+import Link from 'next/link';
 import { useId, useState, type FormEvent } from 'react';
 import { cn } from 'cn';
 import { ThickButton } from '@/components/fitlog/thick-button';
@@ -25,7 +26,7 @@ import {
 } from '@/lib/feed';
 import { LateTag } from '@/components/fitlog/late-tag';
 import { formatJstTime, formatMonthDay } from '@/lib/format';
-import { FEED_MESSAGES } from '@/lib/messages';
+import { FEED_MESSAGES, FRIEND_MESSAGES } from '@/lib/messages';
 import { useOnline } from '@/lib/use-browser-state';
 import { AVATAR_BG } from './member-list';
 import { StampButton } from './stamp-button';
@@ -89,6 +90,16 @@ export function FeedCard({ item }: { item: FeedItem }) {
             </li>
           );
         })}
+        {item.kind === 'workout' && (
+          <li>
+            <Link
+              href={`/record-detail?id=${encodeURIComponent(item.id)}&by=${encodeURIComponent(item.author.id)}`}
+              className="flex min-h-11 items-center rounded-full border-2 border-line bg-white px-3 text-sm font-extrabold text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            >
+              {FRIEND_MESSAGES.open}
+            </Link>
+          </li>
+        )}
         <li>
           <button
             type="button"

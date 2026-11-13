@@ -68,3 +68,10 @@ export function provisionalResult(
     isPersonalBest: isPersonalBest(current, pastMaxVolume),
   };
 }
+
+// 仲間のゴースト（F-16）に出す値。仲間の前回の、同じセット番号 → 無ければ最後のセット。前回が無ければ null
+export function friendGhostValue(previousSets: readonly PreviousSetResponse[] | undefined | null, setNo: number): SetValue | null {
+  if (!previousSets || previousSets.length === 0) return null;
+  const same = previousSets.find((s) => s.setNo === setNo) ?? previousSets[previousSets.length - 1];
+  return { weightKg: same.weightKg, reps: same.reps };
+}

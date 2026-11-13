@@ -5,6 +5,7 @@ import { DB, type Db } from '../db/db.module.js';
 import { isUuid } from '../common/uuid.js';
 import { exercises } from '../db/schema.js';
 import { findPersonalBest, findPrevious } from '../records/ghost-queries.js';
+import { findGroupMates } from '../records/record-access.js';
 import { parseIso } from '../records/record-input.js';
 import { parseExerciseInput } from './exercise-input.js';
 import type { ExerciseResponse, PreviousResponse } from './exercises.response.js';
@@ -69,7 +70,7 @@ export class ExercisesService {
 
   // 前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト・F-05・F-06）。before を付けると、その時刻より前の記録だけを見る
   // （記録中の自分の記録が「前回」にならないように、画面は今の記録の時刻を渡す）。一覧の種目か自分の種目だけが見える
-  async previous(userId: string, exerciseId: string, beforeRaw: unknown): Promise<PreviousResponse> {
+  async previous(userId: string, exerciseId: string, beforeRaw: unknown, friendIdRaw?: unknown): Promise<PreviousResponse> {
     let before: Date | null = null;
     if (beforeRaw !== undefined) {
       const at = typeof beforeRaw === 'string' ? parseIso(beforeRaw) : undefined;
@@ -83,10 +84,29 @@ export class ExercisesService {
     if (!isUuid(exerciseId)) throw notFound();
     const id = exerciseId.toLowerCase();
     const [exercise] = await this.db
-      .select({ id: exercises.id })
+      .select({ id: exercises.id, name: exercises.name, createdBy: exercises.createdBy })
       .from(exercises)
       .where(and(eq(exercises.id, id), or(isNull(exercises.createdBy), eq(exercises.createdBy, userId))));
     if (!exercise) throw notFound();
+
+    // 仲間の前回（F-16）。同じグループの仲間だけ。グループ外・自分自身・無い id・UUID でない値は、どれも同じ 404（存在を教えない）
+    if (friendIdRaw !== undefined) {
+      const friendId = typeof friendIdRaw === 'string' ? friendIdRaw : '';
+      const mates = await findGroupMates(this.db, userId, friendId ? [friendId] : []);
+      if (!mates.has(friendId)) throw new NotFoundException({ code: 'FRIEND_NOT_FOUND', message: '仲間が見つかりません', details: null });
+      // 一覧の種目は同じ id。自作の種目は仲間の id が違うので、仲間の自作種目のうち名前が同じもの（大文字小文字は区別しない）を使う（仮置き）
+      let friendExerciseId: string | undefined = id;
+      if (exercise.createdBy !== null) {
+        const [same] = await this.db
+          .select({ id: exercises.id })
+          .from(exercises)
+          .where(and(eq(exercises.createdBy, friendId), sql`lower(${exercises.name}) = lower(${exercise.name})`));
+        friendExerciseId = same?.id;
+      }
+      const previous = friendExerciseId ? await findPrevious(this.db, friendId, friendExerciseId, before) : null;
+      // 仲間の自己ベストは返さない（比べるのは前回だけ）
+      return { previous: previous && { recordedAt: previous.recordedAt.toISOString(), sets: previous.sets }, personalBest: null };
+    }
 
     const [previous, personalBest] = await Promise.all([findPrevious(this.db, userId, id, before), findPersonalBest(this.db, userId, id, before)]);
     return { previous: previous && { recordedAt: previous.recordedAt.toISOString(), sets: previous.sets }, personalBest };

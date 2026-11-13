@@ -11,8 +11,9 @@ import { ApiError } from '@/lib/api/api-error';
 import { useGetPrevious, useGetRecord, useGetStats, useListExercises } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import { activeRecordId, recordForNextSet } from '@/lib/current-workout';
-import { dayDateOf, parseDayMode, recordedAtFor } from '@/lib/day-mode';
-import { LATE_MESSAGES, SYNC_MESSAGES } from '@/lib/messages';
+import { getCopyPlan, markCopyPlanUsed, planSetsFor } from '@/lib/copy-plan';
+import { dayDateOf, parseDayMode, recordedAtFor, withDay } from '@/lib/day-mode';
+import { FRIEND_MESSAGES, LATE_MESSAGES, SYNC_MESSAGES } from '@/lib/messages';
 import { monthDayCount } from '@/lib/stats';
 import { useRecordMutations } from '@/lib/mutations';
 import {
@@ -28,8 +29,10 @@ import {
 } from '@/lib/record-flow';
 import { volumeOf, type GhostResult } from '@/lib/shared/ghost';
 import { useOnline } from '@/lib/use-browser-state';
+import { useFriendGhosts } from '@/lib/use-friend-ghosts';
 import { useRequireSession } from '@/lib/use-require-session';
 import { DoneSets, type DoneSet } from './done-sets';
+import { FriendPicker } from './friend-picker';
 import { GhostBar } from './ghost-bar';
 import { ResultSheet, type SheetData } from './result-sheet';
 import { StepperField } from './stepper-field';
@@ -83,7 +86,16 @@ export function RecordView() {
     exercise && exercise.trialWeightKg !== null && exercise.trialReps !== null
       ? { weightKg: exercise.trialWeightKg, reps: exercise.trialReps }
       : null;
-  const initial = initialDraft(previous?.previous?.sets, setNo, trial);
+  // メニューのコピー（F-24）で来たとき、その種目の「やる予定」を前回の代わりの目標にする
+  const [plan] = useState(() => (params.get('plan') === '1' ? getCopyPlan() : null));
+  const planSets = planSetsFor(plan, exerciseId);
+  const initial = initialDraft(planSets ?? previous?.previous?.sets, setNo, trial);
+
+  // 仲間のゴースト（F-16）。選んだ仲間だけバーに出す
+  const friends = useFriendGhosts(exerciseId, openedAt, setNo, signedIn && !!exercise);
+  const [pickedFriends, setPickedFriends] = useState<string[]>([]);
+  const togglePicked = (id: string) => setPickedFriends((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const barFriends = friends.flatMap((f) => (pickedFriends.includes(f.id) && f.value ? [{ id: f.id, name: f.name, shirtColor: f.shirtColor, value: f.value }] : []));
 
   // 利用者が直した値。一度直したら、次のセット以降もその値を引き継ぐ（features.md 2.3）
   const [edited, setEdited] = useState<SetValue | null>(null);
@@ -128,8 +140,17 @@ export function RecordView() {
     const value = { weightKg: clampWeight(draft.weightKg), reps: clampReps(draft.reps) };
     const { recordId: rid, isNew } = recordForNextSet(now, day);
     if (isNew) {
+      // コピーして始めた記録だけ、コピー元を付ける（最初の記録だけ。以降は付けない）
+      const copiedFromUserId = plan && !plan.used ? plan.fromUserId : undefined;
+      if (copiedFromUserId) markCopyPlanUsed();
       mutations.createRecord.mutate({
-        data: { id: rid, kind: 'workout', recordedAt: recordedAtFor(day, new Date(now)), ...(day === 'yesterday' ? { late: true } : {}) },
+        data: {
+          id: rid,
+          kind: 'workout',
+          recordedAt: recordedAtFor(day, new Date(now)),
+          ...(day === 'yesterday' ? { late: true } : {}),
+          ...(copiedFromUserId ? { copiedFromUserId } : {}),
+        },
       });
     }
     setRecordId(rid);
@@ -211,6 +232,24 @@ export function RecordView() {
           {LATE_MESSAGES.banner}
         </p>
       )}
+      {plan && (
+        <nav aria-label={FRIEND_MESSAGES.planFrom(plan.fromName)} className="mx-4 mt-2 rounded-fl bg-teal-light px-4 py-2">
+          <p className="text-xs font-extrabold text-ink">{FRIEND_MESSAGES.planFrom(plan.fromName)}</p>
+          <ul className="mt-1 flex flex-wrap gap-1.5">
+            {plan.items.map((i) => (
+              <li key={i.exerciseId}>
+                <Link
+                  href={withDay(`/record?exercise=${encodeURIComponent(i.exerciseId)}&plan=1`, day)}
+                  aria-current={i.exerciseId === exerciseId ? 'page' : undefined}
+                  className={`inline-flex min-h-11 items-center rounded-full border-2 px-3 text-sm font-extrabold ${i.exerciseId === exerciseId ? 'border-teal-dark bg-white' : 'border-transparent bg-white/60'}`}
+                >
+                  {i.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
       <div className="flex flex-1 flex-col items-center gap-4 px-4 pt-4 pb-6">
         <p className="text-[13px] font-bold tracking-widest text-sub-strong">{setNo} セット目</p>
         <h1 className="text-center text-[32px] leading-tight font-extrabold">{exercise.name}</h1>
@@ -246,8 +285,16 @@ export function RecordView() {
         {previousPending ? (
           <div aria-busy="true" aria-label="前回を読み込み中" className="h-24 w-full animate-pulse rounded-fl bg-face" />
         ) : (
-          <GhostBar ghost={initial.ghost} current={draft} isTrial={initial.source === 'trial'} />
+          <GhostBar
+            ghost={initial.ghost}
+            current={draft}
+            isTrial={initial.source === 'trial'}
+            friends={barFriends}
+            {...(planSets ? { label: plan?.fromName ? `${plan.fromName}さんの 予定` : '仲間の 予定' } : {})}
+          />
         )}
+
+        <FriendPicker friends={friends} selected={pickedFriends} onToggle={togglePicked} />
 
         {notice && (
           <p role="alert" className="w-full rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">

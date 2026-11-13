@@ -89,6 +89,14 @@ describe('FeedSection（S-20 の足跡・週の合計）', () => {
     expect(screen.getAllByText(/19:10/)).toHaveLength(1); // 日本時間。late の足跡には時刻が無い
   });
 
+  it('筋トレの足跡には「くわしく見る」があり、書いた人の userId を付けて詳細へ（メニューのコピーの入口。F-24）', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 'r1' })] }) }];
+    renderFeed();
+    await screen.findByText('4人が記録');
+    const link = screen.getByRole('link', { name: 'くわしく見る' });
+    expect(link.getAttribute('href')).toMatch(/^\/record-detail\?id=r1&by=.+/);
+  });
+
   it('順位・連続日数・禁止語を出さない', async () => {
     replies['GET /api/feed'] = [{ status: 200, body: feed() }];
     renderFeed();

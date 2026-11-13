@@ -1,14 +1,16 @@
 import { onlineManager } from '@tanstack/react-query';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { getCopyPlan, resetCopyPlan } from '@/lib/copy-plan';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { calls, installFakeApi, renderWithQuery, restRecord, runRecord, workout } from '@/lib/test/fake-api';
 import { RecordDetailView } from './record-detail-view';
 
 let search = 'id=r1&from=me';
 const replace = vi.fn();
+const push = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace }),
+  useRouter: () => ({ replace, push }),
   usePathname: () => '/record-detail/',
   useSearchParams: () => new URLSearchParams(search),
 }));
@@ -42,6 +44,8 @@ const prev = (sets: [number, number][], best: number | null) => ({
 beforeEach(() => {
   search = 'id=r1&from=me';
   replace.mockReset();
+  push.mockReset();
+  resetCopyPlan();
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -49,6 +53,73 @@ afterEach(() => {
 });
 
 describe('RecordDetailView（S-21 記録の詳細）', () => {
+  describe('メニューのコピー（F-24）', () => {
+    const GROUP = { id: 'g1', name: 'チーム', members: [ME, HANAKO] };
+    const MY_EXERCISES = [{ id: 'e-bench', name: 'ベンチプレス', bodyPart: 'chest', isCustom: false, trialWeightKg: null, trialReps: null }];
+    const friendRoutes = (extra: Parameters<typeof installFakeApi>[0] = {}) =>
+      install({
+        [REC]: ok(workout('r1', '2026-10-22', [squat])),
+        '/api/exercises': ok(MY_EXERCISES),
+        '/api/groups/current': ok(GROUP),
+        ...extra,
+      });
+
+    it('仲間の足跡から来た筋トレ（by つき）には「コピーして始める」が出る。自分の記録・ランには出ない', async () => {
+      search = 'id=r1&by=u2';
+      friendRoutes();
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByRole('button', { name: 'コピーして始める' })).toBeInTheDocument();
+    });
+
+    it('自分の記録（from=me）には出ない', async () => {
+      search = 'id=r1&from=me&by=u2';
+      friendRoutes({ [prevUrl('sq')]: ok(prev([], null)) });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('heading', { level: 1, name: '筋トレ' });
+      expect(screen.queryByRole('button', { name: 'コピーして始める' })).not.toBeInTheDocument();
+    });
+
+    it('押すと、自分に無い種目を作り、記録は作らず、記録画面へ「やる予定」を渡す', async () => {
+      search = 'id=r1&by=u2';
+      friendRoutes({ 'POST /api/exercises': { status: 201, body: { id: 'e-new', name: 'スクワット', bodyPart: 'chest', isCustom: true, trialWeightKg: null, trialReps: null } } });
+      renderWithQuery(<RecordDetailView />);
+      await userEvent.click(await screen.findByRole('button', { name: 'コピーして始める' }));
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/record?exercise=e-new&plan=1'));
+      expect(calls).toContain('POST /api/exercises');
+      expect(calls.filter((c) => c.startsWith('POST /api/records'))).toHaveLength(0);
+      expect(getCopyPlan()).toMatchObject({ fromUserId: 'u2', fromName: 'はなこ', used: false, items: [{ exerciseId: 'e-new', name: 'スクワット', sets: [{ weightKg: 60, reps: 10 }, { weightKg: 60, reps: 8 }] }] });
+    });
+
+    it('自分の一覧に同じ名前の種目があれば、新しく作らずそれを使う', async () => {
+      search = 'id=r1&by=u2';
+      friendRoutes({ '/api/exercises': ok([...MY_EXERCISES, { id: 'e-mine-sq', name: 'スクワット', bodyPart: 'legs', isCustom: false, trialWeightKg: null, trialReps: null }]) });
+      renderWithQuery(<RecordDetailView />);
+      await userEvent.click(await screen.findByRole('button', { name: 'コピーして始める' }));
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/record?exercise=e-mine-sq&plan=1'));
+      expect(calls).not.toContain('POST /api/exercises');
+    });
+
+    it('電波がないときは押せない', async () => {
+      search = 'id=r1&by=u2';
+      friendRoutes();
+      renderWithQuery(<RecordDetailView />);
+      const button = await screen.findByRole('button', { name: 'コピーして始める' });
+      act(() => onlineManager.setOnline(false));
+      await waitFor(() => expect(button).toBeDisabled());
+    });
+
+    it('コピーして始めた記録には「◯◯さんから」の札。抜けた仲間なら「仲間から」', async () => {
+      search = 'id=r1&from=me';
+      install({ [REC]: ok({ ...workout('r1', '2026-10-22', [squat]), copiedFrom: { name: 'はなこ' } }), [prevUrl('sq')]: ok(prev([], null)) });
+      const { unmount } = renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText('はなこさんから')).toBeInTheDocument();
+      unmount();
+      install({ [REC]: ok({ ...workout('r1', '2026-10-22', [squat]), copiedFrom: { name: null } }), [prevUrl('sq')]: ok(prev([], null)) });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText('仲間から')).toBeInTheDocument();
+    });
+  });
+
   describe('あとから記録（late。F-21）', () => {
     it('時刻を出さず、「あとから記録」の札を出す', async () => {
       install({ [REC]: ok({ ...workout('r1', '2026-10-22', [squat]), late: true }), [prevUrl('sq')]: ok(prev([], null)) });

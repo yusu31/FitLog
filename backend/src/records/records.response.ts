@@ -47,6 +47,14 @@ export class CreateRecordRequest {
 
   @ApiProperty({ required: false, description: 'あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。休みには付けられない（400）' })
   late?: boolean;
+
+  @ApiProperty({ required: false, description: 'メニューのコピー（F-24）。仲間の記録をコピーして始めた筋トレだけに付ける、コピー元の人の userId。筋トレ以外は 409、同じグループの仲間でなければ 404' })
+  copiedFromUserId?: string;
+}
+
+export class CopiedFrom {
+  @ApiProperty({ type: String, nullable: true, example: 'ゆうすけ', description: 'コピー元の名前。見る人と同じグループにいなければ null' })
+  name!: string | null;
 }
 
 export class RecordResponse {
@@ -64,6 +72,9 @@ export class RecordResponse {
 
   @ApiProperty({ required: false, description: 'あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない' })
   late?: boolean;
+
+  @ApiProperty({ type: CopiedFrom, required: false, description: 'メニューをコピーして始めた記録だけ（「◯◯さんから」の札。F-24）。コピー元が今も見る人と同じグループなら name、抜けていれば name が null（画面は「仲間から」）' })
+  copiedFrom?: CopiedFrom;
 
   @ApiProperty({ type: RunDetail, required: false, description: 'ランの記録だけ。距離と時間' })
   run?: RunDetail;
@@ -90,6 +101,9 @@ export class RecordedExercise {
 
   @ApiProperty({ example: 'ベンチプレス' })
   name!: string;
+
+  @ApiProperty({ enum: BODY_PARTS, required: false, description: '種目の部位。仲間の自作種目をコピーするとき、自分の種目として作る際に使う（F-24）。応答には必ず入る。端末が楽観的更新で作る仮の行には無い' })
+  bodyPart?: BodyPart;
 
   @ApiProperty({ type: [RecordedSet], description: 'セット番号の昇順' })
   sets!: RecordedSet[];

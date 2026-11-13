@@ -156,6 +156,8 @@ export const records = pgTable(
     localDate: date('local_date').notNull(),
     // あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。端末が保存の時点で決めるので、オフラインで翌日に届いても変わらない
     late: boolean('late').notNull().default(false),
+    // メニューのコピー（F-24）。コピーして始めた記録だけ、コピー元の人の id が入る。抜けた仲間でも消さない（画面は「仲間から」と出す）
+    copiedFromUserId: text('copied_from_user_id').references(() => users.id),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

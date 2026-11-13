@@ -1,6 +1,7 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { resetCopyPlan, setCopyPlan } from '@/lib/copy-plan';
 import { resetCurrentWorkout } from '@/lib/current-workout';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { GHOST_MESSAGES } from '@/lib/messages';
@@ -32,6 +33,7 @@ const PREVIOUS = {
   },
   personalBest: { weightKg: 40, reps: 10, volume: 400 },
 };
+const AVATAR = { body: 'normal', hair: 1, hairColor: 'black', shirtColor: 'teal', pantsColor: 'gray' };
 const NO_PREVIOUS = { previous: null, personalBest: null };
 // 集計（F-20 の「今月◯日目」の材料）。今月3日動いていて、今日はまだ数えられていない
 const STATS = {
@@ -61,11 +63,30 @@ beforeEach(() => {
   search = 'exercise=e-bench';
   calls = [];
   resetCurrentWorkout();
+  resetCopyPlan();
   setReply = echoSet('same');
   handlers = {
     'GET /api/exercises': () => ({ status: 200, body: EXERCISES }),
     'GET /api/me/stats': () => ({ status: 200, body: STATS }),
-    'GET /api/exercises/e-bench/previous': () => ({ status: 200, body: PREVIOUS }),
+    'GET /api/groups/current': () => ({
+      status: 200,
+      body: {
+        id: 'g1',
+        name: 'チーム',
+        members: [
+          { id: 'u1', name: 'わたし', avatar: AVATAR },
+          { id: 'u2', name: 'はなこ', avatar: AVATAR },
+          { id: 'u3', name: 'たろう', avatar: AVATAR },
+        ],
+      },
+    }),
+    // 仲間(friendId 付き)は、はなこだけ前回がある
+    'GET /api/exercises/e-bench/previous': (call) =>
+      call.url.includes('friendId=u2')
+        ? { status: 200, body: { previous: { recordedAt: '2026-10-26T09:00:00.000Z', sets: [{ setNo: 1, weightKg: 60, reps: 8 }] }, personalBest: null } }
+        : call.url.includes('friendId=')
+          ? { status: 200, body: NO_PREVIOUS }
+          : { status: 200, body: PREVIOUS },
     'GET /api/exercises/e-mine/previous': () => ({ status: 200, body: NO_PREVIOUS }),
     'POST /api/records': (call) => ({ status: 201, body: { id: call.body?.id, kind: 'workout', recordedAt: call.body?.recordedAt, localDate: '2026-11-02' } }),
     'POST /api/records/:id/sets': (call) => setReply(call),
@@ -613,6 +634,76 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await screen.findByRole('button', { name: '2秒ラストレップを撮る' });
       act(() => onlineManager.setOnline(false));
       await waitFor(() => expect(entry()).not.toBeInTheDocument());
+    });
+  });
+
+  describe('仲間のゴースト（F-16）', () => {
+    it('同じグループの仲間のボタンが出る。記録の無い仲間はグレーで押せず「まだ記録なし」', async () => {
+      renderView();
+      await ready();
+      const hanako = await screen.findByRole('button', { name: /はなこ/ });
+      await waitFor(() => expect(screen.getByRole('button', { name: /たろう/ })).toBeDisabled());
+      expect(screen.getByRole('button', { name: /たろう/ })).toHaveTextContent('まだ記録なし');
+      expect(hanako).toBeEnabled();
+      expect(screen.queryByRole('button', { name: /わたし/ })).not.toBeInTheDocument(); // 自分は出さない
+    });
+
+    it('仲間を選ぶと、バーに仲間のアイコンと数字（60kg×8）が出て、もう一度押すと消える', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      expect(screen.queryByTestId('friend-marker-u2')).not.toBeInTheDocument();
+      const hanako = await screen.findByRole('button', { name: /はなこ/ });
+      await waitFor(() => expect(hanako).toBeEnabled());
+      await user.click(hanako);
+      expect(screen.getByTestId('friend-marker-u2')).toHaveTextContent('60kg×8');
+      await user.click(hanako);
+      expect(screen.queryByTestId('friend-marker-u2')).not.toBeInTheDocument();
+    });
+
+    it('仲間の前回は friendId つきで取りに行く（自分の前回の問い合わせには friendId を付けない）', async () => {
+      renderView();
+      await ready();
+      await screen.findByRole('button', { name: /はなこ/ });
+      const previousCalls = calls.filter((c) => /\/previous/.test(c.url));
+      expect(previousCalls.some((c) => c.url.includes('friendId=u2'))).toBe(true);
+      expect(previousCalls.some((c) => !c.url.includes('friendId='))).toBe(true);
+    });
+  });
+
+  describe('メニューのコピー（F-24。「やる予定」で始める）', () => {
+    const plan = () => setCopyPlan({ fromUserId: 'u2', fromName: 'はなこ', items: [{ exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ weightKg: 70, reps: 5 }] }] });
+
+    it('やる予定の値が最初に入り、「はなこさんの メニューから」が出る。記録はまだ作られない', async () => {
+      plan();
+      search = 'exercise=e-bench&plan=1';
+      renderView();
+      await screen.findByRole('heading', { name: 'ベンチプレス' });
+      expect(await screen.findByText('はなこさんの メニューから')).toBeInTheDocument();
+      await waitFor(() => expect(weight()).toHaveValue(70));
+      expect(reps()).toHaveValue(5);
+      expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    });
+
+    it('「できた」で初めて記録を作り、copiedFromUserId を付ける。2回目のセットでは付けない', async () => {
+      plan();
+      search = 'exercise=e-bench&plan=1';
+      renderView();
+      await screen.findByText('はなこさんの メニューから');
+      await userEvent.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      const creates = calls.filter((c) => c.method === 'POST' && c.url === '/api/records');
+      expect(creates).toHaveLength(1);
+      expect(creates[0].body).toMatchObject({ kind: 'workout', copiedFromUserId: 'u2' });
+    });
+
+    it('コピーでないとき（plan なし）は copiedFromUserId を付けない', async () => {
+      renderView();
+      await ready();
+      await userEvent.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      const create = calls.find((c) => c.method === 'POST' && c.url === '/api/records');
+      expect(create?.body).not.toHaveProperty('copiedFromUserId');
     });
   });
 
