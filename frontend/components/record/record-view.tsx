@@ -11,8 +11,8 @@ import { ApiError } from '@/lib/api/api-error';
 import { useGetPrevious, useGetRecord, useGetStats, useListExercises } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import { activeRecordId, recordForNextSet } from '@/lib/current-workout';
-import { SYNC_MESSAGES } from '@/lib/messages';
-import { toLocalDate } from '@/lib/shared/local-date';
+import { dayDateOf, parseDayMode, recordedAtFor } from '@/lib/day-mode';
+import { LATE_MESSAGES, SYNC_MESSAGES } from '@/lib/messages';
 import { monthDayCount } from '@/lib/stats';
 import { useRecordMutations } from '@/lib/mutations';
 import {
@@ -47,15 +47,18 @@ const errorText = (e: unknown) => (e instanceof ApiError ? messageOf(e.body, SEN
 // 最初の「できた」で記録（kind=workout）を作り、以降は同じ記録にセットを足す（3時間以上あいたら別の記録）
 export function RecordView() {
   const { signedIn } = useRequireSession();
-  const exerciseId = useSearchParams().get('exercise') ?? '';
+  const params = useSearchParams();
+  const exerciseId = params.get('exercise') ?? '';
+  // きのうの分（F-21）。?day=yesterday のとき、きのうの12:00（日本時間）の記録として late つきで送る
+  const day = parseDayMode(params.get('day'));
   const online = useOnline();
   const mutations = useRecordMutations();
 
   const { data: exerciseData, isPending: exercisesPending } = useListExercises({ query: { enabled: signedIn } });
   const exercise = exerciseData?.status === 200 ? exerciseData.data.find((e) => e.id === exerciseId) : undefined;
 
-  // 画面を開いた時刻。「今の記録の時刻より前」を前回にするため、API へ渡す（自分の記録を前回にしない）
-  const [openedAt] = useState(() => new Date().toISOString());
+  // 画面を開いた時刻（きのうの分は、きのうの12:00）。「今の記録の時刻より前」を前回にするため、API へ渡す（自分の記録を前回にしない）
+  const [openedAt] = useState(() => recordedAtFor(day, new Date()));
   const { data: previousData, isPending: previousPending } = useGetPrevious(
     exerciseId,
     { before: openedAt },
@@ -64,10 +67,10 @@ export function RecordView() {
   const previous = previousData?.status === 200 ? previousData.data : undefined;
 
   // 祝福の「今月◯日目」（F-20）。画面を開いたときの集計を使う。取れていなければ出さない
-  const { data: statsData } = useGetStats({ date: toLocalDate(new Date()) }, { query: { enabled: signedIn } });
+  const { data: statsData } = useGetStats({ date: dayDateOf(day, new Date()) }, { query: { enabled: signedIn } });
   const monthDay = statsData?.status === 200 ? monthDayCount(statsData.data) : undefined;
 
-  const [recordId, setRecordId] = useState<string | null>(() => activeRecordId(Date.now()));
+  const [recordId, setRecordId] = useState<string | null>(() => activeRecordId(Date.now(), day));
   // キャッシュの記録の詳細（楽観的更新の置き場所）を見るだけ。取りに行かない
   const { data: detailData } = useGetRecord(recordId ?? '', { query: { enabled: false } });
   const sets: DoneSet[] = useMemo(
@@ -123,9 +126,11 @@ export function RecordView() {
     if (!exercise) return;
     const now = Date.now();
     const value = { weightKg: clampWeight(draft.weightKg), reps: clampReps(draft.reps) };
-    const { recordId: rid, isNew } = recordForNextSet(now);
+    const { recordId: rid, isNew } = recordForNextSet(now, day);
     if (isNew) {
-      mutations.createRecord.mutate({ data: { id: rid, kind: 'workout', recordedAt: new Date(now).toISOString() } });
+      mutations.createRecord.mutate({
+        data: { id: rid, kind: 'workout', recordedAt: recordedAtFor(day, new Date(now)), ...(day === 'yesterday' ? { late: true } : {}) },
+      });
     }
     setRecordId(rid);
 
@@ -201,6 +206,11 @@ export function RecordView() {
         <Sprite pose="train" size={64} />
       </header>
 
+      {day === 'yesterday' && (
+        <p role="status" className="mx-4 mt-2 rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">
+          {LATE_MESSAGES.banner}
+        </p>
+      )}
       <div className="flex flex-1 flex-col items-center gap-4 px-4 pt-4 pb-6">
         <p className="text-[13px] font-bold tracking-widest text-sub-strong">{setNo} セット目</p>
         <h1 className="text-center text-[32px] leading-tight font-extrabold">{exercise.name}</h1>
@@ -246,7 +256,7 @@ export function RecordView() {
         )}
 
         <DoneSets sets={sets} bestIds={bestIds} online={online} onDelete={onDelete} />
-        {videoCapable && online && recordId && sets.length > 0 && (
+        {videoCapable && online && day === 'today' && recordId && sets.length > 0 && (
           <ThickButton tone="white" size="sm" className="w-full" onClick={() => setFilming(true)}>
             2秒ラストレップを撮る
           </ThickButton>

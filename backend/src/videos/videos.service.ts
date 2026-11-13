@@ -30,10 +30,14 @@ export class VideosService {
     if (!isUuid(recordId)) throw recordNotFound();
     const id = recordId.toLowerCase();
 
-    const [record] = await this.db.select({ userId: records.userId, kind: records.kind, recordedAt: records.recordedAt }).from(records).where(eq(records.id, id));
+    const [record] = await this.db.select({ userId: records.userId, kind: records.kind, recordedAt: records.recordedAt, late: records.late }).from(records).where(eq(records.id, id));
     if (!record || record.userId !== userId) throw recordNotFound();
     if (record.kind !== 'workout') {
       throw new ConflictException({ code: 'RECORD_KIND_MISMATCH', message: '筋トレの記録にだけ動画を付けられます', details: null });
+    }
+    // あとから記録（late）は日付をさかのぼって登録するので、公開期限（記録の週の日曜まで）が過ぎていることがある。動画は付けない（F-21）
+    if (record.late) {
+      throw new ConflictException({ code: 'RECORD_LATE', message: 'あとから記録した分には動画を付けられません', details: null });
     }
 
     const s3Key = `videos/${id}`;

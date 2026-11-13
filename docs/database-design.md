@@ -60,6 +60,7 @@ erDiagram
         record_kind kind
         timestamptz recorded_at
         date local_date
+        boolean late
     }
     workout_sets {
         uuid id PK
@@ -190,6 +191,7 @@ erDiagram
 | kind | record_kind | NOT NULL | `workout`（筋トレ）・`run`（ラン）・`rest`（休み） |
 | recorded_at | timestamptz | NOT NULL | 端末の時刻。未来の時刻（5分より先）は 400 |
 | local_date | date | NOT NULL | 日本時間の日付。サーバーが `recorded_at` から出す |
+| late | boolean | NOT NULL・DEFAULT false | あとから記録（F-21）。`true` のとき、画面は時刻を出さず札を出す。動画は付けられない |
 | created_at | timestamptz | NOT NULL | サーバーが保存した時刻 |
 
 制約: `kind = 'rest'` のとき、同じ `user_id`・`local_date` の組は1件だけ（部分一意インデックス。休みは1日1件）。

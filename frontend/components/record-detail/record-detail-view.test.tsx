@@ -49,6 +49,24 @@ afterEach(() => {
 });
 
 describe('RecordDetailView（S-21 記録の詳細）', () => {
+  describe('あとから記録（late。F-21）', () => {
+    it('時刻を出さず、「あとから記録」の札を出す', async () => {
+      install({ [REC]: ok({ ...workout('r1', '2026-10-22', [squat]), late: true }), [prevUrl('sq')]: ok(prev([], null)) });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('heading', { level: 1, name: '筋トレ' });
+      expect(screen.getByText('あとから記録')).toBeInTheDocument();
+      expect(screen.queryByText(/12:00/)).not.toBeInTheDocument();
+    });
+
+    it('ふつうの記録には札を出さず、時刻を出す', async () => {
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('heading', { level: 1, name: '筋トレ' });
+      expect(screen.queryByText('あとから記録')).not.toBeInTheDocument();
+      expect(screen.getByText(/12:00/)).toBeInTheDocument();
+    });
+  });
+
   describe('筋トレ', () => {
     it('種類・日時（日本時間）・種目ごとのセット（重量×回数）を出す', async () => {
       install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([[60, 10], [60, 8]], 600)) });

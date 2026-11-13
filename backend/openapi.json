@@ -1973,7 +1973,7 @@
           },
           "late": {
             "type": "boolean",
-            "description": "あとから記録した記録だけ true（「遅れて記録」の札。F-21）。いつもの記録には付かない"
+            "description": "あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない"
           },
           "run": {
             "description": "ランの記録だけ。距離と時間",
@@ -2157,7 +2157,7 @@
           },
           "late": {
             "type": "boolean",
-            "description": "あとから記録した記録だけ true（「遅れて記録」の札。F-21）。いつもの記録には付かない"
+            "description": "あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない"
           },
           "run": {
             "description": "ランの記録だけ。距離と時間",
@@ -2515,7 +2515,7 @@
           },
           "late": {
             "type": "boolean",
-            "description": "あとから記録した記録だけ true（「遅れて記録」の札。F-21）"
+            "description": "あとから記録した記録だけ true（「あとから記録」の札。F-21）"
           },
           "author": {
             "description": "書いた人（自分の記録も入る）",

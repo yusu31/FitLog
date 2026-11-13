@@ -2,13 +2,18 @@ import { onlineManager } from '@tanstack/react-query';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
-import { GPX_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
+import { GPX_MESSAGES, LATE_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
 import { calls, installFakeApi, renderWithQuery } from '@/lib/test/fake-api';
 import { RunView } from './run-view';
 
 const replace = vi.fn();
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ replace, push }), usePathname: () => '/run/' }));
+let search = '';
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace, push }),
+  usePathname: () => '/run/',
+  useSearchParams: () => new URLSearchParams(search),
+}));
 let session: { data: unknown; isPending: boolean } = { data: { user: { id: 'u1' } }, isPending: false };
 vi.mock('@/lib/auth-client', () => ({ authClient: { useSession: () => session } }));
 
@@ -16,6 +21,7 @@ const NOW = '2026-11-04T03:00:00.000Z';
 const POST = 'POST /api/records';
 
 beforeEach(() => {
+  search = '';
   replace.mockClear();
   push.mockClear();
   session = { data: { user: { id: 'u1' } }, isPending: false };
@@ -47,6 +53,32 @@ const postBody = () => {
 };
 
 describe('RunView（S-13 記録（ラン））', () => {
+  describe('きのうの分（?day=yesterday。F-21）', () => {
+    it('手入力で保存すると、きのうの12:00（日本時間）の日時と late:true を送る。帯を出す', async () => {
+      search = 'day=yesterday';
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      expect(screen.getByText(LATE_MESSAGES.banner)).toBeInTheDocument();
+      await fill(user, '5', '30');
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody()).toMatchObject({ kind: 'run', recordedAt: '2026-11-03T03:00:00.000Z', late: true });
+    });
+
+    it('今日のとき（day なし）は late を付けず、帯も出さない', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      expect(screen.queryByText(LATE_MESSAGES.banner)).not.toBeInTheDocument();
+      await fill(user, '5', '30');
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody()).not.toHaveProperty('late');
+      expect(postBody().recordedAt).toBe(NOW);
+    });
+  });
+
   describe('入力', () => {
     it('距離（km）と時間（分・秒）の欄がある。何も入れていないうちは保存できない', () => {
       installFakeApi({});
@@ -187,6 +219,28 @@ describe('RunView（S-13 記録（ラン））', () => {
       await screen.findByText(RUN_MESSAGES.saved);
       expect(postBody().run).toEqual({ distanceM: 5000, durationS: 1800, route: ROUTE });
       expect(postBody().recordedAt).toBe(NOW);
+    });
+
+    it('GPX の開始が今日より前（日本時間）なら late:true を付ける。今日の GPX には付けない（F-21）', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await pick(user, fileOf(gpxText('2026-11-03T06:00:00Z', '2026-11-03T06:30:00Z')));
+      await waitFor(() => expect(km()).toHaveValue('5'));
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody()).toMatchObject({ recordedAt: '2026-11-03T06:00:00.000Z', late: true });
+    });
+
+    it('今日の GPX（日本時間の今日）には late を付けない', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await pick(user, fileOf(gpxText('2026-11-04T00:00:00Z', '2026-11-04T00:30:00Z'))); // 日本時間 11/04 09:00
+      await waitFor(() => expect(km()).toHaveValue('5'));
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody()).not.toHaveProperty('late');
     });
 
     it('開始時刻が未来（5分より先）のときは、記録の日時を今にする', async () => {

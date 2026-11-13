@@ -22,6 +22,7 @@ import {
   WEEKDAYS,
   weekdayIndex,
 } from '@/lib/format';
+import { LateTag } from '@/components/fitlog/late-tag';
 import { DETAIL_MESSAGES, GHOST_MESSAGES, ME_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
 import { setOutcomes } from '@/lib/record-detail';
@@ -181,7 +182,7 @@ function Heading({ record }: { record: RecordDetailResponse }) {
       <p className="mt-1 text-sm font-bold text-sub-strong">
         <span className="fl-num text-base text-ink">{formatMonthDay(record.localDate)}</span>（{WEEKDAYS[weekdayIndex(record.localDate)]}）
         {' '}
-        {formatJstTime(record.recordedAt)}
+        {record.late ? <LateTag /> : formatJstTime(record.recordedAt)}
       </p>
     </div>
   );

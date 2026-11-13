@@ -23,6 +23,7 @@ import {
   stampState,
   type StampKey,
 } from '@/lib/feed';
+import { LateTag } from '@/components/fitlog/late-tag';
 import { formatJstTime, formatMonthDay } from '@/lib/format';
 import { FEED_MESSAGES } from '@/lib/messages';
 import { useOnline } from '@/lib/use-browser-state';
@@ -74,7 +75,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
             {detail && <span className="ml-1.5 text-sm text-sub-strong">{detail}</span>}
           </p>
           <p className="mt-0.5 text-xs font-bold text-sub">
-            {formatMonthDay(item.localDate)} {formatJstTime(item.recordedAt)}
+            {formatMonthDay(item.localDate)} {item.late ? <LateTag /> : formatJstTime(item.recordedAt)}
           </p>
         </div>
       </div>

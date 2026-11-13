@@ -521,6 +521,65 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     });
   });
 
+  describe('きのうの分（F-21 あとから記録。?day=yesterday）', () => {
+    beforeEach(() => {
+      // 日付だけ固定する（待ち時間のタイマーは本物のまま）。日本時間 11/13 09:00 → きのうは 11/12
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-11-13T09:00:00+09:00'));
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it('最初の「できた」で、きのうの12:00（日本時間）の日時と late:true つきで記録を作る', async () => {
+      search = 'exercise=e-bench&day=yesterday';
+      renderView();
+      await ready();
+      await userEvent.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      const create = calls.find((c) => c.method === 'POST' && c.url === '/api/records')!.body!;
+      expect(create).toMatchObject({ kind: 'workout', recordedAt: '2026-11-12T03:00:00.000Z', late: true });
+    });
+
+    it('今日の記録には late を付けない（付け忘れ・付けすぎの両方を防ぐ）', async () => {
+      renderView();
+      await ready();
+      await userEvent.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      const create = calls.find((c) => c.method === 'POST' && c.url === '/api/records')!.body!;
+      expect(create).not.toHaveProperty('late');
+    });
+
+    it('前回は「きのうの12:00より前」から探す（きのうの時点の前回。今日の記録を前回にしない）', async () => {
+      search = 'exercise=e-bench&day=yesterday';
+      renderView();
+      await ready();
+      const prev = calls.find((c) => c.url.startsWith('/api/exercises/e-bench/previous'))!;
+      expect(new URL(prev.url, 'http://x').searchParams.get('before')).toBe('2026-11-12T03:00:00.000Z');
+    });
+
+    it('「きのうの分を記録しています」の帯を出す。今日のときは出さない', async () => {
+      search = 'exercise=e-bench&day=yesterday';
+      renderView();
+      await ready();
+      expect(screen.getByText('きのうの分を 記録しています')).toBeInTheDocument();
+      cleanup();
+      search = 'exercise=e-bench';
+      renderView();
+      await ready();
+      expect(screen.queryByText('きのうの分を 記録しています')).not.toBeInTheDocument();
+    });
+
+    it('動画の入口は出さない（その日のうちの記録にだけ付けられる）', async () => {
+      vi.stubGlobal('MediaRecorder', { isTypeSupported: (m: string) => m === 'video/mp4' });
+      Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: vi.fn() } });
+      search = 'exercise=e-bench&day=yesterday';
+      renderView();
+      await ready();
+      await userEvent.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      expect(screen.queryByRole('button', { name: '2秒ラストレップを撮る' })).not.toBeInTheDocument();
+    });
+  });
+
   describe('2秒動画の入口（F-13）', () => {
     const stubCamera = () => {
       vi.stubGlobal('MediaRecorder', { isTypeSupported: (m: string) => m === 'video/mp4' });

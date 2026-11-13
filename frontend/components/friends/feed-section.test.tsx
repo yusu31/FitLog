@@ -76,6 +76,19 @@ describe('FeedSection（S-20 の足跡・週の合計）', () => {
     expect(calls[0].url).toContain(`weekStart=${toLocalDate(new Date())}`);
   });
 
+  it('あとから記録（late）の足跡は、時刻を出さず「あとから記録」の札を出す。ふつうの足跡は時刻を出す（F-21）', async () => {
+    replies['GET /api/feed'] = [
+      {
+        status: 200,
+        body: feed({ items: [item({ id: 'r1', late: true }), item({ id: 'r2', recordedAt: '2026-11-02T10:10:00.000Z' })] }),
+      },
+    ];
+    renderFeed();
+    await screen.findByText('4人が記録');
+    expect(screen.getAllByText('あとから記録')).toHaveLength(1);
+    expect(screen.getAllByText(/19:10/)).toHaveLength(1); // 日本時間。late の足跡には時刻が無い
+  });
+
   it('順位・連続日数・禁止語を出さない', async () => {
     replies['GET /api/feed'] = [{ status: 200, body: feed() }];
     renderFeed();

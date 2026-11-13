@@ -291,7 +291,7 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       expect(asA2.commentCount).toBe(2);
     });
 
-    // T-LATE-08: 仲間の足跡に「遅れて記録」の札（late）が出る
+    // T-LATE-08: 仲間の足跡に「あとから記録」の札（late）が出る
     it('あとから記録した仲間の記録は late: true、いつもの記録には late が無い', async () => {
       const { a1, a2 } = await world();
       const lateId = randomUUID();

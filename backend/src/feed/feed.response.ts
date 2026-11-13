@@ -29,7 +29,7 @@ export class FeedItem {
   @ApiProperty({ example: '2026-11-02', description: '日本時間の日付（YYYY-MM-DD）' })
   localDate!: string;
 
-  @ApiProperty({ required: false, description: 'あとから記録した記録だけ true（「遅れて記録」の札。F-21）' })
+  @ApiProperty({ required: false, description: 'あとから記録した記録だけ true（「あとから記録」の札。F-21）' })
   late?: boolean;
 
   @ApiProperty({ type: MemberResponse, description: '書いた人（自分の記録も入る）' })
