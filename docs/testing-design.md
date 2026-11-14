@@ -679,6 +679,19 @@ API は `backend/test/map-ghost.e2e-spec.ts`（結）、画面は `frontend/comp
 | T-VGATE-08 | 本人 | 仲間が撮っていない | 条件なしで 200 | デ | 結 |
 | T-VGATE-09 | 鍵の枠 | 403 `VIDEO_LOCKED` | 「あなたも 2秒 撮ると 見られます」。期限切れの案内は出さない | 同 | 画 |
 
+### 3-21. ホーム画面に追加（F-25 第1段。Issue #222。実装と同じ PR で書いた）
+
+manifest は `frontend/lib/pwa/manifest.test.ts`（単）、案内は `frontend/components/settings/settings-view.test.tsx`（画）。書き出し（`out/manifest.webmanifest`・`<link rel="manifest">`・apple-touch-icon・theme-color）はビルド後に手で確かめた。
+
+| ID | ケース | 入力 | 期待 | 技法 | 層 |
+|----|--------|------|------|------|----|
+| T-PWA-01 | 必須項目 | manifest | name・short_name・start_url `/`・display `standalone` | 同 | 単 |
+| T-PWA-02 | アイコン | manifest | 192x192 と 512x512 があり、すべて png | 同 | 単 |
+| T-PWA-03 | maskable | manifest | maskable が別画像で1つ以上、any は2つ以上（兼用しない） | デ | 単 |
+| T-PWA-04 | 置き場所 | アイコンの src | すべて `/icons/` 始まり | 同 | 単 |
+| T-PWA-05 | 色 | theme_color・background_color | 16進6桁 | 境 | 単 |
+| T-PWA-06 | 案内 | 設定を開く | 「ホーム画面に追加」の区画に Android・iPhone・共有の手順 | 同 | 画 |
+
 ## 4. 実行件数の確認と、テストが本当に効いているかの確認
 
 ### 4-1. 0件でも成功になる罠
