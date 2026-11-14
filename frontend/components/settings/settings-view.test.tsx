@@ -114,4 +114,13 @@ describe('SettingsView（S-31 設定）', () => {
     const text = document.body.textContent ?? '';
     for (const word of FORBIDDEN_WORDS) expect(text).not.toContain(word);
   });
+
+  it('「ホーム画面に追加」の案内を出す（Android は Chrome のメニュー・iPhone は Safari の共有から。通知はこの追加が前提）', () => {
+    renderView();
+    const section = screen.getByRole('region', { name: 'ホーム画面に追加' });
+    expect(section).toHaveTextContent('Android');
+    expect(section).toHaveTextContent('iPhone');
+    expect(section).toHaveTextContent('共有');
+    expect(section).toHaveTextContent('ホーム画面に追加');
+  });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Info, LogOut, Palette, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, LogOut, Palette, SquarePlus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
@@ -107,6 +107,26 @@ export function SettingsView() {
               </Link>
             </li>
           </ul>
+        </section>
+
+        <section aria-labelledby="add-to-home-heading" className="fl-slab space-y-2 px-4 py-3">
+          <h2 id="add-to-home-heading" className="flex items-center gap-2 font-extrabold">
+            <RowIcon>
+              <SquarePlus aria-hidden className="size-5" />
+            </RowIcon>
+            ホーム画面に追加
+          </h2>
+          <p className="text-sm text-sub-strong">アプリのように、ホーム画面のアイコンからすぐ開けます。仲間の反応の通知を受け取るにも、この追加が前提です。</p>
+          <dl className="space-y-1 text-sm">
+            <div>
+              <dt className="font-bold">Android（Chrome）</dt>
+              <dd className="text-sub-strong">右上のメニュー（︙）から「ホーム画面に追加」または「アプリをインストール」を選びます。</dd>
+            </div>
+            <div>
+              <dt className="font-bold">iPhone（Safari）</dt>
+              <dd className="text-sub-strong">画面下の共有ボタン（□に↑）を押し、「ホーム画面に追加」を選びます。</dd>
+            </div>
+          </dl>
         </section>
 
         <div className="space-y-2">
