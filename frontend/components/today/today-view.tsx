@@ -176,6 +176,12 @@ function NextExercise({ item }: { item: MenuItem }) {
           <span className="fl-num text-5xl leading-none">{formatSet(item.previous)}</span>
         </p>
       )}
+      {item.suggestion && (
+        <p className="mt-2 flex items-baseline gap-2">
+          <span className="text-xs font-extrabold">今日の目標</span>
+          <span className="fl-num text-2xl leading-none">{formatSet(item.suggestion)}</span>
+        </p>
+      )}
       <LinkButton href={recordHref(item.exerciseId)}>はじめる</LinkButton>
     </CardFrame>
   );
@@ -267,6 +273,9 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
                 <span className="min-w-0 flex-1 text-[15px] leading-tight font-extrabold">
                   {item.name}
                   {item.done && <small className="block text-xs font-bold text-sub-strong">できた</small>}
+                  {!item.done && item.suggestion && (
+                    <small className="block text-xs font-bold text-sub-strong">目標 {formatSet(item.suggestion)}</small>
+                  )}
                 </span>
                 {value && <span className="fl-num shrink-0 text-xl text-ink">{formatSet(value)}</span>}
               </Link>
