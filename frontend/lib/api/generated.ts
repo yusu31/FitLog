@@ -352,6 +352,23 @@ export interface RecordedExercise {
   sets: RecordedSet[];
 }
 
+export interface PreviousRun {
+  /** 前回のランの記録 id */
+  recordId: string;
+  recordedAt: string;
+  /**
+     * @minimum 100
+     * @maximum 200000
+     */
+  distanceM: number;
+  /**
+     * @minimum 60
+     * @maximum 86400
+     */
+  durationS: number;
+  route: RunRoute;
+}
+
 export type RecordDetailResponseKind = typeof RecordDetailResponseKind[keyof typeof RecordDetailResponseKind];
 
 
@@ -378,6 +395,8 @@ export interface RecordDetailResponse {
   exercises?: RecordedExercise[];
   /** 動画があるときだけ（詳細 GET /records/{id} のみ）。見るときの GET /videos/{id}/url に使う */
   videoId?: string;
+  /** 地図ゴースト（F-17）。ルート付きのランの詳細を持ち主本人が開いたときだけ、本人の「ひとつ前のルート付きラン」を返す（手入力のランは飛ばす）。前回が無い・仲間が見たときは付かない */
+  previousRun?: PreviousRun;
 }
 
 export interface RecordListResponse {
@@ -519,6 +538,11 @@ export interface StatsResponse {
   weekly: StatsWeek[];
   /** スタンプ帳。全期間の記録から毎回計算する */
   stamps: StatsStamp[];
+  /**
+     * 全期間のランの累計距離（m）。日本縦断（F-28）の進み具合に使う。今日より後の日付は数えない
+     * @minimum 0
+     */
+  totalRunDistanceM: number;
 }
 
 export type FeedStampStampKey = typeof FeedStampStampKey[keyof typeof FeedStampStampKey];

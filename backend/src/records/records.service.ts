@@ -196,7 +196,25 @@ export class RecordsService {
       );
     if (!row) throw recordNotFound();
     const [detail] = await this.withDetails(userId, [row], true);
+    // 地図ゴースト（F-17）。持ち主本人が、ルート付きのランを開いたときだけ、自分の「ひとつ前のルート付きラン」を添える。仲間には見せない
+    if (row.userId === userId && row.kind === 'run' && detail.run?.route) {
+      const previousRun = await this.findPreviousRun(userId, row);
+      if (previousRun) detail.previousRun = previousRun;
+    }
     return detail;
+  }
+
+  // この記録より前（運動した時刻が古い）で、いちばん近いルート付きのラン。手入力のラン（ルートなし）は飛ばす
+  private async findPreviousRun(userId: string, row: Row): Promise<RecordDetailResponse['previousRun']> {
+    const [prev] = await this.db
+      .select({ recordId: records.id, recordedAt: records.recordedAt, distanceM: runDetails.distanceM, durationS: runDetails.durationS, route: runDetails.route })
+      .from(records)
+      .innerJoin(runDetails, eq(runDetails.recordId, records.id))
+      .where(and(eq(records.userId, userId), eq(records.kind, 'run'), lt(records.recordedAt, row.recordedAt), sql`${runDetails.route} is not null`))
+      .orderBy(desc(records.recordedAt), desc(records.id))
+      .limit(1);
+    if (!prev?.route) return undefined;
+    return { recordId: prev.recordId, recordedAt: prev.recordedAt.toISOString(), distanceM: prev.distanceM, durationS: prev.durationS, route: prev.route };
   }
 
   // 記録を消す（取り消し）。自分のだけ。セット・ランの詳細は DB の ON DELETE CASCADE で一緒に消える。

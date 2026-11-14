@@ -92,7 +92,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | DELETE | `/records/{id}/sets/{setId}` | セットを消す（取り消し） | 自分のだけ。成功は 204。他の人の記録・無い記録は 404 `RECORD_NOT_FOUND`、その記録にセットが無い（別の記録のセット・もう消した）は 404 `SET_NOT_FOUND`。**二重削除は 2回目が 404**（7章） |
 | DELETE | `/records/{id}` | 記録を消す | 自分のだけ。成功は 204。セット・ランの詳細は `ON DELETE CASCADE` で一緒に消える。他の人の記録・無い id・もう消した記録は、どれも同じ 404 `RECORD_NOT_FOUND`（7章） |
 | GET | `/records` | 自分の記録の一覧（新しい順・`cursor`・`limit` 既定 20・最大 100。`kind` で絞れる） | 段階的に読み込む。応答は `{ items, nextCursor }`（最後のページの `nextCursor` は `null`）。筋トレの記録は、種目ごとのセットを含めて返す（今日のメニューを画面が作る材料。`kind=workout&limit=1`）。`limit`・`kind`・`cursor` が正しくなければ 400 `VALIDATION_ERROR`。4章に応答例 |
-| GET | `/records/{id}` | 記録の詳細（セット・ラン。動画の有無は動画の PR で足す） | 自分か同じグループの人のだけ。別のグループ・グループに入っていない人・無い id は、どれも同じ 404 `RECORD_NOT_FOUND`（存在を教えない）。応答の形は一覧の1件と同じ |
+| GET | `/records/{id}` | 記録の詳細（セット・ラン。動画の有無は動画の PR で足す） | 自分か同じグループの人のだけ。別のグループ・グループに入っていない人・無い id は、どれも同じ 404 `RECORD_NOT_FOUND`（存在を教えない）。応答の形は一覧の1件と同じ。持ち主本人が開いたルート付きのランには、ひとつ前のルート付きランを `previousRun: { recordId, recordedAt, distanceM, durationS, route }` で添える（地図ゴースト F-17。仲間が開いたとき・前回が無いときは付かない） |
 | POST | `/records/{id}/gpx` | GPX の元ファイルを置く署名付き URL（**POST 形式**。動画と同じ）を発行する | ルートの読み取りは画面側。上限 5MB（5,242,880 バイト）を署名の条件に入れる |
 
 ### 7マス・足跡・集計（F-07・F-09・F-12）

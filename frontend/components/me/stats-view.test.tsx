@@ -25,6 +25,7 @@ function statsOf(over: Partial<StatsResponse> = {}): StatsResponse {
     month: { month: '2026-11', activeDays: 4, restDays: 1, totalWeightKg: 3500, runDistanceM: 12300 },
     weekly: Array.from({ length: 12 }, (_, i) => ({ weekStart: `2026-08-${String(24 + i * 7).padStart(2, '0')}`, totalWeightKg: i * 100, runDistanceM: 0 })),
     stamps: STAMP_KEYS.map((key) => ({ key, earned: key === 'first-record' || key === 'weight-1t' })),
+    totalRunDistanceM: 12300,
     ...over,
   };
 }
@@ -79,6 +80,30 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
     expect(within(stamps).getByText('初めての記録').closest('li')).toHaveTextContent('獲得済み');
     expect(within(stamps).getByText('初めての5km').closest('li')).toHaveTextContent('まだ');
     expect(stamps.textContent).not.toMatch(/あと/);
+  });
+
+  it('日本縦断: 累計距離から今いる場所だけを文で出し、「あと◯km」は出さない（F-28）', async () => {
+    stubStats(statsOf({ totalRunDistanceM: 300_000 }));
+    renderWithQuery(<StatsPage />);
+    const trek = (await screen.findByText('日本縦断')).closest('section')!;
+    expect(trek).toHaveTextContent('300km');
+    expect(trek).toHaveTextContent('福岡');
+    expect(within(trek).getByTestId('trek-total')).toHaveTextContent('300.0 km'); // 合計の走行距離
+    expect(trek).toHaveTextContent('次の広島まで 260.0km'); // 福岡(270km)の次は広島(560km)
+    expect(trek.textContent).not.toMatch(/あと|残り/);
+    expect(within(trek).getByRole('img', { name: /福岡/ })).toBeInTheDocument();
+  });
+
+  it('日本縦断: まだ走っていなくても出発点（鹿児島）で出す。3000km を超えたら2周目', async () => {
+    stubStats(statsOf({ totalRunDistanceM: 0 }));
+    const first = renderWithQuery(<StatsPage />);
+    expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('次の福岡まで 270.0km');
+    first.unmount();
+    stubStats(statsOf({ totalRunDistanceM: 3_500_000 }));
+    renderWithQuery(<StatsPage />);
+    const second = (await screen.findByText('日本縦断')).closest('section')!;
+    expect(second).toHaveTextContent('1回達成');
+    expect(second).toHaveTextContent('2周目');
   });
 
   it('グラフは、読み上げ用に週ごとの数字も持つ（直近12週）', async () => {

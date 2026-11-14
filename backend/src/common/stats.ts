@@ -23,6 +23,7 @@ export type StatsResult = {
   month: { month: string; activeDays: number; restDays: number; totalWeightKg: number; runDistanceM: number };
   weekly: { weekStart: string; totalWeightKg: number; runDistanceM: number }[];
   stamps: { key: StampKey; earned: boolean }[];
+  totalRunDistanceM: number; // 全期間の累計ラン距離（F-28 日本縦断）
 };
 
 const round1 = (n: number): number => Math.round(n * 10) / 10;
@@ -79,5 +80,5 @@ export function buildStats(days: readonly DayAgg[], today: string): StatsResult 
     'run-500k': totalRun >= 500000,
   };
 
-  return { today, calendar, month, weekly, stamps: STAMP_KEYS.map((key) => ({ key, earned: rules[key] })) };
+  return { today, calendar, month, weekly, stamps: STAMP_KEYS.map((key) => ({ key, earned: rules[key] })), totalRunDistanceM: totalRun };
 }

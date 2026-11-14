@@ -2178,6 +2178,43 @@
           "sets"
         ]
       },
+      "PreviousRun": {
+        "type": "object",
+        "properties": {
+          "recordId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "前回のランの記録 id"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-20T03:00:00.000Z"
+          },
+          "distanceM": {
+            "type": "number",
+            "minimum": 100,
+            "maximum": 200000,
+            "example": 4200
+          },
+          "durationS": {
+            "type": "number",
+            "minimum": 60,
+            "maximum": 86400,
+            "example": 1800
+          },
+          "route": {
+            "$ref": "#/components/schemas/RunRoute"
+          }
+        },
+        "required": [
+          "recordId",
+          "recordedAt",
+          "distanceM",
+          "durationS",
+          "route"
+        ]
+      },
       "RecordDetailResponse": {
         "type": "object",
         "properties": {
@@ -2234,6 +2271,14 @@
             "type": "string",
             "format": "uuid",
             "description": "動画があるときだけ（詳細 GET /records/{id} のみ）。見るときの GET /videos/{id}/url に使う"
+          },
+          "previousRun": {
+            "description": "地図ゴースト（F-17）。ルート付きのランの詳細を持ち主本人が開いたときだけ、本人の「ひとつ前のルート付きラン」を返す（手入力のランは飛ばす）。前回が無い・仲間が見たときは付かない",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PreviousRun"
+              }
+            ]
           }
         },
         "required": [
@@ -2502,6 +2547,11 @@
             "items": {
               "$ref": "#/components/schemas/StatsStamp"
             }
+          },
+          "totalRunDistanceM": {
+            "type": "number",
+            "minimum": 0,
+            "description": "全期間のランの累計距離（m）。日本縦断（F-28）の進み具合に使う。今日より後の日付は数えない"
           }
         },
         "required": [
@@ -2509,7 +2559,8 @@
           "calendar",
           "month",
           "weekly",
-          "stamps"
+          "stamps",
+          "totalRunDistanceM"
         ]
       },
       "FeedStamp": {
