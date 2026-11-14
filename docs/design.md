@@ -120,7 +120,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | メソッド | パス | 説明 | 備考 |
 |----------|------|------|------|
 | POST | `/records/{id}/video` | 動画を置く署名付き URL（POST 形式）を発行し、`videos` の行を作る | 自分の筋トレの記録だけ（筋トレでなければ 409 `RECORD_KIND_MISMATCH`・他人の記録は 404）。本文は `{ contentType, sizeBytes }`（画面の申告。形式は `video/mp4`・`video/webm`、大きさは 1〜10,485,760 バイト）。**署名の条件は、大きさが申告値ちょうど・形式とキーが完全一致**（S3 が申告と違うものを受け付けない）。キーは `videos/{記録の id}`。1記録に1本で、**置くのに失敗したやり直しは同じ記録にもう一度呼ぶ**（行は1つのまま申告を更新し、同じキーで署名し直す。初回 201・再発行 200）。応答は `{ id, upload: { url, fields }, expiresInSeconds, visibleUntil }` |
-| GET | `/videos/{id}/url` | 動画を見る署名付き URL を発行する | **本人はいつでも**。**仲間は `visible_until` の前だけ**（過ぎていれば 403 `FORBIDDEN`）。別のグループの人・グループに入っていない人・無い id は 404 `VIDEO_NOT_FOUND`（存在を教えない）。置き場（環境変数 `VIDEO_BUCKET`）が未設定の環境では、署名を頼む両方の API が 503 `VIDEO_STORAGE_UNAVAILABLE` |
+| GET | `/videos/{id}/url` | 動画を見る署名付き URL を発行する | **本人はいつでも**。**仲間は `visible_until` の前だけ**（過ぎていれば 403 `FORBIDDEN`）で、**今週、自分の動画が1本以上あるときだけ**（なければ 403 `VIDEO_LOCKED`。自分の動画の `visible_until` が今週の期限と同じものがあるかで判定）。別のグループの人・グループに入っていない人・無い id は 404 `VIDEO_NOT_FOUND`（存在を教えない）。置き場（環境変数 `VIDEO_BUCKET`）が未設定の環境では、署名を頼む両方の API が 503 `VIDEO_STORAGE_UNAVAILABLE` |
 
 ### その他
 

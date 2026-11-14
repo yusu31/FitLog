@@ -1411,7 +1411,7 @@
             }
           },
           "403": {
-            "description": "仲間が、見られる期限（記録の週の日曜 24:00 日本時間）を過ぎてから見ようとした（FORBIDDEN）",
+            "description": "仲間が、見られる期限（記録の週の日曜 24:00 日本時間）を過ぎてから見ようとした（FORBIDDEN）／期限前でも、今週まだ自分の動画を撮っていない（VIDEO_LOCKED。「あなたも2秒撮ると見られます」）",
             "content": {
               "application/json": {
                 "schema": {

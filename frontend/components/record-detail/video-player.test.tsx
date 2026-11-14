@@ -25,6 +25,14 @@ describe('VideoPlayer（S-21 の2秒動画）', () => {
     expect(screen.queryByLabelText(DETAIL_MESSAGES.videoLabel)).not.toBeInTheDocument();
   });
 
+  it('自分が今週まだ撮っていないとき（VIDEO_LOCKED）は、鍵の枠で「あなたも2秒撮ると見られます」と促す（期限切れの案内とは別）', async () => {
+    installFakeApi({ [URL_API]: { status: 403, body: { code: 'VIDEO_LOCKED', message: 'x', details: null } } });
+    renderWithQuery(<VideoPlayer videoId="v1" />);
+    expect(await screen.findByText(DETAIL_MESSAGES.videoLocked)).toBeInTheDocument();
+    expect(screen.queryByText(DETAIL_MESSAGES.videoExpired)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(DETAIL_MESSAGES.videoLabel)).not.toBeInTheDocument();
+  });
+
   it('URL を取れなかったら、動画の枠だけ静かに出さない案内にする', async () => {
     installFakeApi({ [URL_API]: { status: 404, body: { code: 'VIDEO_NOT_FOUND', message: 'x', details: null } } });
     renderWithQuery(<VideoPlayer videoId="v1" />);

@@ -156,11 +156,43 @@ describe('動画の署名付き URL（結合: 本物の PostgreSQL・better-auth
       expect(new URL(res.url).searchParams.get('X-Amz-Expires')).toBe('300');
     });
 
-    it('同じグループの仲間は、期限の前なら見られる', async () => {
+    // 今週の動画を1本撮る（記録の日時が今なので、見える期限は今週の日曜 24:00 JST）
+    const shootThisWeek = async (cookie: string): Promise<void> => {
+      const recordId = await createRecord(cookie, 'workout', new Date().toISOString());
+      await issue(cookie, recordId).expect(201);
+    };
+
+    it('同じグループの仲間は、期限の前で、自分も今週撮っていれば見られる', async () => {
       const [a, b] = await groupOfTwo();
       const videoId = await issued(a);
       await setVisibleUntil(videoId, new Date(Date.now() + 60_000).toISOString());
+      await shootThisWeek(b);
       await viewUrl(b, videoId).expect(200);
+    });
+
+    it('自分が今週まだ撮っていない仲間は、期限の前でも 403 VIDEO_LOCKED。撮ると見られる。本人は条件なし（案B）', async () => {
+      const [a, b] = await groupOfTwo();
+      const videoId = await issued(a);
+      await setVisibleUntil(videoId, new Date(Date.now() + 60_000).toISOString());
+      const locked = await viewUrl(b, videoId).expect(403);
+      expect((locked.body as { code: string }).code).toBe('VIDEO_LOCKED');
+      await shootThisWeek(b);
+      await viewUrl(b, videoId).expect(200);
+      // 撮った本人は、仲間が撮っていなくても自分の動画を見られる
+      const c = await signUpAs('C1');
+      const own = await issued(c);
+      await viewUrl(c, own).expect(200);
+    });
+
+    it('先週に撮っただけの仲間は、今週は VIDEO_LOCKED（週が替わったらまた撮る）', async () => {
+      const [a, b] = await groupOfTwo();
+      const videoId = await issued(a);
+      await setVisibleUntil(videoId, new Date(Date.now() + 60_000).toISOString());
+      // b の動画は先週の記録（RECORDED_AT は過去の週）
+      const old = await createRecord(b, 'workout', RECORDED_AT);
+      await issue(b, old).expect(201);
+      const res = await viewUrl(b, videoId).expect(403);
+      expect((res.body as { code: string }).code).toBe('VIDEO_LOCKED');
     });
 
     it('仲間は期限を過ぎると 403 FORBIDDEN。本人は期限が過ぎても見られる', async () => {

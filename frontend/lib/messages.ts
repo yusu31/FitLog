@@ -123,6 +123,7 @@ export const DETAIL_MESSAGES = {
   videoLabel: '2秒ラストレップの動画',
   videoExpired: '仲間に見える期間（その週の終わりまで）が 過ぎました',
   videoUnavailable: '動画は 再生できませんでした',
+  videoLocked: 'あなたも 2秒 撮ると 見られます',
   notFoundTitle: '記録が見つかりませんでした',
   notFoundBody: 'すでに消えたか、見られない記録かもしれません',
   loadFailed: '読み込めませんでした。電波の良い所で開き直してください',

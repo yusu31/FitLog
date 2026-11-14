@@ -43,7 +43,11 @@ export class VideosController {
   @ApiOperation({ operationId: 'getVideoUrl', summary: '動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ' })
   @ApiOkResponse({ type: VideoUrlResponse })
   @ApiNotFoundResponse({ type: ErrorResponse, description: '無い・別のグループの人の動画・グループに入っていない人から見た他人の動画（VIDEO_NOT_FOUND。存在を教えない）' })
-  @ApiForbiddenResponse({ type: ErrorResponse, description: '仲間が、見られる期限（記録の週の日曜 24:00 日本時間）を過ぎてから見ようとした（FORBIDDEN）' })
+  @ApiForbiddenResponse({
+    type: ErrorResponse,
+    description:
+      '仲間が、見られる期限（記録の週の日曜 24:00 日本時間）を過ぎてから見ようとした（FORBIDDEN）／期限前でも、今週まだ自分の動画を撮っていない（VIDEO_LOCKED。「あなたも2秒撮ると見られます」）',
+  })
   url(@Session() session: UserSession, @Param('id') id: string): Promise<VideoUrlResponse> {
     return this.videos.viewUrl(session.user.id, id);
   }
