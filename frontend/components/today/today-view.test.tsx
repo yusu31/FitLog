@@ -68,6 +68,28 @@ describe('TodayView（S-10 今日）', () => {
       expect(within(menu).queryByText('できた')).not.toBeInTheDocument();
     });
 
+    it('提案（F-23）: 次の1枚に「今日の目標」、メニューの未完了の種目に「目標」を出す（前回の最後のセット＋1回）', async () => {
+      renderWithQuery(<TodayView />);
+      const next = await screen.findByRole('region', { name: '次の1枚' });
+      expect(within(next).getByText('今日の目標')).toBeInTheDocument();
+      expect(within(next).getByText('60kg × 11')).toBeInTheDocument();
+      const rows = within(screen.getByRole('list', { name: '今日のメニュー' })).getAllByRole('listitem');
+      expect(rows[0]).toHaveTextContent('目標 60kg × 11');
+      expect(rows[1]).toHaveTextContent('目標 27.5kg × 8');
+    });
+
+    it('提案: できた種目には目標を出さない', async () => {
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { '2026-11-02': 'rec' })),
+        [WORKOUTS]: list(workout('r2', TODAY, [squat([[60, 11]])]), PREV),
+        [LATEST]: list(PREV),
+      });
+      renderWithQuery(<TodayView />);
+      const rows = within(await screen.findByRole('list', { name: '今日のメニュー' })).getAllByRole('listitem');
+      expect(rows[0]).not.toHaveTextContent('目標');
+      expect(rows[1]).toHaveTextContent('目標 27.5kg × 8');
+    });
+
     it('週の帯: 記録=記録あり・休み=おやすみ・今日の印。未来の日は状態が付いていても薄い丸（記録あり扱いにしない）', async () => {
       installFakeApi({
         [WEEK]: ok(weekOf(TODAY, { '2026-11-02': 'rec', '2026-11-03': 'rest', '2026-11-06': 'rec' })),
