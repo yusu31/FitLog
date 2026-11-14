@@ -5,6 +5,7 @@ import { DB, type Db } from '../db/db.module.js';
 import { records, videos } from '../db/schema.js';
 import { visibleToMe } from '../records/record-access.js';
 import { visibleUntilOf } from './video-expiry.js';
+import { hasShotThisWeek } from './video-gate.js';
 import { parseVideoInput } from './video-input.js';
 import { VIDEO_URL_EXPIRES_SECONDS, VideoStorage } from './video-storage.js';
 import type { VideoUploadResponse, VideoUrlResponse } from './videos.response.js';
@@ -68,6 +69,20 @@ export class VideosService {
     if (row.ownerId !== userId && Date.now() >= row.visibleUntil.getTime()) {
       throw new ForbiddenException({ code: 'FORBIDDEN', message: 'この動画を見られる期限を過ぎました', details: null });
     }
+    // 仲間の動画は、今週、自分も撮っていれば見られる（案B）。本人の動画は条件なし。条件を満たさないとき 403 VIDEO_LOCKED
+    if (row.ownerId !== userId && !(await this.shotThisWeek(userId))) {
+      throw new ForbiddenException({ code: 'VIDEO_LOCKED', message: 'あなたも2秒撮ると見られます', details: null });
+    }
     return { url: await this.storage.presignDownload(row.s3Key), expiresInSeconds: VIDEO_URL_EXPIRES_SECONDS };
+  }
+
+  // 今週、自分の動画が1本以上あるか。「撮った」は動画の行ができた時点で数える（置き終わりの確認まではしない）
+  private async shotThisWeek(userId: string): Promise<boolean> {
+    const mine = await this.db
+      .select({ visibleUntil: videos.visibleUntil })
+      .from(videos)
+      .innerJoin(records, eq(records.id, videos.recordId))
+      .where(eq(records.userId, userId));
+    return hasShotThisWeek(new Date(), mine.map((m) => m.visibleUntil));
   }
 }
