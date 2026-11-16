@@ -41,7 +41,11 @@ beforeEach(() => {
     }),
   );
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  // 共有のテストで足した navigator.share を、次のテストへ持ち越さない
+  Reflect.deleteProperty(navigator, 'share');
+});
 
 const renderView = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -225,6 +229,50 @@ describe('GroupSettingsView（S-32 グループの設定）', () => {
       await user.click(await screen.findByRole('button', { name: '招待リンクを作る' }));
       await user.click(await screen.findByRole('button', { name: 'コピー' }));
       expect(await screen.findByRole('alert')).toHaveTextContent('リンクを長押しして選んでください');
+    });
+
+    // T-PEER-04（N7）: Web Share API があるときだけ「共有」を出し、無い端末ではコピーだけ
+    it('共有できない端末（navigator.share なし）では「共有」を出さない', async () => {
+      replies['POST /api/groups/current/invitations'] = [
+        { status: 201, body: { id: 'inv-1', token: 'tok', expiresAt: '2026-11-06T03:00:00.000Z' } },
+      ];
+      const user = userEvent.setup();
+      renderView();
+      await user.click(await screen.findByRole('button', { name: '招待リンクを作る' }));
+      await screen.findByRole('button', { name: 'コピー' });
+      expect(screen.queryByRole('button', { name: '共有' })).not.toBeInTheDocument();
+    });
+
+    it('共有できる端末では「共有」を押すと、リンクを渡して共有の画面を開く', async () => {
+      replies['POST /api/groups/current/invitations'] = [
+        { status: 201, body: { id: 'inv-1', token: 'tok', expiresAt: '2026-11-06T03:00:00.000Z' } },
+      ];
+      const share = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'share', { value: share, configurable: true });
+      const user = userEvent.setup();
+      renderView();
+      await user.click(await screen.findByRole('button', { name: '招待リンクを作る' }));
+      await user.click(await screen.findByRole('button', { name: '共有' }));
+      expect(share).toHaveBeenCalledWith(expect.objectContaining({ url: `${window.location.origin}/invite?token=tok` }));
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('共有の画面を自分で閉じた（AbortError）ときは、何も出さない。それ以外の失敗は案内を出す', async () => {
+      replies['POST /api/groups/current/invitations'] = [
+        { status: 201, body: { id: 'inv-1', token: 'tok', expiresAt: '2026-11-06T03:00:00.000Z' } },
+      ];
+      const share = vi
+        .fn()
+        .mockRejectedValueOnce(new DOMException('closed', 'AbortError'))
+        .mockRejectedValueOnce(new Error('boom'));
+      Object.defineProperty(navigator, 'share', { value: share, configurable: true });
+      const user = userEvent.setup();
+      renderView();
+      await user.click(await screen.findByRole('button', { name: '招待リンクを作る' }));
+      await user.click(await screen.findByRole('button', { name: '共有' }));
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: '共有' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('共有できませんでした');
     });
 
     it('招待リンクを作るとき満員（409 GROUP_FULL）と返ったら、決めた文言を出す', async () => {

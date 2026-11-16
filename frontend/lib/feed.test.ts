@@ -58,8 +58,20 @@ describe('describeItem（足跡の1行目）', () => {
     expect(describeItem({ kind: 'rest', exerciseNames: [] })).toEqual({ title: 'おやすみ', detail: '' });
   });
   it('ランは距離つき。run が無いときは距離を出さない', () => {
-    expect(describeItem({ kind: 'run', exerciseNames: [], run: { distanceM: 5200, durationS: 1800 } })).toEqual({ title: 'ラン', detail: '5.2km' });
     expect(describeItem({ kind: 'run', exerciseNames: [] })).toEqual({ title: 'ラン', detail: '' });
+  });
+  // T-PEER-03（U13）: ランは距離・時間・ペースを出す。境界: 時間 0・距離 0 はその項目を出さない
+  it('ランは距離・時間・ペースを「・」でつなぐ', () => {
+    expect(describeItem({ kind: 'run', exerciseNames: [], run: { distanceM: 5200, durationS: 1930 } })).toEqual({
+      title: 'ラン',
+      detail: '5.2km・32:10・6:11/km',
+    });
+  });
+  it('時間が 0 ならペースも出さず距離だけ（0 割りしない）', () => {
+    expect(describeItem({ kind: 'run', exerciseNames: [], run: { distanceM: 5200, durationS: 0 } })).toEqual({ title: 'ラン', detail: '5.2km' });
+  });
+  it('距離が 0 なら時間だけ出す（ペースは出さない）', () => {
+    expect(describeItem({ kind: 'run', exerciseNames: [], run: { distanceM: 0, durationS: 600 } })).toEqual({ title: 'ラン', detail: '0.0km・10:00' });
   });
   it('筋トレは 0・1・3 種目で出し分ける', () => {
     expect(describeItem({ kind: 'workout', exerciseNames: [] })).toEqual({ title: '筋トレ', detail: '' });

@@ -136,7 +136,7 @@ describe('FeedSection（S-20 の足跡・週の合計）', () => {
     ];
     renderFeed();
     expect(await screen.findByText('ラン')).toBeInTheDocument();
-    expect(screen.getByText('5.2km')).toBeInTheDocument();
+    expect(screen.getByText('5.2km・30:00・5:46/km')).toBeInTheDocument();
     expect(screen.getByText('おやすみ')).toBeInTheDocument();
   });
 

@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { FriendsView } from './friends-view';
 
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/lib/auth-client', () => ({
   authClient: { useSession: () => ({ data: { user: { id: 'u1', name: 'たろう' } }, isPending: false }) },
 }));
@@ -30,6 +32,7 @@ const json = ({ status, body }: Reply) =>
   });
 
 beforeEach(() => {
+  push.mockReset();
   replies = {};
   calls.length = 0;
   vi.stubGlobal(
@@ -66,6 +69,36 @@ describe('FriendsView（S-20 仲間）', () => {
       expect(await screen.findByRole('button', { name: 'グループを作る' })).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: '招待リンクで参加する' })).toBeInTheDocument();
       expect(screen.queryByText('メンバー')).not.toBeInTheDocument();
+    });
+
+    // T-PEER-05（N8）: 貼られたリンクから token を取り出して参加画面へ。取り出せなければ移らず知らせる
+    it('招待リンクを貼って「開く」と、参加の画面へ移る', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await user.type(await screen.findByLabelText('届いた招待リンク'), 'https://fitlog.example/invite?token=abc_DEF-123456');
+      await user.click(screen.getByRole('button', { name: '開く' }));
+      expect(push).toHaveBeenCalledWith('/invite?token=abc_DEF-123456');
+    });
+
+    it('token だけを貼っても移れる', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await user.type(await screen.findByLabelText('届いた招待リンク'), 'abc_DEF-123456');
+      await user.click(screen.getByRole('button', { name: '開く' }));
+      expect(push).toHaveBeenCalledWith('/invite?token=abc_DEF-123456');
+    });
+
+    it.each([
+      ['空', ''],
+      ['別のサイトの URL', 'https://example.com/other?token=abc_DEF-123456'],
+    ])('貼ったものが%sなら、移らずに知らせる', async (_label, value) => {
+      const user = userEvent.setup();
+      renderView();
+      const input = await screen.findByLabelText('届いた招待リンク');
+      if (value) await user.type(input, value);
+      await user.click(screen.getByRole('button', { name: '開く' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('招待リンクが読み取れませんでした');
+      expect(push).not.toHaveBeenCalled();
     });
 
     it('順位・連続日数・足跡は出さない（責めない・見せ合うだけ）', async () => {
@@ -141,6 +174,19 @@ describe('FriendsView（S-20 仲間）', () => {
       expect(items[0]).toHaveTextContent('あなた');
       expect(items[1]).toHaveTextContent('はなこ');
       expect(items[1]).not.toHaveTextContent('あなた');
+    });
+
+    // T-PEER-06（N6）: 仲間が自分1人の間だけ、仲間タブの上に招待のカードを出す（境界: 1人／2人）
+    it('自分1人のときは「なかまを まねく」を出し、2人以上なら出さない', async () => {
+      replies['GET /api/groups/current'] = [{ status: 200, body: { ...GROUP, members: [GROUP.members[0]] } }];
+      const { unmount } = renderView();
+      expect(await screen.findByRole('button', { name: '招待リンクを作る' })).toBeInTheDocument();
+      unmount();
+
+      replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }];
+      renderView();
+      await screen.findByRole('heading', { name: '朝トレ部' });
+      expect(screen.queryByRole('button', { name: '招待リンクを作る' })).not.toBeInTheDocument();
     });
 
     it('招待・グループを出るは S-32 に移したので、ここには置かず、設定へのリンクだけ置く', async () => {

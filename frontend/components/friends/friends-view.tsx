@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PageTitle } from '@/components/fitlog/app-shell';
 import { Sprite } from '@/components/fitlog/sprite';
 import { useGetCurrentGroup } from '@/lib/api/generated';
+import { InvitePanel } from '@/components/settings/invite-panel';
 import { GROUP_MESSAGES } from '@/lib/messages';
 import { FeedSection } from './feed-section';
 import { GroupSummary, MemberList } from './member-list';
@@ -30,6 +31,8 @@ export function FriendsView() {
       ) : (
         <div className="space-y-4 px-4 pt-3">
           <GroupSummary group={data.data} />
+          {/* 自分1人の間は、次の一手「仲間を招待」を上に出す（N6）。2人以上になったら設定の奥に戻す */}
+          {data.data.members.length <= 1 && <InvitePanel full={false} />}
           <FeedSection />
           <MemberList group={data.data} />
           <Link
