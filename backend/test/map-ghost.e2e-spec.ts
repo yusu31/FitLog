@@ -141,4 +141,21 @@ describe('地図ゴースト（結合: 本物の PostgreSQL・better-auth）', (
     // 本人から見ると付く（権限の判定を外すと上の行が赤になる）
     expect(await detail(owner, ownerNow)).toHaveProperty('previousRun');
   });
+
+  // 仲間にはルート（座標）を返さない（N13）。自宅の推測につながるため、持ち主本人にだけ返す
+  it('同じグループの仲間が自分のランの詳細を開いても、ルート（座標）は返さない（T-MGHOST-10）', async () => {
+    const owner = await signUpAs('たろう');
+    await http().post('/api/groups').set('Cookie', owner).send({ name: 'グループ' }).expect(201);
+    const { token } = (await http().post('/api/groups/current/invitations').set('Cookie', owner).expect(201)).body as { token: string };
+    const mate = await signUpAs('はなこ');
+    await http().post(`/api/invitations/${token}/accept`).set('Cookie', mate).expect(200);
+
+    const id = await run(owner, DAY1, routeOf(0), 5000);
+    const seenByMate = await detail(mate, id);
+    // 距離と時間は見える
+    expect(seenByMate.run).toMatchObject({ distanceM: 5000, durationS: 1800 });
+    expect(seenByMate.run).not.toHaveProperty('route');
+    // 本人には返る（判定を入れすぎて本人のも消すと、この行が赤になる）
+    expect(((await detail(owner, id)).run as { route?: unknown }).route).toEqual(routeOf(0));
+  });
 });
