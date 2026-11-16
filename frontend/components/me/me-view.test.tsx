@@ -2,8 +2,22 @@ import { onlineManager } from '@tanstack/react-query';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
+import { toLocalDate } from '@/lib/shared/local-date';
 import { calls, installFakeApi, renderWithQuery, restRecord, runRecord, workout } from '@/lib/test/fake-api';
 import { MeView } from './me-view';
+
+const TODAY = toLocalDate(new Date());
+const statsOf = (weekRunM: number, totalRunM: number) => ({
+  today: TODAY,
+  calendar: [],
+  month: { month: TODAY.slice(0, 7), activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: weekRunM },
+  weekly: Array.from({ length: 12 }, (_, i) => ({ weekStart: TODAY, totalWeightKg: 0, runDistanceM: i === 11 ? weekRunM : 0 })),
+  stamps: [],
+  totalRunDistanceM: totalRunM,
+});
+const STATS = `/api/me/stats?date=${TODAY}`;
+// 画面の並び順（見出しの出る順）。今週のラン→今週きたえたところ
+const headingOrder = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 vi.mock('@/lib/auth-client', () => ({
@@ -114,6 +128,33 @@ describe('MeView（S-30 自分）', () => {
       const alert = await screen.findByRole('alert');
       expect(alert).toHaveTextContent('読み込めませんでした');
       expect(alert).not.toHaveTextContent('stack trace');
+    });
+  });
+
+  describe('並び（N9: ランが多い週だけ、今週のランを筋肉の図の上へ）', () => {
+    const sq = { id: 'sq', name: 'スクワット', sets: [[60, 10]] as [number, number][] };
+    it('今週ランが筋トレより多いと、「今週のラン」が「今週きたえたところ」より上に出る', async () => {
+      installFakeApi({
+        [FIRST]: page([runRecord('r2', TODAY, 5000, 1800), runRecord('r1', TODAY, 3000, 1000), workout('w1', TODAY, [sq])]),
+        [STATS]: ok(statsOf(8000, 28000)),
+      });
+      renderWithQuery(<MeView />);
+      const section = (await screen.findByRole('region', { name: '今週のラン' }));
+      expect(section).toHaveTextContent('8.0km');
+      expect(section).toHaveTextContent(/次の.+まで/);
+      const order = headingOrder();
+      expect(order.indexOf('今週のラン')).toBeLessThan(order.indexOf('今週きたえたところ'));
+    });
+
+    it('筋トレが多い・同数・記録なしの人には「今週のラン」を出さない（今の並びのまま）', async () => {
+      installFakeApi({
+        [FIRST]: page([runRecord('r1', TODAY, 3000, 1000), workout('w1', TODAY, [sq])]),
+        [STATS]: ok(statsOf(3000, 3000)),
+      });
+      renderWithQuery(<MeView />);
+      await screen.findByText('スクワット');
+      expect(screen.queryByRole('region', { name: '今週のラン' })).not.toBeInTheDocument();
+      expect(headingOrder()[0]).toBe('今週きたえたところ');
     });
   });
 

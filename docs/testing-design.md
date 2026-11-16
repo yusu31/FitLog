@@ -555,6 +555,11 @@ design.md の 6 章のとおり、記録を取るクエリは1か所の共通関
 | T-STATS-13 | 今月 N 日目 | 今月3日・今日が未計上／計上済み／今月0日／今日は休みだけ | 4／3→同じ数のまま／1／足す。集計が取れなければ出さない | 境 | 単・画 |
 | T-STATS-14 | 画面の文言 | 獲得済み・まだ・記録なし | 「あと」を出さない。獲得済みを文字でも区別。記録が無くても責めない | 同 | 画 |
 
+| T-STATS-15 | スタンプの取得日（U10） | 記録 11/3（初回）・11/5 にラン／1回6000m（合計の1回3000m）→11/4 に5km／累計1000kg に届いた日／休みを挟んだ記録日数10日目 | 初めて条件を満たした日が earnedAt。何度満たしても最初の日。入力の順が日付順でなくても同じ。未獲得は null。休みでは日数が進まない | 同・境 | 単・結 |
+| T-STATS-16 | 取得日の表示 | 獲得済み（11/3・11/16）・まだ | 「11/3」「11/16」の形で添える。まだには出さない | 同 | 画 |
+| T-PWA-05 | 追加ボタン（F7） | `beforeinstallprompt` を受け取る／受け取らない／押す／`appinstalled` | 受け取るまで出さない（iPhone 等は文章の案内のまま）。受け取ると出し、標準の案内は止める。押すと `prompt()` を1回呼び、ボタンは引っ込める（イベントは1回きり）。インストール後も引っ込める | 同・状 | 単・画 |
+| T-ME-01 | 自分タブの並び（N9） | 今週 ラン2・筋トレ1／同数／筋トレ多／0件／先週日曜・来週月曜・今週月曜の記録 | ランが多いときだけ「今週のラン」を筋肉の図の上に。それ以外は今の並び。週の境目は月曜（日曜は前の週） | 境・デ | 単・画 |
+
 ### 3-15. あとから記録（F-21。実装と同じ PR で書いた）
 
 純粋な計算は `backend/src/records/record-input.spec.ts`・`frontend/lib/day-mode.test.ts`・`current-workout.test.ts`、API は `backend/test/records.e2e-spec.ts`・`records-read-delete.e2e-spec.ts`・`feed-social.e2e-spec.ts`・`videos.e2e-spec.ts`、画面は `today-view`・`record-view`・`run-view`・`exercises-view`・`feed-section`・`record-detail-view`・`me-view` の各テスト。

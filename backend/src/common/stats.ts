@@ -22,7 +22,7 @@ export type StatsResult = {
   calendar: { date: string; status: CellStatus }[];
   month: { month: string; activeDays: number; restDays: number; totalWeightKg: number; runDistanceM: number };
   weekly: { weekStart: string; totalWeightKg: number; runDistanceM: number }[];
-  stamps: { key: StampKey; earned: boolean }[];
+  stamps: { key: StampKey; earned: boolean; earnedAt: string | null }[]; // earnedAt＝初めて条件を満たした記録の日（未獲得は null）
   totalRunDistanceM: number; // 全期間の累計ラン距離（F-28 日本縦断）
 };
 
@@ -58,27 +58,36 @@ export function buildStats(days: readonly DayAgg[], today: string): StatsResult 
     };
   });
 
-  // スタンプは全期間（1年より前も数える）。今日より後の日付は数えない
-  const upToToday = days.filter((d) => d.date <= today);
-  const recDays = upToToday.filter((d) => d.status === 'rec').length;
-  const totalWeight = upToToday.reduce((sum, d) => sum + d.weightKg, 0);
-  const totalRun = upToToday.reduce((sum, d) => sum + d.runM, 0);
-  const maxRun = Math.max(0, ...upToToday.map((d) => d.maxRunM));
-  const rules: Record<StampKey, boolean> = {
-    'first-record': recDays >= 1,
-    'first-run': totalRun > 0,
-    'first-5k': maxRun >= 5000,
-    'first-10k': maxRun >= 10000,
-    'days-10': recDays >= 10,
-    'days-30': recDays >= 30,
-    'days-100': recDays >= 100,
-    'weight-1t': totalWeight >= 1000,
-    'weight-10t': totalWeight >= 10000,
-    'weight-100t': totalWeight >= 100000,
-    'run-50k': totalRun >= 50000,
-    'run-100k': totalRun >= 100000,
-    'run-500k': totalRun >= 500000,
-  };
+  // スタンプは全期間（1年より前も数える）。今日より後の日付は数えない。
+  // 日付の古い順に累計を進め、各スタンプが初めて条件を満たした日を earnedAt にする（U10）
+  const upToToday = days.filter((d) => d.date <= today).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  let recDays = 0;
+  let totalWeight = 0;
+  let totalRun = 0;
+  let maxRun = 0;
+  const earnedAt = new Map<StampKey, string>();
+  for (const d of upToToday) {
+    if (d.status === 'rec') recDays += 1;
+    totalWeight += d.weightKg;
+    totalRun += d.runM;
+    maxRun = Math.max(maxRun, d.maxRunM);
+    const rules: Record<StampKey, boolean> = {
+      'first-record': recDays >= 1,
+      'first-run': totalRun > 0,
+      'first-5k': maxRun >= 5000,
+      'first-10k': maxRun >= 10000,
+      'days-10': recDays >= 10,
+      'days-30': recDays >= 30,
+      'days-100': recDays >= 100,
+      'weight-1t': totalWeight >= 1000,
+      'weight-10t': totalWeight >= 10000,
+      'weight-100t': totalWeight >= 100000,
+      'run-50k': totalRun >= 50000,
+      'run-100k': totalRun >= 100000,
+      'run-500k': totalRun >= 500000,
+    };
+    for (const key of STAMP_KEYS) if (rules[key] && !earnedAt.has(key)) earnedAt.set(key, d.date);
+  }
 
-  return { today, calendar, month, weekly, stamps: STAMP_KEYS.map((key) => ({ key, earned: rules[key] })), totalRunDistanceM: totalRun };
+  return { today, calendar, month, weekly, stamps: STAMP_KEYS.map((key) => ({ key, earned: earnedAt.has(key), earnedAt: earnedAt.get(key) ?? null })), totalRunDistanceM: totalRun };
 }
