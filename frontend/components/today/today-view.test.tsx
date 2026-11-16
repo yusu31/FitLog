@@ -153,6 +153,20 @@ describe('TodayView（S-10 今日）', () => {
     });
   });
 
+  // N5: 記録したあとに「今日は休む」が出ると矛盾する（今日はもう動いた）
+  describe('記録したあとの「今日は休む」', () => {
+    it('今日の記録（rec）があれば出さない', async () => {
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { [TODAY]: 'rec' })),
+        [WORKOUTS]: list(PREV),
+        [LATEST]: list(PREV),
+      });
+      renderWithQuery(<TodayView />);
+      await screen.findByRole('link', { name: 'ランを記録' });
+      expect(screen.queryByRole('button', { name: /今日は休む/ })).not.toBeInTheDocument();
+    });
+  });
+
   describe('休み', () => {
     it('今日が休みの日は、おやすみの札を出し、「はじめる」は出さない', async () => {
       installFakeApi({

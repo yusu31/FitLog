@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth-client';
-import { safeNextPath, withNext } from '@/lib/next-path';
+import { withNext } from '@/lib/next-path';
+import { useNextParam } from '@/lib/use-next-param';
 
 // better-auth の既定: パスワードは8文字以上（API 側でも検査される。ここは入力中に気づかせるため）
 const MIN_PASSWORD_LENGTH = 8;
@@ -16,7 +17,7 @@ const MIN_PASSWORD_LENGTH = 8;
 // S-02 新規登録（docs/screen-design.md）。登録するとそのままログイン済みになり、?next= の画面へ移る。
 export function SignupForm() {
   const router = useRouter();
-  const next = safeNextPath(useSearchParams().get('next'));
+  const next = useNextParam();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 

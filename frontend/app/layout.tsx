@@ -6,7 +6,7 @@ import { Providers } from "./providers";
 import { SwRegister } from "@/components/fitlog/sw-register";
 
 export const metadata: Metadata = {
-  title: "FitLog",
+  title: { default: "FitLog", template: "%s | FitLog" },
   description: "少人数で使う、筋トレとランの記録アプリ",
   // iPhone のホーム画面のアイコン（F-25）。manifest は app/manifest.ts が出す
   icons: { apple: "/icons/icon-192.png" },

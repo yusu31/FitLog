@@ -71,12 +71,11 @@ describe('SettingsView（S-31 設定）', () => {
     expect(screen.getByLabelText('グループを読み込み中')).toHaveAttribute('aria-busy', 'true');
   });
 
-  it('キャラの編集（S-33）は、押せない見た目だけ（リンクにしない）', () => {
+  // U14: 未完成に見える「準備中」は出さない（キャラの編集は「できれば」の範囲。できたときに足す）
+  it('「準備中」の行を出さない', () => {
     renderView();
-    const row = screen.getByRole('button', { name: /キャラの編集/ });
-    expect(row).toBeDisabled();
-    expect(screen.queryByRole('link', { name: /キャラの編集/ })).not.toBeInTheDocument();
-    expect(screen.getAllByText('準備中')).toHaveLength(1);
+    expect(screen.queryByText('準備中')).not.toBeInTheDocument();
+    expect(screen.queryByText(/キャラの編集/)).not.toBeInTheDocument();
   });
 
   it('クレジット（S-34）は /settings/credits へのリンク（素材の作者表示のため必ず開ける）', () => {

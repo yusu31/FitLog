@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import { renderWithQuery as render } from '@/lib/test/fake-api';
 import { AppShell } from './app-shell';
 
@@ -24,6 +24,20 @@ describe('AppShell（タブのある画面の枠）', () => {
     render(<AppShell>中身</AppShell>);
     expect(replace).not.toHaveBeenCalled();
     expect(screen.getByLabelText('読み込み中')).toBeInTheDocument();
+  });
+
+  // S1: サーバー（Lambda）が眠っていると最初の確認に5秒前後かかる。無言で待たせず、理由を伝える
+  describe('起動待ちの案内', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('確認が3秒を超えたら「サーバーを起こしています」を出す（それまでは出さない）', () => {
+      vi.useFakeTimers();
+      session = { data: null, isPending: true };
+      render(<AppShell>中身</AppShell>);
+      expect(screen.queryByText(/サーバーを起こしています/)).not.toBeInTheDocument();
+      act(() => { vi.advanceTimersByTime(3100); });
+      expect(screen.getByRole('status')).toHaveTextContent('サーバーを起こしています');
+    });
   });
 
   it('ログイン済みなら中身と下のタブを出す', () => {

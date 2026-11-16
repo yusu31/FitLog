@@ -112,7 +112,8 @@ export function TodayView() {
         )}
 
         <RunLink day={day} />
-        {day === 'today' && todayStatus !== 'rest' && <RestButton />}
+        {/* 休みの日はおやすみの札、記録した日は「休む」と矛盾するので、どちらも出さない（N5） */}
+        {day === 'today' && todayStatus === 'none' && <RestButton />}
       </div>
     </>
   );

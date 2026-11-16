@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { RunView } from '@/components/run/run-view';
+
+export const metadata: Metadata = { title: 'ランを記録' };
 
 // S-13 記録（ラン）（docs/screen-design.md）。タブの無い全画面
 export default function RunPage() {

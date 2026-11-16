@@ -10,7 +10,6 @@ const signUpEmail = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace }),
-  useSearchParams: () => new URLSearchParams(search),
 }));
 vi.mock('@/lib/auth-client', () => ({
   authClient: {
@@ -24,6 +23,7 @@ beforeEach(() => {
   signInEmail.mockReset();
   signUpEmail.mockReset();
   search = '';
+  window.history.replaceState(null, '', '/login');
 });
 
 async function fillLogin(user: ReturnType<typeof userEvent.setup>) {
@@ -46,6 +46,7 @@ describe('LoginForm（S-01）', () => {
   // T-AUTH-FE-11: 招待リンクなどの戻り先（?next=）へ移る
   it('?next= のこのサイトのパスへ移る（招待リンクの値を保つ）', async () => {
     search = 'next=' + encodeURIComponent('/invite?token=abc');
+    window.history.replaceState(null, '', '/login?' + search);
     signInEmail.mockResolvedValue({ data: {}, error: null });
     const user = userEvent.setup();
     render(<LoginForm />);
@@ -56,6 +57,7 @@ describe('LoginForm（S-01）', () => {
   // T-AUTH-FE-12: 外のサイトを指す戻り先には移らない
   it('?next= が外のサイトなら今日の画面へ移る', async () => {
     search = 'next=' + encodeURIComponent('https://evil.example');
+    window.history.replaceState(null, '', '/login?' + search);
     signInEmail.mockResolvedValue({ data: {}, error: null });
     const user = userEvent.setup();
     render(<LoginForm />);
@@ -86,6 +88,7 @@ describe('LoginForm（S-01）', () => {
   // T-AUTH-FE-15: 登録画面へのリンクに戻り先が引き継がれる
   it('新規登録へのリンクに戻り先を引き継ぐ', () => {
     search = 'next=' + encodeURIComponent('/invite?token=abc');
+    window.history.replaceState(null, '', '/login?' + search);
     render(<LoginForm />);
     expect(screen.getByRole('link', { name: '新規登録' })).toHaveAttribute(
       'href',
@@ -105,6 +108,7 @@ describe('SignupForm（S-02）', () => {
   // T-AUTH-FE-20: 表示名・メール・パスワードを送り、成功したら戻り先へ
   it('成功したら3つの値を送り、戻り先へ移る', async () => {
     search = 'next=' + encodeURIComponent('/invite?token=abc');
+    window.history.replaceState(null, '', '/login?' + search);
     signUpEmail.mockResolvedValue({ data: {}, error: null });
     const user = userEvent.setup();
     render(<SignupForm />);
@@ -147,5 +151,17 @@ describe('SignupForm（S-02）', () => {
   it('パスワード欄に8文字以上の制限を付ける', () => {
     render(<SignupForm />);
     expect(screen.getByLabelText(/パスワード/)).toHaveAttribute('minlength', '8');
+  });
+});
+
+// S2: 静的書き出しの HTML にフォームが入っていること（JS が動く前の最初の表示。遅い回線で空白が続かないため）
+describe('ログイン・登録ページの最初の HTML（S2）', () => {
+  it.each([
+    ['ログイン', async () => (await import('@/app/login/page')).default, 'メールアドレス'],
+    ['新規登録', async () => (await import('@/app/signup/page')).default, 'メールアドレス'],
+  ])('%s: JS なしで描いた HTML にフォームの項目が入る', async (_name, load, label) => {
+    const { renderToString } = await import('react-dom/server');
+    const Page = await load();
+    expect(renderToString(<Page />)).toContain(label);
   });
 });
