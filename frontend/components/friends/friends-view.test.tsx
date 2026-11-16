@@ -75,22 +75,22 @@ describe('FriendsView（S-20 仲間）', () => {
     it('招待リンクを貼って「開く」と、参加の画面へ移る', async () => {
       const user = userEvent.setup();
       renderView();
-      await user.type(await screen.findByLabelText('届いた招待リンク'), 'https://fitlog.example/invite?token=abc_DEF-123456');
+      await user.type(await screen.findByLabelText('届いた招待リンク'), 'https://fitlog.example/invite?token=tok_00000001');
       await user.click(screen.getByRole('button', { name: '開く' }));
-      expect(push).toHaveBeenCalledWith('/invite?token=abc_DEF-123456');
+      expect(push).toHaveBeenCalledWith('/invite?token=tok_00000001');
     });
 
     it('token だけを貼っても移れる', async () => {
       const user = userEvent.setup();
       renderView();
-      await user.type(await screen.findByLabelText('届いた招待リンク'), 'abc_DEF-123456');
+      await user.type(await screen.findByLabelText('届いた招待リンク'), 'tok_00000001');
       await user.click(screen.getByRole('button', { name: '開く' }));
-      expect(push).toHaveBeenCalledWith('/invite?token=abc_DEF-123456');
+      expect(push).toHaveBeenCalledWith('/invite?token=tok_00000001');
     });
 
     it.each([
       ['空', ''],
-      ['別のサイトの URL', 'https://example.com/other?token=abc_DEF-123456'],
+      ['別のサイトの URL', 'https://example.com/other?token=tok_00000001'],
     ])('貼ったものが%sなら、移らずに知らせる', async (_label, value) => {
       const user = userEvent.setup();
       renderView();
