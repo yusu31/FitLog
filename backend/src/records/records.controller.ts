@@ -54,6 +54,16 @@ export class RecordsController {
     return set;
   }
 
+  @Post(':id/end')
+  @HttpCode(200)
+  @ApiOperation({ operationId: 'endWorkout', summary: '筋トレを「今日はここまで」で終える（N1）。冪等' })
+  @ApiOkResponse({ type: RecordResponse, description: '終えた（すでに終えていれば1回目の終了時刻のまま）。endedAt が入る' })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '記録が無い・他の人の記録（RECORD_NOT_FOUND。存在を教えない）' })
+  @ApiConflictResponse({ type: ErrorResponse, description: '筋トレでない記録（RECORD_KIND_MISMATCH）' })
+  endWorkout(@Session() session: UserSession, @Param('id') recordId: string): Promise<RecordResponse> {
+    return this.records.endWorkout(session.user.id, recordId);
+  }
+
   @Get()
   @ApiOperation({ operationId: 'listRecords', summary: '自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む' })
   @ApiQuery({ name: 'limit', required: false, example: 20, description: '1ページの件数。1〜100。既定 20' })

@@ -16,6 +16,8 @@ export const shouldStartNewRecord = (lastSetAtMs: number | null, nowMs: number):
 export const WEIGHT_MIN = 0;
 export const WEIGHT_MAX = 500;
 export const WEIGHT_STEP = 2.5;
+// 20→60kg を16回押さなくて済むように、重量には大きい動かし方（±10kg）も置く（E1）
+export const WEIGHT_BIG_STEP = 10;
 export const REPS_MIN = 1;
 export const REPS_MAX = 999;
 
@@ -28,6 +30,7 @@ export const clampReps = (r: number): number =>
   Number.isFinite(r) ? Math.min(REPS_MAX, Math.max(REPS_MIN, Math.round(r))) : REPS_MIN;
 
 export const stepWeight = (w: number, dir: 1 | -1): number => clampWeight(w + dir * WEIGHT_STEP);
+export const stepWeightBig = (w: number, dir: 1 | -1): number => clampWeight(w + dir * WEIGHT_BIG_STEP);
 export const stepReps = (r: number, dir: 1 | -1): number => clampReps(r + dir);
 
 // --- 最初に入る値 ---

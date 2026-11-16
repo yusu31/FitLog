@@ -6,6 +6,7 @@ import {
   getCreateRecordMutationKey,
   getDeleteRecordMutationKey,
   getDeleteSetMutationKey,
+  getEndWorkoutMutationKey,
   getGetRecordQueryKey,
   getGetWeekQueryKey,
   getListExercisesQueryKey,
@@ -344,5 +345,66 @@ describe('記録を作ったとき、週の帯に先に反映する（楽観的�
     act(() => void result.current.createRecord.mutate({ data: { id: REC, kind: 'workout', recordedAt: NOW } }));
     await waitFor(() => expect(detailOf(client)?.kind).toBe('workout'));
     expect(dayStatus(client)).toBeUndefined();
+  });
+});
+
+
+// N1: 「今日はここまで」。電波があるときだけの操作（再送しない）。先に画面の元データを「終えた」にし、失敗したら戻す
+describe('筋トレを終える（endWorkout。N1）', () => {
+  const active = (): RecordDetailResponse => ({
+    id: REC,
+    kind: 'workout',
+    recordedAt: NOW,
+    localDate: '2026-11-02',
+    exercises: [],
+    active: true,
+  });
+  const LIST_KEY = getListRecordsQueryKey({ kind: 'workout', limit: '5' });
+  const seedList = (client: QC) =>
+    client.setQueryData(LIST_KEY, {
+      status: 200,
+      data: { items: [active(), { ...active(), id: 'other' }], nextCursor: null },
+      headers: new Headers(),
+    });
+  const listItems = (client: QC) => client.getQueryData<{ data: { items: RecordDetailResponse[] } }>(LIST_KEY)?.data.items;
+
+  it('POST /records/{id}/end を送り、再送の設定は持たない', async () => {
+    respond = () => ({ status: 200, body: { id: REC, kind: 'workout', recordedAt: NOW, localDate: '2026-11-02', endedAt: NOW } });
+    const client = makeClient();
+    registerRecordMutations(client, 'u1');
+    expect(client.getMutationDefaults(getEndWorkoutMutationKey()).retry).toBeUndefined();
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    await act(() => result.current.endWorkout.mutateAsync({ id: REC }));
+    expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual([`POST /api/records/${REC}/end`]);
+  });
+
+  it('サーバーが終えたと返したら、詳細と一覧の記録中を false にする（取り直しを待たない。記録画面が終えた記録を続きに選び直さない）', async () => {
+    respond = () => ({ status: 200, body: { id: REC } });
+    const client = makeClient();
+    seedDetail(client, active());
+    seedList(client);
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    await act(() => result.current.endWorkout.mutateAsync({ id: REC }));
+    expect(detailOf(client)?.active).toBe(false);
+    expect(detailOf(client)?.endedAt).toBeTruthy();
+    expect(listItems(client)?.map((i) => [i.id, i.active])).toEqual([
+      [REC, false],
+      ['other', true],
+    ]);
+  });
+
+  it('失敗したら、詳細も一覧も記録中のまま（送っている間に札が消えない）。再送せずにエラーを返し、一覧は取り直し待ちの印が付く', async () => {
+    respond = () => ({ status: 500, body: { code: 'INTERNAL', message: 'x' } });
+    const client = makeClient();
+    seedDetail(client, active());
+    seedList(client);
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    await act(async () => {
+      await expect(result.current.endWorkout.mutateAsync({ id: REC })).rejects.toBeInstanceOf(ApiError);
+    });
+    expect(calls.filter((c) => c.method === 'POST')).toHaveLength(1);
+    expect(detailOf(client)?.active).toBe(true);
+    expect(detailOf(client)?.endedAt).toBeUndefined();
+    expect(client.getQueryState(LIST_KEY)?.isInvalidated).toBe(true);
   });
 });

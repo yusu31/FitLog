@@ -4,6 +4,7 @@ import { compareSet, isPersonalBest } from '../common/ghost.js';
 import { buildStats, type DayAgg } from '../common/stats.js';
 import { cellStatus, weekDates, weekStartOf } from '../common/week.js';
 import { toLocalDate } from '../common/local-date.js';
+import { isWorkoutActive } from '../common/workout-session.js';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
 import { BODY_PARTS, exercises, records, runDetails, videos, workoutSets } from '../db/schema.js';
@@ -25,6 +26,7 @@ const toResponse = (row: Row, run?: RunInput, copiedFrom?: CopiedFrom): RecordRe
   recordedAt: row.recordedAt.toISOString(),
   localDate: row.localDate,
   ...(row.late ? { late: true } : {}),
+  ...(row.endedAt ? { endedAt: row.endedAt.toISOString() } : {}),
   ...(copiedFrom ? { copiedFrom } : {}),
   ...(run ? { run: { distanceM: run.distanceM, durationS: run.durationS } } : {}),
 });
@@ -230,6 +232,27 @@ export class RecordsService {
     this.logger.log(`記録を削除: ${deleted[0].id}`);
   }
 
+  // 筋トレを「今日はここまで」で終える（N1）。冪等（もう終えていれば1回目の終了時刻のまま返す）。
+  // 自分の筋トレだけ（他人の記録・無い id は同じ 404、筋トレ以外は 409）。持ち主の確認と更新を1つの文で行う
+  async endWorkout(userId: string, recordId: string): Promise<RecordResponse> {
+    if (!isUuid(recordId)) throw recordNotFound();
+    const id = recordId.toLowerCase();
+    const [existing] = await this.db.select().from(records).where(and(eq(records.id, id), eq(records.userId, userId)));
+    if (!existing) throw recordNotFound();
+    if (existing.kind !== 'workout') throw new ConflictException({ code: 'RECORD_KIND_MISMATCH', message: '筋トレの記録だけ終えられます', details: null });
+    if (existing.endedAt) return toResponse(existing);
+
+    const [ended] = await this.db
+      .update(records)
+      .set({ endedAt: new Date() })
+      .where(and(eq(records.id, id), eq(records.userId, userId), isNull(records.endedAt)))
+      .returning();
+    // 同時にもう1つ届いて先に終わっていたとき（更新が0行）は、先の終了時刻を返す
+    const row = ended ?? (await this.db.select().from(records).where(eq(records.id, id)))[0];
+    if (ended) this.logger.log(`筋トレを終了: ${ended.id}`);
+    return toResponse(row);
+  }
+
   // セットを消す（取り消し）。確かめる順番: 記録が自分のものか（404 RECORD_NOT_FOUND。他人の記録も同じ）→ その記録のセットか（404 SET_NOT_FOUND）。
   // セットの持ち主は記録で決まるので、「自分の記録の下にあるセット」だけを1つの文で消す
   async deleteSet(userId: string, recordId: string, setId: string): Promise<void> {
@@ -281,12 +304,15 @@ export class RecordsService {
 
     // 種目は最初にセットを足した順（createdAt の昇順に読んでいるので、Map に入れた順）。セットは種目の中でセット番号の昇順
     const exercisesByRecord = new Map<string, Map<string, RecordedExercise>>();
+    const lastSetAtByRecord = new Map<string, Date>();
+    const now = new Date();
     for (const s of setRows) {
       const perRecord = exercisesByRecord.get(s.recordId) ?? new Map<string, RecordedExercise>();
       exercisesByRecord.set(s.recordId, perRecord);
       const entry = perRecord.get(s.exerciseId) ?? { exerciseId: s.exerciseId, name: s.exerciseName, bodyPart: s.bodyPart, sets: [] };
       perRecord.set(s.exerciseId, entry);
-      entry.sets.push({ id: s.id, setNo: s.setNo, weightKg: Number(s.weightKg), reps: s.reps });
+      entry.sets.push({ id: s.id, setNo: s.setNo, weightKg: Number(s.weightKg), reps: s.reps, createdAt: s.createdAt.toISOString() });
+      if (!lastSetAtByRecord.get(s.recordId) || s.createdAt > lastSetAtByRecord.get(s.recordId)!) lastSetAtByRecord.set(s.recordId, s.createdAt);
     }
 
     // 動画の id は詳細だけ付ける（一覧には付けない。1記録に1本）
@@ -310,7 +336,10 @@ export class RecordsService {
         bodyPart: e.bodyPart,
         sets: e.sets.toSorted((a, b) => a.setNo - b.setNo),
       }));
-      return Object.assign(base, { exercises: exercisesOfRecord });
+      return Object.assign(base, {
+        exercises: exercisesOfRecord,
+        active: isWorkoutActive({ endedAt: row.endedAt, lastSetAt: lastSetAtByRecord.get(row.id) ?? null, recordedAt: row.recordedAt }, now),
+      });
     });
   }
 

@@ -75,4 +75,29 @@ describe('buildMenu（今日のメニューを組み立てる）', () => {
     const prev = workout('r1', '2026-11-01', [squat([[60, 10]])]);
     expect(buildMenu([today, prev], TODAY).items[0].done).toBe(false);
   });
+
+  // N1: 記録中（サーバーが active を返す）は「全部できた」にしない。今日の記録の種目数・セット数を session に持つ
+  describe('記録中（active）', () => {
+    const activeToday = (...ex: ReturnType<typeof squat>[]) => ({ ...workout('r2', TODAY, ex), active: true });
+    const prev = workout('r1', '2026-11-01', [squat([[60, 10]]), curl([[25, 12]])]);
+
+    it('全部の種目にセットが入っていても、記録中なら allDone にならない。session に種目数とセット数が入る', () => {
+      const today = activeToday(squat([[60, 10], [60, 9]]), curl([[25, 12]]));
+      const m = buildMenu([today, prev], TODAY);
+      expect(m.allDone).toBe(false);
+      expect(m.session).toEqual({ recordId: 'r2', exerciseCount: 2, setCount: 3 });
+    });
+
+    it('終えた（active が false）か、active の項目が無い記録なら、全部できたとき allDone で session は null', () => {
+      const ended = { ...workout('r2', TODAY, [squat([[60, 10]]), curl([[25, 12]])]), active: false };
+      const m = buildMenu([ended, prev], TODAY);
+      expect(m.allDone).toBe(true);
+      expect(m.session).toBeNull();
+    });
+
+    it('記録中でも、別の日の記録は session にしない（きのうの分を入れた直後など）', () => {
+      const yesterdayLate = { ...workout('r3', '2026-11-03', [squat([[60, 10]])]), active: true };
+      expect(buildMenu([yesterdayLate, prev], TODAY).session).toBeNull();
+    });
+  });
 });

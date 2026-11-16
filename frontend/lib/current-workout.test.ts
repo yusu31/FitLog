@@ -1,4 +1,4 @@
-import { activeRecordId, recordForNextSet, resetCurrentWorkout } from './current-workout';
+import { activeRecordId, bestCountOf, endCurrentWorkout, noteBest, recordForNextSet, resetCurrentWorkout } from './current-workout';
 
 const H = 60 * 60 * 1000;
 const t0 = Date.parse('2026-11-02T10:00:00Z');
@@ -38,5 +38,55 @@ describe('いま記録している筋トレの記録', () => {
     const a = recordForNextSet(t0);
     expect(activeRecordId(t0 + H)).toBe(a.recordId);
     expect(activeRecordId(t0 + 3 * H)).toBeNull();
+  });
+});
+
+// N2: ページを読み直すとメモリは消える。サーバーが「記録中」と返した記録を、続きの記録として使う
+describe('サーバーが返した「記録中」の記録を使う（N2）', () => {
+  it('メモリが空でも、サーバーの記録中があれば、それが続きの記録になり、新しい記録は作らない', () => {
+    expect(activeRecordId(t0, 'today', 'srv')).toBe('srv');
+    expect(recordForNextSet(t0, 'today', 'srv')).toEqual({ recordId: 'srv', isNew: false });
+    // 一度使ったら、以降はメモリが持つ（サーバーの答えが無くても同じ記録）
+    expect(recordForNextSet(t0 + 60_000)).toEqual({ recordId: 'srv', isNew: false });
+  });
+
+  it('メモリの記録が3時間以上前でも、サーバーが別の記録を記録中と言えば、サーバーを正とする', () => {
+    recordForNextSet(t0);
+    expect(activeRecordId(t0 + 4 * H, 'today', 'srv')).toBe('srv');
+    expect(recordForNextSet(t0 + 4 * H, 'today', 'srv')).toEqual({ recordId: 'srv', isNew: false });
+  });
+
+  it('サーバーの記録中が無く、メモリも空なら新しい記録', () => {
+    expect(activeRecordId(t0, 'today', null)).toBeNull();
+    expect(recordForNextSet(t0, 'today', null).isNew).toBe(true);
+  });
+
+  it('きのうの分には、サーバーの記録中を使わない（今日の記録に混ざらない）', () => {
+    expect(activeRecordId(t0, 'yesterday', 'srv')).toBeNull();
+    expect(recordForNextSet(t0, 'yesterday', 'srv').isNew).toBe(true);
+  });
+});
+
+describe('「今日はここまで」（N1）', () => {
+  it('終えると、続きの記録は無くなり、次のセットは新しい記録になる。きのうの分は残る', () => {
+    const a = recordForNextSet(t0);
+    const y = recordForNextSet(t0, 'yesterday');
+    endCurrentWorkout();
+    expect(activeRecordId(t0 + 60_000)).toBeNull();
+    const b = recordForNextSet(t0 + 60_000);
+    expect(b.isNew).toBe(true);
+    expect(b.recordId).not.toBe(a.recordId);
+    expect(activeRecordId(t0 + 60_000, 'yesterday')).toBe(y.recordId);
+  });
+
+  it('自己ベストの数を、記録ごとに数える（終了のまとめ用）。終えても数は残り、別の記録とは混ざらない', () => {
+    noteBest('a');
+    noteBest('a');
+    noteBest('b');
+    expect(bestCountOf('a')).toBe(2);
+    expect(bestCountOf('b')).toBe(1);
+    expect(bestCountOf('none')).toBe(0);
+    resetCurrentWorkout();
+    expect(bestCountOf('a')).toBe(0);
   });
 });

@@ -2,7 +2,7 @@ import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resetCopyPlan, setCopyPlan } from '@/lib/copy-plan';
-import { resetCurrentWorkout } from '@/lib/current-workout';
+import { bestCountOf, resetCurrentWorkout } from '@/lib/current-workout';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { GHOST_MESSAGES } from '@/lib/messages';
 import { RecordView } from './record-view';
@@ -68,6 +68,7 @@ beforeEach(() => {
   handlers = {
     'GET /api/exercises': () => ({ status: 200, body: EXERCISES }),
     'GET /api/me/stats': () => ({ status: 200, body: STATS }),
+    'GET /api/records': () => ({ status: 200, body: { items: [], nextCursor: null } }),
     'GET /api/groups/current': () => ({
       status: 200,
       body: {
@@ -99,7 +100,7 @@ beforeEach(() => {
       const call: Call = { method, url, body: init?.body ? JSON.parse(String(init.body)) : undefined };
       calls.push(call);
       const path = url.split('?')[0];
-      const key = path.replace(/^\/api\/records\/[^/]+\/sets\/[^/]+$/, '/api/records/:id/sets/:setId').replace(/^\/api\/records\/[^/]+\/sets$/, '/api/records/:id/sets');
+      const key = path.replace(/^\/api\/records\/[^/]+\/sets\/[^/]+$/, '/api/records/:id/sets/:setId').replace(/^\/api\/records\/[^/]+\/sets$/, '/api/records/:id/sets').replace(/^\/api\/records\/[^/]+$/, '/api/records/:id');
       const handler = handlers[`${method} ${key}`];
       if (!handler) throw new Error(`想定外の呼び出し: ${method} ${url}`);
       const { status, body } = await handler(call);
@@ -705,6 +706,143 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       const create = calls.find((c) => c.method === 'POST' && c.url === '/api/records');
       expect(create?.body).not.toHaveProperty('copiedFromUserId');
     });
+  });
+
+  // E1: 重量は ±2.5kg ずつで、20→60kg は16回押す。±10kg を足す
+  describe('重量を大きく動かす（E1）', () => {
+    it('「10kg ふやす／へらす」で重量が10kg動く（0kg の下には行かない）', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      expect(weight()).toHaveValue(40);
+      await user.click(screen.getByRole('button', { name: '重量を 10kg ふやす' }));
+      expect(weight()).toHaveValue(50);
+      await user.click(screen.getByRole('button', { name: '重量を 10kg へらす' }));
+      await user.click(screen.getByRole('button', { name: '重量を 10kg へらす' }));
+      expect(weight()).toHaveValue(30);
+      for (let i = 0; i < 4; i++) await user.click(screen.getByRole('button', { name: '重量を 10kg へらす' }));
+      expect(weight()).toHaveValue(0);
+    });
+
+    it('回数のほうには、大きい動かし方は付けない（1回ずつ）', async () => {
+      renderView();
+      await ready();
+      expect(screen.queryByRole('button', { name: /回数を 10回/ })).not.toBeInTheDocument();
+    });
+  });
+
+  // N3: 記録画面に「次の種目へ」が無く、×で閉じて種目を選び直す4手以上だった
+  describe('次の種目へ（N3）', () => {
+    const TODAY_JST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const todayRec = {
+      id: 'srv-rec',
+      kind: 'workout',
+      recordedAt: new Date().toISOString(),
+      localDate: TODAY_JST,
+      active: true,
+      exercises: [{ exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ id: 's-1', setNo: 1, weightKg: 40, reps: 10 }] }],
+    };
+    const prevRec = {
+      id: 'prev',
+      kind: 'workout',
+      recordedAt: '2026-10-01T03:00:00.000Z',
+      localDate: '2026-10-01',
+      exercises: [
+        { exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ id: 'p-1', setNo: 1, weightKg: 40, reps: 10 }] },
+        { exerciseId: 'e-mine', name: 'ケトルベルスイング', sets: [{ id: 'p-2', setNo: 1, weightKg: 16, reps: 15 }] },
+      ],
+    };
+    beforeEach(() => {
+      handlers['GET /api/records'] = () => ({ status: 200, body: { items: [todayRec, prevRec], nextCursor: null } });
+      handlers['GET /api/records/:id'] = () => ({ status: 200, body: todayRec });
+    });
+
+    it('1セット以上できたら、まだの種目（今日のメニューの次）へのリンクを出す', async () => {
+      renderView();
+      await ready();
+      const link = await screen.findByRole('link', { name: '次の種目へ' });
+      expect(link).toHaveAttribute('href', '/record?exercise=e-mine');
+    });
+
+    it('まだの種目がなければ、種目の一覧へ（きのうの分は day を引き継ぐ）', async () => {
+      handlers['GET /api/records'] = () => ({ status: 200, body: { items: [todayRec], nextCursor: null } });
+      renderView();
+      await ready();
+      expect(await screen.findByRole('link', { name: '次の種目へ' })).toHaveAttribute('href', '/exercises');
+    });
+
+    it('まだ1セットもできていないあいだは出さない', async () => {
+      handlers['GET /api/records'] = () => ({ status: 200, body: { items: [], nextCursor: null } });
+      renderView();
+      await ready();
+      expect(screen.queryByRole('link', { name: '次の種目へ' })).not.toBeInTheDocument();
+    });
+  });
+
+  // N2: ページを読み直すとメモリの「いまの記録」は消える。サーバーが「記録中」と返した記録を続きにする
+  describe('読み直したあとも、同じ記録に足す（N2）', () => {
+    const TODAY_JST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const serverActive = {
+      id: 'srv-rec',
+      kind: 'workout',
+      recordedAt: new Date().toISOString(),
+      localDate: TODAY_JST,
+      active: true,
+      exercises: [{ exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ id: 's-1', setNo: 1, weightKg: 40, reps: 10 }] }],
+    };
+
+    beforeEach(() => {
+      handlers['GET /api/records'] = () => ({ status: 200, body: { items: [serverActive], nextCursor: null } });
+      handlers['GET /api/records/:id'] = () => ({ status: 200, body: serverActive });
+    });
+
+    it('サーバーの記録中の記録のセットを出し、次は2セット目になる', async () => {
+      renderView();
+      await ready();
+      expect(await screen.findByText('2 セット目')).toBeInTheDocument();
+      expect(screen.getByRole('list', { name: /できたセット/ })).toBeInTheDocument();
+    });
+
+    it('「できた」は、新しい記録を作らず、その記録にセットを足す', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await screen.findByText('2 セット目');
+      await user.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      expect(setCalls()[0].url).toBe('/api/records/srv-rec/sets');
+      expect(calls.filter((c) => c.method === 'POST' && c.url === '/api/records')).toHaveLength(0);
+    });
+
+    it('サーバーが「記録中」でない（終えた）なら、新しい記録を作る', async () => {
+      handlers['GET /api/records'] = () => ({ status: 200, body: { items: [{ ...serverActive, active: false }], nextCursor: null } });
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      await waitFor(() => expect(calls.filter((c) => c.method === 'POST' && c.url === '/api/records')).toHaveLength(1));
+    });
+
+    it('きのうの分では、サーバーの記録中を使わない（今日の記録に混ざらない）', async () => {
+      search = 'exercise=e-bench&day=yesterday';
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      await waitFor(() => expect(calls.filter((c) => c.method === 'POST' && c.url === '/api/records')).toHaveLength(1));
+    });
+  });
+
+  // N1: 終了のまとめに「自己ベスト◯回」を出すため、自己ベストが出た回数を記録ごとに数える
+  it('自己ベストが出たセットを、記録ごとに数える（終了のまとめ用）', async () => {
+    setReply = echoSet('up', true);
+    const user = userEvent.setup();
+    renderView();
+    await ready();
+    await user.click(doneButton());
+    await waitFor(() => expect(setCalls()).toHaveLength(1));
+    const rid = calls.find((c) => c.method === 'POST' && c.url === '/api/records')!.body!.id as string;
+    await waitFor(() => expect(bestCountOf(rid)).toBe(1));
   });
 
   it('責める言葉（禁止語）を画面に出さない（T-DATE-13・T-GHOST-13）', async () => {

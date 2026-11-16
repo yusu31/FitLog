@@ -24,8 +24,10 @@ export type TodayMenu = {
   items: MenuItem[];
   /** 次の1枚＝まだできていない種目のうち、並びの先頭 */
   next: MenuItem | null;
-  /** メニューがあり、全部できた */
+  /** メニューがあり、全部できた。記録中（終わっていない）の間は false（「今日の分は できた」と言い切らない。N1） */
   allDone: boolean;
+  /** いま記録中の筋トレ（サーバーの active。今日の日付のもの）。無ければ null。種目数・セット数は終了のまとめにも使う */
+  session: { recordId: string; exerciseCount: number; setCount: number } | null;
 };
 
 const valueOf = (s: { weightKg: number; reps: number }): SetValue => ({ weightKg: s.weightKg, reps: s.reps });
@@ -65,10 +67,21 @@ export function buildMenu(workouts: readonly RecordDetailResponse[], today: stri
     if (!items.some((i) => i.exerciseId === exerciseId)) items.push(toItem(exerciseId, name, null, null));
   }
 
+  // 記録中の筋トレ（今日の日付だけ。同じ日に複数あれば、新しい順の先頭）
+  const running = todays.find((r) => r.active === true);
+  const session = running
+    ? {
+        recordId: running.id,
+        exerciseCount: (running.exercises ?? []).length,
+        setCount: (running.exercises ?? []).reduce((n, e) => n + e.sets.length, 0),
+      }
+    : null;
+
   return {
     isFirstTime: previous === null,
     items,
     next: items.find((i) => !i.done) ?? null,
-    allDone: items.length > 0 && items.every((i) => i.done),
+    allDone: session === null && items.length > 0 && items.every((i) => i.done),
+    session,
   };
 }

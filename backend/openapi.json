@@ -683,6 +683,57 @@
         ]
       }
     },
+    "/api/records/{id}/end": {
+      "post": {
+        "operationId": "endWorkout",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "終えた（すでに終えていれば1回目の終了時刻のまま）。endedAt が入る",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・他の人の記録（RECORD_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "筋トレでない記録（RECORD_KIND_MISMATCH）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "筋トレを「今日はここまで」で終える（N1）。冪等",
+        "tags": [
+          "records"
+        ]
+      }
+    },
     "/api/records/{id}": {
       "get": {
         "operationId": "getRecord",
@@ -2017,6 +2068,11 @@
                 "$ref": "#/components/schemas/RunDetail"
               }
             ]
+          },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "筋トレを「今日はここまで」で終えた時刻（N1）。押していなければ付かない（自動で終わった分には付かない。記録中かどうかは詳細・一覧の active）"
           }
         },
         "required": [
@@ -2131,6 +2187,11 @@
           "reps": {
             "type": "number",
             "example": 10
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "セットを足した時刻（UTC）。応答には必ず入る。端末が楽観的更新で作る仮の行には無い"
           }
         },
         "required": [
@@ -2260,12 +2321,21 @@
               }
             ]
           },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "筋トレを「今日はここまで」で終えた時刻（N1）。押していなければ付かない（自動で終わった分には付かない。記録中かどうかは詳細・一覧の active）"
+          },
           "exercises": {
             "description": "筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RecordedExercise"
             }
+          },
+          "active": {
+            "type": "boolean",
+            "description": "筋トレの「いま記録中」か（N1・N2）。終了（endedAt）を押しておらず、最後のセットから3時間たっていなければ true。サーバーが読み出すときに判定する（定期実行はしない）。筋トレ以外には付かない。端末が楽観的更新で作る仮の行には無い"
           },
           "videoId": {
             "type": "string",

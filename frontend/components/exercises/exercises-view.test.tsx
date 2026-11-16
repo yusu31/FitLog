@@ -26,7 +26,11 @@ let replies: Record<string, Reply[]> = {};
 const calls: { method: string; url: string; body?: unknown }[] = [];
 
 beforeEach(() => {
-  replies = { 'GET /api/exercises': [{ status: 200, body: EXERCISES }] };
+  search = '';
+  replies = {
+    'GET /api/exercises': [{ status: 200, body: EXERCISES }],
+    'GET /api/records?kind=workout&limit=5': [{ status: 200, body: { items: [], nextCursor: null } }],
+  };
   calls.length = 0;
   session = { data: { user: { id: 'u1' } }, isPending: false };
   vi.stubGlobal(
@@ -178,6 +182,75 @@ describe('ExercisesView（S-11 種目を選ぶ）', () => {
       await user.click(screen.getByRole('button', { name: '胸' }));
       await user.click(screen.getByRole('button', { name: '追加する' }));
       expect(await screen.findByRole('alert')).toHaveTextContent('同じ名前の種目が もうあります');
+    });
+  });
+
+  // E3: 30種目を部位順にスクロールしなくてよいように、部位で絞れる
+  describe('部位で絞る（E3）', () => {
+    it('「すべて」と部位のボタンがあり、選んでいる1つだけが押された状態になる。初めは「すべて」', async () => {
+      renderView();
+      await screen.findByRole('link', { name: /ベンチプレス/ });
+      const group = screen.getByRole('group', { name: '部位で絞る' });
+      expect(within(group).getByRole('button', { name: 'すべて' })).toHaveAttribute('aria-pressed', 'true');
+      expect(within(group).getByRole('button', { name: '胸で絞る' })).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('部位を選ぶと、その部位の種目だけになる。「すべて」で戻る', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await screen.findByRole('link', { name: /ベンチプレス/ });
+      const group = screen.getByRole('group', { name: '部位で絞る' });
+      await user.click(within(group).getByRole('button', { name: '背中で絞る' }));
+      expect(screen.getByRole('link', { name: /ベントオーバーロウ/ })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /ベンチプレス/ })).not.toBeInTheDocument();
+      expect(within(group).getByRole('button', { name: '背中で絞る' })).toHaveAttribute('aria-pressed', 'true');
+      await user.click(within(group).getByRole('button', { name: 'すべて' }));
+      expect(screen.getByRole('link', { name: /ベンチプレス/ })).toBeInTheDocument();
+    });
+
+    it('検索と組み合わせられる（部位 AND 名前）', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await screen.findByRole('link', { name: /ベンチプレス/ });
+      await user.click(within(screen.getByRole('group', { name: '部位で絞る' })).getByRole('button', { name: '胸で絞る' }));
+      await user.type(screen.getByRole('searchbox', { name: '種目を さがす' }), 'フライ');
+      expect(screen.getByRole('link', { name: /ダンベルフライ/ })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /ベンチプレス/ })).not.toBeInTheDocument();
+    });
+  });
+
+  // E2: 最近やった種目を、一覧の先頭に出す（記録の一覧は今日の画面と同じ条件で、キャッシュを共有する）
+  describe('最近やった種目（E2）', () => {
+    const recent = [
+      { id: 'r2', kind: 'workout', recordedAt: '2026-11-04T03:00:00.000Z', localDate: '2026-11-04', exercises: [{ exerciseId: 'e-squat', name: 'スクワット', sets: [{ id: 's', setNo: 1, weightKg: 40, reps: 10 }] }] },
+      { id: 'r1', kind: 'workout', recordedAt: '2026-11-02T03:00:00.000Z', localDate: '2026-11-02', exercises: [
+        { exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ id: 's2', setNo: 1, weightKg: 40, reps: 10 }] },
+        { exerciseId: 'e-squat', name: 'スクワット', sets: [{ id: 's3', setNo: 1, weightKg: 40, reps: 10 }] },
+      ] },
+    ];
+
+    it('新しい順・重複なしで「最近やった種目」に並べる（スクワット → ベンチプレス）', async () => {
+      replies['GET /api/records?kind=workout&limit=5'] = [{ status: 200, body: { items: recent, nextCursor: null } }];
+      renderView();
+      const section = await screen.findByRole('region', { name: '最近やった種目' });
+      const links = within(section).getAllByRole('link');
+      expect(links.map((l) => l.textContent)).toEqual([expect.stringContaining('スクワット'), expect.stringContaining('ベンチプレス')]);
+      expect(links[0]).toHaveAttribute('href', '/record?exercise=e-squat');
+    });
+
+    it('記録が無いときは出さない', async () => {
+      renderView();
+      await screen.findByRole('link', { name: /ベンチプレス/ });
+      expect(screen.queryByRole('region', { name: '最近やった種目' })).not.toBeInTheDocument();
+    });
+
+    it('検索中・部位で絞っている間は出さない（探している種目の邪魔にならない）', async () => {
+      replies['GET /api/records?kind=workout&limit=5'] = [{ status: 200, body: { items: recent, nextCursor: null } }];
+      const user = userEvent.setup();
+      renderView();
+      await screen.findByRole('region', { name: '最近やった種目' });
+      await user.click(within(screen.getByRole('group', { name: '部位で絞る' })).getByRole('button', { name: '胸で絞る' }));
+      expect(screen.queryByRole('region', { name: '最近やった種目' })).not.toBeInTheDocument();
     });
   });
 
