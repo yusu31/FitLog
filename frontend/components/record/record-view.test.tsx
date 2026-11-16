@@ -708,6 +708,77 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     });
   });
 
+  // E1: 重量は ±2.5kg ずつで、20→60kg は16回押す。±10kg を足す
+  describe('重量を大きく動かす（E1）', () => {
+    it('「10kg ふやす／へらす」で重量が10kg動く（0kg の下には行かない）', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      expect(weight()).toHaveValue(40);
+      await user.click(screen.getByRole('button', { name: '重量を 10kg ふやす' }));
+      expect(weight()).toHaveValue(50);
+      await user.click(screen.getByRole('button', { name: '重量を 10kg へらす' }));
+      await user.click(screen.getByRole('button', { name: '重量を 10kg へらす' }));
+      expect(weight()).toHaveValue(30);
+      for (let i = 0; i < 4; i++) await user.click(screen.getByRole('button', { name: '重量を 10kg へらす' }));
+      expect(weight()).toHaveValue(0);
+    });
+
+    it('回数のほうには、大きい動かし方は付けない（1回ずつ）', async () => {
+      renderView();
+      await ready();
+      expect(screen.queryByRole('button', { name: /回数を 10回/ })).not.toBeInTheDocument();
+    });
+  });
+
+  // N3: 記録画面に「次の種目へ」が無く、×で閉じて種目を選び直す4手以上だった
+  describe('次の種目へ（N3）', () => {
+    const TODAY_JST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const todayRec = {
+      id: 'srv-rec',
+      kind: 'workout',
+      recordedAt: new Date().toISOString(),
+      localDate: TODAY_JST,
+      active: true,
+      exercises: [{ exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ id: 's-1', setNo: 1, weightKg: 40, reps: 10 }] }],
+    };
+    const prevRec = {
+      id: 'prev',
+      kind: 'workout',
+      recordedAt: '2026-10-01T03:00:00.000Z',
+      localDate: '2026-10-01',
+      exercises: [
+        { exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ id: 'p-1', setNo: 1, weightKg: 40, reps: 10 }] },
+        { exerciseId: 'e-mine', name: 'ケトルベルスイング', sets: [{ id: 'p-2', setNo: 1, weightKg: 16, reps: 15 }] },
+      ],
+    };
+    beforeEach(() => {
+      handlers['GET /api/records'] = () => ({ status: 200, body: { items: [todayRec, prevRec], nextCursor: null } });
+      handlers['GET /api/records/:id'] = () => ({ status: 200, body: todayRec });
+    });
+
+    it('1セット以上できたら、まだの種目（今日のメニューの次）へのリンクを出す', async () => {
+      renderView();
+      await ready();
+      const link = await screen.findByRole('link', { name: '次の種目へ' });
+      expect(link).toHaveAttribute('href', '/record?exercise=e-mine');
+    });
+
+    it('まだの種目がなければ、種目の一覧へ（きのうの分は day を引き継ぐ）', async () => {
+      handlers['GET /api/records'] = () => ({ status: 200, body: { items: [todayRec], nextCursor: null } });
+      renderView();
+      await ready();
+      expect(await screen.findByRole('link', { name: '次の種目へ' })).toHaveAttribute('href', '/exercises');
+    });
+
+    it('まだ1セットもできていないあいだは出さない', async () => {
+      handlers['GET /api/records'] = () => ({ status: 200, body: { items: [], nextCursor: null } });
+      renderView();
+      await ready();
+      expect(screen.queryByRole('link', { name: '次の種目へ' })).not.toBeInTheDocument();
+    });
+  });
+
   // N2: ページを読み直すとメモリの「いまの記録」は消える。サーバーが「記録中」と返した記録を続きにする
   describe('読み直したあとも、同じ記録に足す（N2）', () => {
     const TODAY_JST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);

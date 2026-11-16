@@ -111,6 +111,21 @@ describe('TodayView（S-10 今日）', () => {
       expect(screen.getByRole('link', { name: '種目を足す' })).toHaveAttribute('href', '/exercises');
     });
 
+    // N4: 見出しは「ほかの種目」だったが、中身は全部の種目（上の「次の1枚」と同じ種目や、できた種目も並ぶ）
+    it('メニューの見出しは「今日のメニュー」（中身と合わせる）', async () => {
+      renderWithQuery(<TodayView />);
+      await screen.findByRole('list', { name: '今日のメニュー' });
+      expect(screen.getByRole('heading', { name: '今日のメニュー' })).toBeInTheDocument();
+      expect(screen.queryByText(/ほかの種目/)).not.toBeInTheDocument();
+    });
+
+    // N12: 帯の左上が「11/」だと、途中で切れて見える
+    it('週の帯の左上は「11月」と、単位まで書く', async () => {
+      renderWithQuery(<TodayView />);
+      await screen.findByRole('list', { name: '今週の7日' });
+      expect(screen.getByText('11月')).toBeInTheDocument();
+    });
+
     it('連続日数は出さない', async () => {
       renderWithQuery(<TodayView />);
       await screen.findByRole('region', { name: '次の1枚' });

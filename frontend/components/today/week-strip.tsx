@@ -11,7 +11,7 @@ export function WeekStrip({ days, today }: { days: readonly WeekDay[]; today: st
   return (
     <section aria-label="今週" className="bg-teal-dark text-white">
       <p className="fl-num h-11 px-4 pt-2.5 text-[26px] leading-none" aria-hidden>
-        {Number(today.slice(5, 7))}/
+        {Number(today.slice(5, 7))}月
       </p>
       <ol aria-label="今週の7日" className="flex h-[84px]">
         {days.map((day) => {
