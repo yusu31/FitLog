@@ -165,3 +165,18 @@ describe('ログイン・登録ページの最初の HTML（S2）', () => {
     expect(renderToString(<Page />)).toContain(label);
   });
 });
+
+// F8: ログイン前の人にアプリが何かを3行で伝える（ログイン・新規登録の両方）
+describe('アプリの紹介（F8）', () => {
+  it.each([
+    ['ログイン', <LoginForm key="l" />],
+    ['新規登録', <SignupForm key="s" />],
+  ])('%s画面に紹介が3行ある', (_name, ui) => {
+    render(ui);
+    const intro = screen.getByRole('list', { name: 'FitLogでできること' });
+    expect(intro.querySelectorAll('li')).toHaveLength(3);
+    expect(intro).toHaveTextContent('前回の自分');
+    expect(intro).toHaveTextContent('仲間');
+    expect(intro).toHaveTextContent('責めない');
+  });
+});
