@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { SettingsView } from './settings-view';
@@ -121,5 +121,23 @@ describe('SettingsView（S-31 設定）', () => {
     expect(section).toHaveTextContent('iPhone');
     expect(section).toHaveTextContent('共有');
     expect(section).toHaveTextContent('ホーム画面に追加');
+  });
+
+  it('追加の案内を受け取れない端末（iPhone など）では、追加ボタンを出さない（F7）', () => {
+    renderView();
+    expect(screen.queryByRole('button', { name: 'ホーム画面に追加する' })).not.toBeInTheDocument();
+  });
+
+  it('追加の案内を受け取れた端末（Android の Chrome）では、追加ボタンを出し、押すと案内を呼ぶ（F7）', async () => {
+    renderView();
+    const event = new Event('beforeinstallprompt', { cancelable: true }) as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+    event.prompt = vi.fn(async () => {});
+    event.userChoice = Promise.resolve({ outcome: 'accepted' });
+    act(() => {
+      window.dispatchEvent(event);
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'ホーム画面に追加する' }));
+    expect(event.prompt).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'ホーム画面に追加する' })).not.toBeInTheDocument();
   });
 });

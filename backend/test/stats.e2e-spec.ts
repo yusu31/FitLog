@@ -92,6 +92,8 @@ describe('記録をくわしく（結合: 本物の PostgreSQL・better-auth）'
     expect(res.body.totalRunDistanceM).toBe(5000); // 日本縦断（F-28）の累計
     const earned = res.body.stamps.filter((s: { earned: boolean }) => s.earned).map((s: { key: string }) => s.key);
     expect(earned).toEqual(['first-record', 'first-run', 'first-5k', 'weight-1t']);
+    const stampAt = (key: string) => res.body.stamps.find((s: { key: string }) => s.key === key).earnedAt;
+    expect([stampAt('first-record'), stampAt('first-run'), stampAt('first-5k'), stampAt('weight-1t'), stampAt('days-10')]).toEqual(['2026-11-11', '2026-11-11', '2026-11-11', '2026-11-12', null]);
   });
 
   it('同じ日に記録と休みがあれば、その日は rec（休みの日として数えない）', async () => {
