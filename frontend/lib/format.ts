@@ -11,6 +11,13 @@ export const formatWeight = (kg: number): string => String(kg);
 export const formatSet = ({ weightKg, reps }: SetValue): string =>
   weightKg === 0 ? `自重 × ${reps}` : `${formatWeight(weightKg)}kg × ${reps}`;
 
+// 「40kg × 10回」。自重（0kg）は「自重 × 10回」（0kg と出さない）
+export const formatSetWithReps = ({ weightKg, reps }: SetValue): string => `${formatSet({ weightKg, reps })}回`;
+
+// 記録画面の上のバーの読み上げ（U2・A4）。「0/100」ではなく、何セット できたかと、前回のセット数
+export const formatSetProgress = (done: number, previousCount: number): string =>
+  previousCount > 0 ? `${done}セット できた（前回は${previousCount}セット）` : `${done}セット できた`;
+
 // 2026-10-22 → "10/22"
 export const formatMonthDay = (date: string): string => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
 

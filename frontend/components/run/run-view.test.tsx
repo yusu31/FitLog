@@ -90,6 +90,12 @@ describe('RunView（S-13 記録（ラン））', () => {
       expect(save()).toBeDisabled();
     });
 
+    it('GPX の手に入れ方を一言で案内する（F6）', () => {
+      installFakeApi({});
+      renderWithQuery(<RunView />);
+      expect(screen.getByText(/ラン用のアプリ.*書き出し/)).toBeInTheDocument();
+    });
+
     it('地図は、この画面に置かない（範囲外。GPX を選ぶ入口だけある）', () => {
       installFakeApi({});
       renderWithQuery(<RunView />);

@@ -72,6 +72,17 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
     expect(within(screen.getByTestId('stats-grid')).getByLabelText('11/10 おやすみ')).toHaveAttribute('data-status', 'rest');
   });
 
+  it('週の7マスには曜日が付く（U9）。月・年には付けない', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const row = await screen.findByTestId('stats-weekdays');
+    expect(row.textContent).toHaveLength(7);
+    expect(row.textContent).toMatch(/^[日月火水木金土]{7}$/);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: '月' }));
+    expect(screen.queryByTestId('stats-weekdays')).not.toBeInTheDocument();
+  });
+
   it('スタンプ帳は全部並べ、獲得済みとまだを文字でも区別する。「あと◯」は出さない', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);

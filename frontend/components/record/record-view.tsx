@@ -10,6 +10,7 @@ import { ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
 import { useGetPrevious, useGetRecord, useGetStats, useListExercises } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
+import { formatSetProgress, formatSetWithReps } from '@/lib/format';
 import { activeRecordId, recordForNextSet } from '@/lib/current-workout';
 import { getCopyPlan, markCopyPlanUsed, planSetsFor } from '@/lib/copy-plan';
 import { dayDateOf, parseDayMode, recordedAtFor, withDay } from '@/lib/day-mode';
@@ -158,7 +159,7 @@ export function RecordView() {
     const setId = crypto.randomUUID();
     const number = isNew ? 1 : setNo;
     const provisional = provisionalResult(ghost, value, pastMax);
-    const summaryOf = `${exercise.name} ${value.weightKg}kg × ${value.reps}回`;
+    const summaryOf = `${exercise.name} ${formatSetWithReps(value)}`;
     const diff = ghost ? ghostDiff(ghost, value) : 0;
     setNotice(null);
     setOutcomes((o) => ({ ...o, [setId]: provisional }));
@@ -217,6 +218,7 @@ export function RecordView() {
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
+          aria-valuetext={formatSetProgress(done, previous?.previous?.sets.length ?? 0)}
           className="h-4 flex-1 -skew-x-[14deg] overflow-hidden rounded-[5px] bg-line"
         >
           <i

@@ -1,4 +1,4 @@
-import { formatJstTime, formatPace } from './format';
+import { formatJstTime, formatPace, formatSetProgress, formatSetWithReps } from './format';
 
 describe('formatPace（1kmあたりのペース）', () => {
   it.each([
@@ -32,5 +32,23 @@ describe('formatJstTime（日本時間の時刻）', () => {
     ['2026-10-22T00:00:00.000Z', '9:00'],
   ])('%s → %s', (iso, expected) => {
     expect(formatJstTime(iso)).toBe(expected);
+  });
+});
+
+describe('formatSetWithReps（U3: 自重は 0kg と出さない）', () => {
+  it('重さがあるときは「40kg × 10回」', () => {
+    expect(formatSetWithReps({ weightKg: 40, reps: 10 })).toBe('40kg × 10回');
+  });
+  it('重さ 0（自重）は「自重 × 10回」', () => {
+    expect(formatSetWithReps({ weightKg: 0, reps: 10 })).toBe('自重 × 10回');
+  });
+});
+
+describe('formatSetProgress（U2・A4: 上のバーの読み上げ）', () => {
+  it('前回があるときは、できた数と前回のセット数', () => {
+    expect(formatSetProgress(2, 3)).toBe('2セット できた（前回は3セット）');
+  });
+  it('前回が無いときは、できた数だけ', () => {
+    expect(formatSetProgress(1, 0)).toBe('1セット できた');
   });
 });

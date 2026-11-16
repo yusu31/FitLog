@@ -1,5 +1,6 @@
 import { cn } from 'cn';
 import { AVATAR_BG } from '@/components/friends/member-list';
+import { formatSetWithReps } from '@/lib/format';
 import { FRIEND_MESSAGES, RECORD_MESSAGES } from '@/lib/messages';
 import { volumeOf, type SetValue } from '@/lib/shared/ghost';
 
@@ -33,7 +34,7 @@ export function GhostBar({ ghost, current, isTrial, friends = [], label = '前�
           {isTrial && <span className="fl-tag bg-line-dark !py-0 !text-xs !leading-4 text-ink">{RECORD_MESSAGES.trial}</span>}
         </span>
         <span className="fl-num text-[22px] text-ink">
-          {ghost.weightKg}kg × {ghost.reps}回
+          {formatSetWithReps(ghost)}
         </span>
       </div>
       <Row label="前回" pct={(a / max) * 100} tone="bg-[repeating-linear-gradient(-45deg,var(--color-line)_0_6px,var(--color-line-dark)_6px_12px)]" />

@@ -134,10 +134,10 @@ describe('MeView（S-30 自分）', () => {
       expect(screen.getByText('今週きたえたところ')).toBeInTheDocument();
     });
 
-    it('名前の表示とログアウトの導線は残っている', async () => {
+    it('名前は出すが、ログアウトは自分タブに置かない（設定にある。N10: 押し間違いを防ぐ）', async () => {
       renderWithQuery(<MeView />);
       expect(await screen.findByText('たろう')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'ログアウト' })).toBeEnabled();
+      expect(screen.queryByRole('button', { name: 'ログアウト' })).not.toBeInTheDocument();
     });
   });
 
