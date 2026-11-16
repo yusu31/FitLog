@@ -33,10 +33,12 @@ import {
 import { volumeOf, type GhostResult } from '@/lib/shared/ghost';
 import { useOnline } from '@/lib/use-browser-state';
 import { useFriendGhosts } from '@/lib/use-friend-ghosts';
+import { readRestSeconds } from '@/lib/rest-timer';
 import { useRequireSession } from '@/lib/use-require-session';
 import { DoneSets, type DoneSet } from './done-sets';
 import { FriendPicker } from './friend-picker';
 import { GhostBar } from './ghost-bar';
+import { RestTimerBar } from './rest-timer-bar';
 import { ResultSheet, type SheetData } from './result-sheet';
 import { StepperField } from './stepper-field';
 import { VideoRecorder, canRecordVideo } from './video-recorder';
@@ -120,6 +122,8 @@ export function RecordView() {
   const [outcomes, setOutcomes] = useState<Record<string, Outcome>>({});
   const [sheet, setSheet] = useState<SheetData | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // 休憩タイマー（F-34）。「できた」のたびに開き直す（startedAt が変わると部品ごと作り直す）。きのうの分（あとから記録）では始めない
+  const [rest, setRest] = useState<{ startedAt: number; seconds: number } | null>(null);
   const dismissSheet = useCallback(() => setSheet(null), []);
   // 2秒動画（F-13）。撮れる端末で、電波があり、1セット以上できた後だけ入口を出す（署名付き URL をもらうには API に届く必要がある）
   const videoCapable = useSyncExternalStore(noSubscribe, canRecordVideo, () => false);
@@ -177,6 +181,7 @@ export function RecordView() {
     const summaryOf = `${exercise.name} ${formatSetWithReps(value)}`;
     const diff = ghost ? ghostDiff(ghost, value) : 0;
     setNotice(null);
+    setRest(day === 'today' ? { startedAt: now, seconds: readRestSeconds() } : null);
     setOutcomes((o) => ({ ...o, [setId]: provisional }));
     // 今日の記録で使った部位（F-19）。この記録に入っている種目と、いまの種目の部位
     const bodyPartOf = (id: string) => (exerciseData?.status === 200 ? exerciseData.data.find((e) => e.id === id)?.bodyPart : undefined);
@@ -244,6 +249,7 @@ export function RecordView() {
         </div>
         <Sprite pose="train" size={64} />
       </header>
+      {rest && <RestTimerBar key={rest.startedAt} startedAt={rest.startedAt} initialSeconds={rest.seconds} onClose={() => setRest(null)} />}
 
       {day === 'yesterday' && (
         <p role="status" className="mx-4 mt-2 rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">

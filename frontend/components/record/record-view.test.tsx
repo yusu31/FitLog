@@ -238,6 +238,43 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     });
   });
 
+  // T-REST-08（F-34）: 「できた」で休憩タイマーが自動で始まる。きのうの分（あとから記録）では始めない
+  describe('休憩タイマー', () => {
+    beforeEach(() => localStorage.clear());
+
+    it('「できた」を押すと休憩タイマーが始まり、スキップで閉じる。もう一度「できた」で開き直す', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
+      await user.click(doneButton());
+      expect(await screen.findByRole('region', { name: '休憩タイマー' })).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: '休憩をスキップ' }));
+      expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
+      await user.click(doneButton());
+      expect(await screen.findByRole('region', { name: '休憩タイマー' })).toBeInTheDocument();
+    });
+
+    it('端末に控えた長さで始まる（変えた長さは次の「できた」に引き継ぐ）', async () => {
+      localStorage.setItem('fitlog:rest-seconds', '120');
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      expect(await screen.findByTestId('rest-remaining')).toHaveTextContent('2:00');
+    });
+
+    it('きのうの分（あとから記録）では始めない', async () => {
+      search = 'exercise=e-bench&day=yesterday';
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
+    });
+  });
+
   describe('「できた」', () => {
     it('最初の「できた」で記録（kind=workout）を作り、そのあとセットを足す。2回目からは同じ記録にセットだけ足す', async () => {
       const user = userEvent.setup();
