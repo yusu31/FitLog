@@ -108,7 +108,7 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
   it('日本縦断: まだ走っていなくても出発点（鹿児島）で出す。3000km を超えたら2周目', async () => {
     stubStats(statsOf({ totalRunDistanceM: 0 }));
     const first = renderWithQuery(<StatsPage />);
-    expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('次の福岡まで 270.0km');
+    expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('次の熊本まで 170.0km');
     first.unmount();
     stubStats(statsOf({ totalRunDistanceM: 3_500_000 }));
     renderWithQuery(<StatsPage />);
