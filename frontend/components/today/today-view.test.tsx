@@ -136,6 +136,93 @@ describe('TodayView（S-10 今日）', () => {
     });
   });
 
+  // N1: 開始は自動、終わりは「今日はここまで」。押すまで（または3時間）は記録中で、「できた」と言い切らない
+  describe('記録中（N1）', () => {
+    const activeToday = () => ({ ...workout('r2', TODAY, [squat([[60, 10], [60, 9]]), curl([[25, 12]])]), active: true });
+    const END = 'POST /api/records/r2/end';
+    const installActive = () =>
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { [TODAY]: 'rec' })),
+        // 終えたあとの取り直し（invalidate）では、サーバーは終えた状態を返す
+        [WORKOUTS]: [list(activeToday(), PREV), list({ ...activeToday(), active: false }, PREV)],
+        [LATEST]: list(activeToday()),
+        [END]: ok({ id: 'r2', kind: 'workout', recordedAt: NOON_WED, localDate: TODAY, endedAt: NOON_WED }),
+      });
+
+    it('全部の種目ができていても「今日の分は できた」とは言わず、「記録中」と種目数・セット数を出す', async () => {
+      installActive();
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '記録中' });
+      expect(within(card).getByText('2種目 3セット')).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: '今日の分は できた' })).not.toBeInTheDocument();
+    });
+
+    it('「続ける」は、まだの種目がなければ種目の一覧へ。「今日はここまで」のボタンもある', async () => {
+      installActive();
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '記録中' });
+      expect(within(card).getByRole('link', { name: '続ける' })).toHaveAttribute('href', '/exercises');
+      expect(within(card).getByRole('button', { name: '今日はここまで' })).toBeEnabled();
+    });
+
+    it('まだの種目が残っていれば、「続ける」はその種目の記録画面へ', async () => {
+      const partial = { ...workout('r2', TODAY, [squat([[60, 10]])]), active: true };
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { [TODAY]: 'rec' })),
+        [WORKOUTS]: list(partial, PREV),
+        [LATEST]: list(partial),
+      });
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '記録中' });
+      expect(within(card).getByRole('link', { name: '続ける' })).toHaveAttribute('href', '/record?exercise=lc');
+    });
+
+    it('「今日はここまで」を押すと終了を送り、まとめ（種目数・セット数）と「おつかれさま」を出して、記録中の札は消える', async () => {
+      installActive();
+      const user = userEvent.setup();
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '記録中' });
+      await user.click(within(card).getByRole('button', { name: '今日はここまで' }));
+      expect(calls).toContain(END);
+      const summary = await screen.findByRole('dialog', { name: '今日のまとめ' });
+      expect(within(summary).getByText('2種目 3セット')).toBeInTheDocument();
+      expect(within(summary).getByText(/おつかれさま/)).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole('region', { name: '記録中' })).not.toBeInTheDocument());
+    });
+
+    it('電波が無いときは「今日はここまで」を押せず、理由を出す（終了は電波があるときだけ）', async () => {
+      installActive();
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '記録中' });
+      onlineManager.setOnline(false);
+      await waitFor(() => expect(within(card).getByRole('button', { name: '今日はここまで' })).toBeDisabled());
+      expect(within(card).getByText(/電波がある/)).toBeInTheDocument();
+    });
+
+    it('終了が送れなかったら、記録中のまま、やさしい文言を出す（責めない）', async () => {
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { [TODAY]: 'rec' })),
+        [WORKOUTS]: list(activeToday(), PREV),
+        [LATEST]: list(activeToday()),
+        [END]: { status: 500, body: { code: 'INTERNAL', message: 'x' } },
+      });
+      const user = userEvent.setup();
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '記録中' });
+      await user.click(within(card).getByRole('button', { name: '今日はここまで' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('送れませんでした');
+      expect(screen.getByRole('region', { name: '記録中' })).toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: '今日のまとめ' })).not.toBeInTheDocument();
+    });
+
+    it('禁止語（責める言葉）を使わない', async () => {
+      installActive();
+      renderWithQuery(<TodayView />);
+      await screen.findByRole('region', { name: '記録中' });
+      for (const w of FORBIDDEN_WORDS) expect(document.body).not.toHaveTextContent(w);
+    });
+  });
+
   describe('記録後（全部できた）', () => {
     it('「今日の分はできた」と出し、「はじめる」は出さない。全部にチェックが付く', async () => {
       const today = workout('r2', TODAY, [squat([[60, 10]]), curl([[25, 12]])]);

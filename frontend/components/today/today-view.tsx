@@ -9,6 +9,7 @@ import { Sprite } from '@/components/fitlog/sprite';
 import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
+import { bestCountOf, endCurrentWorkout } from '@/lib/current-workout';
 import { useRecordMutations } from '@/lib/mutations';
 import { useOnline } from '@/lib/use-browser-state';
 import {
@@ -20,7 +21,7 @@ import {
 } from '@/lib/api/generated';
 import { dayDateOf, withDay, type DayMode } from '@/lib/day-mode';
 import { formatSet } from '@/lib/format';
-import { HOME_MESSAGES, LATE_MESSAGES, REST_MESSAGES } from '@/lib/messages';
+import { HOME_MESSAGES, LATE_MESSAGES, REST_MESSAGES, WORKOUT_END_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { todayPose } from '@/lib/today-pose';
 import { buildMenu, type MenuItem, type TodayMenu } from '@/lib/today-menu';
@@ -38,6 +39,8 @@ export function TodayView() {
   const today = toLocalDate(new Date());
   // 記録する日（F-21 あとから記録）。きのうを選ぶと、記録・ラン・種目一覧のリンクに day=yesterday が付く
   const [day, setDay] = useState<DayMode>('today');
+  // 「今日はここまで」を押したあとのまとめ（N1）。記録中の札が消えても、閉じるまで出し続ける
+  const [finished, setFinished] = useState<Finished | null>(null);
   const week = useGetWeek({ date: today });
   // 今日の分（今日の日付の記録）と前回（それより前の一番新しい記録）の両方を取るため、少し多めに読む
   const workouts = useListRecords({ kind: ListRecordsKind.workout, limit: '5' });
@@ -106,7 +109,11 @@ export function TodayView() {
                 size={112}
               />
             </div>
-            <NextCard menu={menu} todayStatus={todayStatus} />
+            {menu.session && todayStatus !== 'rest' ? (
+              <ActiveCard session={menu.session} next={menu.next} onEnded={setFinished} />
+            ) : (
+              <NextCard menu={menu} todayStatus={todayStatus} />
+            )}
             {menu.items.length > 0 && <Menu items={menu.items} day={day} />}
           </>
         )}
@@ -115,6 +122,7 @@ export function TodayView() {
         {/* 休みの日はおやすみの札、記録した日は「休む」と矛盾するので、どちらも出さない（N5） */}
         {day === 'today' && todayStatus === 'none' && <RestButton />}
       </div>
+      {finished && <WorkoutSummary finished={finished} onClose={() => setFinished(null)} />}
     </>
   );
 }
@@ -141,6 +149,77 @@ function DaySwitch({ day, onChange }: { day: DayMode; onChange: (next: DayMode) 
           {o.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+type Session = NonNullable<TodayMenu['session']>;
+type Finished = { exerciseCount: number; setCount: number; bestCount: number };
+
+// 記録中のカード（N1）。開始は自動（最初の「できた」）なので、ここで出すのは「続ける」と「今日はここまで」だけ。
+// 終了は電波があるときだけ（サーバーに終了時刻を残すため）。送れなかったときは記録中のまま、やさしい文言を出す
+function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuItem | null; onEnded: (f: Finished) => void }) {
+  const online = useOnline();
+  const { endWorkout } = useRecordMutations();
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onEnd() {
+    if (sending) return;
+    setError(null);
+    setSending(true);
+    try {
+      await endWorkout.mutateAsync({ id: session.recordId });
+      onEnded({ exerciseCount: session.exerciseCount, setCount: session.setCount, bestCount: bestCountOf(session.recordId) });
+      endCurrentWorkout();
+    } catch (e) {
+      setError(sendErrorText(e, WORKOUT_END_MESSAGES.sendError));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <CardFrame label={WORKOUT_END_MESSAGES.active} tone="teal" tag={WORKOUT_END_MESSAGES.tag}>
+      <h2 className="mt-3 text-2xl leading-snug font-extrabold">{WORKOUT_END_MESSAGES.active}</h2>
+      <p className="fl-num mt-1 text-lg">{WORKOUT_END_MESSAGES.count(session.exerciseCount, session.setCount)}</p>
+      {next && <p className="mt-1 text-sm font-bold">次は {next.name}</p>}
+      <LinkButton href={next ? recordHref(next.exerciseId) : '/exercises'}>{WORKOUT_END_MESSAGES.keepGoing}</LinkButton>
+      <ThickButton tone="white" className="mt-3" disabled={!online || sending} onClick={onEnd}>
+        {WORKOUT_END_MESSAGES.end}
+      </ThickButton>
+      {!online && <p className="mt-2 text-xs font-bold">{WORKOUT_END_MESSAGES.offlineNote}</p>}
+      {error && (
+        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+          {error}
+        </p>
+      )}
+    </CardFrame>
+  );
+}
+
+// 終了のまとめ（N1）。大きい祝福はここだけに置き、セットごとの結果シートは小さいままにする（U1）。
+// 自己ベストの回数は、この画面を開いている間に数えた分だけ（読み直したあとは 0 に戻り、出さない）
+function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+      <div aria-hidden onClick={onClose} className="absolute inset-0 bg-ink/50" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={WORKOUT_END_MESSAGES.summaryTitle}
+        className="fl-slab relative m-4 w-full max-w-[398px] space-y-3 px-5 pt-6 pb-5 text-center shadow-lg"
+      >
+        <div className="flex justify-center">
+          <Sprite pose={finished.bestCount > 0 ? 'pb' : 'cheer'} size={144} />
+        </div>
+        <h2 className="text-2xl font-extrabold">{WORKOUT_END_MESSAGES.thanks}</h2>
+        <p className="fl-num text-3xl">{WORKOUT_END_MESSAGES.count(finished.exerciseCount, finished.setCount)}</p>
+        {finished.bestCount > 0 && <p className="text-base font-extrabold text-teal-dark">{WORKOUT_END_MESSAGES.best(finished.bestCount)}</p>}
+        <ThickButton autoFocus onClick={onClose}>
+          {WORKOUT_END_MESSAGES.close}
+        </ThickButton>
+      </div>
     </div>
   );
 }

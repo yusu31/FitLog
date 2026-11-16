@@ -53,7 +53,7 @@
 |---|-----------|
 | F-01 | T-AUTH-01〜04 |
 | F-02 | T-GRP・T-INV |
-| F-03 | T-SET・T-SPLIT（種目は T-EXR） |
+| F-03 | T-SET・T-SPLIT・T-END（種目は T-EXR） |
 | F-04 | T-RUN |
 | F-05 | T-GHOST |
 | F-06 | T-PB |
@@ -692,6 +692,27 @@ manifest は `frontend/lib/pwa/manifest.test.ts`（単）、案内は `frontend/
 | T-PWA-04 | 置き場所 | アイコンの src | すべて `/icons/` 始まり | 同 | 単 |
 | T-PWA-05 | 色 | theme_color・background_color | 16進6桁 | 境 | 単 |
 | T-PWA-06 | 案内 | 設定を開く | 「ホーム画面に追加」の区画に Android・iPhone・共有の手順 | 同 | 画 |
+
+### 3-22. 筋トレの終了と記録中（N1・N2・U1。Issue #236。実装と同じ PR で書いた）
+
+判定は `backend/src/common/workout-session.spec.ts`（単）、API は `backend/test/records-end.e2e-spec.ts`（結）、画面は `frontend/lib/today-menu.test.ts`・`current-workout.test.ts`・`mutations.test.tsx`（単）と `components/today/today-view.test.tsx`・`components/record/record-view.test.tsx`（画）。
+
+| ID | ケース | 入力 | 期待 | 技法 | 層 |
+|----|--------|------|------|------|----|
+| T-END-01 | セットを足した直後 | 筋トレ・終了なし | `active: true`・`endedAt` なし。セットに `createdAt` | 同 | 結 |
+| T-END-02 | 「今日はここまで」 | POST `/records/{id}/end` | 200・`endedAt` が入り、詳細も一覧も記録中ではなくなる | 同 | 結 |
+| T-END-03 | 2回押す | 同じ記録 | 1回目の終了時刻のまま（冪等） | 同 | 結 |
+| T-END-04 | 3時間以上あいた | 最後のセットから3時間以上 | 押さなくても記録中ではない（サーバーが判定） | 境 | 結 |
+| T-END-05 | 他人・無い・UUID でない id | | 同じ 404（存在を教えない） | 同 | 結 |
+| T-END-06 | ランに終了 | | 409 `RECORD_KIND_MISMATCH` | 同 | 結 |
+| T-END-07 | ランの詳細 | | `active` が付かない | 同 | 結 |
+| T-END-08 | 2時間59分／ちょうど3時間／終了を押した直後／セットなし | | 記録中／ではない／ではない／記録時刻から数える | 境 | 単 |
+| T-END-09 | 記録中なら allDone にしない | 全種目できた＋`active` | `allDone` は偽、`session` に種目数・セット数。終えた・別の日の記録は `session` なし | デ | 単 |
+| T-END-10 | 続きの記録（N2） | メモリ無し＋サーバーの記録中 | サーバーの記録を続きにし、新しい記録を作らない。きのうの分には使わない | 同 | 単・画 |
+| T-END-11 | 終えたあと | `endCurrentWorkout` | 次の「できた」は新しい記録。きのうの分は残る | 同 | 単 |
+| T-END-12 | 画面の元データ | 終了が成功／失敗 | 成功すると詳細と一覧の `active` を偽に（取り直しを待たない）。失敗では記録中のまま・再送しない・一覧に取り直しの印 | 同 | 単 |
+| T-END-13 | 今日の画面 | 記録中 | 「記録中」と「◯種目◯セット」・「続ける」・「今日はここまで」。「今日の分は できた」は出さない。禁止語なし | 同 | 画 |
+| T-END-14 | 「今日はここまで」 | 押す／電波なし／送れない | 終了を送り「今日のまとめ」を出す／ボタンが押せず理由を出す／記録中のままやさしい文言 | デ | 画 |
 
 ## 4. 実行件数の確認と、テストが本当に効いているかの確認
 

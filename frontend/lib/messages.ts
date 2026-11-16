@@ -79,6 +79,22 @@ export const REST_MESSAGES = {
   sendError: '休みを 送れませんでした。電波の良い所でもう一度ためしてください',
 } as const;
 
+// 筋トレの「記録中」と「今日はここまで」（N1。S-10 今日）。開始は自動（最初の「できた」）で、終わりはこのボタン（または3時間）。
+// 終わらせないことを責めない。終了は電波があるときだけ（サーバーに時刻を残すため）
+export const WORKOUT_END_MESSAGES = {
+  active: '記録中',
+  tag: 'NOW',
+  count: (exercises: number, sets: number) => `${exercises}種目 ${sets}セット`,
+  keepGoing: '続ける',
+  end: '今日はここまで',
+  offlineNote: '電波があるときだけ 終えられます',
+  sendError: '終了を 送れませんでした。電波の良い所でもう一度ためしてください',
+  summaryTitle: '今日のまとめ',
+  thanks: 'おつかれさま。今日の分は ここまで',
+  best: (n: number) => `自己ベスト ${n}回`,
+  close: 'とじる',
+} as const;
+
 // 自分の記録の一覧（S-30）の「削除」
 export const ME_MESSAGES = {
   deleteTitle: 'この記録を 消しますか？',

@@ -195,6 +195,7 @@ erDiagram
 | late | boolean | NOT NULL・DEFAULT false | あとから記録（F-21）。`true` のとき、画面は時刻を出さず札を出す。動画は付けられない |
 | copied_from_user_id | text | FK → users.id・NULL可 | メニューのコピー（F-24）。仲間のメニューをコピーして始めた筋トレだけ、コピー元の人の id。コピー元が抜けても消さない（画面は「仲間から」） |
 | created_at | timestamptz | NOT NULL | サーバーが保存した時刻 |
+| ended_at | timestamptz | NULL可 | 筋トレを「今日はここまで」で終えた時刻（N1）。**押した記録だけ**に入る（NULL＝まだ終えていない、または3時間で自動的に終わった）。自動で終わった分には入れない（定期実行を置かず、「記録中か」は読み出すときに `active` として計算するため）。移行 `0012_records_ended_at.sql` |
 
 制約: `kind = 'rest'` のとき、同じ `user_id`・`local_date` の組は1件だけ（部分一意インデックス。休みは1日1件）。
 

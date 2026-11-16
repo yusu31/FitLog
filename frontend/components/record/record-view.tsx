@@ -8,10 +8,10 @@ import { FullScreen } from '@/components/fitlog/full-screen';
 import { Sprite } from '@/components/fitlog/sprite';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
-import { useGetPrevious, useGetRecord, useGetStats, useListExercises } from '@/lib/api/generated';
+import { ListRecordsKind, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import { formatSetProgress, formatSetWithReps } from '@/lib/format';
-import { activeRecordId, recordForNextSet } from '@/lib/current-workout';
+import { activeRecordId, noteBest, recordForNextSet } from '@/lib/current-workout';
 import { getCopyPlan, markCopyPlanUsed, planSetsFor } from '@/lib/copy-plan';
 import { dayDateOf, parseDayMode, recordedAtFor, withDay } from '@/lib/day-mode';
 import { FRIEND_MESSAGES, LATE_MESSAGES, SYNC_MESSAGES } from '@/lib/messages';
@@ -74,9 +74,17 @@ export function RecordView() {
   const { data: statsData } = useGetStats({ date: dayDateOf(day, new Date()) }, { query: { enabled: signedIn } });
   const monthDay = statsData?.status === 200 ? monthDayCount(statsData.data) : undefined;
 
-  const [recordId, setRecordId] = useState<string | null>(() => activeRecordId(Date.now(), day));
-  // キャッシュの記録の詳細（楽観的更新の置き場所）を見るだけ。取りに行かない
-  const { data: detailData } = useGetRecord(recordId ?? '', { query: { enabled: false } });
+  // 続きの記録（N2）。メモリにあればそれ。ページを読み直してメモリが消えたときは、サーバーが「記録中」と返した今日の記録を使う
+  // （今日の画面と同じ条件の一覧なので、キャッシュを共有する）。きのうの分は、今日の記録に混ざらないよう使わない
+  const workouts = useListRecords({ kind: ListRecordsKind.workout, limit: '5' }, { query: { enabled: signedIn } });
+  const serverActiveId =
+    day === 'today' && workouts.data?.status === 200
+      ? (workouts.data.data.items.find((r) => r.active === true && r.localDate === dayDateOf('today', new Date()))?.id ?? null)
+      : null;
+  const [memoryRecordId, setRecordId] = useState<string | null>(() => activeRecordId(Date.now(), day));
+  const recordId = memoryRecordId ?? serverActiveId;
+  // 記録の詳細（楽観的更新の置き場所）。メモリの記録はキャッシュを見るだけ。サーバーの記録を続きにしたときだけ取りに行く
+  const { data: detailData } = useGetRecord(recordId ?? '', { query: { enabled: memoryRecordId === null && serverActiveId !== null } });
   const sets: DoneSet[] = useMemo(
     () => (detailData?.status === 200 ? (detailData.data.exercises?.find((e) => e.exerciseId === exerciseId)?.sets ?? []) : []),
     [detailData, exerciseId],
@@ -139,7 +147,7 @@ export function RecordView() {
     if (!exercise) return;
     const now = Date.now();
     const value = { weightKg: clampWeight(draft.weightKg), reps: clampReps(draft.reps) };
-    const { recordId: rid, isNew } = recordForNextSet(now, day);
+    const { recordId: rid, isNew } = recordForNextSet(now, day, serverActiveId);
     if (isNew) {
       // コピーして始めた記録だけ、コピー元を付ける（最初の記録だけ。以降は付けない）
       const copiedFromUserId = plan && !plan.used ? plan.fromUserId : undefined;
@@ -179,6 +187,7 @@ export function RecordView() {
       .mutateAsync({ id: rid, data: { id: setId, exerciseId: exercise.id, setNo: number, weightKg: value.weightKg, reps: value.reps } })
       .then((res) => {
         const outcome: Outcome = { result: res.data.result, isPersonalBest: res.data.isPersonalBest };
+        if (outcome.isPersonalBest) noteBest(rid); // 終了のまとめの「自己ベスト◯回」用
         setOutcomes((o) => ({ ...o, [setId]: outcome }));
         setSheet((s) => (s && s.setId === setId ? { ...s, ...outcome, diff: ghost && outcome.result ? ghostDiff(ghost, value) : 0 } : s));
       })

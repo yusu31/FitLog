@@ -1,13 +1,13 @@
 'use client';
 
-// 記録の書き込み4つ（記録を作る・セットを足す・セットを消す・記録を消す）。F-30（オフライン記録）の形で書く。
+// 記録の書き込み5つ（記録を作る・セットを足す・セットを消す・記録を消す・筋トレを終える）。F-30（オフライン記録）の形で書く。
 // docs/tech-stack.md「オフライン記録（F-30）」:
 //   ① 楽観的更新（onMutate で先に画面の元データを更新し、失敗したら戻す）
 //   ② mutationKey ＋ setMutationDefaults（送信処理を登録する。再読み込みしても再送できる「形」）
 //      ＋ scope.id（同じ scope の送信は1本ずつ順に実行される＝記録の作成 → セットの追加の順を守る）
 // ③ 作成系（記録を作る・セットを足す）は、送れなかったときの扱い（lib/offline/retry-policy.ts）で retry を付け、
 //    送信待ちとして残す。端末への保存は lib/offline/persister.ts、再読み込み後の再送は lib/offline/resume.ts。
-// 削除は電波があるときだけ（features.md 2.11）なので、retry は付けず、失敗はそのまま画面へ返す。
+// 削除と終了は電波があるときだけ（features.md 2.11・N1）なので、retry は付けず、失敗はそのまま画面へ返す。
 import { useMutation, useQueryClient, type QueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { unwrap } from '@/lib/api/api-error';
@@ -16,10 +16,12 @@ import {
   createRecord,
   deleteRecord,
   deleteSet,
+  endWorkout,
   getAddSetMutationKey,
   getCreateRecordMutationKey,
   getDeleteRecordMutationKey,
   getDeleteSetMutationKey,
+  getEndWorkoutMutationKey,
   getGetRecordQueryKey,
   getGetWeekQueryKey,
   getListExercisesQueryKey,
@@ -28,8 +30,10 @@ import {
   type CreateRecordMutationVariables,
   type DeleteRecordMutationVariables,
   type DeleteSetMutationVariables,
+  type EndWorkoutMutationVariables,
   type ExerciseResponse,
   type getRecordResponseSuccess,
+  type listRecordsResponseSuccess,
   type getWeekResponseSuccess,
   type RecordDetailResponse,
   type RecordedExercise,
@@ -119,7 +123,16 @@ function assertQueued(client: QueryClient, mutationKey: readonly unknown[], vars
   if (!still) throw new SendCancelled();
 }
 
-// 書き込み4つの送信処理と楽観的更新を、QueryClient に登録する。何度呼んでも同じ結果（登録し直すだけ）。
+// 記録の一覧のキャッシュ（どの条件のものも）で、1件の記録を直す。見ていない一覧も同じ。
+// 「記録中」の判定は一覧の active から読むので、終えたあと取り直しを待つ間に、終えた記録を記録中と読み続けないために使う
+function patchListedRecord(client: QueryClient, recordId: string, patch: Partial<RecordDetailResponse>): void {
+  client.setQueriesData<listRecordsResponseSuccess>({ queryKey: getListRecordsQueryKey() }, (old) => {
+    if (!old || old.status !== 200) return old;
+    return { ...old, data: { ...old.data, items: old.data.items.map((r) => (r.id === recordId ? { ...r, ...patch } : r)) } };
+  });
+}
+
+// 書き込み5つの送信処理と楽観的更新を、QueryClient に登録する。何度呼んでも同じ結果（登録し直すだけ）。
 // 送信処理そのものは端末に保存できないので、再読み込みのあとは、保存した状態を戻す前にこれを呼ぶ（02-4）
 export function registerRecordMutations(client: QueryClient, userId: string): void {
   const scope = { id: recordScopeId(userId) };
@@ -208,6 +221,20 @@ export function registerRecordMutations(client: QueryClient, userId: string): vo
     onError: (_e: unknown, vars: DeleteSetMutationVariables, snap: Snapshot | undefined) => restore(client, vars.id, snap),
   });
 
+  // 筋トレを終える（N1「今日はここまで」）。電波があるときだけの操作なので、再送の設定は持たない（失敗はそのまま画面へ）。
+  // 画面の元データは、サーバーが「終えた」と返してから直す（送っている間に「記録中」の札が消え、失敗でまた現れる、を避ける）。
+  // 直さないと、取り直しを待つ間、記録画面が終えた記録を「記録中」と読み続けて、そこへセットを足してしまう
+  client.setMutationDefaults(getEndWorkoutMutationKey(), {
+    scope,
+    onSettled: () => refreshLists(client),
+    mutationFn: async (vars: EndWorkoutMutationVariables) => unwrap(await endWorkout(vars.id)),
+    onSuccess: (_data: unknown, vars: EndWorkoutMutationVariables) => {
+      const patch = { active: false, endedAt: new Date().toISOString() };
+      writeDetail(client, vars.id, (old) => (old ? { ...old, ...patch } : old));
+      patchListedRecord(client, vars.id, patch);
+    },
+  });
+
   client.setMutationDefaults(getDeleteRecordMutationKey(), {
     scope,
     onSettled: () => refreshLists(client),
@@ -236,6 +263,7 @@ export function useRecordMutations(): {
   addSet: Mut<typeof addSet, AddSetMutationVariables>;
   deleteSet: Mut<typeof deleteSet, DeleteSetMutationVariables>;
   deleteRecord: Mut<typeof deleteRecord, DeleteRecordMutationVariables>;
+  endWorkout: Mut<typeof endWorkout, EndWorkoutMutationVariables>;
 } {
   const client = useQueryClient();
   const { data: session } = useAppSession();
@@ -255,5 +283,8 @@ export function useRecordMutations(): {
   const delRecord = useMutation<Ok<Awaited<ReturnType<typeof deleteRecord>>>, Error, DeleteRecordMutationVariables, Snapshot>({
     mutationKey: getDeleteRecordMutationKey(),
   });
-  return { createRecord: create, addSet: add, deleteSet: delSet, deleteRecord: delRecord };
+  const end = useMutation<Ok<Awaited<ReturnType<typeof endWorkout>>>, Error, EndWorkoutMutationVariables, Snapshot>({
+    mutationKey: getEndWorkoutMutationKey(),
+  });
+  return { createRecord: create, addSet: add, deleteSet: delSet, deleteRecord: delRecord, endWorkout: end };
 }
