@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { useGetStats, type StatsResponse, type StatsWeek } from '@/lib/api/generated';
-import { formatDistance, formatMonthDay } from '@/lib/format';
+import { WEEKDAYS, formatDistance, formatMonthDay, weekdayIndex } from '@/lib/format';
 import { JAPAN_ROUTE, locateOnRoute, nextText, trekText } from '@/lib/japan-route';
 import { STAMP_LABEL, STATS_VIEWS, barRatios, buildGrid, weightEquivalent, type StatsView } from '@/lib/stats';
 import { toLocalDate } from '@/lib/shared/local-date';
@@ -78,10 +78,17 @@ function Calendar({ data }: { data: StatsResponse }) {
           </button>
         ))}
       </div>
+      {view === 'week' && (
+        <p aria-hidden data-testid="stats-weekdays" className="mt-3 grid grid-cols-7 gap-1 text-center text-xs font-bold text-sub-strong">
+          {cells.map((c, i) => (
+            <span key={i}>{c.date ? WEEKDAYS[weekdayIndex(c.date)] : ''}</span>
+          ))}
+        </p>
+      )}
       <ol
         aria-label={`${STATS_VIEWS.find((v) => v.view === view)!.label}のマス`}
         data-testid="stats-grid"
-        className={cn('mt-3 grid gap-1', view === 'year' ? 'grid-flow-col grid-rows-7' : 'grid-cols-7')}
+        className={cn(view === 'week' ? 'mt-1' : 'mt-3', 'grid gap-1', view === 'year' ? 'grid-flow-col grid-rows-7' : 'grid-cols-7')}
       >
         {cells.map((c, i) =>
           c.date === null ? (

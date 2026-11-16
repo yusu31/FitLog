@@ -3,6 +3,7 @@
 import { Check, Ellipsis, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
+import { formatSetWithReps } from '@/lib/format';
 import { RECORD_MESSAGES } from '@/lib/messages';
 
 export type DoneSet = { id: string; setNo: number; weightKg: number; reps: number };
@@ -45,7 +46,7 @@ export function DoneSets({
             <span className="flex-1 leading-tight">
               <span className="block text-xs text-sub-strong">セット{s.setNo}</span>
               <span className="fl-num text-xl">
-                {s.weightKg}kg × {s.reps}回
+                {formatSetWithReps(s)}
               </span>
             </span>
             {bestIds.has(s.id) && <span className="fl-tag bg-gold !py-0 !text-xs !leading-4 text-ink">{RECORD_MESSAGES.best}</span>}
@@ -88,7 +89,7 @@ export function DoneSets({
               このセットを 消しますか？
             </h2>
             <p id="del-desc" className="mt-2 text-sm text-sub-strong">
-              セット{confirming.setNo} ・ <span className="fl-num text-base text-ink">{confirming.weightKg}kg × {confirming.reps}回</span> を取り消します。
+              セット{confirming.setNo} ・ <span className="fl-num text-base text-ink">{formatSetWithReps(confirming)}</span> を取り消します。
             </p>
             <div className="mt-5 flex gap-2">
               <ThickButton autoFocus tone="white" size="sm" className="flex-1" onClick={() => setConfirming(null)}>

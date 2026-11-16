@@ -213,7 +213,7 @@ export function RunView() {
           inputMode="decimal"
           value={kmText}
           onChange={onKmChange}
-          placeholder="5.2"
+          placeholder="例 5.2"
           invalid={distanceProblem}
           big
         />
@@ -222,8 +222,8 @@ export function RunView() {
         <div>
           <p className="mb-2 text-sm font-extrabold text-sub-strong">時間</p>
           <div className="flex items-end gap-3">
-            <NumberField label="時間（分）" unit="分" inputMode="numeric" value={minText} onChange={setMinText} placeholder="32" invalid={durationProblem} />
-            <NumberField label="時間（秒）" unit="秒" inputMode="numeric" value={secText} onChange={setSecText} placeholder="10" invalid={durationProblem} />
+            <NumberField label="時間（分）" unit="分" inputMode="numeric" value={minText} onChange={setMinText} placeholder="例 32" invalid={durationProblem} />
+            <NumberField label="時間（秒）" unit="秒" inputMode="numeric" value={secText} onChange={setSecText} placeholder="例 10" invalid={durationProblem} />
           </div>
           {durationProblem && <Hint>{RUN_MESSAGES.durationRange}</Hint>}
         </div>
@@ -272,6 +272,7 @@ function GpxPicker({
         <span>GPX ファイルを選ぶ</span>
         <input type="file" accept=".gpx,application/gpx+xml" disabled={!online} onChange={onPick} className="sr-only" />
       </label>
+      <p className="text-xs text-sub-strong">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）の「GPX の書き出し」で手に入ります。</p>
       {!online && <p className="text-sm font-bold text-sub-strong">{GPX_MESSAGES.offline}</p>}
       {gpx && (
         <p className="flex items-center justify-between gap-2 text-sm font-bold text-ink">
