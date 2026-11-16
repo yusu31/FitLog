@@ -3,11 +3,11 @@ import { extractInviteToken } from './invite-token';
 describe('extractInviteToken（貼られた招待リンクから token を取り出す）', () => {
   // T-PEER-01: 同値分割（URL 全体／token だけ／前後の空白つき）
   it.each([
-    ['https://fitlog.example/invite?token=abc_DEF-123456', 'abc_DEF-123456'],
-    ['http://localhost:3000/invite?token=abc_DEF-123456&x=1', 'abc_DEF-123456'],
-    ['abc_DEF-123456', 'abc_DEF-123456'],
-    ['  abc_DEF-123456\n', 'abc_DEF-123456'],
-    ['https://fitlog.example/invite/?token=abc_DEF-123456', 'abc_DEF-123456'],
+    ['https://fitlog.example/invite?token=tok_00000001', 'tok_00000001'],
+    ['http://localhost:3000/invite?token=tok_00000001&x=1', 'tok_00000001'],
+    ['tok_00000001', 'tok_00000001'],
+    ['  tok_00000001\n', 'tok_00000001'],
+    ['https://fitlog.example/invite/?token=tok_00000001', 'tok_00000001'],
   ])('%s → %s', (input, expected) => {
     expect(extractInviteToken(input)).toBe(expected);
   });
@@ -16,7 +16,7 @@ describe('extractInviteToken（貼られた招待リンクから token を取り
   it.each([
     '',
     '   ',
-    'https://example.com/other?token=abc_DEF-123456',
+    'https://example.com/other?token=tok_00000001',
     'https://fitlog.example/invite',
     'https://fitlog.example/invite?token=',
     'abc def ghi',
