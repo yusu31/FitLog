@@ -266,6 +266,8 @@ export interface RecordResponse {
   copiedFrom?: CopiedFrom;
   /** ランの記録だけ。距離と時間 */
   run?: RunDetail;
+  /** 筋トレを「今日はここまで」で終えた時刻（N1）。押していなければ付かない（自動で終わった分には付かない。記録中かどうかは詳細・一覧の active） */
+  endedAt?: string;
 }
 
 export interface CreateSetRequest {
@@ -325,6 +327,8 @@ export interface RecordedSet {
   setNo: number;
   weightKg: number;
   reps: number;
+  /** セットを足した時刻（UTC）。応答には必ず入る。端末が楽観的更新で作る仮の行には無い */
+  createdAt?: string;
 }
 
 /**
@@ -391,8 +395,12 @@ export interface RecordDetailResponse {
   copiedFrom?: CopiedFrom;
   /** ランの記録だけ。距離と時間 */
   run?: RunDetail;
+  /** 筋トレを「今日はここまで」で終えた時刻（N1）。押していなければ付かない（自動で終わった分には付かない。記録中かどうかは詳細・一覧の active） */
+  endedAt?: string;
   /** 筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない */
   exercises?: RecordedExercise[];
+  /** 筋トレの「いま記録中」か（N1・N2）。終了（endedAt）を押しておらず、最後のセットから3時間たっていなければ true。サーバーが読み出すときに判定する（定期実行はしない）。筋トレ以外には付かない。端末が楽観的更新で作る仮の行には無い */
+  active?: boolean;
   /** 動画があるときだけ（詳細 GET /records/{id} のみ）。見るときの GET /videos/{id}/url に使う */
   videoId?: string;
   /** 地図ゴースト（F-17）。ルート付きのランの詳細を持ち主本人が開いたときだけ、本人の「ひとつ前のルート付きラン」を返す（手入力のランは飛ばす）。前回が無い・仲間が見たときは付かない */
@@ -2606,6 +2614,111 @@ export const useAddSet = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getAddSetMutationOptions(options), queryClient);
+    }
+
+export type endWorkoutResponse200 = {
+  data: RecordResponse
+  status: 200
+}
+
+export type endWorkoutResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type endWorkoutResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type endWorkoutResponseSuccess = (endWorkoutResponse200) & {
+  headers: Headers;
+};
+export type endWorkoutResponseError = (endWorkoutResponse404 | endWorkoutResponse409) & {
+  headers: Headers;
+};
+
+export type endWorkoutResponse = (endWorkoutResponseSuccess | endWorkoutResponseError)
+
+export const getEndWorkoutUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}/end`
+}
+
+/**
+ * @summary 筋トレを「今日はここまで」で終える（N1）。冪等
+ */
+export const endWorkout = async (id: string, options?: RequestInit): Promise<endWorkoutResponse> => {
+
+  const res = await fetch(getEndWorkoutUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: endWorkoutResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as endWorkoutResponse
+}
+
+
+
+
+
+export const getEndWorkoutMutationKey = () => ['endWorkout'] as const;
+
+export const getEndWorkoutMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endWorkout>>, TError,EndWorkoutMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof endWorkout>>, TError,EndWorkoutMutationVariables, TContext> => {
+
+const mutationKey = getEndWorkoutMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof endWorkout>>, EndWorkoutMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  endWorkout(id,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EndWorkoutMutationResult = NonNullable<Awaited<ReturnType<typeof endWorkout>>>
+
+    export type EndWorkoutMutationError = ErrorResponse
+    export type EndWorkoutMutationVariables = {id: string}
+
+    /**
+ * @summary 筋トレを「今日はここまで」で終える（N1）。冪等
+ */
+export const useEndWorkout = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endWorkout>>, TError,EndWorkoutMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof endWorkout>>,
+        TError,
+        EndWorkoutMutationVariables,
+        TContext
+      > => {
+      return useMutation(getEndWorkoutMutationOptions(options), queryClient);
     }
 
 export type getRecordResponse200 = {

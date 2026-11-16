@@ -96,6 +96,9 @@ export class RecordResponse {
 
   @ApiProperty({ type: RunDetail, required: false, description: 'ランの記録だけ。距離と時間' })
   run?: RunDetail;
+
+  @ApiProperty({ format: 'date-time', required: false, description: '筋トレを「今日はここまで」で終えた時刻（N1）。押していなければ付かない（自動で終わった分には付かない。記録中かどうかは詳細・一覧の active）' })
+  endedAt?: string;
 }
 
 // 一覧・詳細に入れるセット。再送の応答（SetResponse）と違い、ゴーストの比べ結果と自己ベストの札は付けない（記録した瞬間に使うもの）
@@ -111,6 +114,9 @@ export class RecordedSet {
 
   @ApiProperty({ example: 10 })
   reps!: number;
+
+  @ApiProperty({ format: 'date-time', required: false, description: 'セットを足した時刻（UTC）。応答には必ず入る。端末が楽観的更新で作る仮の行には無い' })
+  createdAt?: string;
 }
 
 export class RecordedExercise {
@@ -135,6 +141,13 @@ export class RecordDetailResponse extends RecordResponse {
     description: '筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない',
   })
   exercises?: RecordedExercise[];
+
+  @ApiProperty({
+    required: false,
+    description:
+      '筋トレの「いま記録中」か（N1・N2）。終了（endedAt）を押しておらず、最後のセットから3時間たっていなければ true。サーバーが読み出すときに判定する（定期実行はしない）。筋トレ以外には付かない。端末が楽観的更新で作る仮の行には無い',
+  })
+  active?: boolean;
 
   @ApiProperty({
     type: String,

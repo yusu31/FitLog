@@ -158,6 +158,8 @@ export const records = pgTable(
     late: boolean('late').notNull().default(false),
     // メニューのコピー（F-24）。コピーして始めた記録だけ、コピー元の人の id が入る。抜けた仲間でも消さない（画面は「仲間から」と出す）
     copiedFromUserId: text('copied_from_user_id').references(() => users.id),
+    // 筋トレの終了（N1。「今日はここまで」）。押すまでは null。押さなくても、最後のセットから3時間で「記録中」ではなくなる（common/workout-session.ts）
+    endedAt: timestamp('ended_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
