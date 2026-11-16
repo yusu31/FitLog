@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Info, LogOut, Palette, SquarePlus, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, LogOut, SquarePlus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
@@ -92,9 +92,6 @@ export function SettingsView() {
               )}
             </li>
             <li>
-              <ComingSoonRow icon={<Palette aria-hidden className="size-5" />} label="キャラの編集" />
-            </li>
-            <li>
               <Link
                 href="/settings/credits"
                 className="fl-slab flex min-h-16 items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
@@ -152,20 +149,5 @@ function RowIcon({ children, muted }: { children: ReactNode; muted?: boolean }) 
     >
       {children}
     </span>
-  );
-}
-
-// 「できれば」の範囲の行。リンクにせず、押せない（disabled）ことを見た目と読み上げで伝える
-function ComingSoonRow({ icon, label }: { icon: ReactNode; label: string }) {
-  return (
-    <button
-      type="button"
-      disabled
-      className="fl-slab flex min-h-16 w-full items-center gap-3 border-line bg-face px-4 py-2.5 text-left opacity-70"
-    >
-      <RowIcon muted>{icon}</RowIcon>
-      <span className="min-w-0 flex-1 truncate font-extrabold">{label}</span>
-      <span className="fl-tag bg-line text-sub-strong">準備中</span>
-    </button>
   );
 }

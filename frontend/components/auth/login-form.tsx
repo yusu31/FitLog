@@ -1,20 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { AuthLayout } from '@/components/auth/auth-layout';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth-client';
-import { safeNextPath, withNext } from '@/lib/next-path';
+import { withNext } from '@/lib/next-path';
+import { useNextParam } from '@/lib/use-next-param';
 
 // S-01 ログイン（docs/screen-design.md）。成功したら ?next= の画面（既定は今日）へ移る。
 // 失敗の理由は「メールが無い」「パスワードが違う」を分けずに伝える（登録済みのメールを探られないため）。
 export function LoginForm() {
   const router = useRouter();
-  const next = safeNextPath(useSearchParams().get('next'));
+  const next = useNextParam();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 

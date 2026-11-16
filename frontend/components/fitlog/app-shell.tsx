@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useAppSession } from '@/lib/use-app-session';
 import { SyncBanner } from './sync-banner';
 import { TabBar } from './tab-bar';
@@ -32,6 +32,7 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
             <div className="h-8 w-28 animate-pulse rounded-lg bg-face" />
             <div className="h-40 animate-pulse rounded-fl bg-face" />
             <div className="h-16 animate-pulse rounded-fl bg-face" />
+            <WakingNote />
           </main>
         )}
         <TabBar />
@@ -43,4 +44,22 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
 // 画面の見出し（v8 の .title）
 export function PageTitle({ children }: { children: ReactNode }) {
   return <h1 className="px-4 pt-[18px] text-[28px] font-extrabold">{children}</h1>;
+}
+
+// S1: 少人数のアプリは利用の間隔が空き、API（Lambda）が眠っていて最初の確認に5秒前後かかる。
+// 3秒を超えたら、止まったのではなく待てば進むことを伝える（設定は変えず、無料のまま）
+const WAKING_DELAY_MS = 3000;
+
+function WakingNote() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(true), WAKING_DELAY_MS);
+    return () => clearTimeout(t);
+  }, []);
+  if (!show) return null;
+  return (
+    <p role="status" className="rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-ink">
+      サーバーを起こしています。数秒お待ちください
+    </p>
+  );
 }
