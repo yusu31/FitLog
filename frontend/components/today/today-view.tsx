@@ -326,7 +326,7 @@ function LinkButton({ href, children }: { href: string; children: ReactNode }) {
 function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
   return (
     <section>
-      <h2 className="mb-2 text-sm font-extrabold text-sub-strong">ほかの種目（今日のメニュー）</h2>
+      <h2 className="mb-2 text-sm font-extrabold text-sub-strong">今日のメニュー</h2>
       <ul aria-label="今日のメニュー" className="space-y-2">
         {items.map((item, i) => {
           const value = item.todayLast ?? item.previous;

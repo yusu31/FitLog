@@ -13,8 +13,10 @@ import { Label } from '@/components/ui/label';
 import { messageOf } from '@/lib/api/message';
 import {
   getListExercisesQueryKey,
+  ListRecordsKind,
   useCreateExercise,
   useListExercises,
+  useListRecords,
   type BodyPart,
   type ExerciseResponse,
 } from '@/lib/api/generated';
@@ -35,6 +37,10 @@ export function ExercisesView() {
   const day = parseDayMode(useSearchParams().get('day'));
   const { data, isPending, isError } = useListExercises({ query: { enabled: signedIn } });
   const [query, setQuery] = useState('');
+  // 部位で絞る（E3）。null は「すべて」
+  const [part, setPart] = useState<BodyPart | null>(null);
+  // 最近やった種目（E2）。今日の画面と同じ条件の一覧なので、キャッシュを共有する
+  const workouts = useListRecords({ kind: ListRecordsKind.workout, limit: '5' }, { query: { enabled: signedIn } });
   const [adding, setAdding] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [added, setAdded] = useState<string | null>(null);
@@ -42,9 +48,17 @@ export function ExercisesView() {
   const exercises = data?.status === 200 ? data.data : undefined;
   const q = normalize(query);
   const groups = useMemo(() => {
-    const matched = (exercises ?? []).filter((e) => normalize(e.name).includes(q));
+    const matched = (exercises ?? []).filter((e) => normalize(e.name).includes(q) && (part === null || e.bodyPart === part));
     return BODY_PART_ORDER.map((part) => ({ part, items: matched.filter((e) => e.bodyPart === part) })).filter((g) => g.items.length > 0);
-  }, [exercises, q]);
+  }, [exercises, q, part]);
+
+  // 新しい記録から、重複なしで最大5つ。探している間（検索・部位で絞り中）は出さない
+  const recent = useMemo(() => {
+    if (!exercises || q || part !== null || workouts.data?.status !== 200) return [];
+    const ids: string[] = [];
+    for (const r of workouts.data.data.items) for (const ex of r.exercises ?? []) if (!ids.includes(ex.exerciseId)) ids.push(ex.exerciseId);
+    return ids.flatMap((id) => exercises.find((e) => e.id === id) ?? []).slice(0, 5);
+  }, [exercises, q, part, workouts.data]);
 
   const loading = !signedIn || isPending;
 
@@ -82,6 +96,24 @@ export function ExercisesView() {
             className="h-12 rounded-fl border-2 border-line bg-face pl-11 text-base font-bold text-ink placeholder:text-sub-strong"
           />
         </div>
+      </div>
+
+      <div role="group" aria-label="部位で絞る" className="flex gap-2 overflow-x-auto px-4 pt-3 pb-1">
+        {[{ value: null, label: 'すべて' }, ...BODY_PART_ORDER.map((p) => ({ value: p, label: BODY_PART_LABEL[p] }))].map((o) => (
+          <button
+            key={o.label}
+            type="button"
+            aria-pressed={part === o.value}
+            aria-label={o.value === null ? o.label : `${o.label}で絞る`}
+            onClick={() => setPart(o.value)}
+            className={cn(
+              'min-h-11 shrink-0 rounded-full border-2 px-4 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+              part === o.value ? 'border-teal-dark bg-teal-dark text-white' : 'border-line bg-white text-sub-strong',
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
       </div>
 
       <div role="status" aria-live="polite" className="px-4">
@@ -133,6 +165,20 @@ export function ExercisesView() {
         </div>
       ) : (
         <div className="space-y-1 pb-6">
+          {recent.length > 0 && (
+            <section aria-labelledby="recent-exercises">
+              <h2 id="recent-exercises" className="px-4 pt-4 pb-2 text-xs font-bold tracking-widest text-sub">
+                最近やった種目
+              </h2>
+              <ul className="flex flex-col gap-2 px-4">
+                {recent.map((e) => (
+                  <li key={e.id}>
+                    <ExerciseRow exercise={e} day={day} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {groups.map(({ part, items }) => (
             <section key={part} aria-labelledby={`part-${part}`}>
               <h2 id={`part-${part}`} className="px-4 pt-4 pb-2 text-xs font-bold tracking-widest text-sub">

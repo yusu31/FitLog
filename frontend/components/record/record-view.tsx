@@ -16,6 +16,7 @@ import { getCopyPlan, markCopyPlanUsed, planSetsFor } from '@/lib/copy-plan';
 import { dayDateOf, parseDayMode, recordedAtFor, withDay } from '@/lib/day-mode';
 import { FRIEND_MESSAGES, LATE_MESSAGES, SYNC_MESSAGES } from '@/lib/messages';
 import { monthDayCount } from '@/lib/stats';
+import { buildMenu } from '@/lib/today-menu';
 import { useRecordMutations } from '@/lib/mutations';
 import {
   clampReps,
@@ -26,6 +27,7 @@ import {
   provisionalResult,
   stepReps,
   stepWeight,
+  stepWeightBig,
   type SetValue,
 } from '@/lib/record-flow';
 import { volumeOf, type GhostResult } from '@/lib/shared/ghost';
@@ -81,6 +83,11 @@ export function RecordView() {
     day === 'today' && workouts.data?.status === 200
       ? (workouts.data.data.items.find((r) => r.active === true && r.localDate === dayDateOf('today', new Date()))?.id ?? null)
       : null;
+  // 次の種目（N3）。今日のメニュー（今日の画面と同じ組み立て）で、まだできていない、いまの種目以外の先頭。無ければ種目の一覧
+  const nextExerciseId =
+    workouts.data?.status === 200
+      ? buildMenu(workouts.data.data.items, dayDateOf(day, new Date())).items.find((i) => !i.done && i.exerciseId !== exerciseId)?.exerciseId
+      : undefined;
   const [memoryRecordId, setRecordId] = useState<string | null>(() => activeRecordId(Date.now(), day));
   const recordId = memoryRecordId ?? serverActiveId;
   // 記録の詳細（楽観的更新の置き場所）。メモリの記録はキャッシュを見るだけ。サーバーの記録を続きにしたときだけ取りに行く
@@ -277,6 +284,8 @@ export function RecordView() {
             clamp={clampWeight}
             onChange={(n) => setEdited({ ...draft, weightKg: n })}
             onStep={(dir) => setEdited({ ...draft, weightKg: stepWeight(draft.weightKg, dir) })}
+            bigStepLabel="10kg"
+            onBigStep={(dir) => setEdited({ ...draft, weightKg: stepWeightBig(draft.weightKg, dir) })}
           />
           <StepperField
             label="回数"
@@ -314,6 +323,14 @@ export function RecordView() {
         )}
 
         <DoneSets sets={sets} bestIds={bestIds} online={online} onDelete={onDelete} />
+        {sets.length > 0 && (
+          <Link
+            href={nextExerciseId ? withDay(`/record?exercise=${encodeURIComponent(nextExerciseId)}`, day) : withDay('/exercises', day)}
+            className="fl-slab flex min-h-12 w-full items-center justify-center text-[15px] font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          >
+            次の種目へ
+          </Link>
+        )}
         {videoCapable && online && day === 'today' && recordId && sets.length > 0 && (
           <ThickButton tone="white" size="sm" className="w-full" onClick={() => setFilming(true)}>
             2秒ラストレップを撮る
