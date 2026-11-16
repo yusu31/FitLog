@@ -454,17 +454,19 @@ describe('記録の取り消し・一覧・詳細（結合: 本物の PostgreSQL
           kind: 'workout',
           recordedAt: '2026-10-28T03:00:00.000Z',
           localDate: '2026-10-28',
+          // 記録の時刻は過去でも、セットを足したのは今（最後のセットから3時間たっていない）ので記録中
+          active: true,
           exercises: [
             {
               exerciseId: SQUAT_ID,
               name: names[SQUAT_ID],
               bodyPart: 'legs',
               sets: [
-                { id: squat1, setNo: 1, weightKg: 70, reps: 8 },
-                { id: squat2, setNo: 2, weightKg: 80, reps: 5 },
+                { id: squat1, setNo: 1, weightKg: 70, reps: 8, createdAt: expect.any(String) },
+                { id: squat2, setNo: 2, weightKg: 80, reps: 5, createdAt: expect.any(String) },
               ],
             },
-            { exerciseId: BENCH_PRESS_ID, name: names[BENCH_PRESS_ID], bodyPart: 'chest', sets: [{ id: bench1, setNo: 1, weightKg: 40, reps: 10 }] },
+            { exerciseId: BENCH_PRESS_ID, name: names[BENCH_PRESS_ID], bodyPart: 'chest', sets: [{ id: bench1, setNo: 1, weightKg: 40, reps: 10, createdAt: expect.any(String) }] },
           ],
         },
         { id: run, kind: 'run', recordedAt: '2026-10-27T03:00:00.000Z', localDate: '2026-10-27', run: { distanceM: 5000, durationS: 1800 } },
@@ -476,7 +478,7 @@ describe('記録の取り消し・一覧・詳細（結合: 本物の PostgreSQL
       const cookie = await signUpAs('たろう');
       const workout = await createRecord(cookie);
       const res = await list(cookie).expect(200);
-      expect(res.body.items).toEqual([{ id: workout, kind: 'workout', recordedAt: RECORDED_AT, localDate: '2026-10-26', exercises: [] }]);
+      expect(res.body.items).toEqual([{ id: workout, kind: 'workout', recordedAt: RECORDED_AT, localDate: '2026-10-26', active: false, exercises: [] }]);
     });
 
     // T-LATE-03: あとから記録（F-21）の札は、一覧・詳細にも late:true のときだけ付く
@@ -511,7 +513,7 @@ describe('記録の取り消し・一覧・詳細（結合: 本物の PostgreSQL
       await http().delete(`/api/records/${goneRecord}`).set('Cookie', cookie).expect(204);
 
       const res = await list(cookie).expect(200);
-      expect(res.body.items).toEqual([{ id: keep, kind: 'workout', recordedAt: '2026-10-27T03:00:00.000Z', localDate: '2026-10-27', exercises: [] }]);
+      expect(res.body.items).toEqual([{ id: keep, kind: 'workout', recordedAt: '2026-10-27T03:00:00.000Z', localDate: '2026-10-27', active: false, exercises: [] }]);
     });
   });
 
@@ -531,7 +533,7 @@ describe('記録の取り消し・一覧・詳細（結合: 本物の PostgreSQL
       const s1 = await addSet(cookie, recordId, BENCH_PRESS_ID, 1, 40, 10);
       const res = await detail(cookie, recordId).expect(200);
       expect(res.body).toMatchObject({ id: recordId, kind: 'workout', recordedAt: RECORDED_AT, localDate: '2026-10-26' });
-      expect(res.body.exercises).toEqual([expect.objectContaining({ exerciseId: BENCH_PRESS_ID, sets: [{ id: s1, setNo: 1, weightKg: 40, reps: 10 }] })]);
+      expect(res.body.exercises).toEqual([expect.objectContaining({ exerciseId: BENCH_PRESS_ID, sets: [{ id: s1, setNo: 1, weightKg: 40, reps: 10, createdAt: expect.any(String) }] })]);
     });
 
     it('ランは run（距離と時間）、休みは run も exercises も付かない', async () => {
