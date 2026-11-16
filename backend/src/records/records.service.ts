@@ -301,8 +301,8 @@ export class RecordsService {
       const base = toResponse(row, run, copiedFrom.get(row.id));
       const videoId = videoByRecord.get(row.id);
       if (videoId) Object.assign(base, { videoId });
-      // 詳細だけ route を足す（toResponse は距離と時間だけ）
-      if (base.run && run?.route) base.run.route = run.route;
+      // 詳細だけ route を足す（toResponse は距離と時間だけ）。座標は自宅の推測につながるので、持ち主本人にだけ返す（仲間には距離・時間・ペースだけ。N13）
+      if (base.run && run?.route && row.userId === viewerId) base.run.route = run.route;
       if (row.kind !== 'workout') return base;
       const exercisesOfRecord = [...(exercisesByRecord.get(row.id)?.values() ?? [])].map((e) => ({
         exerciseId: e.exerciseId,
