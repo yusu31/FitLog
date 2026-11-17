@@ -14,7 +14,7 @@ import { ME_MESSAGES } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
 import { useOnline } from '@/lib/use-browser-state';
 
-const PAGE_SIZE = '20';
+export const PAGE_SIZE = '20';
 const LOAD_ERROR = '読み込めませんでした。電波の良い所で開き直してください';
 
 // 「…」と確認ダイアログの状態は、ページをまたいで1つだけ持つ（同時に開くのは1つ）

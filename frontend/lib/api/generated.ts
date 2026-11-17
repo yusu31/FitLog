@@ -534,6 +534,11 @@ export interface StatsStamp {
   key: StampKey;
   /** 獲得済みか（初めて・累計だけで決まる。連続日数の型は無い） */
   earned: boolean;
+  /**
+     * 初めて条件を満たした記録の日（日本時間・YYYY-MM-DD）。未獲得は null
+     * @nullable
+     */
+  earnedAt: string | null;
 }
 
 export interface StatsResponse {

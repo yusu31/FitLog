@@ -3,14 +3,22 @@
 import { ListChecks, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { PageTitle } from '@/components/fitlog/app-shell';
+import { useListRecords } from '@/lib/api/generated';
+import { toLocalDate } from '@/lib/shared/local-date';
 import { useAppSession } from '@/lib/use-app-session';
+import { isRunHeavyWeek } from '@/lib/week-focus';
 import { HeatmapSection } from './heatmap-section';
-import { RecordsList } from './records-list';
+import { PAGE_SIZE, RecordsList } from './records-list';
+import { WeekRunSection } from './week-run-section';
 
 // S-30 自分（docs/screen-design.md 4章）。記録の一覧には「…」から削除がある。「記録をくわしく」は /me/stats（S-35）へのリンク。
 // 「設定」は /settings へのリンク。ログアウトは設定（S-31）にだけ置く（自分タブで目立つと押し間違えるため）
 export function MeView() {
   const { data: session } = useAppSession();
+  // 記録の一覧の1ページ目（RecordsList と同じ呼び出し。TanStack Query が1回分を共有する）で、今週ランが多い人かを見る（N9）
+  const first = useListRecords({ limit: PAGE_SIZE });
+  const items = first.data?.status === 200 ? first.data.data.items : [];
+  const runHeavy = isRunHeavyWeek(items, toLocalDate(new Date()));
 
   return (
     <>
@@ -35,6 +43,8 @@ export function MeView() {
             設定
           </Link>
         </section>
+
+        {runHeavy && <WeekRunSection />}
 
         <HeatmapSection />
 
