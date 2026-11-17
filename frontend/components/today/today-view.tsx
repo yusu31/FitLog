@@ -26,6 +26,7 @@ import { toLocalDate } from '@/lib/shared/local-date';
 import { todayPose } from '@/lib/today-pose';
 import { buildMenu, type MenuItem, type TodayMenu } from '@/lib/today-menu';
 import { shouldWelcomeBack } from '@/lib/welcome-back';
+import { RoutineStarter } from '@/components/routine/routine-starter';
 import { WeekStrip } from './week-strip';
 
 const LOAD_ERROR = '読み込めませんでした。電波の良い所で開き直してください';
@@ -118,6 +119,7 @@ export function TodayView() {
           </>
         )}
 
+        {todayStatus !== 'rest' && <RoutineStarter day={day} />}
         <RunLink day={day} />
         {/* 休みの日はおやすみの札、記録した日は「休む」と矛盾するので、どちらも出さない（N5） */}
         {day === 'today' && todayStatus === 'none' && <RestButton />}

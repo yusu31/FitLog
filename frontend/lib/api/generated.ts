@@ -558,6 +558,57 @@ export interface StatsResponse {
   totalRunDistanceM: number;
 }
 
+export interface RoutineSet {
+  /** 種目の中で1から振り直した番号 */
+  setNo: number;
+  weightKg: number;
+  reps: number;
+}
+
+export type RoutineExerciseBodyPart = typeof RoutineExerciseBodyPart[keyof typeof RoutineExerciseBodyPart];
+
+
+export const RoutineExerciseBodyPart = {
+  chest: 'chest',
+  back: 'back',
+  shoulders: 'shoulders',
+  arms: 'arms',
+  abs: 'abs',
+  glutes: 'glutes',
+  legs: 'legs',
+} as const;
+
+export interface RoutineExercise {
+  exerciseId: string;
+  name: string;
+  bodyPart: RoutineExerciseBodyPart;
+  /** セット番号の昇順 */
+  sets: RoutineSet[];
+}
+
+export interface RoutineResponse {
+  id: string;
+  /** 1〜20字 */
+  name: string;
+  /** 種目の並びは、元の記録で最初にセットを足した順 */
+  exercises: RoutineExercise[];
+  createdAt: string;
+}
+
+export interface RoutineListResponse {
+  /** 古い順（保存した順） */
+  items: RoutineResponse[];
+  /** 1人が保存できる上限 */
+  max: number;
+}
+
+export interface CreateRoutineRequest {
+  /** 前後の空白を除いて 1〜20字。同じ名前（大文字小文字を区別しない）は保存できない */
+  name: string;
+  /** 写す元の、自分の筋トレの記録（セットが1つ以上あるもの） */
+  recordId: string;
+}
+
 export type FeedStampStampKey = typeof FeedStampStampKey[keyof typeof FeedStampStampKey];
 
 
@@ -3463,6 +3514,350 @@ export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError
 
 
 
+
+export type listRoutinesResponse200 = {
+  data: RoutineListResponse
+  status: 200
+}
+
+export type listRoutinesResponseSuccess = (listRoutinesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type listRoutinesResponse = (listRoutinesResponseSuccess)
+
+export const getListRoutinesUrl = () => {
+
+
+
+
+  return `/api/routines`
+}
+
+/**
+ * @summary 自分のルーティンの一覧（保存した順）と上限
+ */
+export const listRoutines = async ( options?: RequestInit): Promise<listRoutinesResponse> => {
+
+  const res = await fetch(getListRoutinesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listRoutinesResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as listRoutinesResponse
+}
+
+
+
+
+
+export const getListRoutinesQueryKey = () => {
+    return [
+    `/api/routines`
+    ] as const;
+    }
+
+
+export const getListRoutinesQueryOptions = <TData = Awaited<ReturnType<typeof listRoutines>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRoutinesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRoutines>>> = ({ signal }) => listRoutines({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListRoutinesQueryResult = NonNullable<Awaited<ReturnType<typeof listRoutines>>>
+export type ListRoutinesQueryError = unknown
+
+
+export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRoutines>>,
+          TError,
+          Awaited<ReturnType<typeof listRoutines>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRoutines>>,
+          TError,
+          Awaited<ReturnType<typeof listRoutines>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 自分のルーティンの一覧（保存した順）と上限
+ */
+
+export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListRoutinesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type createRoutineResponse201 = {
+  data: RoutineResponse
+  status: 201
+}
+
+export type createRoutineResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type createRoutineResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type createRoutineResponse409 = {
+  data: ErrorResponse
+  status: 409
+}
+
+export type createRoutineResponseSuccess = (createRoutineResponse201) & {
+  headers: Headers;
+};
+export type createRoutineResponseError = (createRoutineResponse400 | createRoutineResponse404 | createRoutineResponse409) & {
+  headers: Headers;
+};
+
+export type createRoutineResponse = (createRoutineResponseSuccess | createRoutineResponseError)
+
+export const getCreateRoutineUrl = () => {
+
+
+
+
+  return `/api/routines`
+}
+
+/**
+ * @summary 自分の筋トレの記録1件から、種目と回数・重さを写してルーティンを保存する
+ */
+export const createRoutine = async (createRoutineRequest: CreateRoutineRequest, options?: RequestInit): Promise<createRoutineResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCreateRoutineUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createRoutineRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createRoutineResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as createRoutineResponse
+}
+
+
+
+
+
+export const getCreateRoutineMutationKey = () => ['createRoutine'] as const;
+
+export const getCreateRoutineMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRoutine>>, TError,CreateRoutineMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof createRoutine>>, TError,CreateRoutineMutationVariables, TContext> => {
+
+const mutationKey = getCreateRoutineMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRoutine>>, CreateRoutineMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRoutine(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRoutineMutationResult = NonNullable<Awaited<ReturnType<typeof createRoutine>>>
+    export type CreateRoutineMutationBody = CreateRoutineRequest
+    export type CreateRoutineMutationError = ErrorResponse
+    export type CreateRoutineMutationVariables = {data: CreateRoutineRequest}
+
+    /**
+ * @summary 自分の筋トレの記録1件から、種目と回数・重さを写してルーティンを保存する
+ */
+export const useCreateRoutine = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRoutine>>, TError,CreateRoutineMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createRoutine>>,
+        TError,
+        CreateRoutineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateRoutineMutationOptions(options), queryClient);
+    }
+
+export type deleteRoutineResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteRoutineResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteRoutineResponseSuccess = (deleteRoutineResponse204) & {
+  headers: Headers;
+};
+export type deleteRoutineResponseError = (deleteRoutineResponse404) & {
+  headers: Headers;
+};
+
+export type deleteRoutineResponse = (deleteRoutineResponseSuccess | deleteRoutineResponseError)
+
+export const getDeleteRoutineUrl = (id: string,) => {
+
+
+
+
+  return `/api/routines/${id}`
+}
+
+/**
+ * @summary 自分のルーティンを消す
+ */
+export const deleteRoutine = async (id: string, options?: RequestInit): Promise<deleteRoutineResponse> => {
+
+  const res = await fetch(getDeleteRoutineUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteRoutineResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as deleteRoutineResponse
+}
+
+
+
+
+
+export const getDeleteRoutineMutationKey = () => ['deleteRoutine'] as const;
+
+export const getDeleteRoutineMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRoutine>>, TError,DeleteRoutineMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteRoutine>>, TError,DeleteRoutineMutationVariables, TContext> => {
+
+const mutationKey = getDeleteRoutineMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteRoutine>>, DeleteRoutineMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteRoutine(id,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteRoutineMutationResult = NonNullable<Awaited<ReturnType<typeof deleteRoutine>>>
+
+    export type DeleteRoutineMutationError = ErrorResponse
+    export type DeleteRoutineMutationVariables = {id: string}
+
+    /**
+ * @summary 自分のルーティンを消す
+ */
+export const useDeleteRoutine = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRoutine>>, TError,DeleteRoutineMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteRoutine>>,
+        TError,
+        DeleteRoutineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteRoutineMutationOptions(options), queryClient);
+    }
 
 export type getFeedResponse200 = {
   data: FeedResponse

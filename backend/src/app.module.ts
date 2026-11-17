@@ -9,6 +9,7 @@ import { FeedModule } from './feed/feed.module.js';
 import { GroupsModule } from './groups/groups.module.js';
 import { HealthController } from './health/health.controller.js';
 import { RecordsModule } from './records/records.module.js';
+import { RoutinesModule } from './routines/routines.module.js';
 import { VideosModule } from './videos/videos.module.js';
 
 @Module({
@@ -17,6 +18,7 @@ import { VideosModule } from './videos/videos.module.js';
     GroupsModule,
     ExercisesModule,
     RecordsModule,
+    RoutinesModule,
     FeedModule,
     VideosModule,
     // 連携部品（@thallesp/nestjs-better-auth を 2.8.0 に固定。判断ログ 02-1-3）。

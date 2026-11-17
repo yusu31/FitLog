@@ -124,6 +124,9 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 |----------|------|------|------|
 | POST | `/records/{id}/video` | 動画を置く署名付き URL（POST 形式）を発行し、`videos` の行を作る | 自分の筋トレの記録だけ（筋トレでなければ 409 `RECORD_KIND_MISMATCH`・他人の記録は 404）。本文は `{ contentType, sizeBytes }`（画面の申告。形式は `video/mp4`・`video/webm`、大きさは 1〜10,485,760 バイト）。**署名の条件は、大きさが申告値ちょうど・形式とキーが完全一致**（S3 が申告と違うものを受け付けない）。キーは `videos/{記録の id}`。1記録に1本で、**置くのに失敗したやり直しは同じ記録にもう一度呼ぶ**（行は1つのまま申告を更新し、同じキーで署名し直す。初回 201・再発行 200）。応答は `{ id, upload: { url, fields }, expiresInSeconds, visibleUntil }` |
 | GET | `/videos/{id}/url` | 動画を見る署名付き URL を発行する | **本人はいつでも**。**仲間は `visible_until` の前だけ**（過ぎていれば 403 `FORBIDDEN`）で、**今週、自分の動画が1本以上あるときだけ**（なければ 403 `VIDEO_LOCKED`。自分の動画の `visible_until` が今週の期限と同じものがあるかで判定）。別のグループの人・グループに入っていない人・無い id は 404 `VIDEO_NOT_FOUND`（存在を教えない）。置き場（環境変数 `VIDEO_BUCKET`）が未設定の環境では、署名を頼む両方の API が 503 `VIDEO_STORAGE_UNAVAILABLE` |
+| GET | `/routines` | 自分のルーティンの一覧（F3） | 応答は `{ items, max }`。保存した順。各ルーティンは種目ごとのセット（種目名・部位つき） |
+| POST | `/routines` | ルーティンを保存する（F3） | 本文は `{ name, recordId }`。自分の筋トレの記録1件から写す。201。名前が1〜20字でない 400 `VALIDATION_ERROR`／他の人・無い記録 404 `RECORD_NOT_FOUND`／筋トレでない 409 `RECORD_KIND_MISMATCH`／セットが無い 409 `ROUTINE_EMPTY`／もう5つある 409 `ROUTINE_LIMIT`／同じ名前 409 `ROUTINE_NAME_TAKEN` |
+| DELETE | `/routines/{id}` | 自分のルーティンを消す（F3） | 204。他の人の・無い・もう消した 404 `ROUTINE_NOT_FOUND`（存在を教えない）。元の記録は消えない |
 
 ### その他
 

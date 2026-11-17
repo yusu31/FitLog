@@ -735,6 +735,18 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       expect(creates[0].body).toMatchObject({ kind: 'workout', copiedFromUserId: 'u2' });
     });
 
+    it('ルーティンから始めたとき（F3）は「ルーティン「胸の日」から」が出て、記録に copiedFromUserId を付けない', async () => {
+      setCopyPlan({ fromUserId: null, fromName: null, routineName: '胸の日', items: [{ exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ weightKg: 70, reps: 5 }] }] });
+      search = 'exercise=e-bench&plan=1';
+      renderView();
+      expect(await screen.findByText('ルーティン「胸の日」から')).toBeInTheDocument();
+      await waitFor(() => expect(weight()).toHaveValue(70));
+      await userEvent.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      const create = calls.find((c) => c.method === 'POST' && c.url === '/api/records');
+      expect(create?.body).not.toHaveProperty('copiedFromUserId');
+    });
+
     it('コピーでないとき（plan なし）は copiedFromUserId を付けない', async () => {
       renderView();
       await ready();
