@@ -14,6 +14,7 @@ const PAGES: [path: string, title: string][] = [
   ['rest', 'おやすみ'],
   ['invite', 'グループへの招待'],
   ['settings', '設定'],
+  ['settings/account', 'アカウントの設定'],
   ['settings/credits', 'クレジット'],
   ['settings/group', 'グループの設定'],
 ];
