@@ -121,3 +121,36 @@ describe('totalRunDistanceM（累計のラン距離。F-28 日本縦断）', () 
     expect(buildStats(days, '2026-11-12').totalRunDistanceM).toBe(1000);
   });
 });
+
+describe('stamps の earnedAt（初めて条件を満たした記録の日。U10）', () => {
+  const at = (days: DayAgg[], key: string) => buildStats(days, '2026-11-12').stamps.find((s) => s.key === key)!.earnedAt;
+  it('未獲得は null', () => {
+    expect(at([], 'first-record')).toBeNull();
+    expect(at([day('2026-11-01', { runM: 4999, maxRunM: 4999 })], 'first-5k')).toBeNull();
+  });
+  it('初めての記録・ランは、その記録の日', () => {
+    const days = [day('2026-11-03'), day('2026-11-05', { runM: 100, maxRunM: 100 })];
+    expect(at(days, 'first-record')).toBe('2026-11-03');
+    expect(at(days, 'first-run')).toBe('2026-11-05');
+  });
+  it('条件を何度も満たしても、最初の日（5km は1回の距離で決める）', () => {
+    const days = [
+      day('2026-11-01', { runM: 6000, maxRunM: 3000 }),
+      day('2026-11-04', { runM: 5000, maxRunM: 5000 }),
+      day('2026-11-08', { runM: 9000, maxRunM: 9000 }),
+    ];
+    expect(at(days, 'first-5k')).toBe('2026-11-04');
+  });
+  it('累計は、ちょうど届いた日（入力が日付順でなくても）', () => {
+    const days = [day('2026-11-08', { weightKg: 600 }), day('2026-11-02', { weightKg: 500 }), day('2026-11-05', { weightKg: 499.9 })];
+    expect(at(days, 'weight-1t')).toBe('2026-11-08');
+  });
+  it('記録日数は rec の日だけ数える（休みでは進まない）', () => {
+    const days = [
+      ...Array.from({ length: 9 }, (_, i) => day(`2026-10-${String(i + 1).padStart(2, '0')}`)),
+      day('2026-10-20', { status: 'rest' }),
+      day('2026-10-25'),
+    ];
+    expect(at(days, 'days-10')).toBe('2026-10-25');
+  });
+});

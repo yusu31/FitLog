@@ -1,4 +1,4 @@
-import { formatJstTime, formatPace, formatSetProgress, formatSetWithReps } from './format';
+import { formatJstTime, formatDistance, formatPace, formatSetProgress, formatSetWithReps } from './format';
 
 describe('formatPace（1kmあたりのペース）', () => {
   it.each([
@@ -50,5 +50,20 @@ describe('formatSetProgress（U2・A4: 上のバーの読み上げ）', () => {
   });
   it('前回が無いときは、できた数だけ', () => {
     expect(formatSetProgress(1, 0)).toBe('1セット できた');
+  });
+});
+
+// T-RUNP-03（U18）: 距離は 0.01km の桁まで。1桁で足りる値は今までどおり（5.2km・5.0km）。取り込み 5.04 と保存後の表示をそろえる
+describe('formatDistance（距離の表示）', () => {
+  it.each([
+    [5200, '5.2km'],
+    [5000, '5.0km'],
+    [5040, '5.04km'],
+    [5049, '5.05km'],
+    [5004, '5.0km'],
+    [12345, '12.35km'],
+    [0, '0.0km'],
+  ])('%i m → %s', (m, expected) => {
+    expect(formatDistance(m)).toBe(expected);
   });
 });

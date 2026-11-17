@@ -2579,11 +2579,18 @@
           "earned": {
             "type": "boolean",
             "description": "獲得済みか（初めて・累計だけで決まる。連続日数の型は無い）"
+          },
+          "earnedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-03",
+            "description": "初めて条件を満たした記録の日（日本時間・YYYY-MM-DD）。未獲得は null"
           }
         },
         "required": [
           "key",
-          "earned"
+          "earned",
+          "earnedAt"
         ]
       },
       "StatsResponse": {
