@@ -1,6 +1,6 @@
 // 仲間タブ（S-20）の足跡・スタンプ・コメントの決まりごと（docs/screen-design.md「スタンプと定型コメント（F-10）」）。
 // 画面の部品から切り離した純粋な関数・定数。順位・数を競う言い方は入れない。
-import { formatDistance } from '@/lib/format';
+import { formatDistance, formatDuration, formatPace } from '@/lib/format';
 import type { FeedItem, FeedItemKind, FeedStamp, FeedTotals } from '@/lib/api/generated';
 
 export type StampKey = FeedStamp['stampKey'];
@@ -53,10 +53,22 @@ export function describeTotals(totals: FeedTotals): TotalsView {
   };
 }
 
+// ランの足跡: 距離・時間・ペースを「・」でつなぐ（U13）。時間が 0 以下なら時間もペースも出さない（ペースは距離 0 でも出さない）
+function describeRun(run: FeedItem['run']): string {
+  if (!run) return '';
+  const parts = [formatDistance(run.distanceM)];
+  if (run.durationS > 0) {
+    parts.push(formatDuration(run.durationS));
+    const pace = formatPace(run.distanceM, run.durationS);
+    if (pace) parts.push(pace);
+  }
+  return parts.join('・');
+}
+
 // 足跡の1行目（何をしたか）。筋トレは最初の種目名＋「ほかN種目」
 export function describeItem(item: Pick<FeedItem, 'kind' | 'exerciseNames' | 'run'>): { title: string; detail: string } {
   if (item.kind === 'rest') return { title: 'おやすみ', detail: '' };
-  if (item.kind === 'run') return { title: 'ラン', detail: item.run ? formatDistance(item.run.distanceM) : '' };
+  if (item.kind === 'run') return { title: 'ラン', detail: describeRun(item.run) };
   const [first, ...rest] = item.exerciseNames;
   if (!first) return { title: '筋トレ', detail: '' };
   return { title: first, detail: rest.length > 0 ? `ほか${rest.length}種目` : '' };

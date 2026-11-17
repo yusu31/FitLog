@@ -79,6 +79,59 @@ describe('InviteView（S-03 招待を受ける）', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  // T-PEER-07（N11）: 「登録して参加」「ログインして参加」を押して戻ってきたときだけ、自動で参加する
+  describe('登録・ログインから戻ったとき', () => {
+    const intentKey = 'fitlog:join-intent';
+    beforeEach(() => sessionStorage.clear());
+    const signedIn = () => {
+      session = { data: { user: { id: 'u2', name: 'はなこ' } }, isPending: false };
+      replies['GET /api/invitations/tok_123'] = OK;
+      replies['POST /api/invitations/tok_123/accept'] = { status: 200, body: { id: 'g1', name: '朝トレ部' } };
+    };
+
+    it('「登録して参加」を押すと、この token で参加するつもりだと端末に控える', async () => {
+      replies['GET /api/invitations/tok_123'] = OK;
+      renderView();
+      await userEvent.click(await screen.findByRole('link', { name: '登録して参加' }));
+      expect(sessionStorage.getItem(intentKey)).toBe('tok_123');
+    });
+
+    it('控えがあるログイン済みの戻りなら、「参加する」を押さなくても参加して仲間タブへ移る', async () => {
+      signedIn();
+      sessionStorage.setItem(intentKey, 'tok_123');
+      renderView();
+      await vi.waitFor(() => expect(replace).toHaveBeenCalledWith('/friends'));
+      expect(calls.filter((c) => c === 'POST /api/invitations/tok_123/accept')).toHaveLength(1);
+      expect(sessionStorage.getItem(intentKey)).toBeNull();
+    });
+
+    it('控えが無いなら（リンクを開いただけ）、勝手に参加せず「参加する」を待つ', async () => {
+      signedIn();
+      renderView();
+      expect(await screen.findByRole('button', { name: '参加する' })).toBeInTheDocument();
+      expect(calls).not.toContain('POST /api/invitations/tok_123/accept');
+    });
+
+    it('別の token の控えでは参加しない', async () => {
+      signedIn();
+      sessionStorage.setItem(intentKey, 'other_token');
+      renderView();
+      expect(await screen.findByRole('button', { name: '参加する' })).toBeInTheDocument();
+      expect(calls).not.toContain('POST /api/invitations/tok_123/accept');
+    });
+
+    it('自動参加が失敗したら、文言を出して「参加する」ボタンを残す（控えは使い切る）', async () => {
+      signedIn();
+      replies['POST /api/invitations/tok_123/accept'] = { status: 409, body: { code: 'GROUP_FULL', message: '満員' } };
+      sessionStorage.setItem(intentKey, 'tok_123');
+      renderView();
+      expect(await screen.findByRole('alert')).toHaveTextContent('満員');
+      expect(screen.getByRole('button', { name: '参加する' })).toBeInTheDocument();
+      expect(replace).not.toHaveBeenCalled();
+      expect(sessionStorage.getItem(intentKey)).toBeNull();
+    });
+  });
+
   it('満員（5人）なら、参加の入口を出さずに知らせる', async () => {
     replies['GET /api/invitations/tok_123'] = { status: 200, body: { groupName: '朝トレ部', memberCount: 5, memberMax: 5 } };
     renderView();

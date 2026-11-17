@@ -40,6 +40,8 @@ export const GROUP_MESSAGES = {
   revokeFailed: '取り消せませんでした。少し待って、もう一度お試しください',
   leaveFailed: 'グループを出られませんでした。少し待って、もう一度お試しください',
   copyFailed: 'コピーできませんでした。リンクを長押しして選んでください',
+  shareFailed: '共有できませんでした。「コピー」して送ってください',
+  pasteInvalid: '招待リンクが読み取れませんでした。届いたリンクをそのまま貼ってください',
 } as const;
 
 // API の応答の code（design.md 5章）→ 画面の文言

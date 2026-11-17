@@ -1,0 +1,8 @@
+# テスト用のダミー招待 token（abc_DEF-123456）を generic-api-key と誤検知した履歴上の7件。実際の秘密ではない（コミット 3c073d69f67dc0e1e17cfa6d1afcf1d7a4c719e0 の該当行で確認済み）
+3c073d69f67dc0e1e17cfa6d1afcf1d7a4c719e0:frontend/lib/invite-token.test.ts:generic-api-key:6
+3c073d69f67dc0e1e17cfa6d1afcf1d7a4c719e0:frontend/lib/invite-token.test.ts:generic-api-key:10
+3c073d69f67dc0e1e17cfa6d1afcf1d7a4c719e0:frontend/lib/invite-token.test.ts:generic-api-key:19
+3c073d69f67dc0e1e17cfa6d1afcf1d7a4c719e0:frontend/components/friends/friends-view.test.tsx:generic-api-key:78
+3c073d69f67dc0e1e17cfa6d1afcf1d7a4c719e0:frontend/components/friends/friends-view.test.tsx:generic-api-key:80
+3c073d69f67dc0e1e17cfa6d1afcf1d7a4c719e0:frontend/components/friends/friends-view.test.tsx:generic-api-key:88
+3c073d69f67dc0e1e17cfa6d1afcf1d7a4c719e0:frontend/components/friends/friends-view.test.tsx:generic-api-key:93

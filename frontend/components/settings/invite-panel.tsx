@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy, Send, X } from 'lucide-react';
+import { Check, Copy, Send, Share2, X } from 'lucide-react';
 import { useState } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { useCreateInvitation, useRevokeInvitation } from '@/lib/api/generated';
@@ -54,6 +54,17 @@ export function InvitePanel({ full }: { full: boolean }) {
     }
   }
 
+  // 共有（LINE などへ直接送る）。Web Share API がある端末だけ。自分で閉じた（AbortError）ときは何も出さない
+  async function onShare() {
+    if (!invitation) return;
+    try {
+      await navigator.share({ title: 'FitLog の招待', text: 'FitLog で一緒に記録しよう', url: invitation.url });
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      setError(GROUP_MESSAGES.shareFailed);
+    }
+  }
+
   async function onRevoke() {
     if (!invitation) return;
     setError(null);
@@ -103,6 +114,12 @@ export function InvitePanel({ full }: { full: boolean }) {
               {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
               {copied ? 'コピーしました' : 'コピー'}
             </ThickButton>
+            {typeof navigator.share === 'function' && (
+              <ThickButton tone="white" size="sm" onClick={onShare}>
+                <Share2 aria-hidden />
+                共有
+              </ThickButton>
+            )}
             <ThickButton tone="white" size="sm" onClick={onRevoke} disabled={revokeInvitation.isPending}>
               <X aria-hidden />
               取り消す

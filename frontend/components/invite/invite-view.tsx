@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link2, LogIn, UserPlus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { getGetCurrentGroupQueryKey, useAcceptInvitation, useGetInvitation } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
@@ -12,7 +12,30 @@ import { useAppSession } from '@/lib/use-app-session';
 import { withNext } from '@/lib/next-path';
 
 // S-03 招待を受ける（docs/screen-design.md 1章）。グループ名と今の人数はログイン前でも見える。
-// 参加はログイン後。未ログインなら「登録して参加」「ログインして参加」を出し、終わったらこの画面へ戻す（?next=）
+// 参加はログイン後。「登録して参加」「ログインして参加」を押して戻ったときだけ、押さなくても自動で参加する（N11）。
+// 未ログインなら「登録して参加」「ログインして参加」を出し、終わったらこの画面へ戻す（?next=）
+// 「登録して参加」「ログインして参加」を押したことの控え（同じタブの中だけ）。リンクを開いただけの人は、
+// 勝手にグループへ入らない（悪意のあるリンクで本人の知らないうちに参加させられるのを防ぐ）。token が合うときだけ使い、使ったら消す
+const JOIN_INTENT_KEY = 'fitlog:join-intent';
+
+function rememberJoinIntent(token: string): void {
+  try {
+    sessionStorage.setItem(JOIN_INTENT_KEY, token);
+  } catch {
+    // 保存できない端末では、戻ったあとに「参加する」を押してもらう
+  }
+}
+
+function takeJoinIntent(token: string): boolean {
+  try {
+    const mine = sessionStorage.getItem(JOIN_INTENT_KEY) === token;
+    if (sessionStorage.getItem(JOIN_INTENT_KEY) !== null) sessionStorage.removeItem(JOIN_INTENT_KEY);
+    return mine;
+  } catch {
+    return false;
+  }
+}
+
 export function InviteView() {
   const token = useSearchParams().get('token') ?? '';
   // 招待リンクの値は base64url（URL にそのまま載る文字）。それ以外の文字が来ても、パスを壊さないように包む
@@ -72,32 +95,8 @@ function JoinActions({ token, encoded }: { token: string; encoded: string }) {
   const [error, setError] = useState<string | null>(null);
   const next = `/invite?token=${encodeURIComponent(token)}`;
 
-  if (isPending) return <div aria-busy="true" aria-label="読み込み中" className="h-14 animate-pulse rounded-fl bg-face" />;
-
-  if (!session) {
-    return (
-      <div className="space-y-3">
-        <p className="text-sm text-sub">参加するには、登録かログインが必要です。終わると、この画面に戻ります。</p>
-        <Link
-          href={withNext('/signup', next)}
-          className="fl-thick flex min-h-14 items-center justify-center gap-2 rounded-fl bg-teal-dark text-lg font-extrabold tracking-wider text-white [--thick:var(--color-teal-deep)] [&_svg]:size-5"
-        >
-          <UserPlus aria-hidden />
-          登録して参加
-        </Link>
-        <Link
-          href={withNext('/login', next)}
-          className="fl-thick flex min-h-14 items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-white text-lg font-extrabold tracking-wider text-teal-dark [--thick:#b8e3e4] [&_svg]:size-5"
-        >
-          <LogIn aria-hidden />
-          ログインして参加
-        </Link>
-      </div>
-    );
-  }
-
-  async function onJoin() {
-    setError(null);
+  // 参加の本体。最初に setState をしない（登録・ログインから戻ったときの自動参加を、effect から呼ぶため）
+  async function join() {
     try {
       const res = await accept.mutateAsync({ token: encoded });
       if (res.status !== 200) {
@@ -109,6 +108,50 @@ function JoinActions({ token, encoded }: { token: string; encoded: string }) {
     } catch {
       setError('通信に失敗しました。電波の良い所でもう一度お試しください');
     }
+  }
+
+  function onJoin() {
+    setError(null);
+    void join();
+  }
+
+  // 登録・ログインから戻ったとき（控えがあるとき）だけ、1回だけ自動で参加する
+  const autoJoined = useRef(false);
+  const signedIn = !!session;
+  useEffect(() => {
+    if (!signedIn || autoJoined.current) return;
+    autoJoined.current = true;
+    // join は通信を待ってから setState をする（effect の中で同期的には呼ばない）ので、この規則の想定とは違う
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (takeJoinIntent(token)) void join();
+    // join は毎回作り直されるが、ここで使うのは最初の1回だけ（autoJoined で守る）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signedIn, token]);
+
+  if (isPending) return <div aria-busy="true" aria-label="読み込み中" className="h-14 animate-pulse rounded-fl bg-face" />;
+
+  if (!session) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-sub">参加するには、登録かログインが必要です。終わると、この画面に戻ります。</p>
+        <Link
+          href={withNext('/signup', next)}
+          onClick={() => rememberJoinIntent(token)}
+          className="fl-thick flex min-h-14 items-center justify-center gap-2 rounded-fl bg-teal-dark text-lg font-extrabold tracking-wider text-white [--thick:var(--color-teal-deep)] [&_svg]:size-5"
+        >
+          <UserPlus aria-hidden />
+          登録して参加
+        </Link>
+        <Link
+          href={withNext('/login', next)}
+          onClick={() => rememberJoinIntent(token)}
+          className="fl-thick flex min-h-14 items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-white text-lg font-extrabold tracking-wider text-teal-dark [--thick:#b8e3e4] [&_svg]:size-5"
+        >
+          <LogIn aria-hidden />
+          ログインして参加
+        </Link>
+      </div>
+    );
   }
 
   return (
