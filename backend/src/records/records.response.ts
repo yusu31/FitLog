@@ -97,6 +97,12 @@ export class RecordResponse {
   @ApiProperty({ type: RunDetail, required: false, description: 'ランの記録だけ。距離と時間' })
   run?: RunDetail;
 
+  @ApiProperty({ required: false, description: 'ひとことメモ（F5）。**持ち主本人が詳細を開いたときだけ**付く。仲間には返さない。無ければ付かない' })
+  note?: string;
+
+  @ApiProperty({ required: false, minimum: 1, maximum: 10, description: 'きつさ（RPE。F5）。note と同じく持ち主本人の詳細だけ。無ければ付かない' })
+  rpe?: number;
+
   @ApiProperty({ format: 'date-time', required: false, description: '筋トレを「今日はここまで」で終えた時刻（N1）。押していなければ付かない（自動で終わった分には付かない。記録中かどうかは詳細・一覧の active）' })
   endedAt?: string;
 }
@@ -189,6 +195,22 @@ export class CreateSetRequest {
 
   @ApiProperty({ minimum: 1, maximum: 999, example: 10, description: '回数（1〜999 の整数）' })
   reps!: number;
+}
+
+export class MemoRequest {
+  @ApiProperty({ type: String, nullable: true, required: false, maxLength: 200, description: 'ひとことメモ（200字まで）。null か空白だけで消す。項目を送らなければ変えない' })
+  note?: string | null;
+
+  @ApiProperty({ type: Number, nullable: true, required: false, minimum: 1, maximum: 10, description: 'きつさ（RPE。1〜10 の整数）。null で消す。項目を送らなければ変えない' })
+  rpe?: number | null;
+}
+
+export class MemoResponse {
+  @ApiProperty({ type: String, nullable: true, description: '保存後のメモ。無ければ null' })
+  note!: string | null;
+
+  @ApiProperty({ type: Number, nullable: true, description: '保存後のきつさ。無ければ null' })
+  rpe!: number | null;
 }
 
 export class SetResponse {

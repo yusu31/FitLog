@@ -266,6 +266,14 @@ export interface RecordResponse {
   copiedFrom?: CopiedFrom;
   /** ランの記録だけ。距離と時間 */
   run?: RunDetail;
+  /** ひとことメモ（F5）。**持ち主本人が詳細を開いたときだけ**付く。仲間には返さない。無ければ付かない */
+  note?: string;
+  /**
+     * きつさ（RPE。F5）。note と同じく持ち主本人の詳細だけ。無ければ付かない
+     * @minimum 1
+     * @maximum 10
+     */
+  rpe?: number;
   /** 筋トレを「今日はここまで」で終えた時刻（N1）。押していなければ付かない（自動で終わった分には付かない。記録中かどうかは詳細・一覧の active） */
   endedAt?: string;
 }
@@ -320,6 +328,35 @@ export interface SetResponse {
   result: SetResponseResult;
   /** その種目で、過去最大の重量×回数を超えたら true（同じは false。初めての記録の最初のセットも false） */
   isPersonalBest: boolean;
+}
+
+export interface MemoRequest {
+  /**
+     * ひとことメモ（200字まで）。null か空白だけで消す。項目を送らなければ変えない
+     * @maxLength 200
+     * @nullable
+     */
+  note?: string | null;
+  /**
+     * きつさ（RPE。1〜10 の整数）。null で消す。項目を送らなければ変えない
+     * @minimum 1
+     * @maximum 10
+     * @nullable
+     */
+  rpe?: number | null;
+}
+
+export interface MemoResponse {
+  /**
+     * 保存後のメモ。無ければ null
+     * @nullable
+     */
+  note: string | null;
+  /**
+     * 保存後のきつさ。無ければ null
+     * @nullable
+     */
+  rpe: number | null;
 }
 
 export interface RecordedSet {
@@ -395,6 +432,14 @@ export interface RecordDetailResponse {
   copiedFrom?: CopiedFrom;
   /** ランの記録だけ。距離と時間 */
   run?: RunDetail;
+  /** ひとことメモ（F5）。**持ち主本人が詳細を開いたときだけ**付く。仲間には返さない。無ければ付かない */
+  note?: string;
+  /**
+     * きつさ（RPE。F5）。note と同じく持ち主本人の詳細だけ。無ければ付かない
+     * @minimum 1
+     * @maximum 10
+     */
+  rpe?: number;
   /** 筋トレを「今日はここまで」で終えた時刻（N1）。押していなければ付かない（自動で終わった分には付かない。記録中かどうかは詳細・一覧の active） */
   endedAt?: string;
   /** 筋トレの記録だけ。種目ごとのセット（種目は最初にセットを足した順）。セットが無ければ空の配列。ランと休みには付かない */
@@ -2782,6 +2827,126 @@ export const useEndWorkout = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getEndWorkoutMutationOptions(options), queryClient);
+    }
+
+export type updateRecordMemoResponse200 = {
+  data: MemoResponse
+  status: 200
+}
+
+export type updateRecordMemoResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type updateRecordMemoResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type updateRecordMemoResponseSuccess = (updateRecordMemoResponse200) & {
+  headers: Headers;
+};
+export type updateRecordMemoResponseError = (updateRecordMemoResponse400 | updateRecordMemoResponse404) & {
+  headers: Headers;
+};
+
+export type updateRecordMemoResponse = (updateRecordMemoResponseSuccess | updateRecordMemoResponseError)
+
+export const getUpdateRecordMemoUrl = (id: string,) => {
+
+
+
+
+  return `/api/records/${id}/memo`
+}
+
+/**
+ * @summary 記録にメモ・きつさ（RPE）を書く（F5）。自分の記録だけ。送った項目だけ変える
+ */
+export const updateRecordMemo = async (id: string,
+    memoRequest: MemoRequest, options?: RequestInit): Promise<updateRecordMemoResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getUpdateRecordMemoUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(memoRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: updateRecordMemoResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as updateRecordMemoResponse
+}
+
+
+
+
+
+export const getUpdateRecordMemoMutationKey = () => ['updateRecordMemo'] as const;
+
+export const getUpdateRecordMemoMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRecordMemo>>, TError,UpdateRecordMemoMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof updateRecordMemo>>, TError,UpdateRecordMemoMutationVariables, TContext> => {
+
+const mutationKey = getUpdateRecordMemoMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateRecordMemo>>, UpdateRecordMemoMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateRecordMemo(id,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateRecordMemoMutationResult = NonNullable<Awaited<ReturnType<typeof updateRecordMemo>>>
+    export type UpdateRecordMemoMutationBody = MemoRequest
+    export type UpdateRecordMemoMutationError = ErrorResponse
+    export type UpdateRecordMemoMutationVariables = {id: string;data: MemoRequest}
+
+    /**
+ * @summary 記録にメモ・きつさ（RPE）を書く（F5）。自分の記録だけ。送った項目だけ変える
+ */
+export const useUpdateRecordMemo = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRecordMemo>>, TError,UpdateRecordMemoMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateRecordMemo>>,
+        TError,
+        UpdateRecordMemoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateRecordMemoMutationOptions(options), queryClient);
     }
 
 export type getRecordResponse200 = {

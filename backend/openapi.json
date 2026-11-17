@@ -734,6 +734,67 @@
         ]
       }
     },
+    "/api/records/{id}/memo": {
+      "patch": {
+        "operationId": "updateRecordMemo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "保存後のメモ・きつさ（無ければ null）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "メモが 200 字を超える・きつさが 1〜10 の整数でない・どちらも送っていない（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・他の人の記録（RECORD_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録にメモ・きつさ（RPE）を書く（F5）。自分の記録だけ。送った項目だけ変える",
+        "tags": [
+          "records"
+        ]
+      }
+    },
     "/api/records/{id}": {
       "get": {
         "operationId": "getRecord",
@@ -2222,6 +2283,16 @@
               }
             ]
           },
+          "note": {
+            "type": "string",
+            "description": "ひとことメモ（F5）。**持ち主本人が詳細を開いたときだけ**付く。仲間には返さない。無ければ付かない"
+          },
+          "rpe": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "きつさ（RPE。F5）。note と同じく持ち主本人の詳細だけ。無ければ付かない"
+          },
           "endedAt": {
             "type": "string",
             "format": "date-time",
@@ -2320,6 +2391,43 @@
           "reps",
           "result",
           "isPersonalBest"
+        ]
+      },
+      "MemoRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "ひとことメモ（200字まで）。null か空白だけで消す。項目を送らなければ変えない"
+          },
+          "rpe": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 10,
+            "description": "きつさ（RPE。1〜10 の整数）。null で消す。項目を送らなければ変えない"
+          }
+        }
+      },
+      "MemoResponse": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "保存後のメモ。無ければ null"
+          },
+          "rpe": {
+            "type": "number",
+            "nullable": true,
+            "description": "保存後のきつさ。無ければ null"
+          }
+        },
+        "required": [
+          "note",
+          "rpe"
         ]
       },
       "RecordedSet": {
@@ -2473,6 +2581,16 @@
                 "$ref": "#/components/schemas/RunDetail"
               }
             ]
+          },
+          "note": {
+            "type": "string",
+            "description": "ひとことメモ（F5）。**持ち主本人が詳細を開いたときだけ**付く。仲間には返さない。無ければ付かない"
+          },
+          "rpe": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "きつさ（RPE。F5）。note と同じく持ち主本人の詳細だけ。無ければ付かない"
           },
           "endedAt": {
             "type": "string",

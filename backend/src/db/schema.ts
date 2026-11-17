@@ -163,9 +163,14 @@ export const records = pgTable(
     copiedFromUserId: text('copied_from_user_id').references(() => users.id, { onDelete: 'set null' }),
     // 筋トレの終了（N1。「今日はここまで」）。押すまでは null。押さなくても、最後のセットから3時間で「記録中」ではなくなる（common/workout-session.ts）
     endedAt: timestamp('ended_at', { withTimezone: true }),
+    // メモときつさ（F5）。記録ごとに1つ。持ち主だけが見る（仲間には返さない）。どちらも未入力は null
+    note: text('note'),
+    rpe: smallint('rpe'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    check('records_note_ck', sql`${t.note} is null or char_length(${t.note}) between 1 and 200`),
+    check('records_rpe_ck', sql`${t.rpe} is null or ${t.rpe} between 1 and 10`),
     index('records_user_local_date_idx').on(t.userId, t.localDate.desc()),
     index('records_user_recorded_at_idx').on(t.userId, t.recordedAt.desc()),
     // 休みは1日1件（筋トレ・ランは1日に何件でもよい）

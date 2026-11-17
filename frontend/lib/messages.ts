@@ -243,3 +243,16 @@ export const DELETE_ACCOUNT_MESSAGES = {
   failed: '退会できませんでした。少し待って、もう一度お試しください',
   network: '通信できませんでした。電波の良い所でもう一度お試しください',
 } as const;
+
+// 記録のメモ・きつさ（F5）。持ち主だけが見る。落ち度を責めない
+export const MEMO_MESSAGES = {
+  heading: 'メモときつさ',
+  rpeLabel: 'きつさ（1 らく 〜 10 限界）',
+  noteLabel: 'メモ',
+  notePlaceholder: '今日の調子、フォームの気づきなど',
+  save: '保存する',
+  saved: '保存しました',
+  saveFailed: '保存できませんでした。電波の良い所でもう一度ためしてください',
+  offline: '電波があるときに保存できます',
+  onlyMe: '自分だけに見えます（仲間には見えません）',
+} as const;

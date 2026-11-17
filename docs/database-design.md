@@ -213,6 +213,8 @@ erDiagram
 | copied_from_user_id | text | FK → users.id・NULL可 | メニューのコピー（F-24）。仲間のメニューをコピーして始めた筋トレだけ、コピー元の人の id。コピー元が抜けても消さない（画面は「仲間から」） |
 | created_at | timestamptz | NOT NULL | サーバーが保存した時刻 |
 | ended_at | timestamptz | NULL可 | 筋トレを「今日はここまで」で終えた時刻（N1）。**押した記録だけ**に入る（NULL＝まだ終えていない、または3時間で自動的に終わった）。自動で終わった分には入れない（定期実行を置かず、「記録中か」は読み出すときに `active` として計算するため）。移行 `0012_records_ended_at.sql` |
+| note | text | NULL可・CHECK（NULL か 1〜200字） | ひとことメモ（F5）。持ち主だけが見る。空白だけは保存せず NULL にする。移行 `0016_records_note_rpe.sql` |
+| rpe | smallint | NULL可・CHECK（NULL か 1〜10） | きつさ（RPE。F5）。持ち主だけが見る |
 
 制約: `kind = 'rest'` のとき、同じ `user_id`・`local_date` の組は1件だけ（部分一意インデックス。休みは1日1件）。
 
@@ -348,5 +350,6 @@ Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次�
 | 6 | videos |
 | 7 | routines・routine_sets（`0014_routines.sql`。2026-11-17。F3） |
 | 8 | 退会（F2-b）のための外部キーの削除規則（`0015_account_delete_cascade.sql`。2026-11-17）。`records.user_id`・`reactions.user_id`・`comments.user_id`・`exercises.created_by` を **CASCADE**、`groups.created_by`・`invitations.created_by`・`records.copied_from_user_id` を **SET NULL** に直した。消す順番はアプリ（`account-deletion.ts`）が守り、DB の規則はその安全網 |
+| 9 | records に note・rpe（`0016_records_note_rpe.sql`。2026-11-18。F5）。記録ごとに1つ（セットごとにしない。本人の決定） |
 
 テストでは、マイグレーションを空の DB に最初から流して通ること、2回流しても壊れないことを確かめる。
