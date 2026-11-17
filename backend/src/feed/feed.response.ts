@@ -46,6 +46,14 @@ export class FeedItem {
 
   @ApiProperty({ example: 2, description: 'コメントの数' })
   commentCount!: number;
+
+  @ApiProperty({ required: false, description: '新着の印（F4）。最後に仲間タブを見た時刻（POST /feed/seen）より後に来た仲間の記録と、仲間の新しいスタンプ・コメントが付いた自分の記録だけ true。それ以外は省く' })
+  isNew?: boolean;
+}
+
+export class FeedUnreadResponse {
+  @ApiProperty({ description: '最後に仲間タブを見たあとに、仲間の新しい記録か、自分の記録への仲間の新しいスタンプ・コメントがあれば true（週は区切らない）。一度も見ていなければ登録した時刻から数える' })
+  hasNew!: boolean;
 }
 
 export class FeedTotals {

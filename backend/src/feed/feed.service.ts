@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, between, count, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
+import { and, asc, between, count, desc, eq, gt, inArray, lt, ne, or, sql } from 'drizzle-orm';
 import { weekDates } from '../common/week.js';
 import { DB, type Db } from '../db/db.module.js';
 import { comments, exercises, reactions, records, runDetails, users, workoutSets } from '../db/schema.js';
 import { encodeCursor } from '../records/list-input.js';
 import { ownerInMyGroup } from '../records/record-access.js';
 import { FEED_PAGE_SIZE, parseFeedQuery } from './feed-input.js';
-import type { FeedItem, FeedResponse, FeedStamp, FeedTotals } from './feed.response.js';
+import type { FeedItem, FeedResponse, FeedStamp, FeedTotals, FeedUnreadResponse } from './feed.response.js';
 import { summarizeStamps } from './stamps.js';
 
 // 仲間の足跡と週の合計（F-09。docs/design.md 3章 GET /feed・6章）。
@@ -46,13 +46,17 @@ export class FeedService {
     const last = page[page.length - 1];
     const ids = page.map((r) => r.record.id);
 
-    const [exerciseNames, runs, stamps, commentCounts, totals] = await Promise.all([
+    const seenAt = await this.watermark(userId);
+    const [exerciseNames, runs, stamps, commentCounts, totals, reactedMine] = await Promise.all([
       this.exerciseNamesOf(ids),
       this.runsOf(ids),
       this.stampsOf(ids, userId),
       this.commentCountsOf(ids),
       this.totals(scope),
+      this.myRecordsWithNewReactions(userId, seenAt, ids),
     ]);
+    const isNew = (record: (typeof page)[number]['record'], authorId: string) =>
+      authorId === userId ? reactedMine.has(record.id) : record.createdAt > seenAt;
 
     const items: FeedItem[] = page.map(({ record, authorId, authorName, authorAvatar }) => ({
       id: record.id,
@@ -65,9 +69,59 @@ export class FeedService {
       ...(runs.has(record.id) ? { run: runs.get(record.id) } : {}),
       stamps: stamps.get(record.id) ?? [],
       commentCount: commentCounts.get(record.id) ?? 0,
+      ...(isNew(record, authorId) ? { isNew: true } : {}),
     }));
 
     return { weekStart, items, nextCursor: rows.length > FEED_PAGE_SIZE && last ? encodeCursor(last.record.recordedAt, last.record.id) : null, totals };
+  }
+
+  // 仲間タブの新着の印（F4）。基準は「最後に仲間タブを見た時刻」（一度も見ていなければ登録した時刻）。
+  // 新着になるのは ①同じグループの自分以外の人の記録で、基準より後に作られたもの（あとから記録した前の週の日付でも、作った時刻で見る）
+  //               ②自分の記録に、自分以外の人が基準より後に付けたスタンプ・コメント
+  // 週は区切らない（前の週の日付であとから記録したものも知らせる）。足跡を読んだだけでは基準は進まない（markSeen だけが進める）
+  async unread(userId: string): Promise<FeedUnreadResponse> {
+    const seenAt = await this.watermark(userId);
+    const [others] = await this.db
+      .select({ one: sql`1` })
+      .from(records)
+      .where(and(ownerInMyGroup(this.db, userId), ne(records.userId, userId), gt(records.createdAt, seenAt)))
+      .limit(1);
+    if (others) return { hasNew: true };
+    return { hasNew: (await this.myRecordsWithNewReactions(userId, seenAt)).size > 0 };
+  }
+
+  // 仲間タブを見た。基準を今にする。グループに入っていない人も呼べる（何も起きないのと同じ）
+  async markSeen(userId: string): Promise<void> {
+    await this.db.update(users).set({ feedSeenAt: sql`now()` }).where(eq(users.id, userId));
+  }
+
+  private async watermark(userId: string): Promise<Date> {
+    const [row] = await this.db
+      .select({ at: sql<Date>`coalesce(${users.feedSeenAt}, ${users.createdAt})`.mapWith(users.createdAt) })
+      .from(users)
+      .where(eq(users.id, userId));
+    // セッションがあるのに users の行が無いことは起きない（better-auth が行を消すとセッションも消える）。念のため「全部新着ではない」側に倒す
+    return row?.at ?? new Date();
+  }
+
+  // 自分の記録のうち、自分以外の人が seenAt より後にスタンプかコメントを付けたものの id。
+  // ids を渡したときはその中だけ（足跡の1ページ分）。渡さなければ全部（新着があるかだけを見る）
+  private async myRecordsWithNewReactions(userId: string, seenAt: Date, ids?: string[]): Promise<Set<string>> {
+    if (ids && ids.length === 0) return new Set();
+    const onlyIds = ids ? inArray(records.id, ids) : undefined;
+    const [fromStamps, fromComments] = await Promise.all([
+      this.db
+        .selectDistinct({ id: records.id })
+        .from(reactions)
+        .innerJoin(records, eq(records.id, reactions.recordId))
+        .where(and(eq(records.userId, userId), ne(reactions.userId, userId), gt(reactions.createdAt, seenAt), onlyIds)),
+      this.db
+        .selectDistinct({ id: records.id })
+        .from(comments)
+        .innerJoin(records, eq(records.id, comments.recordId))
+        .where(and(eq(records.userId, userId), ne(comments.userId, userId), gt(comments.createdAt, seenAt), onlyIds)),
+    ]);
+    return new Set([...fromStamps, ...fromComments].map((r) => r.id));
   }
 
   // 種目名の要約。重複なし・最初にセットを足した順（記録の詳細と同じ並び）

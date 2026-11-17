@@ -1030,6 +1030,43 @@
         ]
       }
     },
+    "/api/feed/unread": {
+      "get": {
+        "operationId": "getFeedUnread",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedUnreadResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "仲間タブに新着があるか（下のタブの点に使う。F4）",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/api/feed/seen": {
+      "post": {
+        "operationId": "markFeedSeen",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "基準を今にした"
+          }
+        },
+        "summary": "仲間タブを見た。新着の基準を今にする（F4）。何度呼んでもよい",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
     "/api/records/{id}/comments": {
       "get": {
         "operationId": "listComments",
@@ -2739,6 +2776,10 @@
             "type": "number",
             "example": 2,
             "description": "コメントの数"
+          },
+          "isNew": {
+            "type": "boolean",
+            "description": "新着の印（F4）。最後に仲間タブを見た時刻（POST /feed/seen）より後に来た仲間の記録と、仲間の新しいスタンプ・コメントが付いた自分の記録だけ true。それ以外は省く"
           }
         },
         "required": [
@@ -2811,6 +2852,18 @@
           "items",
           "nextCursor",
           "totals"
+        ]
+      },
+      "FeedUnreadResponse": {
+        "type": "object",
+        "properties": {
+          "hasNew": {
+            "type": "boolean",
+            "description": "最後に仲間タブを見たあとに、仲間の新しい記録か、自分の記録への仲間の新しいスタンプ・コメントがあれば true（週は区切らない）。一度も見ていなければ登録した時刻から数える"
+          }
+        },
+        "required": [
+          "hasNew"
         ]
       },
       "CommentResponse": {
