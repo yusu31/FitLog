@@ -211,6 +211,12 @@ function JapanTrek({ totalMeters }: { totalMeters: number }) {
   );
 }
 
+// 「2026-11-03」→「11/3」（取得日の表示。U10）
+function shortDate(date: string): string {
+  const [, m, d] = date.split('-');
+  return `${Number(m)}/${Number(d)}`;
+}
+
 function Stamps({ data }: { data: StatsResponse }) {
   return (
     <section aria-labelledby="stats-stamps" className="fl-slab px-4 py-3">
@@ -228,6 +234,7 @@ function Stamps({ data }: { data: StatsResponse }) {
               {s.earned ? '★' : '☆'}
             </span>
             {STAMP_LABEL[s.key]}
+            {s.earnedAt && <span className="mt-0.5 block text-[11px] font-bold text-sub-strong">{shortDate(s.earnedAt)}</span>}
             <span className="sr-only">{s.earned ? '（獲得済み）' : '（まだ）'}</span>
           </li>
         ))}

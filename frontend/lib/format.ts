@@ -24,8 +24,13 @@ export const formatMonthDay = (date: string): string => `${Number(date.slice(5, 
 // 0〜6（日曜=0）
 export const weekdayIndex = (date: string): number => new Date(`${date}T00:00:00Z`).getUTCDay();
 
-// 5200 → "5.2km"
-export const formatDistance = (meters: number): string => `${(meters / 1000).toFixed(1)}km`;
+// 5200 → "5.2km"、5040 → "5.04km"。0.01km（10m）の桁まで。1桁で足りる値は今までどおり（5000 → "5.0km"）。
+// 取り込み直後の 5.04 と、保存後の表示をそろえるため（U18）
+export function formatDistance(meters: number): string {
+  const km = Math.round(meters / 10) / 100;
+  const two = km.toFixed(2);
+  return `${two.endsWith('0') ? km.toFixed(1) : two}km`;
+}
 
 // 1930 → "32:10"、3909 → "1:05:09"
 export function formatDuration(seconds: number): string {

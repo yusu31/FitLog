@@ -8,6 +8,7 @@ import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { authClient } from '@/lib/auth-client';
+import { useInstallPrompt } from '@/lib/pwa/use-install-prompt';
 import { clearCachedUser } from '@/lib/session-cache';
 import { useAppSession } from '@/lib/use-app-session';
 import { GROUP_MESSAGES } from '@/lib/messages';
@@ -22,6 +23,7 @@ export function SettingsView() {
   const { data: session } = useAppSession();
   const group = useGetCurrentGroup({ query: { enabled: signedIn } });
   const [error, setError] = useState<string | null>(null);
+  const { canInstall, install } = useInstallPrompt();
 
   async function onSignOut() {
     setError(null);
@@ -114,6 +116,13 @@ export function SettingsView() {
             ホーム画面に追加
           </h2>
           <p className="text-sm text-sub-strong">アプリのように、ホーム画面のアイコンからすぐ開けます。仲間の反応の通知を受け取るにも、この追加が前提です。</p>
+          {/* 追加の案内を受け取れた端末（Android の Chrome など）だけ。受け取れない端末は下の文章の案内のまま */}
+          {canInstall && (
+            <ThickButton tone="white" onClick={() => void install()}>
+              <SquarePlus aria-hidden />
+              ホーム画面に追加する
+            </ThickButton>
+          )}
           <dl className="space-y-1 text-sm">
             <div>
               <dt className="font-bold">Android（Chrome）</dt>

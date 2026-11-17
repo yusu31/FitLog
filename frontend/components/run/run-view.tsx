@@ -8,7 +8,10 @@ import { cn } from 'cn';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
+import { RouteMap } from '@/components/record-detail/route-map';
+import { useGetStats } from '@/lib/api/generated';
 import { parseDayMode, recordedAtFor } from '@/lib/day-mode';
+import { trekProgress } from '@/lib/japan-route';
 import { parseGpx, type RouteLineString } from '@/lib/gpx/parse-gpx';
 import { GPX_MESSAGES, LATE_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
@@ -32,7 +35,8 @@ const FUTURE_LIMIT_MS = 5 * 60 * 1000;
 // 取り込んだ GPX。保存のときに route と開始時刻を使う
 type Gpx = { name: string; route: RouteLineString; startedAt: string | null };
 
-type Saved = { distanceM: number; durationS: number };
+// totalBeforeM: 保存する前の走った距離の累計（日本縦断の前進を出すため。分からなければ出さない）
+type Saved = { distanceM: number; durationS: number; totalBeforeM?: number };
 
 // 入力（文字）を、API に送る値（m・秒の整数）にする。読めない欄があれば NaN が入り、validateRun が弾く
 function toRun(kmText: string, minText: string, secText: string) {
@@ -50,6 +54,8 @@ export function RunView() {
   const router = useRouter();
   const online = useOnline();
   const { createRecord } = useRecordMutations();
+  const stats = useGetStats({ date: toLocalDate(new Date()) });
+  const totalRunM = stats.data?.status === 200 ? stats.data.data.totalRunDistanceM : undefined;
   // きのうの分（F-21）。?day=yesterday のとき、きのうの12:00（日本時間）の記録として late つきで送る
   const day = parseDayMode(useSearchParams().get('day'));
 
@@ -129,14 +135,14 @@ export function RunView() {
     if (!online) {
       // 電波が無いときは、送信待ちに入れて待たずに結果を出す（F-30）
       createRecord.mutate({ data });
-      setSaved({ distanceM, durationS });
+      setSaved({ distanceM, durationS, totalBeforeM: totalRunM });
       return;
     }
     setSending(true);
-    setInFlight({ distanceM, durationS });
+    setInFlight({ distanceM, durationS, totalBeforeM: totalRunM });
     try {
       await createRecord.mutateAsync({ data });
-      setSaved({ distanceM, durationS });
+      setSaved({ distanceM, durationS, totalBeforeM: totalRunM });
     } catch (e) {
       setError(sendErrorText(e, RUN_MESSAGES.sendError));
     } finally {
@@ -148,6 +154,7 @@ export function RunView() {
 
   if (shown) {
     const savedPace = paceSecPerKm(shown.distanceM, shown.durationS);
+    const trek = shown.totalBeforeM === undefined ? null : trekProgress(shown.totalBeforeM, shown.totalBeforeM + shown.distanceM);
     return (
       <FullScreen
         footer={
@@ -176,6 +183,13 @@ export function RunView() {
               </span>
             </p>
           </section>
+          {trek && (
+            <section data-testid="trek-progress" aria-label="日本縦断" className="fl-slab space-y-1 px-4 py-3">
+              <p className="text-xs font-extrabold tracking-widest text-sub">日本縦断</p>
+              {trek.arrived && <p className="text-lg font-extrabold">{trek.arrived}に着きました！</p>}
+              <p className="text-sm font-bold text-sub-strong">{trek.next}</p>
+            </section>
+          )}
         </div>
       </FullScreen>
     );
@@ -206,6 +220,8 @@ export function RunView() {
         )}
 
         <GpxPicker online={online} gpx={gpx} message={gpxMessage} onPick={onPickGpx} onClear={clearGpx} />
+        {/* 保存する前に、読み取ったルートの形を確かめられる（U19）。保存後の詳細と同じ地図の部品 */}
+        {gpx && <RouteMap route={gpx.route} />}
 
         <NumberField
           label="距離（km）"
