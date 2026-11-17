@@ -208,3 +208,25 @@ export const FRIEND_MESSAGES = {
   planFrom: (name: string | null) => (name ? `${name}さんの メニューから` : '仲間の メニューから'),
   copiedTag: (name: string | null) => (name ? `${name}さんから` : '仲間から'),
 } as const;
+
+// ルーティン（F3）。よくやるメニューを保存して、今日の画面から始める
+export const ROUTINE_MESSAGES = {
+  saveButton: 'ルーティンに保存',
+  nameLabel: 'ルーティンの名前',
+  nameHint: (max: number) => `${max}字まで。同じ名前は重ねて保存できません。`,
+  namePlaceholder: '例: 脚の日',
+  submit: '保存する',
+  saving: '保存しています',
+  cancel: 'やめる',
+  saved: (name: string) => `「${name}」を保存しました。今日の画面から始められます`,
+  saveFailed: '保存できませんでした。電波の良い所でもう一度ためしてください',
+  saveOffline: '電波があるときに保存できます',
+  heading: 'ルーティンから始める',
+  start: (name: string) => `${name}を始める`,
+  deleteLabel: (name: string) => `${name}を消す`,
+  deleteTitle: 'ルーティンを消しますか？',
+  deleteBody: (name: string) => `「${name}」を消します。これまでの記録は消えません。`,
+  deleteFailed: '消せませんでした。電波の良い所でもう一度ためしてください',
+  planFrom: (name: string) => `ルーティン「${name}」から`,
+  ghostLabel: 'ルーティンの 予定',
+} as const;

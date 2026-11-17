@@ -12,9 +12,9 @@ import { ListRecordsKind, useGetPrevious, useGetRecord, useGetStats, useListExer
 import { messageOf } from '@/lib/api/message';
 import { formatSetProgress, formatSetWithReps } from '@/lib/format';
 import { activeRecordId, noteBest, recordForNextSet } from '@/lib/current-workout';
-import { getCopyPlan, markCopyPlanUsed, planSetsFor } from '@/lib/copy-plan';
+import { getCopyPlan, markCopyPlanUsed, planGhostLabel, planHeading, planSetsFor } from '@/lib/copy-plan';
 import { dayDateOf, parseDayMode, recordedAtFor, withDay } from '@/lib/day-mode';
-import { FRIEND_MESSAGES, LATE_MESSAGES, SYNC_MESSAGES } from '@/lib/messages';
+import { LATE_MESSAGES, SYNC_MESSAGES } from '@/lib/messages';
 import { monthDayCount } from '@/lib/stats';
 import { buildMenu } from '@/lib/today-menu';
 import { useRecordMutations } from '@/lib/mutations';
@@ -161,7 +161,7 @@ export function RecordView() {
     const { recordId: rid, isNew } = recordForNextSet(now, day, serverActiveId);
     if (isNew) {
       // コピーして始めた記録だけ、コピー元を付ける（最初の記録だけ。以降は付けない）
-      const copiedFromUserId = plan && !plan.used ? plan.fromUserId : undefined;
+      const copiedFromUserId = plan && !plan.used ? (plan.fromUserId ?? undefined) : undefined;
       if (copiedFromUserId) markCopyPlanUsed();
       mutations.createRecord.mutate({
         data: {
@@ -257,8 +257,8 @@ export function RecordView() {
         </p>
       )}
       {plan && (
-        <nav aria-label={FRIEND_MESSAGES.planFrom(plan.fromName)} className="mx-4 mt-2 rounded-fl bg-teal-light px-4 py-2">
-          <p className="text-xs font-extrabold text-ink">{FRIEND_MESSAGES.planFrom(plan.fromName)}</p>
+        <nav aria-label={planHeading(plan)} className="mx-4 mt-2 rounded-fl bg-teal-light px-4 py-2">
+          <p className="text-xs font-extrabold text-ink">{planHeading(plan)}</p>
           <ul className="mt-1 flex flex-wrap gap-1.5">
             {plan.items.map((i) => (
               <li key={i.exerciseId}>
@@ -316,7 +316,7 @@ export function RecordView() {
             current={draft}
             isTrial={initial.source === 'trial'}
             friends={barFriends}
-            {...(planSets ? { label: plan?.fromName ? `${plan.fromName}さんの 予定` : '仲間の 予定' } : {})}
+            {...(planSets && plan ? { label: planGhostLabel(plan) } : {})}
           />
         )}
 

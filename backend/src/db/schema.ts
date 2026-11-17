@@ -288,3 +288,50 @@ export const videos = pgTable(
   },
   (t) => [check('videos_size_ck', sql`${t.sizeBytes} between 1 and 10485760`)],
 );
+
+// ── ルーティン（docs/database-design.md routines・routine_sets。F3） ─────────────────
+// よくやるメニューの保存。自分の筋トレの記録1件から、種目と回数・重さを写して作る（記録とはつながない。元の記録を消してもルーティンは残る）。
+// 1人 5 件まで（API が持ち主の users の行を FOR UPDATE でロックしてから数える）。名前は 1〜20 字・同じ人の中で同じ名前は不可（大文字小文字は区別しない）。
+// 持ち主が退会すると一緒に消える（ON DELETE CASCADE）
+export const ROUTINE_MAX = 5;
+export const ROUTINE_NAME_MAX = 20;
+export const routines = pgTable(
+  'routines',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('routines_user_name_uq').on(t.userId, sql`lower(${t.name})`),
+    check('routines_name_ck', sql`char_length(${t.name}) between 1 and 20`),
+  ],
+);
+
+// ルーティンの中身。1行が1セット。position は種目の並び（1から。元の記録で最初にセットを足した順）。
+// 範囲の CHECK は workout_sets と同じ（写した値なので、すり抜けることは無いが DB でも止める）
+export const routineSets = pgTable(
+  'routine_sets',
+  {
+    routineId: uuid('routine_id')
+      .notNull()
+      .references(() => routines.id, { onDelete: 'cascade' }),
+    exerciseId: uuid('exercise_id')
+      .notNull()
+      .references(() => exercises.id),
+    position: smallint('position').notNull(),
+    setNo: smallint('set_no').notNull(),
+    weightKg: numeric('weight_kg', { precision: 4, scale: 1 }).notNull(),
+    reps: smallint('reps').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.routineId, t.exerciseId, t.setNo] }),
+    check('routine_sets_position_ck', sql`${t.position} between 1 and 99`),
+    check('routine_sets_set_no_ck', sql`${t.setNo} between 1 and 99`),
+    check('routine_sets_weight_ck', sql`${t.weightKg} between 0 and 500 and (${t.weightKg} * 2) = trunc(${t.weightKg} * 2)`),
+    check('routine_sets_reps_ck', sql`${t.reps} between 1 and 999`),
+  ],
+);

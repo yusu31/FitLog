@@ -978,6 +978,122 @@
         ]
       }
     },
+    "/api/routines": {
+      "get": {
+        "operationId": "listRoutines",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineListResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分のルーティンの一覧（保存した順）と上限",
+        "tags": [
+          "routines"
+        ]
+      },
+      "post": {
+        "operationId": "createRoutine",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoutineRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "名前が 1〜20字でない・recordId が UUID でない（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・他の人の記録（RECORD_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "筋トレでない（RECORD_KIND_MISMATCH）・セットが無い（ROUTINE_EMPTY）・もう5つある（ROUTINE_LIMIT）・同じ名前がある（ROUTINE_NAME_TAKEN）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分の筋トレの記録1件から、種目と回数・重さを写してルーティンを保存する",
+        "tags": [
+          "routines"
+        ]
+      }
+    },
+    "/api/routines/{id}": {
+      "delete": {
+        "operationId": "deleteRoutine",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "消した"
+          },
+          "404": {
+            "description": "無い・他の人のもの・もう消した（ROUTINE_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分のルーティンを消す",
+        "tags": [
+          "routines"
+        ]
+      }
+    },
     "/api/feed": {
       "get": {
         "operationId": "getFeed",
@@ -2675,6 +2791,138 @@
           "weekly",
           "stamps",
           "totalRunDistanceM"
+        ]
+      },
+      "RoutineSet": {
+        "type": "object",
+        "properties": {
+          "setNo": {
+            "type": "number",
+            "example": 1,
+            "description": "種目の中で1から振り直した番号"
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 40
+          },
+          "reps": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "setNo",
+          "weightKg",
+          "reps"
+        ]
+      },
+      "RoutineExercise": {
+        "type": "object",
+        "properties": {
+          "exerciseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "ベンチプレス"
+          },
+          "bodyPart": {
+            "type": "string",
+            "enum": [
+              "chest",
+              "back",
+              "shoulders",
+              "arms",
+              "abs",
+              "glutes",
+              "legs"
+            ]
+          },
+          "sets": {
+            "description": "セット番号の昇順",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoutineSet"
+            }
+          }
+        },
+        "required": [
+          "exerciseId",
+          "name",
+          "bodyPart",
+          "sets"
+        ]
+      },
+      "RoutineResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "脚の日",
+            "description": "1〜20字"
+          },
+          "exercises": {
+            "description": "種目の並びは、元の記録で最初にセットを足した順",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoutineExercise"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "exercises",
+          "createdAt"
+        ]
+      },
+      "RoutineListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "古い順（保存した順）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoutineResponse"
+            }
+          },
+          "max": {
+            "type": "number",
+            "example": 5,
+            "description": "1人が保存できる上限"
+          }
+        },
+        "required": [
+          "items",
+          "max"
+        ]
+      },
+      "CreateRoutineRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "脚の日",
+            "description": "前後の空白を除いて 1〜20字。同じ名前（大文字小文字を区別しない）は保存できない"
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "写す元の、自分の筋トレの記録（セットが1つ以上あるもの）"
+          }
+        },
+        "required": [
+          "name",
+          "recordId"
         ]
       },
       "FeedStamp": {

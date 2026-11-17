@@ -13,6 +13,7 @@ import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
 import { useCreateExercise, useGetCurrentGroup, useGetPrevious, useGetRecord, useListExercises, type RecordDetailResponse, type RecordedExercise } from '@/lib/api/generated';
+import { SaveRoutine } from '@/components/routine/save-routine';
 import { setCopyPlan } from '@/lib/copy-plan';
 import {
   formatDistance,
@@ -138,6 +139,7 @@ export function RecordDetailView() {
         )}
         {record.kind === 'workout' && <Workout record={record} mine={mine} />}
         {record.kind === 'workout' && !mine && by !== '' && (record.exercises?.length ?? 0) > 0 && <CopyButton record={record} fromUserId={by} />}
+        {record.kind === 'workout' && mine && (record.exercises?.length ?? 0) > 0 && <SaveRoutine recordId={record.id} />}
         {record.videoId && <VideoPlayer videoId={record.videoId} />}
         {record.kind === 'run' && record.run && <Run distanceM={record.run.distanceM} durationS={record.run.durationS} />}
         {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} ghost={record.previousRun?.route} />}

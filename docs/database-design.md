@@ -26,6 +26,9 @@ erDiagram
     records ||--o{ comments : ""
     users ||--o{ reactions : ""
     users ||--o{ comments : ""
+    users ||--o{ routines : "最大5つ"
+    routines ||--|{ routine_sets : "中身"
+    exercises ||--o{ routine_sets : ""
 
     users {
         text id PK
@@ -76,6 +79,19 @@ erDiagram
         integer distance_m
         integer duration_s
         jsonb route
+    }
+    routines {
+        uuid id PK
+        text user_id FK
+        text name
+    }
+    routine_sets {
+        uuid routine_id PK
+        uuid exercise_id PK
+        smallint set_no PK
+        smallint position
+        numeric weight_kg
+        smallint reps
     }
     videos {
         uuid id PK
@@ -258,6 +274,32 @@ erDiagram
 
 自分のコメントは削除できる（物理削除）。
 
+### routines（ルーティン。F3）
+
+よくやるメニューの保存。自分の筋トレの記録1件から、種目と回数・重さを写して作る（記録とはつながない。元の記録を消してもルーティンは残る）。
+
+| 列名 | 型 | 制約 | 説明 |
+|------|-----|------|------|
+| id | uuid | PK・DEFAULT gen_random_uuid() | サーバーで作る（保存は電波があるときだけ。送信待ちには積まない） |
+| user_id | text | FK → users.id・NOT NULL・ON DELETE CASCADE | 持ち主。退会（F2）で一緒に消える |
+| name | text | NOT NULL・CHECK（1〜20字） | 前後の空白は API が除く |
+| created_at | timestamptz | NOT NULL | 一覧はこの昇順（保存した順） |
+
+制約: `(user_id, lower(name))` は一意（同じ人の中で同じ名前は不可。大文字小文字は区別しない）。1人5件まで（DB では数えない。API が持ち主の `users` の行を `FOR UPDATE` でロックしてから数える。同時押しで6件になるのを防ぐ）。
+
+### routine_sets（ルーティンの中身。F3）
+
+| 列名 | 型 | 制約 | 説明 |
+|------|-----|------|------|
+| routine_id | uuid | PK・FK → routines.id・ON DELETE CASCADE | ルーティンを消すと一緒に消える |
+| exercise_id | uuid | PK・FK → exercises.id | 種目は消させない（NO ACTION）。名前・部位は exercises から引く |
+| set_no | smallint | PK・CHECK（1〜99） | 種目ごとに1から振り直す（途中のセットを消した記録でも 1,2,3…） |
+| position | smallint | NOT NULL・CHECK（1〜99） | 種目の並び。元の記録で最初にセットを足した順 |
+| weight_kg | numeric(4,1) | NOT NULL・CHECK（workout_sets と同じ） | |
+| reps | smallint | NOT NULL・CHECK（1〜999） | |
+
+主キーは3列の組（複合主キー）。重量・回数は、ルーティン・種目・セット番号の3つがそろって初めて決まる。
+
 ---
 
 ## 3. 列挙値（Enum）の定義
@@ -304,5 +346,6 @@ Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次�
 | 4 | record_kind・records（`0004_records.sql`。2026-11-01）・workout_sets（`0005_workout_sets.sql`。2026-11-02）・run_details（`0006_run_details.sql`）・route（`0008_run_details_route.sql`。2026-11-04） |
 | 5 | reactions・comments（`0007_reactions_comments.sql`。2026-11-03）。`user_id` は `users.id` を参照するだけで ON DELETE CASCADE は付けない（`records.user_id` と同じ。退会は作らない）。記録を消すと `record_id` の CASCADE で一緒に消える |
 | 6 | videos |
+| 7 | routines・routine_sets（`0014_routines.sql`。2026-11-17。F3） |
 
 テストでは、マイグレーションを空の DB に最初から流して通ること、2回流しても壊れないことを確かめる。
