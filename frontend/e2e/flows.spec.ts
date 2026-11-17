@@ -94,3 +94,30 @@ test('T-FIRST-01 登録した直後の人が、今日 → 種目を選ぶ → �
   await page.goto('/today/');
   await expect(page.getByText('できた', { exact: true }).first()).toBeVisible();
 });
+
+// Q1: 電波が無いときに「できた」を押しても結果が出て、電波が戻ると記録が API に届く（オフライン記録。docs/tech-stack.md）。
+// Service Worker は開発サーバーで無効なので、画面を開いたあとに電波を切る（画面のファイルが端末にある状態の再現）
+test('T-OFFLINE-01 電波が無いときに記録しても結果が出て、電波が戻ると API に届く', async ({ page, context }) => {
+  await signUp(page, newEmail('offline'));
+  await page.getByRole('link', { name: '種目を選ぶ' }).click();
+  await expect(page).toHaveURL(/\/exercises\/?$/);
+  await page.locator('a[href^="/record?exercise="]').first().click();
+  await expect(page).toHaveURL(/\/record\/?\?exercise=/);
+  await expect(page.getByRole('button', { name: 'できた' })).toBeVisible();
+
+  const countRecords = async (): Promise<number> => {
+    const res = await page.request.get('/api/records?limit=100');
+    expect(res.ok()).toBe(true);
+    return ((await res.json()) as { items: unknown[] }).items.length;
+  };
+  expect(await countRecords()).toBe(0);
+
+  await context.setOffline(true);
+  await page.getByRole('button', { name: 'できた' }).click();
+  // 電波が無くても、手元の画面では結果が出る（楽観的更新）
+  await expect(page.getByTestId('result-sheet')).toBeVisible();
+
+  // 電波が戻ると、送信待ちの記録が API に届く（ちょうど1件。二重に送られない）
+  await context.setOffline(false);
+  await expect.poll(countRecords, { timeout: 30_000 }).toBe(1);
+});
