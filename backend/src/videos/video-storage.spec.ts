@@ -67,3 +67,28 @@ describe('createVideoStorage（環境変数から置き場を決める）', () =
     }
   });
 });
+
+// 退会（F2-b）で本人の動画をまとめて消す。S3 の一括削除は 1 回 1,000 件まで・1件ずつの失敗は例外にならず Errors に入る
+describe('S3VideoStorage.deleteMany（まとめて削除）', () => {
+  const sendWith = (reply: (input: { Delete: { Objects: unknown[] } }) => object) => {
+    const send = vi.fn((command: { input: { Delete: { Objects: unknown[] } } }) => Promise.resolve(reply(command.input)));
+    return { send, storage: new S3VideoStorage({ send } as unknown as S3Client, 'fitlog-test-bucket', 300) };
+  };
+
+  it('0件のときは S3 を呼ばない', async () => {
+    const { send, storage: s } = sendWith(() => ({}));
+    await s.deleteMany([]);
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('1,000 件ずつに分けて消す（2,001 件なら 3 回）', async () => {
+    const { send, storage: s } = sendWith(() => ({}));
+    await s.deleteMany(Array.from({ length: 2001 }, (_, i) => `videos/${i}`));
+    expect(send.mock.calls.map(([c]) => c.input.Delete.Objects.length)).toEqual([1000, 1000, 1]);
+  });
+
+  it('S3 が一部の削除を拒否したら（Errors）、例外にして呼び出し側に知らせる', async () => {
+    const { storage: s } = sendWith(() => ({ Errors: [{ Key: 'videos/a', Code: 'AccessDenied' }] }));
+    await expect(s.deleteMany(['videos/a'])).rejects.toThrow('AccessDenied');
+  });
+});

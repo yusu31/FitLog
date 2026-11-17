@@ -39,11 +39,12 @@ resource "aws_iam_role_policy" "lambda_secrets" {
 }
 
 # 動画の署名付き URL（POST/GET）を発行する人（このロール）が、その操作の権限を持っている必要がある。
-# 許すのは動画用バケットの videos/ の下だけ（キーは videos/{id}。backend/src/videos）。ListBucket・削除は許さない
+# 許すのは動画用バケットの videos/ の下だけ（キーは videos/{id}。backend/src/videos）。ListBucket は許さない。
+# DeleteObject は退会（F2-b）で本人の動画を消すために足した。持ち主の確認はアプリ側（account-deletion.ts）で行う
 data "aws_iam_policy_document" "lambda_videos" {
   statement {
     sid       = "VideoObjects"
-    actions   = ["s3:PutObject", "s3:GetObject"]
+    actions   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
     resources = ["${aws_s3_bucket.videos.arn}/videos/*"]
   }
 }
