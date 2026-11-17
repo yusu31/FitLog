@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
-import { useGetFeed, type FeedTotals } from '@/lib/api/generated';
+import { getGetFeedUnreadQueryKey, markFeedSeen, useGetFeed, type FeedTotals } from '@/lib/api/generated';
 import { describeTotals } from '@/lib/feed';
 import { FEED_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
@@ -19,6 +20,7 @@ export function FeedSection() {
 function FeedPage({ weekStart, cursor, isFirst = false }: { weekStart: string; cursor: string | undefined; isFirst?: boolean }) {
   const { data, isPending, isError } = useGetFeed({ weekStart, ...(cursor ? { cursor } : {}) });
   const [more, setMore] = useState(false);
+  useMarkSeen(isFirst && !isPending && !isError && data?.status === 200);
 
   if (isPending) {
     return <div aria-busy="true" aria-label="足跡を読み込み中" className="h-40 animate-pulse rounded-fl bg-face" />;
@@ -54,6 +56,21 @@ function FeedPage({ weekStart, cursor, isFirst = false }: { weekStart: string; c
         ))}
     </>
   );
+}
+
+// 新着の印（F4）。最初のページが読めたら「見た」を1回だけ送り、下のタブの点を消す。
+// 送れなくても（電波なし等）足跡は見られるので、知らせない。次に開いたときにまた送る。
+// 札（新着）は今読んだ足跡の値のまま残す（送ったあとに足跡を取り直さない。見ている最中に札が消えないように）
+function useMarkSeen(ready: boolean) {
+  const queryClient = useQueryClient();
+  const sent = useRef(false);
+  useEffect(() => {
+    if (!ready || sent.current) return;
+    sent.current = true;
+    markFeedSeen()
+      .then(() => queryClient.setQueryData(getGetFeedUnreadQueryKey(), { status: 200, data: { hasNew: false }, headers: new Headers() }))
+      .catch(() => undefined);
+  }, [ready, queryClient]);
 }
 
 // 今週のグループ合計。順位・連続日数は出さない。だれも記録していない週は数字ではなく一言

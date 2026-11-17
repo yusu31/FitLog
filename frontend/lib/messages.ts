@@ -169,6 +169,8 @@ export const SYNC_MESSAGES = {
 // 仲間タブの足跡・週の合計・スタンプ・コメント（S-20。screen-design.md「スタンプと定型コメント（F-10）」）。
 // 順位・連続日数・数を競う言い方は入れない。付け外しは電波があるときだけ（F-30）
 export const FEED_MESSAGES = {
+  // 新着の札（F4）。最後に仲間タブを見たあとに来た足跡・反応が付いた自分の記録
+  newTag: '新着',
   weekHeading: '今週のグループ',
   totalsEmpty: '今週は まだ だれも記録していないよ',
   volumeLabel: '総重量',

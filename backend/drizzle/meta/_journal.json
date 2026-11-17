@@ -92,6 +92,13 @@
       "when": 1794829439427,
       "tag": "0012_records_ended_at",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794894662093,
+      "tag": "0013_users_feed_seen_at",
+      "breakpoints": true
     }
   ]
 }

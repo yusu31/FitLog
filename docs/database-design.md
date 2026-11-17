@@ -122,6 +122,7 @@ erDiagram
 | email_verified | boolean | NOT NULL | better-auth の列 |
 | image | text |  | better-auth の列（使わない） |
 | avatar | jsonb | NOT NULL | キャラの設定。`{"body":"A","hair":1,"hairColor":"brown","shirtColor":"teal","pantsColor":"navy"}`。既定値は体型 A・髪型 1・既定の色 |
+| feed_seen_at | timestamptz | NULL可 | 最後に仲間タブを見た時刻（F4 の新着の印）。これより後に来た仲間の記録・自分の記録への反応が「新着」。NULL＝一度も見ていない（基準は created_at）。**端末ではなくサーバーに持つ**（スマホと PC で同じ印にするため。端末保存は端末をまたいで同期しない）。`0013_users_feed_seen_at.sql` |
 | created_at | timestamptz | NOT NULL |  |
 | updated_at | timestamptz | NOT NULL |  |
 

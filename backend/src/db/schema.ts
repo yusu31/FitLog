@@ -24,6 +24,9 @@ export const users = pgTable('users', {
   image: text('image'),
   // better-auth の列ではない。登録のときは渡されないので、DB の既定値で埋まる
   avatar: jsonb('avatar').notNull().default(DEFAULT_AVATAR),
+  // 仲間タブの新着の印（F4）。最後に仲間タブを見た時刻。これより後に来た仲間の記録・自分の記録への反応が「新着」。
+  // 一度も見ていなければ null（基準は登録した時刻）。端末ではなくサーバーに持つので、スマホと PC で同じ印になる
+  feedSeenAt: timestamp('feed_seen_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

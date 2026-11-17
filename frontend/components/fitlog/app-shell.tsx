@@ -35,7 +35,7 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
             <WakingNote />
           </main>
         )}
-        <TabBar />
+        <TabBar signedIn={Boolean(session)} />
       </div>
     </div>
   );

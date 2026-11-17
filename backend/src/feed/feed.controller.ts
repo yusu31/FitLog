@@ -14,7 +14,7 @@ import {
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { ErrorResponse } from '../common/error-response.js';
-import { CommentListResponse, CommentResponse, CreateCommentRequest, CreateReactionRequest, FeedResponse, ReactionListResponse, ReactionResponse } from './feed.response.js';
+import { CommentListResponse, CommentResponse, CreateCommentRequest, CreateReactionRequest, FeedResponse, FeedUnreadResponse, ReactionListResponse, ReactionResponse } from './feed.response.js';
 import { FeedService } from './feed.service.js';
 import { SocialService } from './social.service.js';
 
@@ -32,6 +32,21 @@ export class FeedController {
   @ApiBadRequestResponse({ type: ErrorResponse, description: 'weekStart が実在する YYYY-MM-DD でない・無い、cursor が壊れている（VALIDATION_ERROR）' })
   getFeed(@Session() session: UserSession, @Query('weekStart') weekStart?: string, @Query('cursor') cursor?: string) {
     return this.feed.feed(session.user.id, { weekStart, cursor });
+  }
+
+  @Get('unread')
+  @ApiOperation({ operationId: 'getFeedUnread', summary: '仲間タブに新着があるか（下のタブの点に使う。F4）' })
+  @ApiOkResponse({ type: FeedUnreadResponse })
+  getUnread(@Session() session: UserSession): Promise<FeedUnreadResponse> {
+    return this.feed.unread(session.user.id);
+  }
+
+  @Post('seen')
+  @HttpCode(204)
+  @ApiOperation({ operationId: 'markFeedSeen', summary: '仲間タブを見た。新着の基準を今にする（F4）。何度呼んでもよい' })
+  @ApiNoContentResponse({ description: '基準を今にした' })
+  async markSeen(@Session() session: UserSession): Promise<void> {
+    await this.feed.markSeen(session.user.id);
   }
 }
 

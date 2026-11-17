@@ -609,6 +609,8 @@ export interface FeedItem {
   stamps: FeedStamp[];
   /** コメントの数 */
   commentCount: number;
+  /** 新着の印（F4）。最後に仲間タブを見た時刻（POST /feed/seen）より後に来た仲間の記録と、仲間の新しいスタンプ・コメントが付いた自分の記録だけ true。それ以外は省く */
+  isNew?: boolean;
 }
 
 export interface FeedTotals {
@@ -632,6 +634,11 @@ export interface FeedResponse {
   nextCursor: string | null;
   /** その週のグループ合計（ページに関係なく週全体）。順位・連続日数は持たない。グループに入っていなければすべて 0 */
   totals: FeedTotals;
+}
+
+export interface FeedUnreadResponse {
+  /** 最後に仲間タブを見たあとに、仲間の新しい記録か、自分の記録への仲間の新しいスタンプ・コメントがあれば true（週は区切らない）。一度も見ていなければ登録した時刻から数える */
+  hasNew: boolean;
 }
 
 export interface CommentResponse {
@@ -3590,6 +3597,219 @@ export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError =
 
 
 
+
+export type getFeedUnreadResponse200 = {
+  data: FeedUnreadResponse
+  status: 200
+}
+
+export type getFeedUnreadResponseSuccess = (getFeedUnreadResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getFeedUnreadResponse = (getFeedUnreadResponseSuccess)
+
+export const getGetFeedUnreadUrl = () => {
+
+
+
+
+  return `/api/feed/unread`
+}
+
+/**
+ * @summary 仲間タブに新着があるか（下のタブの点に使う。F4）
+ */
+export const getFeedUnread = async ( options?: RequestInit): Promise<getFeedUnreadResponse> => {
+
+  const res = await fetch(getGetFeedUnreadUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getFeedUnreadResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getFeedUnreadResponse
+}
+
+
+
+
+
+export const getGetFeedUnreadQueryKey = () => {
+    return [
+    `/api/feed/unread`
+    ] as const;
+    }
+
+
+export const getGetFeedUnreadQueryOptions = <TData = Awaited<ReturnType<typeof getFeedUnread>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFeedUnreadQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFeedUnread>>> = ({ signal }) => getFeedUnread({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetFeedUnreadQueryResult = NonNullable<Awaited<ReturnType<typeof getFeedUnread>>>
+export type GetFeedUnreadQueryError = unknown
+
+
+export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFeedUnread>>,
+          TError,
+          Awaited<ReturnType<typeof getFeedUnread>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFeedUnread>>,
+          TError,
+          Awaited<ReturnType<typeof getFeedUnread>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 仲間タブに新着があるか（下のタブの点に使う。F4）
+ */
+
+export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetFeedUnreadQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type markFeedSeenResponse204 = {
+  data: void
+  status: 204
+}
+
+export type markFeedSeenResponseSuccess = (markFeedSeenResponse204) & {
+  headers: Headers;
+};
+;
+
+export type markFeedSeenResponse = (markFeedSeenResponseSuccess)
+
+export const getMarkFeedSeenUrl = () => {
+
+
+
+
+  return `/api/feed/seen`
+}
+
+/**
+ * @summary 仲間タブを見た。新着の基準を今にする（F4）。何度呼んでもよい
+ */
+export const markFeedSeen = async ( options?: RequestInit): Promise<markFeedSeenResponse> => {
+
+  const res = await fetch(getMarkFeedSeenUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: markFeedSeenResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as markFeedSeenResponse
+}
+
+
+
+
+
+export const getMarkFeedSeenMutationKey = () => ['markFeedSeen'] as const;
+
+export const getMarkFeedSeenMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markFeedSeen>>, TError,void, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof markFeedSeen>>, TError,void, TContext> => {
+
+const mutationKey = getMarkFeedSeenMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markFeedSeen>>, void> = () => {
+
+
+          return  markFeedSeen(fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkFeedSeenMutationResult = NonNullable<Awaited<ReturnType<typeof markFeedSeen>>>
+
+    export type MarkFeedSeenMutationError = unknown
+
+
+    /**
+ * @summary 仲間タブを見た。新着の基準を今にする（F4）。何度呼んでもよい
+ */
+export const useMarkFeedSeen = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markFeedSeen>>, TError,void, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof markFeedSeen>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getMarkFeedSeenMutationOptions(options), queryClient);
+    }
 
 export type listCommentsResponse200 = {
   data: CommentListResponse

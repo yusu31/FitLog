@@ -77,6 +77,9 @@ export function FeedCard({ item }: { item: FeedItem }) {
           </p>
           <p className="mt-0.5 text-xs font-bold text-sub">
             {formatMonthDay(item.localDate)} {item.late ? <LateTag /> : formatJstTime(item.recordedAt)}
+            {item.isNew && (
+              <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-[11px] font-extrabold text-white">{FEED_MESSAGES.newTag}</span>
+            )}
           </p>
         </div>
       </div>

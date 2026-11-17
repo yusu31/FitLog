@@ -32,8 +32,12 @@ type Reply = { status: number; body?: unknown };
 let replies: Record<string, Reply[]> = {};
 const calls: { method: string; url: string; body?: unknown }[] = [];
 
+// 足跡を開くと「見た」（POST /feed/seen。F4）が必ず1回飛ぶ。ほかのテストではそれを除いて数える
+const feedGets = () => calls.filter((c) => c.method === 'GET' && c.url.startsWith('/api/feed?'));
+const sentPosts = () => calls.filter((c) => c.method === 'POST' && c.url !== '/api/feed/seen');
+
 beforeEach(() => {
-  replies = {};
+  replies = { 'POST /api/feed/seen': [{ status: 204 }] };
   calls.length = 0;
   onlineManager.setOnline(true);
   vi.stubGlobal(
@@ -150,7 +154,7 @@ describe('FeedSection（S-20 の足跡・週の合計）', () => {
     await user.click(await screen.findByRole('button', { name: 'もっと見る' }));
     expect(await screen.findByText('じろう')).toBeInTheDocument();
     expect(screen.getByText('はなこ')).toBeInTheDocument();
-    expect(calls[1].url).toContain('cursor=c1');
+    expect(feedGets()[1].url).toContain('cursor=c1');
     expect(screen.queryByRole('button', { name: 'もっと見る' })).not.toBeInTheDocument();
   });
 
@@ -194,7 +198,7 @@ describe('スタンプ', () => {
     renderFeed();
     await user.click(await screen.findByRole('button', { name: 'おつかれ' }));
     expect(await screen.findByRole('button', { name: 'おつかれ 1' })).toHaveAttribute('aria-pressed', 'true');
-    const post = calls.find((c) => c.method === 'POST')!;
+    const post = sentPosts()[0];
     expect(post.body).toMatchObject({ stampKey: 'clap' });
     expect((post.body as { id: string }).id).toMatch(/^[0-9a-f-]{36}$/);
   });
@@ -257,7 +261,7 @@ describe('コメント', () => {
     await user.click(await screen.findByRole('button', { name: 'コメント' }));
     await user.click(screen.getByRole('button', { name: 'ナイス！' }));
     expect(await screen.findByText('コメントを送ったよ')).toBeInTheDocument();
-    expect(calls.find((c) => c.method === 'POST')!.body).toMatchObject({ body: 'ナイス！' });
+    expect(sentPosts()[0].body).toMatchObject({ body: 'ナイス！' });
     expect(await screen.findByRole('button', { name: 'コメント 1' })).toBeInTheDocument();
   });
 
@@ -272,7 +276,7 @@ describe('コメント', () => {
     await user.type(input, body);
     await user.click(screen.getByRole('button', { name: '送る' }));
     await screen.findByText('コメントを送ったよ');
-    expect(calls.find((c) => c.method === 'POST')!.body).toMatchObject({ body });
+    expect(sentPosts()[0].body).toMatchObject({ body });
     expect(input).toHaveValue('');
   });
 
@@ -284,7 +288,7 @@ describe('コメント', () => {
     await user.type(screen.getByLabelText('自由に書く（50字まで）'), '   ');
     await user.click(screen.getByRole('button', { name: '送る' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('コメントは1〜50字で入れてください');
-    expect(calls.some((c) => c.method === 'POST')).toBe(false);
+    expect(sentPosts()).toHaveLength(0);
   });
 
   it('入力欄は 51 字目を受け付けない（maxLength=50）', async () => {
@@ -316,5 +320,37 @@ describe('コメント', () => {
     onlineManager.setOnline(false);
     await waitFor(() => expect(screen.getByRole('button', { name: '送る' })).toBeDisabled());
     expect(screen.getByRole('button', { name: 'ナイス！' })).toBeDisabled();
+  });
+});
+
+// 新着の印（F4）。足跡の最初のページが読めたら「見た」を1回だけ送る。新着の足跡には NEW の札
+describe('新着の印', () => {
+  it('新着（isNew）の足跡にだけ「新着」の札を出す', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 'r1', isNew: true }), item({ id: 'r2' })] }) }];
+    replies['POST /api/feed/seen'] = [{ status: 204 }];
+    renderFeed();
+    const list = await screen.findByRole('list', { name: '仲間の足跡' });
+    const items = within(list).getAllByRole('listitem').filter((li) => li.parentElement === list);
+    expect(within(items[0]).getByText('新着')).toBeInTheDocument();
+    expect(within(items[1]).queryByText('新着')).not.toBeInTheDocument();
+  });
+
+  it('足跡が読めたら POST /feed/seen を1回だけ送る（もっと見るで続きを読んでも増えない）', async () => {
+    replies['GET /api/feed'] = [
+      { status: 200, body: feed({ nextCursor: 'c1' }) },
+      { status: 200, body: feed({ items: [item({ id: 'r9' })], nextCursor: null }) },
+    ];
+    replies['POST /api/feed/seen'] = [{ status: 204 }];
+    renderFeed();
+    await userEvent.click(await screen.findByRole('button', { name: 'もっと見る' }));
+    await waitFor(() => expect(calls.filter((c) => c.method === 'GET' && c.url.startsWith('/api/feed?')).length).toBe(2));
+    expect(calls.filter((c) => c.method === 'POST' && c.url === '/api/feed/seen')).toHaveLength(1);
+  });
+
+  it('読み込みに失敗したら「見た」は送らない', async () => {
+    replies['GET /api/feed'] = [{ status: 500, body: {} }];
+    renderFeed();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(calls.some((c) => c.url === '/api/feed/seen')).toBe(false);
   });
 });
