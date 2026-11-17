@@ -24,7 +24,7 @@ function statsOf(over: Partial<StatsResponse> = {}): StatsResponse {
     calendar,
     month: { month: '2026-11', activeDays: 4, restDays: 1, totalWeightKg: 3500, runDistanceM: 12300 },
     weekly: Array.from({ length: 12 }, (_, i) => ({ weekStart: `2026-08-${String(24 + i * 7).padStart(2, '0')}`, totalWeightKg: i * 100, runDistanceM: 0 })),
-    stamps: STAMP_KEYS.map((key) => ({ key, earned: key === 'first-record' || key === 'weight-1t' })),
+    stamps: STAMP_KEYS.map((key) => ({ key, earned: key === 'first-record' || key === 'weight-1t', earnedAt: key === 'first-record' ? '2026-11-03' : key === 'weight-1t' ? '2026-11-16' : null })),
     totalRunDistanceM: 12300,
     ...over,
   };
@@ -93,6 +93,15 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
     expect(stamps.textContent).not.toMatch(/あと/);
   });
 
+  it('獲得済みのスタンプには取得日（月/日）を出す。まだのスタンプには出さない（U10）', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const stamps = (await screen.findByText('スタンプ帳')).closest('section')!;
+    expect(within(stamps).getByText('初めての記録').closest('li')).toHaveTextContent('11/3');
+    expect(within(stamps).getByText('総重量1t').closest('li')).toHaveTextContent('11/16');
+    expect(within(stamps).getByText('初めての5km').closest('li')).not.toHaveTextContent(/\d+\/\d+/);
+  });
+
   it('日本縦断: 累計距離から今いる場所だけを文で出し、「あと◯km」は出さない（F-28）', async () => {
     stubStats(statsOf({ totalRunDistanceM: 300_000 }));
     renderWithQuery(<StatsPage />);
@@ -108,7 +117,7 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
   it('日本縦断: まだ走っていなくても出発点（鹿児島）で出す。3000km を超えたら2周目', async () => {
     stubStats(statsOf({ totalRunDistanceM: 0 }));
     const first = renderWithQuery(<StatsPage />);
-    expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('次の福岡まで 270.0km');
+    expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('次の熊本まで 170.0km');
     first.unmount();
     stubStats(statsOf({ totalRunDistanceM: 3_500_000 }));
     renderWithQuery(<StatsPage />);
@@ -129,7 +138,7 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
     stubStats(
       statsOf({
         month: { month: '2026-11', activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 },
-        stamps: STAMP_KEYS.map((key) => ({ key, earned: false })),
+        stamps: STAMP_KEYS.map((key) => ({ key, earned: false, earnedAt: null })),
       }),
     );
     renderWithQuery(<StatsPage />);

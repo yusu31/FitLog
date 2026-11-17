@@ -290,6 +290,9 @@ export class StatsStamp {
 
   @ApiProperty({ description: '獲得済みか（初めて・累計だけで決まる。連続日数の型は無い）' })
   earned!: boolean;
+
+  @ApiProperty({ type: String, nullable: true, example: '2026-11-03', description: '初めて条件を満たした記録の日（日本時間・YYYY-MM-DD）。未獲得は null' })
+  earnedAt!: string | null;
 }
 
 export class StatsResponse {

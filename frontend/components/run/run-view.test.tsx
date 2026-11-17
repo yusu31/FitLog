@@ -6,6 +6,11 @@ import { GPX_MESSAGES, LATE_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/li
 import { calls, installFakeApi, renderWithQuery } from '@/lib/test/fake-api';
 import { RunView } from './run-view';
 
+// 地図（MapLibre）は WebGL が要るので、この画面のテストでは見せかけの部品に差し替える
+vi.mock('@/components/record-detail/route-map', () => ({
+  RouteMap: ({ route }: { route: { coordinates: unknown[] } }) => <div data-testid="route-preview">{route.coordinates.length}点</div>,
+}));
+
 const replace = vi.fn();
 const push = vi.fn();
 let search = '';
@@ -100,6 +105,50 @@ describe('RunView（S-13 記録（ラン））', () => {
       installFakeApi({});
       renderWithQuery(<RunView />);
       expect(screen.queryByText(/地図/)).not.toBeInTheDocument();
+    });
+
+    // T-RUNP-04（U18）: 保存後の表示も 0.01km の桁まで（取り込み直後の 5.04 とそろう）
+    it('5.04km で保存すると、結果の画面にも 5.04km と出す', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await fill(user, '5.04', '30');
+      await user.click(save());
+      expect(await screen.findByText(/5\.04km/)).toBeInTheDocument();
+    });
+
+    // T-RUNP-05（U6）: 保存前の累計と保存後の累計を比べて、日本縦断の前進を出す。累計が分からないとき（電波なしなど）は出さない
+    describe('日本縦断の前進（U6）', () => {
+      const STATS_URL = 'GET /api/me/stats?date=2026-11-04';
+      it('地点をまたいだら「◯◯に着きました」と次の地点までを出す', async () => {
+        installFakeApi({ [POST]: { status: 201, body: { id: 'x' } }, [STATS_URL]: { status: 200, body: { totalRunDistanceM: 160_000 } } });
+        const user = userEvent.setup();
+        renderWithQuery(<RunView />);
+        await waitFor(() => expect(calls).toContain(STATS_URL));
+        await fill(user, '20', '120');
+        await user.click(save());
+        expect(await screen.findByText('熊本に着きました！')).toBeInTheDocument();
+        expect(screen.getByText('次の福岡まで 90.0km')).toBeInTheDocument();
+      });
+      it('地点の手前なら、着いたとは言わず次の地点までだけ出す', async () => {
+        installFakeApi({ [POST]: { status: 201, body: { id: 'x' } }, [STATS_URL]: { status: 200, body: { totalRunDistanceM: 160_000 } } });
+        const user = userEvent.setup();
+        renderWithQuery(<RunView />);
+        await waitFor(() => expect(calls).toContain(STATS_URL));
+        await fill(user, '5', '30');
+        await user.click(save());
+        expect(await screen.findByText('次の熊本まで 5.0km')).toBeInTheDocument();
+        expect(screen.queryByText(/に着きました/)).not.toBeInTheDocument();
+      });
+      it('累計が読めていないときは、日本縦断の欄を出さない', async () => {
+        installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+        const user = userEvent.setup();
+        renderWithQuery(<RunView />);
+        await fill(user, '5', '30');
+        await user.click(save());
+        await screen.findByText(RUN_MESSAGES.saved);
+        expect(screen.queryByTestId('trek-progress')).not.toBeInTheDocument();
+      });
     });
 
     it('ペース（分/km）を、入力に合わせて画面が計算して見せる', async () => {
@@ -207,6 +256,18 @@ describe('RunView（S-13 記録（ラン））', () => {
       const body = postBody();
       expect(body.run).toEqual({ distanceM: 5000, durationS: 1800, route: ROUTE });
       expect(body.recordedAt).toBe('2026-11-03T06:00:00.000Z');
+    });
+
+    // T-RUNP-06（U19）: 読み取れたら、保存する前にルートの形を地図で確かめられる。はずすと消える
+    it('読み取れたらルートの地図を出し、「GPX をはずす」で消す', async () => {
+      installFakeApi({});
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      expect(screen.queryByTestId('route-preview')).not.toBeInTheDocument();
+      await pick(user, fileOf(gpxText('2026-11-03T06:00:00Z', '2026-11-03T06:30:00Z')));
+      expect(await screen.findByTestId('route-preview')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'GPX をはずす' }));
+      expect(screen.queryByTestId('route-preview')).not.toBeInTheDocument();
     });
 
     it('時刻が無い GPX は、距離だけ入れて時間は空のまま（手で入れてもらう）。記録の日時は今', async () => {
