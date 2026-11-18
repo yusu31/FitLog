@@ -23,9 +23,9 @@ variable "lambda_package_dir" {
 }
 
 variable "lambda_memory_mb" {
-  description = "Lambda のメモリ。CPU はメモリに比例する。公開の第1段で 512 と 1024 の起動時間を比べる（infrastructure.md 3.2章）"
+  description = "Lambda のメモリ。CPU はメモリに比例する。512 だとコールドスタートが5秒前後かかったので、1024 に上げる（S1。docs/release-checklist-h.md）"
   type        = number
-  default     = 512
+  default     = 1024
 }
 
 variable "lambda_timeout_seconds" {
