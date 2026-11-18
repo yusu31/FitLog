@@ -21,13 +21,14 @@ class Tracker {
     mkdirSync(join(OUT, id), { recursive: true });
   }
 
-  private async snap(label: string, lower: boolean | null) {
+  async snap(label: string, lower: boolean | null) {
     const k = this.steps.length + 1;
     const url = new URL(this.page.url()).pathname;
     this.urls.add(url);
     const scrollY = await this.page.evaluate(() => Math.round(window.scrollY));
     await this.page.screenshot({ path: join(OUT, this.id, `step-${k}.png`) });
     writeFileSync(join(OUT, this.id, `step-${k}.txt`), await this.page.evaluate(() => document.body.innerText), 'utf-8');
+    writeFileSync(join(OUT, this.id, `step-${k}.aria.txt`), await this.page.locator('body').ariaSnapshot(), 'utf-8');
     this.steps.push({ k, label, url, scrollY, inLowerHalf: lower });
   }
 
@@ -197,3 +198,99 @@ test('T13 きのう記録し忘れた筋トレをあとから記録する', asyn
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
   t.finish();
 });
+
+// T3: GPS で走って保存し、日本縦断を見る。位置情報は偽物（window.__emit）。実際の GPS 精度は実機でしか確かめられない（本人の操作が必要）
+test('T3 GPS で走って保存し、日本縦断がどこまで進んだか見る', async ({ page }) => {
+  const s = seed();
+  await page.clock.install({ time: new Date(AUDIT_NOW) });
+  await page.addInitScript(() => {
+    type Cb = (p: unknown) => void;
+    let cb: Cb | null = null;
+    const w = window as unknown as { __emit: (northM: number) => void };
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: { watchPosition: (f: Cb) => ((cb = f), 1), clearWatch: () => (cb = null) },
+    });
+    w.__emit = (northM: number) =>
+      cb?.({ coords: { latitude: northM / ((Math.PI / 180) * 6_371_008.8), longitude: 139.7, accuracy: 5 }, timestamp: Date.now() });
+  });
+  await page.goto('/login/');
+  await loginAs(page, 'active', s);
+  await page.goto('/today/');
+  const t = new Tracker(page, 'T3');
+  await t.start();
+  await t.click(page.getByRole('link', { name: /ランを記録/ }), 'ランを記録');
+  await t.click(page.getByRole('button', { name: 'GPS で記録する' }), 'GPS で記録する');
+  for (let i = 0; i <= 8; i++) {
+    await page.evaluate((m) => (window as unknown as { __emit: (n: number) => void }).__emit(m), i * 30);
+    await page.clock.runFor(10_000);
+  }
+  await t.click(page.getByRole('button', { name: '終了' }), '終了');
+  await t.click(page.getByRole('button', { name: '保存する' }), '保存する');
+  await t.click(page.getByRole('link', { name: /日本地図で見る/ }), '日本地図で見る');
+  t.finish();
+});
+
+// T5: 2秒動画。ローカルに S3 が無いので、撮影の入口（ボタンまで）と、仲間の足跡から詳細へ行く道までを数える。撮影・保存・再生は未確認（原理的に不可能: S3 なし。実機・本番で本人が確認）
+test('T5 2秒動画を撮って、仲間の動画を見る（入口まで）', async ({ page }) => {
+  const s = seed();
+  await page.goto('/login/');
+  await loginAs(page, 'active', s);
+  await page.goto('/today/');
+  const t = new Tracker(page, 'T5');
+  await t.start();
+  await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
+  await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
+  await t.click(page.getByRole('button', { name: /2秒ラストレップを撮る/ }), '2秒ラストレップを撮る');
+  t.finish();
+});
+
+test('T5b 仲間の足跡のくわしく見る（動画再生の入口）', async ({ page }) => {
+  const s = seed();
+  await page.goto('/login/');
+  await loginAs(page, 'active', s);
+  await page.goto('/today/');
+  const t = new Tracker(page, 'T5b');
+  await t.start();
+  await t.click(tab(page, '仲間'), 'タブ「仲間」');
+  await t.click(page.locator('li').filter({ hasText: 'ユウスケ' }).first().getByRole('link', { name: 'くわしく見る' }), 'くわしく見る');
+  t.finish();
+});
+
+// T11: 電波が無い所で記録し、戻ったら送られる
+test('T11 電波の無いジムで1セット記録し、電波が戻ったら送られたことを確かめる', async ({ page, context }) => {
+  const s = seed();
+  await page.goto('/login/');
+  await loginAs(page, 'active', s);
+  await page.goto('/today/');
+  await page.waitForLoadState('networkidle');
+  const t = new Tracker(page, 'T11');
+  await t.start();
+  await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
+  await context.setOffline(true);
+  await t.click(page.getByRole('button', { name: 'できた' }), 'できた（オフライン）');
+  await page.waitForTimeout(800);
+  await context.setOffline(false);
+  await page.waitForTimeout(3000);
+  await t.snap('電波が戻った後', null);
+  t.finish();
+});
+
+// T12: 200% 拡大（195×422 相当）・横向き・320 幅で、同じ道（T2）を通す。読み上げの名前は step-k.aria.txt（アクセシビリティツリー）
+for (const [name, w, h] of [['200%', 195, 422], ['横向き', 844, 390], ['320幅', 320, 568]] as const) {
+  test(`T12 ${name} で前回と同じメニューを始める`, async ({ page }) => {
+    const s = seed();
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto('/login/');
+    await loginAs(page, 'active', s);
+    await page.goto('/today/');
+    const t = new Tracker(page, `T12-${w}x${h}`);
+    await t.start();
+    const over = async () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    console.log(`T12 ${name} 最初の画面の横はみ出し=${await over()}px`);
+    await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
+    await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
+    console.log(`T12 ${name} 記録中の横はみ出し=${await over()}px`);
+    t.finish();
+  });
+}
