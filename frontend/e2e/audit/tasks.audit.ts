@@ -114,7 +114,11 @@ test('T4 仲間の今日の運動を見て、スタンプとコメントを送�
   const t = new Tracker(page, 'T4');
   await t.start();
   await t.click(tab(page, '仲間'), 'タブ「仲間」');
-  await t.click(page.getByRole('button', { name: /スタンプ|ナイス|すごい|おつかれ|いいね/ }).first(), 'スタンプ');
+  // 仲間（ユウスケ）の足跡にだけ反応する（先頭は自分の足跡なので使わない）
+  const card = page.locator('li').filter({ hasText: 'ユウスケ' }).first();
+  await t.click(card.getByRole('button', { name: /ナイス/ }), 'スタンプ（ナイス）');
+  await t.click(card.getByRole('button', { name: /^コメント/ }), 'コメントを開く');
+  await t.click(card.getByRole('button', { name: 'いい調子！' }), '定型コメントを送る');
   t.finish();
 });
 
@@ -127,6 +131,9 @@ test('T6 グループを作って招待リンクを送る', async ({ page }) => 
   await t.start();
   await t.click(tab(page, '仲間'), 'タブ「仲間」');
   await t.click(page.getByRole('button', { name: /グループを作る/ }).or(page.getByRole('link', { name: /グループを作る/ })).first(), 'グループを作る');
+  await t.fill(page.getByLabel('グループ名'), 'ほぐし会2', 'グループ名');
+  await t.click(page.getByRole('button', { name: '作る' }), '作る');
+  await t.click(page.getByRole('button', { name: '招待リンクを作る' }), '招待リンクを作る');
   t.finish();
 });
 
@@ -139,6 +146,7 @@ test('T7 今週・今月どれだけ動いたかを振り返る', async ({ page 
   await t.start();
   await t.click(tab(page, '自分'), 'タブ「自分」');
   await t.click(page.getByRole('link', { name: /記録をくわしく/ }).first(), '記録をくわしく');
+  await t.click(page.getByRole('group', { name: '期間' }).getByRole('button', { name: '月' }), '月に切替');
   t.finish();
 });
 
@@ -150,6 +158,7 @@ test('T8 6日ぶりに開いて、また始める', async ({ page }) => {
   const t = new Tracker(page, 'T8');
   await t.start();
   await t.click(page.getByRole('link', { name: /はじめる|種目を選ぶ/ }).first(), 'はじめる');
+  await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
   t.finish();
 });
 
@@ -162,6 +171,9 @@ test('T9 表示名を変える。ログアウトと退会の場所を確かめ�
   await t.start();
   await t.click(page.getByRole('link', { name: '設定' }).first(), '設定');
   await t.click(page.getByRole('link', { name: /アカウントの設定/ }), 'アカウントの設定');
+  await t.fill(page.getByLabel('表示名'), 'ヨシコさん', '表示名');
+  await t.click(page.getByRole('button', { name: '名前を保存する' }), '名前を保存する');
+  await t.click(page.getByRole('link', { name: '設定へ戻る' }).or(page.getByRole('button', { name: '設定へ戻る' })), '設定へ戻る');
   t.finish();
 });
 
@@ -181,5 +193,7 @@ test('T13 きのう記録し忘れた筋トレをあとから記録する', asyn
   const t = new Tracker(page, 'T13');
   await t.start();
   await t.click(page.getByRole('button', { name: /きのう/ }).first(), 'きのう');
+  await t.click(page.getByRole('link', { name: /ベンチプレス/ }).first(), 'メニューの種目');
+  await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
   t.finish();
 });
