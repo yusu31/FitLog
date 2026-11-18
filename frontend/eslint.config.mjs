@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Android アプリ（Capacitor）の生成物（同梱の JS・Gradle の出力）。自分で書いた画面のコードではない
+    "android/**",
   ]),
 ]);
 
