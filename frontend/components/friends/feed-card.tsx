@@ -28,14 +28,17 @@ import { LateTag } from '@/components/fitlog/late-tag';
 import { formatJstTime, formatMonthDay } from '@/lib/format';
 import { FEED_MESSAGES, FRIEND_MESSAGES } from '@/lib/messages';
 import { useOnline } from '@/lib/use-browser-state';
+import { useAppSession } from '@/lib/use-app-session';
 import { AVATAR_BG } from './member-list';
-import { StampButton } from './stamp-button';
+import { StampButton, StampChip } from './stamp-button';
 
 // 足跡の1件。スタンプ（付け外し）とコメント（定型4つ／休みは2つ＋自由入力 50字まで）。
 // 付け外しは電波があるときだけ（F-30）。送ったあとは足跡を取り直すので、数と「自分が付けた」はサーバーの値になる。
 // コメントの本文を読む画面は記録の詳細（S-21）。ここでは件数だけ出す
 export function FeedCard({ item }: { item: FeedItem }) {
   const online = useOnline();
+  const { data: session } = useAppSession();
+  const isOwn = session?.user.id === item.author.id;
   const queryClient = useQueryClient();
   const addReaction = useAddReaction();
   const deleteReaction = useDeleteReaction();
@@ -87,6 +90,14 @@ export function FeedCard({ item }: { item: FeedItem }) {
       <ul aria-label={`${item.author.name}の${title}へのスタンプ`} className="flex flex-wrap gap-1.5">
         {STAMP_KEYS[item.kind].map((key) => {
           const { count, mine } = stampState(item.stamps, key);
+          // 自分の足跡には自分でスタンプを付けない（U11）。もらった分だけ見せる
+          if (isOwn) {
+            return count > 0 ? (
+              <li key={key}>
+                <StampChip stampKey={key} count={count} />
+              </li>
+            ) : null;
+          }
           return (
             <li key={key}>
               <StampButton stampKey={key} count={count} pressed={mine !== null} disabled={!online || busy} onClick={() => void toggle(key)} />

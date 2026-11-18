@@ -5,6 +5,10 @@ import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { FeedSection } from './feed-section';
 
+vi.mock('@/lib/auth-client', () => ({
+  authClient: { useSession: () => ({ data: { user: { id: 'u1', name: 'わたし' } }, isPending: false }) },
+}));
+
 const AVATAR = { body: 'A', hair: 1, hairColor: 'brown', shirtColor: 'teal', pantsColor: 'navy' };
 const HANAKO = { id: 'u2', name: 'はなこ', avatar: { ...AVATAR, shirtColor: 'coral' } };
 
@@ -186,6 +190,17 @@ describe('スタンプ', () => {
     expect(nice).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'すごい 1' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: 'おつかれ' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('U11: 自分の足跡には押すボタンを出さず、もらった分だけ数つきで出す', async () => {
+    const ME = { id: 'u1', name: 'わたし', avatar: HANAKO.avatar };
+    replies['GET /api/feed'] = [
+      { status: 200, body: feed({ items: [item({ author: ME, stamps: [{ stampKey: 'nice', count: 2, mine: null }] })] }) },
+    ];
+    renderFeed();
+    const list = await screen.findByRole('list', { name: /へのスタンプ$/ });
+    expect(within(list).getByRole('img', { name: 'ナイス 2' })).toBeInTheDocument();
+    expect(within(list).queryByRole('button', { name: /ナイス|すごい|おつかれ/ })).not.toBeInTheDocument();
   });
 
   it('押すと POST /records/{id}/reactions へ id とスタンプのキーを送り、足跡を取り直す', async () => {
