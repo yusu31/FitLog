@@ -32,14 +32,34 @@ class Tracker {
     this.steps.push({ k, label, url, scrollY, inLowerHalf: lower });
   }
 
+  // 画面が落ち着くまで待つ: 通信が止み、本文に文字が出て、読み込み中の印（aria-busy="true"）が消える。
+  // strict（E1）は見出し（h1）が出るまで必ず待つ。それ以外は待ちきれなくても撮影は続ける（オフラインの画面など）
+  async settle(strict: boolean) {
+    await this.page.waitForLoadState('networkidle').catch(() => undefined);
+    const ready = this.page.waitForFunction(
+      // textContent は <script> の中身まで数えるので、画面に見える文字（innerText）で見る
+      () => ((document.querySelector('main') as HTMLElement | null)?.innerText ?? '').trim().length > 20 && !document.querySelector('[aria-busy="true"]'),
+      undefined,
+      { timeout: 30_000 },
+    );
+    if (strict) {
+      await ready;
+      await this.page.locator('h1').first().waitFor({ timeout: 30_000 });
+    } else {
+      await ready.catch(() => undefined);
+    }
+  }
+
   // 最初の画面（操作ではない）
   async start(label = '最初の画面') {
-    await this.page.waitForLoadState('networkidle');
+    await this.settle(false);
     await this.snap(label, null);
   }
 
   // 押す・選ぶ（1操作）。押した要素が画面の下半分にあるかも記録（親指の届きやすさ）
-  // settle: 押した後、通信が落ち着くまで待ってから撮る（E1 の詳細画面など。T1〜T13 は従来どおり 400ms だけ待つ）
+  // 押した後、画面が落ち着いてから撮る（利用者が実際に見る画面にするため）。
+  // 開発サーバーは初めて開く画面をその場で組み立てる（Rendering…）ので、400ms だけ待つと空白や読み込み中の枠が写った（2026-11-19 の P2 で判明）。
+  // 通信が落ち着き、本文に文字が出るまで待つ。操作数の数え方は変わらない
   async click(target: Locator, label: string, opts: { settle?: boolean } = {}) {
     const box = await target.boundingBox();
     const vh = this.page.viewportSize()?.height ?? 844;
@@ -47,11 +67,7 @@ class Tracker {
     await target.click();
     this.ops++;
     await this.page.waitForTimeout(400);
-    if (opts.settle) {
-      // 開発サーバーは初めて開く画面をその場で組み立てる（Rendering…）ので、通信が落ち着き、見出しが出るまで待つ
-      await this.page.waitForLoadState('networkidle');
-      await this.page.locator('h1').first().waitFor({ timeout: 30_000 });
-    }
+    await this.settle(opts.settle ?? false);
     await this.snap(label, lower);
   }
 
