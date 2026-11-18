@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Res } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -14,7 +14,7 @@ import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { ErrorResponse } from '../common/error-response.js';
 import { RECORD_KINDS } from '../db/schema.js';
-import { CreateRecordRequest, CreateSetRequest, RecordDetailResponse, RecordListResponse, RecordResponse, SetResponse } from './records.response.js';
+import { CreateRecordRequest, CreateSetRequest, MemoRequest, MemoResponse, RecordDetailResponse, RecordListResponse, RecordResponse, SetResponse } from './records.response.js';
 import { RecordsService } from './records.service.js';
 
 // 記録（F-03・F-08。docs/design.md 4章）。すべてログイン必須（共通のガードが既定で守る）
@@ -62,6 +62,15 @@ export class RecordsController {
   @ApiConflictResponse({ type: ErrorResponse, description: '筋トレでない記録（RECORD_KIND_MISMATCH）' })
   endWorkout(@Session() session: UserSession, @Param('id') recordId: string): Promise<RecordResponse> {
     return this.records.endWorkout(session.user.id, recordId);
+  }
+
+  @Patch(':id/memo')
+  @ApiOperation({ operationId: 'updateRecordMemo', summary: '記録にメモ・きつさ（RPE）を書く（F5）。自分の記録だけ。送った項目だけ変える' })
+  @ApiOkResponse({ type: MemoResponse, description: '保存後のメモ・きつさ（無ければ null）' })
+  @ApiBadRequestResponse({ type: ErrorResponse, description: 'メモが 200 字を超える・きつさが 1〜10 の整数でない・どちらも送っていない（VALIDATION_ERROR）' })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '記録が無い・他の人の記録（RECORD_NOT_FOUND。存在を教えない）' })
+  updateMemo(@Session() session: UserSession, @Param('id') recordId: string, @Body() body: MemoRequest): Promise<MemoResponse> {
+    return this.records.updateMemo(session.user.id, recordId, body);
   }
 
   @Get()

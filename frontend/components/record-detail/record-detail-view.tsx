@@ -14,6 +14,7 @@ import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
 import { useCreateExercise, useGetCurrentGroup, useGetPrevious, useGetRecord, useListExercises, type RecordDetailResponse, type RecordedExercise } from '@/lib/api/generated';
 import { SaveRoutine } from '@/components/routine/save-routine';
+import { RecordMemo } from './record-memo';
 import { setCopyPlan } from '@/lib/copy-plan';
 import {
   formatDistance,
@@ -149,6 +150,7 @@ export function RecordDetailView() {
         {record.kind === 'rest' && (
           <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.restBody}</p>
         )}
+        {mine && <RecordMemo recordId={record.id} note={record.note} rpe={record.rpe} />}
         <SocialSection recordId={record.id} kind={record.kind} />
         {mine && (
           <div className="pt-2">
