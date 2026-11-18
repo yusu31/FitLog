@@ -344,8 +344,9 @@ Drizzle（`drizzle-kit generate` → `migrate`）で管理する。順序は次�
 | 2 | groups・group_members・invitations |
 | 3 | body_part・exercises（`0002_exercises.sql`）と、一覧の種目30件・お試しの前回値の投入（`0003_seed_exercises.sql`。固定の ID `00000000-0000-4000-8000-0000000000NN`（NN は一覧の順の 01〜30）。種目を直すときは、この行を書き換えず新しいマイグレーションを足す） |
 | 4 | record_kind・records（`0004_records.sql`。2026-11-01）・workout_sets（`0005_workout_sets.sql`。2026-11-02）・run_details（`0006_run_details.sql`）・route（`0008_run_details_route.sql`。2026-11-04） |
-| 5 | reactions・comments（`0007_reactions_comments.sql`。2026-11-03）。`user_id` は `users.id` を参照するだけで ON DELETE CASCADE は付けない（`records.user_id` と同じ。退会は作らない）。記録を消すと `record_id` の CASCADE で一緒に消える |
+| 5 | reactions・comments（`0007_reactions_comments.sql`。2026-11-03）。`user_id` は `users.id` を参照する（当初は CASCADE なし。退会（F2-b）で 0015 が ON DELETE CASCADE に直した）。記録を消すと `record_id` の CASCADE で一緒に消える |
 | 6 | videos |
 | 7 | routines・routine_sets（`0014_routines.sql`。2026-11-17。F3） |
+| 8 | 退会（F2-b）のための外部キーの削除規則（`0015_account_delete_cascade.sql`。2026-11-17）。`records.user_id`・`reactions.user_id`・`comments.user_id`・`exercises.created_by` を **CASCADE**、`groups.created_by`・`invitations.created_by`・`records.copied_from_user_id` を **SET NULL** に直した。消す順番はアプリ（`account-deletion.ts`）が守り、DB の規則はその安全網 |
 
 テストでは、マイグレーションを空の DB に最初から流して通ること、2回流しても壊れないことを確かめる。

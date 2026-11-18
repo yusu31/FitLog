@@ -106,6 +106,13 @@
       "when": 1794912809386,
       "tag": "0014_routines",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794926171847,
+      "tag": "0015_account_delete_cascade",
+      "breakpoints": true
     }
   ]
 }

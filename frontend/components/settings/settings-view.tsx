@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
+import { DeleteAccount } from './delete-account';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { authClient } from '@/lib/auth-client';
 import { useInstallPrompt } from '@/lib/pwa/use-install-prompt';
@@ -146,6 +147,8 @@ export function SettingsView() {
             </p>
           )}
         </div>
+
+        <DeleteAccount />
       </div>
     </FullScreen>
   );
