@@ -77,6 +77,7 @@ export class SocialController {
   @ApiCreatedResponse({ type: ReactionResponse, description: '新しく付けた' })
   @ApiOkResponse({ type: ReactionResponse, description: 'すでに付いている（同じ id の再送、または同じスタンプの二重付与）。付いているスタンプを返す' })
   @ApiBadRequestResponse({ type: ErrorResponse, description: 'id が UUID でない・stampKey が一覧にない（VALIDATION_ERROR）' })
+  @ApiForbiddenResponse({ type: ErrorResponse, description: '自分の記録（FORBIDDEN）。スタンプは仲間からもらうもの' })
   @ApiNotFoundResponse({ type: ErrorResponse, description: '記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）、他の人のスタンプと同じ id（REACTION_NOT_FOUND）。存在を教えない' })
   @ApiConflictResponse({ type: ErrorResponse, description: '記録の種類に合わないスタンプ（休みに通常のスタンプ・筋トレ／ランに休み用のスタンプ。RECORD_KIND_MISMATCH）' })
   async addReaction(

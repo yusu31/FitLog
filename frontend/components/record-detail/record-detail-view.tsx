@@ -151,7 +151,7 @@ export function RecordDetailView() {
           <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.restBody}</p>
         )}
         {mine && <RecordMemo recordId={record.id} note={record.note} rpe={record.rpe} />}
-        <SocialSection recordId={record.id} kind={record.kind} />
+        <SocialSection recordId={record.id} kind={record.kind} mine={mine} />
         {mine && (
           <div className="pt-2">
             <ThickButton tone="coral" size="sm" className="w-full" disabled={!online} onClick={() => setConfirming(true)}>

@@ -1447,6 +1447,16 @@
               }
             }
           },
+          "403": {
+            "description": "自分の記録（FORBIDDEN）。スタンプは仲間からもらうもの",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "記録が無い・別のグループの人の記録（RECORD_NOT_FOUND）、他の人のスタンプと同じ id（REACTION_NOT_FOUND）。存在を教えない",
             "content": {

@@ -199,6 +199,7 @@ export const FEED_MESSAGES = {
   commentLength: 'コメントは1〜50字で入れてください',
   commentFailed: 'コメントを送れませんでした。少し待って、もう一度お試しください',
   stampsHeading: 'スタンプ',
+  stampsNoneYet: 'まだスタンプはもらっていないよ',
   commentsHeading: 'コメント',
   commentsEmpty: 'コメントは まだないよ',
   commentsLoadFailed: 'コメントを読み込めませんでした。電波の良い所で開き直してください',

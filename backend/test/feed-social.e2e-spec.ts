@@ -73,10 +73,10 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
 
   // グループ A（2人）・B（2人）・なし（1人）と、それぞれの記録
   const world = async () => {
-    const [a1, a2] = await groupWith(2, 'A');
+    const [a1, a2, a3] = await groupWith(3, 'A');
     const [b1, b2] = await groupWith(2, 'B');
     const n1 = await signUpAs('なし');
-    return { a1, a2, b1, b2, n1 };
+    return { a1, a2, a3, b1, b2, n1 };
   };
 
   type FeedBody = {
@@ -273,12 +273,12 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
     });
 
     it('スタンプ（付いたものだけ・件数・自分のスタンプの id）とコメント数が付く', async () => {
-      const { a1, a2 } = await world();
+      const { a1, a2, a3 } = await world();
       const rec = await createRecord(a1);
       const mineId = randomUUID();
       await http().post(`/api/records/${rec}/reactions`).set('Cookie', a2).send({ id: mineId, stampKey: 'nice' }).expect(201);
-      await http().post(`/api/records/${rec}/reactions`).set('Cookie', a1).send({ id: randomUUID(), stampKey: 'nice' }).expect(201);
-      await http().post(`/api/records/${rec}/reactions`).set('Cookie', a1).send({ id: randomUUID(), stampKey: 'clap' }).expect(201);
+      await http().post(`/api/records/${rec}/reactions`).set('Cookie', a3).send({ id: randomUUID(), stampKey: 'nice' }).expect(201);
+      await http().post(`/api/records/${rec}/reactions`).set('Cookie', a3).send({ id: randomUUID(), stampKey: 'clap' }).expect(201);
       await http().post(`/api/records/${rec}/comments`).set('Cookie', a2).send({ id: randomUUID(), body: 'ナイス！' }).expect(201);
       await http().post(`/api/records/${rec}/comments`).set('Cookie', a1).send({ id: randomUUID(), body: 'ありがとう' }).expect(201);
 
@@ -323,14 +323,15 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       await react(undefined, randomUUID(), { id: randomUUID(), stampKey: 'nice' }).expect(401);
     });
 
-    it('同じグループの人の記録に付けられる（201）。自分の記録にも付けられる', async () => {
+    it('同じグループの人の記録に付けられる（201）。自分の記録には付けられない（U11: 403 FORBIDDEN）', async () => {
       const { a1, a2 } = await world();
       const rec = await createRecord(a1);
       const id = randomUUID();
       const res = await react(a2, rec, { id, stampKey: 'fire' }).expect(201);
       expect(res.body).toEqual({ id, recordId: rec, stampKey: 'fire' });
-      await react(a1, rec, { id: randomUUID(), stampKey: 'nice' }).expect(201);
-      expect(await countOf('reactions')).toBe(2);
+      const own = await react(a1, rec, { id: randomUUID(), stampKey: 'nice' }).expect(403);
+      expect(own.body.code).toBe('FORBIDDEN');
+      expect(await countOf('reactions')).toBe(1);
     });
 
     it('T-OFF: 同じ id の再送は 200 で同じ内容。1件のまま', async () => {
@@ -354,11 +355,11 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
     });
 
     it('T-STP-02・03: 同じ人が別のスタンプ → 2件。別の人が同じスタンプ → 2件', async () => {
-      const { a1, a2 } = await world();
+      const { a1, a2, a3 } = await world();
       const rec = await createRecord(a1);
       await react(a2, rec, { id: randomUUID(), stampKey: 'fire' }).expect(201);
       await react(a2, rec, { id: randomUUID(), stampKey: 'clap' }).expect(201);
-      await react(a1, rec, { id: randomUUID(), stampKey: 'fire' }).expect(201);
+      await react(a3, rec, { id: randomUUID(), stampKey: 'fire' }).expect(201);
       expect(await countOf('reactions')).toBe(3);
     });
 
@@ -407,19 +408,19 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
     });
 
     it('他の人のスタンプと同じ id を送ると 404 REACTION_NOT_FOUND（中身を返さない）。1件のまま', async () => {
-      const { a1, a2 } = await world();
+      const { a1, a2, a3 } = await world();
       const rec = await createRecord(a1);
       const id = randomUUID();
-      await react(a1, rec, { id, stampKey: 'nice' }).expect(201);
+      await react(a3, rec, { id, stampKey: 'nice' }).expect(201);
       const res = await react(a2, rec, { id, stampKey: 'fire' }).expect(404);
       expect(res.body.code).toBe('REACTION_NOT_FOUND');
       expect(await countOf('reactions')).toBe(1);
     });
 
     it('DB の最後の砦: (record_id, user_id, stamp_key) が同じ行を直接 INSERT すると一意制約で拒否される', async () => {
-      const { a1 } = await world();
+      const { a1, a2 } = await world();
       const rec = await createRecord(a1);
-      await react(a1, rec, { id: randomUUID(), stampKey: 'nice' }).expect(201);
+      await react(a2, rec, { id: randomUUID(), stampKey: 'nice' }).expect(201);
       await expect(
         withPool(url!, (pool) => pool.query(`INSERT INTO reactions (id, record_id, user_id, stamp_key) SELECT gen_random_uuid(), record_id, user_id, stamp_key FROM reactions`)),
       ).rejects.toMatchObject({ code: '23505' });
@@ -442,48 +443,48 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
     });
 
     it('T-STP-05: 自分のスタンプは 204（本文なし）で外れ、他のスタンプは残る', async () => {
-      const { a1, a2 } = await world();
+      const { a1, a2, a3 } = await world();
       const rec = await createRecord(a1);
       const mine = await put(a2, rec, 'nice');
-      await put(a1, rec, 'nice');
+      await put(a3, rec, 'nice');
       const res = await del(a2, rec, mine).expect(204);
       expect(res.text).toBe('');
       expect(await countOf('reactions')).toBe(1);
     });
 
     it('T-STP-05: 他の人のスタンプは 403 FORBIDDEN で、外れない', async () => {
-      const { a1, a2 } = await world();
+      const { a1, a2, a3 } = await world();
       const rec = await createRecord(a1);
-      const theirs = await put(a1, rec);
+      const theirs = await put(a3, rec);
       const res = await del(a2, rec, theirs).expect(403);
       expect(res.body.code).toBe('FORBIDDEN');
       expect(await countOf('reactions')).toBe(1);
     });
 
     it('もう一度外すと 404 REACTION_NOT_FOUND（二重削除）', async () => {
-      const { a1 } = await world();
+      const { a1, a2 } = await world();
       const rec = await createRecord(a1);
-      const id = await put(a1, rec);
-      await del(a1, rec, id).expect(204);
-      expect((await del(a1, rec, id).expect(404)).body.code).toBe('REACTION_NOT_FOUND');
+      const id = await put(a2, rec);
+      await del(a2, rec, id).expect(204);
+      expect((await del(a2, rec, id).expect(404)).body.code).toBe('REACTION_NOT_FOUND');
     });
 
     it('別のグループの人・グループなしの人は、記録ごと 404 RECORD_NOT_FOUND（403 にしない）。外れない', async () => {
-      const { a1, b1, n1 } = await world();
+      const { a1, a2, b1, n1 } = await world();
       const rec = await createRecord(a1);
-      const id = await put(a1, rec);
+      const id = await put(a2, rec);
       expect((await del(b1, rec, id).expect(404)).body.code).toBe('RECORD_NOT_FOUND');
       expect((await del(n1, rec, id).expect(404)).body.code).toBe('RECORD_NOT_FOUND');
       expect(await countOf('reactions')).toBe(1);
     });
 
     it('別の記録のスタンプの id を指しても 404（その記録のスタンプだけが対象）。UUID でない id も 404', async () => {
-      const { a1 } = await world();
+      const { a1, a2 } = await world();
       const r1 = await createRecord(a1, 'workout', MON_NOON);
       const r2 = await createRecord(a1, 'workout', TUE_NOON);
-      const id = await put(a1, r1);
-      await del(a1, r2, id).expect(404);
-      await del(a1, r1, 'x').expect(404);
+      const id = await put(a2, r1);
+      await del(a2, r2, id).expect(404);
+      await del(a2, r1, 'x').expect(404);
       expect(await countOf('reactions')).toBe(1);
     });
   });
@@ -685,8 +686,8 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
     });
 
     it('スタンプはスタンプごとの数にまとまり、スタンプの一覧の順に並ぶ。自分が付けたものだけ mine に id が入る', async () => {
-      const { a1, a2 } = await world();
-      const rec = await createRecord(a1);
+      const { a1, a2, a3 } = await world();
+      const rec = await createRecord(a3);
       const mineFire = await stamp(a1, rec, 'fire');
       await stamp(a2, rec, 'fire');
       await stamp(a2, rec, 'nice');
@@ -702,8 +703,8 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
     });
 
     it('外したスタンプ・消したコメントは一覧から消える', async () => {
-      const { a1 } = await world();
-      const rec = await createRecord(a1);
+      const { a1, a2 } = await world();
+      const rec = await createRecord(a2);
       const sid = await stamp(a1, rec, 'nice');
       const cid = await say(a1, rec, 'あ');
       await http().delete(`/api/records/${rec}/reactions/${sid}`).set('Cookie', a1).expect(204);

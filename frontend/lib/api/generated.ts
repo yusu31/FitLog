@@ -4765,6 +4765,11 @@ export type addReactionResponse400 = {
   status: 400
 }
 
+export type addReactionResponse403 = {
+  data: ErrorResponse
+  status: 403
+}
+
 export type addReactionResponse404 = {
   data: ErrorResponse
   status: 404
@@ -4778,7 +4783,7 @@ export type addReactionResponse409 = {
 export type addReactionResponseSuccess = (addReactionResponse200 | addReactionResponse201) & {
   headers: Headers;
 };
-export type addReactionResponseError = (addReactionResponse400 | addReactionResponse404 | addReactionResponse409) & {
+export type addReactionResponseError = (addReactionResponse400 | addReactionResponse403 | addReactionResponse404 | addReactionResponse409) & {
   headers: Headers;
 };
 
