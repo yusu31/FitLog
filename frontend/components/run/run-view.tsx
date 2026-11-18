@@ -9,11 +9,12 @@ import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
 import { RouteMap } from '@/components/record-detail/route-map';
+import { GpsTracker } from '@/components/run/gps-tracker';
 import { useGetStats } from '@/lib/api/generated';
 import { parseDayMode, recordedAtFor } from '@/lib/day-mode';
 import { trekProgress } from '@/lib/japan-route';
-import { parseGpx, type RouteLineString } from '@/lib/gpx/parse-gpx';
-import { GPX_MESSAGES, LATE_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
+import { parseGpx, type GpxRun, type RouteLineString } from '@/lib/gpx/parse-gpx';
+import { GPS_MESSAGES, GPX_MESSAGES, LATE_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
 import {
   formatPace,
@@ -67,6 +68,7 @@ export function RunView() {
   const [gpx, setGpx] = useState<Gpx | null>(null);
   const [gpxMessage, setGpxMessage] = useState<{ text: string; kind: 'error' | 'info' } | null>(null);
   const [saved, setSaved] = useState<Saved | null>(null);
+  const [tracking, setTracking] = useState(false); // GPS で記録している間は、入力欄を隠して保存も止める
   // 送っている最中の値。送れずに再送待ちになったら（failureCount>0）、結果の画面へ進む（送信待ちの帯が知らせる）
   const [inFlight, setInFlight] = useState<Saved | null>(null);
   const shown = saved ?? (sending && createRecord.failureCount > 0 ? inFlight : null);
@@ -88,6 +90,17 @@ export function RunView() {
   function clearGpx() {
     setGpx(null);
     setGpxMessage(null);
+  }
+
+  // GPS の記録が終わったら、GPX を選んだときと同じ形で入力欄とルートに入れる
+  function onGpsFinish(run: GpxRun) {
+    setKmText(String(run.distanceM / 1000));
+    if (run.durationS !== null) {
+      setMinText(String(Math.floor(run.durationS / 60)));
+      setSecText(String(run.durationS % 60));
+    }
+    setGpx({ name: 'GPS の記録', route: run.route, startedAt: run.startedAt });
+    setGpxMessage({ text: GPS_MESSAGES.filled, kind: 'info' });
   }
 
   async function onPickGpx(e: ChangeEvent<HTMLInputElement>) {
@@ -201,7 +214,7 @@ export function RunView() {
   return (
     <FullScreen
       footer={
-        <ThickButton onClick={onSave} disabled={problem !== null || sending}>
+        <ThickButton onClick={onSave} disabled={problem !== null || sending || tracking}>
           保存する
         </ThickButton>
       }
@@ -229,10 +242,13 @@ export function RunView() {
           <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">{LATE_MESSAGES.banner}</p>
         )}
 
-        <GpxPicker online={online} gpx={gpx} message={gpxMessage} onPick={onPickGpx} onClear={clearGpx} />
+        <GpsTracker onFinish={onGpsFinish} onActiveChange={setTracking} />
+        {!tracking && <GpxPicker online={online} gpx={gpx} message={gpxMessage} onPick={onPickGpx} onClear={clearGpx} />}
         {/* 保存する前に、読み取ったルートの形を確かめられる（U19）。保存後の詳細と同じ地図の部品 */}
-        {gpx && <RouteMap route={gpx.route} />}
+        {!tracking && gpx && <RouteMap route={gpx.route} />}
 
+        {!tracking && (
+          <>
         <NumberField
           label="距離（km）"
           unit="km"
@@ -261,6 +277,8 @@ export function RunView() {
           </span>
         </section>
         {!touched && <p className="text-xs font-bold text-sub-strong">距離と時間を入れると、ペースが出ます</p>}
+          </>
+        )}
 
         {error && (
           <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
