@@ -6,7 +6,7 @@ import { useState, type ReactNode } from 'react';
 import { QueueOwner } from '@/components/fitlog/queue-owner';
 import { installBodyHash } from '@/lib/api/body-hash';
 import { registerRecordMutations } from '@/lib/mutations';
-import { createQueuePersister, queueDehydrateOptions, QUEUE_MAX_AGE_MS } from '@/lib/offline/persister';
+import { BROWSE_MAX_AGE_MS, createQueuePersister, queueDehydrateOptions, QUEUE_MAX_AGE_MS } from '@/lib/offline/persister';
 import { markQueueRestored } from '@/lib/offline/resume';
 
 // 画面を開いた時点で、/api/* への本文つきリクエストに SHA-256 を付ける仕組みを入れる（公開環境の Lambda が要求する。lib/api/body-hash.ts）。
@@ -21,8 +21,9 @@ export function Providers({ children, persister }: { children: ReactNode; persis
   const [state] = useState(() => {
     const client = new QueryClient({
       defaultOptions: {
-        // 30秒は「新鮮」とみなして、画面を開き直しても取り直さない（通信を減らす）
-        queries: { staleTime: 30_000 },
+        // 30秒は「新鮮」とみなして、画面を開き直しても取り直さない（通信を減らす）。
+        // gcTime は保存の期限（閲覧キャッシュ1日）以上にする。既定の5分だと、見ていない間にキャッシュから消えて保存されない（S4）
+        queries: { staleTime: 30_000, gcTime: BROWSE_MAX_AGE_MS },
       },
     });
     // 保存した送信待ちを戻すと、送信処理（mutationFn）は保存されていないので、先に登録しておく。

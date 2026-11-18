@@ -25,7 +25,10 @@ export function resolveSession(
     const user = { id: raw.data.user.id, name: raw.data.user.name };
     return { session: { user: { ...user, email: raw.data.user.email } }, save: user, clear: false };
   }
-  if (raw.isPending) return { session: null, save: null, clear: false };
+  // 確認中（S3）: 控えの人として先に画面を開く。Lambda が眠っていると確認に5秒前後かかるため、
+  // 待たせずに描き始める。確認が返れば上の分岐で本物に置き換わり、未ログインなら控えを消してログインへ移す。
+  // 控えは画面を開くためだけに使い、権限は API が確かめる（design.md 2章）
+  if (raw.isPending) return { session: cached ? { user: cached } : null, save: null, clear: false };
   const failed = raw.error !== null && raw.error.status !== 401;
   if (!failed) return { session: null, save: null, clear: true };
   return { session: cached ? { user: cached } : null, save: null, clear: false };
