@@ -1,9 +1,11 @@
 import { Logger } from '@nestjs/common';
 import { betterAuth } from 'better-auth';
-import { APIError } from 'better-auth/api';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import type { Db } from '../db/db.module.js';
 import * as schema from '../db/schema.js';
+import { createVideoStorage, type VideoStorage } from '../videos/video-storage.js';
+import { deleteAccountData } from './account-deletion.js';
 import { logFromBetterAuth } from './auth-log.js';
 
 const authLogger = new Logger('Auth');
@@ -20,7 +22,7 @@ function assertValidName(name: string): void {
 
 // 認証の設定（docs/design.md 2章）。メール＋パスワードで登録・ログインし、Cookie でセッションを持つ。
 // 受け付けるパスは /api/auth/*（sign-up/email・sign-in/email・sign-out・get-session ほか）。
-export function createAuth(db: Db) {
+export function createAuth(db: Db, storage: VideoStorage = createVideoStorage()) {
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret) {
     throw new Error('BETTER_AUTH_SECRET が設定されていません（32文字以上の秘密の文字列。ローカルは .env.example を参照）');
@@ -59,6 +61,27 @@ export function createAuth(db: Db) {
           },
         },
       },
+    },
+    // 退会（F2-b）。better-auth の /delete-user を使う。標準では「ログイン直後（1日以内）ならパスワード無しで消せる」ので、
+    // 下の hooks で、必ずパスワードを求める（置き忘れた端末・Cookie の悪用で消されないように）
+    user: {
+      deleteUser: {
+        enabled: true,
+        beforeDelete: async (user) => {
+          await deleteAccountData(db, storage, user.id);
+        },
+      },
+    },
+    hooks: {
+      before: createAuthMiddleware((ctx) => {
+        if (ctx.path === '/delete-user') {
+          const password = (ctx.body as { password?: unknown } | undefined)?.password;
+          if (typeof password !== 'string' || password.length === 0) {
+            throw new APIError('BAD_REQUEST', { message: '退会にはパスワードが必要です' });
+          }
+        }
+        return Promise.resolve();
+      }),
     },
     emailAndPassword: {
       enabled: true,

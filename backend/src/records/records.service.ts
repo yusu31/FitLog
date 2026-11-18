@@ -13,6 +13,7 @@ import { encodeCursor, parseListQuery } from './list-input.js';
 import { findGroupMates, visibleToMe } from './record-access.js';
 import { parseRecordInput, type RunInput } from './record-input.js';
 import type { CopiedFrom, HeatmapResponse, RecordDetailResponse, RecordedExercise, RecordListResponse, RecordResponse, SetResponse, StatsResponse, WeekResponse } from './records.response.js';
+import { parseMemoInput } from './memo-input.js';
 import { parseSetInput } from './set-input.js';
 import { parseWeekDate } from './week-input.js';
 
@@ -198,6 +199,11 @@ export class RecordsService {
       );
     if (!row) throw recordNotFound();
     const [detail] = await this.withDetails(userId, [row], true);
+    // メモ・きつさ（F5）は持ち主本人にだけ返す。仲間には返さない
+    if (row.userId === userId) {
+      if (row.note !== null) detail.note = row.note;
+      if (row.rpe !== null) detail.rpe = row.rpe;
+    }
     // 地図ゴースト（F-17）。持ち主本人が、ルート付きのランを開いたときだけ、自分の「ひとつ前のルート付きラン」を添える。仲間には見せない
     if (row.userId === userId && row.kind === 'run' && detail.run?.route) {
       const previousRun = await this.findPreviousRun(userId, row);
@@ -230,6 +236,20 @@ export class RecordsService {
       .returning({ id: records.id });
     if (deleted.length === 0) throw recordNotFound();
     this.logger.log(`記録を削除: ${deleted[0].id}`);
+  }
+
+  // メモ・きつさを書く（F5）。自分の記録だけ（他人の記録・無い id は同じ 404）。種類は問わない。
+  // 持ち主の確認と更新を1つの文で行う。送った項目だけ変える（無い項目は触らない・null は消す）
+  async updateMemo(userId: string, recordId: string, raw: unknown): Promise<{ note: string | null; rpe: number | null }> {
+    const input = parseMemoInput(raw);
+    if (!isUuid(recordId)) throw recordNotFound();
+    const [updated] = await this.db
+      .update(records)
+      .set(input)
+      .where(and(eq(records.id, recordId.toLowerCase()), eq(records.userId, userId)))
+      .returning({ note: records.note, rpe: records.rpe });
+    if (!updated) throw recordNotFound();
+    return updated;
   }
 
   // 筋トレを「今日はここまで」で終える（N1）。冪等（もう終えていれば1回目の終了時刻のまま返す）。

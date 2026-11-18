@@ -242,3 +242,29 @@ export const ROUTINE_MESSAGES = {
   planFrom: (name: string) => `ルーティン「${name}」から`,
   ghostLabel: 'ルーティンの 予定',
 } as const;
+
+// 退会（F2-b）。元に戻せないので、消えるものを先に見せる。落ち度を責めない
+export const DELETE_ACCOUNT_MESSAGES = {
+  start: '退会の手続きへ',
+  heading: '退会',
+  warning: '退会すると、あなたの記録・動画・仲間の記録に付けたスタンプとコメントが、すべて消えます。元に戻せません。仲間の記録やグループは残ります。',
+  passwordLabel: 'パスワード（確認のため）',
+  confirm: '完全に退会する',
+  cancel: 'やめる',
+  passwordWrong: 'パスワードが違います。入れ直してください',
+  failed: '退会できませんでした。少し待って、もう一度お試しください',
+  network: '通信できませんでした。電波の良い所でもう一度お試しください',
+} as const;
+
+// 記録のメモ・きつさ（F5）。持ち主だけが見る。落ち度を責めない
+export const MEMO_MESSAGES = {
+  heading: 'メモときつさ',
+  rpeLabel: 'きつさ（1 らく 〜 10 限界）',
+  noteLabel: 'メモ',
+  notePlaceholder: '今日の調子、フォームの気づきなど',
+  save: '保存する',
+  saved: '保存しました',
+  saveFailed: '保存できませんでした。電波の良い所でもう一度ためしてください',
+  offline: '電波があるときに保存できます',
+  onlyMe: '自分だけに見えます（仲間には見えません）',
+} as const;

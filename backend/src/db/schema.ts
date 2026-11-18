@@ -76,7 +76,7 @@ export const verifications = pgTable('verifications', {
 export const groups = pgTable('groups', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
-  createdBy: text('created_by').references(() => users.id),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -104,7 +104,7 @@ export const invitations = pgTable('invitations', {
     .references(() => groups.id),
   tokenHash: text('token_hash').notNull().unique(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  createdBy: text('created_by').references(() => users.id),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
 });
@@ -123,7 +123,7 @@ export const exercises = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
     bodyPart: bodyPart('body_part').notNull(),
-    createdBy: text('created_by').references(() => users.id),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'cascade' }),
     // お試しの前回値（一覧の種目だけ。2つは同時に入れる）。記録としては保存しない
     trialWeightKg: numeric('trial_weight_kg', { precision: 4, scale: 1 }),
     trialReps: smallint('trial_reps'),
@@ -153,19 +153,24 @@ export const records = pgTable(
     id: uuid('id').primaryKey(),
     userId: text('user_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade' }),
     kind: recordKind('kind').notNull(),
     recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
     localDate: date('local_date').notNull(),
     // あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。端末が保存の時点で決めるので、オフラインで翌日に届いても変わらない
     late: boolean('late').notNull().default(false),
     // メニューのコピー（F-24）。コピーして始めた記録だけ、コピー元の人の id が入る。抜けた仲間でも消さない（画面は「仲間から」と出す）
-    copiedFromUserId: text('copied_from_user_id').references(() => users.id),
+    copiedFromUserId: text('copied_from_user_id').references(() => users.id, { onDelete: 'set null' }),
     // 筋トレの終了（N1。「今日はここまで」）。押すまでは null。押さなくても、最後のセットから3時間で「記録中」ではなくなる（common/workout-session.ts）
     endedAt: timestamp('ended_at', { withTimezone: true }),
+    // メモときつさ（F5）。記録ごとに1つ。持ち主だけが見る（仲間には返さない）。どちらも未入力は null
+    note: text('note'),
+    rpe: smallint('rpe'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    check('records_note_ck', sql`${t.note} is null or char_length(${t.note}) between 1 and 200`),
+    check('records_rpe_ck', sql`${t.rpe} is null or ${t.rpe} between 1 and 10`),
     index('records_user_local_date_idx').on(t.userId, t.localDate.desc()),
     index('records_user_recorded_at_idx').on(t.userId, t.recordedAt.desc()),
     // 休みは1日1件（筋トレ・ランは1日に何件でもよい）
@@ -237,7 +242,7 @@ export const reactions = pgTable(
       .references(() => records.id, { onDelete: 'cascade' }),
     userId: text('user_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade' }),
     stampKey: text('stamp_key').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -257,7 +262,7 @@ export const comments = pgTable(
       .references(() => records.id, { onDelete: 'cascade' }),
     userId: text('user_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade' }),
     body: text('body').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

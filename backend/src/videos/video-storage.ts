@@ -1,4 +1,4 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectsCommand, GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -13,7 +13,12 @@ export type PresignedPost = { url: string; fields: Record<string, string> };
 export abstract class VideoStorage {
   abstract presignUpload(key: string, contentType: string, sizeBytes: number): Promise<PresignedPost>;
   abstract presignDownload(key: string): Promise<string>;
+  // 退会のときに、その人の動画をまとめて消す（F2-b）。無いキーは S3 が黙って成功にする
+  abstract deleteMany(keys: string[]): Promise<void>;
 }
+
+// S3 の一括削除は 1 回に 1,000 件まで
+const DELETE_BATCH = 1000;
 
 export class S3VideoStorage extends VideoStorage {
   constructor(
@@ -42,6 +47,16 @@ export class S3VideoStorage extends VideoStorage {
   presignDownload(key: string): Promise<string> {
     return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.bucket, Key: key }), { expiresIn: this.expiresIn });
   }
+
+  async deleteMany(keys: string[]): Promise<void> {
+    for (let i = 0; i < keys.length; i += DELETE_BATCH) {
+      const out = await this.client.send(
+        new DeleteObjectsCommand({ Bucket: this.bucket, Delete: { Objects: keys.slice(i, i + DELETE_BATCH).map((Key) => ({ Key })), Quiet: true } }),
+      );
+      // 一括削除は、1件ずつの失敗を例外にせず Errors に入れて返す。見落とさないよう、ここで例外にする
+      if (out.Errors?.length) throw new Error(`S3 の削除に失敗: ${out.Errors[0].Code ?? 'unknown'}（${out.Errors.length}件）`);
+    }
+  }
 }
 
 // 置き場（バケット）が設定されていない環境（ローカル開発など）の窓口。署名を作ろうとすると 503 を返す
@@ -53,6 +68,9 @@ class UnavailableVideoStorage extends VideoStorage {
     return this.fail();
   }
   presignDownload(): Promise<string> {
+    return this.fail();
+  }
+  deleteMany(): Promise<void> {
     return this.fail();
   }
 }
