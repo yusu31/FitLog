@@ -20,7 +20,7 @@ import {
 } from '@/lib/api/generated';
 import { useAppSession } from '@/lib/use-app-session';
 import { StampButton } from '@/components/friends/stamp-button';
-import { COMMENT_MAX, STAMP_KEYS, normalizeComment, stampState, type StampKey } from '@/lib/feed';
+import { COMMENT_MAX, STAMP_KEYS, normalizeComment, stampState, stampStateWithPending, type PendingStamp, type StampKey } from '@/lib/feed';
 import { formatJstTime, formatMonthDay } from '@/lib/format';
 import { FEED_MESSAGES } from '@/lib/messages';
 import { useOnline } from '@/lib/use-browser-state';
@@ -44,6 +44,7 @@ function Stamps({ recordId, kind, online }: { recordId: string; kind: FeedItemKi
   const addReaction = useAddReaction();
   const deleteReaction = useDeleteReaction();
   const [notice, setNotice] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingStamp | null>(null);
   const busy = addReaction.isPending || deleteReaction.isPending;
   const stamps = data?.status === 200 ? data.data.items : [];
   const failed = isError || (data !== undefined && data.status !== 200);
@@ -51,10 +52,12 @@ function Stamps({ recordId, kind, online }: { recordId: string; kind: FeedItemKi
   async function toggle(key: StampKey) {
     const { mine } = stampState(stamps, key);
     setNotice(null);
+    setPending({ key, add: mine === null, base: stamps });
     try {
       if (mine) unwrap(await deleteReaction.mutateAsync({ id: recordId, reactionId: mine }));
       else unwrap(await addReaction.mutateAsync({ id: recordId, data: { id: crypto.randomUUID(), stampKey: key } }));
     } catch (e) {
+      setPending(null);
       setNotice(sendErrorText(e, FEED_MESSAGES.stampFailed));
     } finally {
       void queryClient.invalidateQueries({ queryKey: getListReactionsQueryKey(recordId) });
@@ -73,7 +76,7 @@ function Stamps({ recordId, kind, online }: { recordId: string; kind: FeedItemKi
       ) : (
         <ul aria-label="スタンプ" className="flex flex-wrap gap-1.5">
           {STAMP_KEYS[kind].map((key) => {
-            const { count, mine } = stampState(stamps, key);
+            const { count, mine } = stampStateWithPending(stamps, key, pending);
             return (
               <li key={key}>
                 <StampButton

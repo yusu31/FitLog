@@ -203,6 +203,25 @@ describe('スタンプ', () => {
     expect((post.body as { id: string }).id).toMatch(/^[0-9a-f-]{36}$/);
   });
 
+  it('S5: 押した瞬間に数と「付いた」が変わる（サーバーの返事を待たない）。失敗したら元に戻る', async () => {
+    const user = userEvent.setup();
+    replies['GET /api/feed'] = [{ status: 200, body: feed() }];
+    let rejectPost: (e: Error) => void = () => {};
+    const base = globalThis.fetch as unknown as (url: string, init?: RequestInit) => Promise<Response>;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) =>
+        init?.method === 'POST' && url === '/api/records/r1/reactions' ? new Promise<Response>((_, rej) => (rejectPost = rej)) : base(url, init),
+      ),
+    );
+    renderFeed();
+    await user.click(await screen.findByRole('button', { name: 'おつかれ' }));
+    // 返事はまだ来ていないのに、もう「おつかれ 1」で押した状態
+    expect(screen.getByRole('button', { name: 'おつかれ 1' })).toHaveAttribute('aria-pressed', 'true');
+    rejectPost(new Error('offline'));
+    expect(await screen.findByRole('button', { name: 'おつかれ' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
   it('自分が付けているスタンプを押すと、DELETE /records/{id}/reactions/{reactionId} で外す', async () => {
     const user = userEvent.setup();
     replies['GET /api/feed'] = [
