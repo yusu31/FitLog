@@ -1,26 +1,26 @@
 // 日本縦断（F-28。docs/features.md 2.16）。ランの累計距離で、鹿児島から稚内までの決まった道を進む。
-// 地図は略図（viewBox 220×300 の SVG）で、形も距離も目安（仮置き。実際の道のりとは合わない）。「あと◯km」は出さない
+// 地図は本物の地図（MapLibre）の上に、地点を直線でつないで描く。道のりの形も距離も目安（実際の道のりとは合わない）。「あと◯km」は出さない
 // 地点は誰でも知っている主要都市だけ（2026-11-17 本人の決定。最初の目標を近くするため熊本を足した）
-export type RoutePoint = { name: string; km: number; x: number; y: number };
+export type RoutePoint = { name: string; km: number; lng: number; lat: number };
 
 export const JAPAN_ROUTE: readonly RoutePoint[] = [
-  { name: '鹿児島', km: 0, x: 40, y: 280 },
-  { name: '熊本', km: 170, x: 44, y: 267 },
-  { name: '福岡', km: 270, x: 48, y: 258 },
-  { name: '広島', km: 560, x: 72, y: 244 },
-  { name: '岡山', km: 700, x: 85, y: 238 },
-  { name: '大阪', km: 880, x: 102, y: 230 },
-  { name: '京都', km: 930, x: 111, y: 226 },
-  { name: '名古屋', km: 1000, x: 124, y: 220 },
-  { name: '静岡', km: 1130, x: 134, y: 215 },
-  { name: '東京', km: 1330, x: 150, y: 208 },
-  { name: '仙台', km: 1650, x: 160, y: 166 },
-  { name: '盛岡', km: 1830, x: 159, y: 146 },
-  { name: '青森', km: 2000, x: 158, y: 126 },
-  { name: '函館', km: 2150, x: 161, y: 107 },
-  { name: '札幌', km: 2400, x: 166, y: 76 },
-  { name: '旭川', km: 2600, x: 169, y: 60 },
-  { name: '稚内', km: 3000, x: 174, y: 26 },
+  { name: '鹿児島', km: 0, lng: 130.558, lat: 31.597 },
+  { name: '熊本', km: 170, lng: 130.742, lat: 32.79 },
+  { name: '福岡', km: 270, lng: 130.402, lat: 33.59 },
+  { name: '広島', km: 560, lng: 132.46, lat: 34.397 },
+  { name: '岡山', km: 700, lng: 133.935, lat: 34.662 },
+  { name: '大阪', km: 880, lng: 135.502, lat: 34.694 },
+  { name: '京都', km: 930, lng: 135.768, lat: 35.012 },
+  { name: '名古屋', km: 1000, lng: 136.906, lat: 35.181 },
+  { name: '静岡', km: 1130, lng: 138.383, lat: 34.977 },
+  { name: '東京', km: 1330, lng: 139.692, lat: 35.689 },
+  { name: '仙台', km: 1650, lng: 140.872, lat: 38.269 },
+  { name: '盛岡', km: 1830, lng: 141.153, lat: 39.702 },
+  { name: '青森', km: 2000, lng: 140.74, lat: 40.822 },
+  { name: '函館', km: 2150, lng: 140.729, lat: 41.769 },
+  { name: '札幌', km: 2400, lng: 141.354, lat: 43.062 },
+  { name: '旭川', km: 2600, lng: 142.365, lat: 43.77 },
+  { name: '稚内', km: 3000, lng: 141.673, lat: 45.416 },
 ];
 
 // 1周ぶんの距離（km）。稚内に着いたら鹿児島に戻って2周目、3周目…と何周でも続ける
@@ -28,8 +28,8 @@ export const TOTAL_KM = JAPAN_ROUTE[JAPAN_ROUTE.length - 1].km;
 
 export type RoutePosition = {
   name: string; // 今いる場所（その周で最後に通った地点の名前）
-  x: number;
-  y: number;
+  lng: number;
+  lat: number;
   passed: number; // その周で通った地点の数（出発点を含む）
   lap: number; // 何周目か（1から）
   kmInLap: number; // その周の中で進んだ距離（km）
@@ -43,7 +43,7 @@ export function locateOnRoute(totalMeters: number): RoutePosition {
   while (km >= JAPAN_ROUTE[i + 1].km) i++;
   const [a, b] = [JAPAN_ROUTE[i], JAPAN_ROUTE[i + 1]];
   const t = (km - a.km) / (b.km - a.km);
-  return { name: a.name, x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, passed: i + 1, lap, kmInLap: km };
+  return { name: a.name, lng: a.lng + (b.lng - a.lng) * t, lat: a.lat + (b.lat - a.lat) * t, passed: i + 1, lap, kmInLap: km };
 }
 
 // 次の地点までの距離（F-28）。ゴールまでの残りは出さない。0.1km 単位に切り上げる（手前なのに 0.0km と出さないため）

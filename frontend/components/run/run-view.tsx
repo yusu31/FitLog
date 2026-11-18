@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, FileUp, X } from 'lucide-react';
+import { Check, FileUp, Map, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useId, useState, type ChangeEvent } from 'react';
@@ -188,6 +188,9 @@ export function RunView() {
               <p className="text-xs font-extrabold tracking-widest text-sub">日本縦断</p>
               {trek.arrived && <p className="text-lg font-extrabold">{trek.arrived}に着きました！</p>}
               <p className="text-sm font-bold text-sub-strong">{trek.next}</p>
+              <Link href="/me/stats" className="inline-block py-2 text-sm font-extrabold text-teal-dark underline">
+                日本地図で見る
+              </Link>
             </section>
           )}
         </div>
@@ -210,6 +213,13 @@ export function RunView() {
           className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <X aria-hidden className="size-6" />
+        </Link>
+        <Link
+          href="/me/stats"
+          className="ml-auto flex min-h-11 items-center gap-1 rounded-fl px-3 text-sm font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        >
+          <Map aria-hidden className="size-5" />
+          日本縦断
         </Link>
       </header>
 

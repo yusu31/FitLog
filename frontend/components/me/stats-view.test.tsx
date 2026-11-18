@@ -6,6 +6,8 @@ import { renderWithQuery } from '@/lib/test/fake-api';
 import { StatsPage } from './stats-view';
 
 vi.mock('@/lib/use-require-session', () => ({ useRequireSession: () => ({ signedIn: true }) }));
+// 本物の地図は WebGL が要り jsdom では動かない。部品を差し替える（描画は実ブラウザで確かめる）
+vi.mock('@/components/me/japan-map', () => ({ JapanMap: ({ pos }: { pos: { name: string } }) => <div role="img" aria-label={`いまは${pos.name}のあたり`} /> }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }), usePathname: () => '/me/stats/' }));
 
 // 記録をくわしく（S-35・F-22・F-26・F-27・F-29。docs/testing-design.md 3-14）。今日は API が決めた today を使う（画面の時計に依存しない）
