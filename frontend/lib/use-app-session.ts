@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { type CachedUser, clearCachedUser, readCachedUser, writeCachedUser } from '@/lib/session-cache';
 
@@ -34,13 +34,30 @@ export function resolveSession(
   return { session: cached ? { user: cached } : null, save: null, clear: false };
 }
 
+// 端末の控えを、描画のずれ（hydration mismatch）を起こさずに読む。
+// 静的に書き出した HTML には控えが無い（サーバー側は null）ので、描画の途中で localStorage を直接読むと、
+// 控えのある端末だけ最初の描画が HTML と食い違う。useSyncExternalStore なら、最初の描画はサーバーと同じ null で、
+// そのあと端末の控えに切り替わる。文字列で受けるのは、同じ中身なら同じ値を返す必要があるため
+function useCachedUser(): CachedUser | null {
+  const raw = useSyncExternalStore(
+    (notify) => {
+      window.addEventListener('storage', notify);
+      return () => window.removeEventListener('storage', notify);
+    },
+    () => JSON.stringify(readCachedUser()),
+    () => 'null',
+  );
+  return useMemo(() => JSON.parse(raw) as CachedUser | null, [raw]);
+}
+
 // authClient.useSession() の代わりに使う。電波なしで開き直しても、前にログインしていた人なら
 // ログイン画面へ飛ばさない（F-30③）。返す形は { data, isPending } で、useSession と同じ使い方ができる
 export function useAppSession(): { data: AppSession | null; isPending: boolean } {
   const { data, isPending, error } = authClient.useSession();
+  const cached = useCachedUser();
   const { session, save, clear } = resolveSession(
     { data: data ?? null, isPending, error: (error as RawSession['error']) ?? null },
-    readCachedUser(),
+    cached,
   );
   const saveId = save?.id;
   const saveName = save?.name;
