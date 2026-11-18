@@ -3,6 +3,7 @@
 import { Navigation, Pause, Play, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GpxRun } from '@/lib/gpx/parse-gpx';
+import { canWatchLocation, isNativeApp, startLocationWatch, type StopWatch } from '@/lib/gps/source';
 import { addFix, breakSegment, emptyTrack, finishTrack, movingMs, type FinishError, type TrackState } from '@/lib/gps/track';
 import { GPS_MESSAGES } from '@/lib/messages';
 import { formatPace, paceSecPerKm } from '@/lib/run';
@@ -29,7 +30,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
 
   // 開始時刻・一時停止の合計・今の一時停止の始まり（ms）。画面に出す時間の計算に使うので state で持つ
   const [timing, setTiming] = useState<{ startedAt: number; pausedMs: number; pausedAt: number | null }>({ startedAt: 0, pausedMs: 0, pausedAt: null });
-  const watchId = useRef<number | null>(null);
+  const stopWatchRef = useRef<StopWatch | null>(null);
   const wakeLock = useRef<WakeLockSentinel | null>(null);
   const onActiveChangeRef = useRef(onActiveChange);
   useEffect(() => {
@@ -42,6 +43,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
   }, []);
 
   const requestWakeLock = useCallback(async () => {
+    if (isNativeApp()) return; // アプリは画面を消しても記録が続く（通知が出る）
     if (!('wakeLock' in navigator)) {
       setWakeLockMissing(true);
       return;
@@ -54,19 +56,19 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
   }, []);
 
   const stopWatch = useCallback(() => {
-    if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
-    watchId.current = null;
+    stopWatchRef.current?.();
+    stopWatchRef.current = null;
   }, []);
 
   const startWatch = useCallback(() => {
-    watchId.current = navigator.geolocation.watchPosition(
-      (p) => {
+    stopWatchRef.current = startLocationWatch(
+      (fix) => {
         setProblem(null);
-        setTrack((t) => addFix(t, { lon: p.coords.longitude, lat: p.coords.latitude, accuracyM: p.coords.accuracy, t: p.timestamp }));
+        setTrack((t) => addFix(t, fix));
       },
-      (err) => {
-        // 一時的な取れなさ（TIMEOUT・POSITION_UNAVAILABLE）は次の位置を待つ。許可が無いときだけ止める
-        if (err.code === err.PERMISSION_DENIED) {
+      (kind) => {
+        // 一時的な取れなさは次の位置を待つ。許可が無いときだけ止める
+        if (kind === 'denied') {
           stopWatch();
           releaseWakeLock();
           setPhase('idle');
@@ -76,7 +78,6 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
           setProblem('unavailable');
         }
       },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000 },
     );
   }, [releaseWakeLock, stopWatch]);
 
@@ -100,7 +101,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
   // 画面を離れるときは、位置の取得も画面の点けっぱなしも止める
   useEffect(
     () => () => {
-      if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
+      stopWatchRef.current?.();
       wakeLock.current?.release().catch(() => {});
     },
     [],
@@ -112,7 +113,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
   }
 
   function onStart() {
-    if (!('geolocation' in navigator)) {
+    if (!canWatchLocation()) {
       setProblem('unsupported');
       return;
     }
@@ -206,7 +207,11 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
           {GPS_MESSAGES.searching}
         </p>
       )}
-      {phase === 'running' && <p className="text-xs font-bold text-sub-strong">{wakeLockMissing ? GPS_MESSAGES.noWakeLock : GPS_MESSAGES.keepScreenOn}</p>}
+      {phase === 'running' && (
+        <p className="text-xs font-bold text-sub-strong">
+          {isNativeApp() ? GPS_MESSAGES.appBackground : wakeLockMissing ? GPS_MESSAGES.noWakeLock : GPS_MESSAGES.keepScreenOn}
+        </p>
+      )}
       {problem && <ProblemNote problem={problem} />}
 
       <div className="mt-auto flex gap-3">
