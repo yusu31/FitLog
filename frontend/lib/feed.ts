@@ -79,3 +79,12 @@ export function stampState(stamps: readonly FeedStamp[], key: StampKey): { count
   const found = stamps.find((s) => s.stampKey === key);
   return { count: found?.count ?? 0, mine: found?.mine ?? null };
 }
+
+// 押した直後に、サーバーの返事を待たず数と「付いた」状態を先に変える（S5。楽観的更新）。
+// pending は「押した操作」。base は押した時点のスタンプ一覧（サーバーの値）で、取り直して一覧が入れ替わったら、この先読みは使わない
+export type PendingStamp = { key: StampKey; add: boolean; base: readonly FeedStamp[] };
+export function stampStateWithPending(stamps: readonly FeedStamp[], key: StampKey, pending: PendingStamp | null): { count: number; mine: string | null } {
+  const actual = stampState(stamps, key);
+  if (!pending || pending.key !== key || pending.base !== stamps) return actual;
+  return pending.add ? { count: actual.count + 1, mine: 'pending' } : { count: Math.max(0, actual.count - 1), mine: null };
+}

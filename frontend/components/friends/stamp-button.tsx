@@ -20,12 +20,15 @@ export function StampButton({
   pressed,
   disabled,
   onClick,
+  compact = false,
 }: {
   stampKey: StampKey;
   count: number;
   pressed: boolean;
   disabled: boolean;
   onClick: () => void;
+  // 足跡カード用。1行に収めて縦を短くする（U12）。ことばは読み上げ用に残し、見た目は絵と数だけ
+  compact?: boolean;
 }) {
   const label = STAMP_LABELS[stampKey];
   return (
@@ -36,17 +39,18 @@ export function StampButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'flex min-h-14 min-w-16 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-2.5 py-1.5 outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60',
+        'flex items-center justify-center rounded-2xl border-2 outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60',
+        compact ? 'min-h-11 min-w-11 gap-1 px-2.5' : 'min-h-14 min-w-16 flex-col gap-0.5 px-2.5 py-1.5',
         pressed ? 'border-teal-dark bg-teal-light text-teal-dark' : 'border-line bg-white text-sub-strong',
       )}
     >
       <span className="flex items-center gap-1">
-        <span aria-hidden data-testid="stamp-emoji" className="text-[26px] leading-none">
+        <span aria-hidden data-testid="stamp-emoji" className={cn('leading-none', compact ? 'text-[22px]' : 'text-[26px]')}>
           {STAMP_EMOJI[stampKey]}
         </span>
         {count > 0 && <span className="fl-num text-base">{count}</span>}
       </span>
-      <span className="text-[11px] leading-none font-extrabold">{label}</span>
+      <span className={compact ? 'sr-only' : 'text-[11px] leading-none font-extrabold'}>{label}</span>
     </button>
   );
 }

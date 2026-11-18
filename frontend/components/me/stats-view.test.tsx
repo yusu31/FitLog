@@ -134,6 +134,14 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
     expect(within(list).getAllByRole('listitem')[11]).toHaveTextContent('1100kg');
   });
 
+  it('U8: グラフに、いちばん多い週と今週の数字を見える文字で出す', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const section = (await screen.findByText('週ごとの総重量（直近12週）')).closest('section')!;
+    expect(section).toHaveTextContent('最大');
+    expect(section).toHaveTextContent('右が今週 1100kg');
+  });
+
   it('記録がまったく無くても、責めずに表示できる（換算は出ない・スタンプはすべてまだ）', async () => {
     stubStats(
       statsOf({

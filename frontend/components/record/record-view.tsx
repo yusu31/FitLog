@@ -338,12 +338,18 @@ export function RecordView() {
           </Link>
         )}
         {videoCapable && online && day === 'today' && recordId && sets.length > 0 && (
-          <ThickButton tone="white" size="sm" className="w-full" onClick={() => setFilming(true)}>
-            2秒ラストレップを撮る
-          </ThickButton>
+          <div className="space-y-1">
+            <ThickButton tone="white" size="sm" className="w-full" aria-describedby="video-hint" onClick={() => setFilming(true)}>
+              2秒ラストレップを撮る
+            </ThickButton>
+            {/* 「ラストレップ」と撮る時機が初見で分かりにくい（U4）。言い換えと、いつ撮るかを一言添える */}
+            <p id="video-hint" className="text-center text-xs font-bold text-sub-strong">
+              セットの最後の1回（ラストレップ）を、終えたあとに2秒だけ撮れます
+            </p>
+          </div>
         )}
         {/* 結果シートが重なる分の余白 */}
-        <div aria-hidden className="h-24" />
+        <div aria-hidden className="h-56" />
       </div>
 
       <ResultSheet sheet={sheet} onDismiss={dismissSheet} />

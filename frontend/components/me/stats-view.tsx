@@ -162,6 +162,10 @@ function WeeklyChart({
     <section aria-label={title} className="fl-slab px-4 py-3">
       <h2 className="text-sm font-extrabold text-sub-strong">{title}（直近12週）</h2>
       <svg viewBox="0 0 240 80" role="img" aria-label={`${title}の棒グラフ`} className="mt-2 w-full">
+        {/* 記録がない週も「空の箱」にならないよう、全部の週に薄い土台の線を引く（U8） */}
+        {weeks.map((w, i) => (
+          <rect key={`base-${w.weekStart}`} x={i * 20 + 3} y={78} width={14} height={2} rx={1} className="fill-line" />
+        ))}
         {ratios.map((r, i) => (
           <rect key={weeks[i].weekStart} x={i * 20 + 3} y={80 - r * 76} width={14} height={r * 76} rx={2} className={i === ratios.length - 1 ? 'fill-gold' : 'fill-teal'} />
         ))}
@@ -173,7 +177,11 @@ function WeeklyChart({
           </li>
         ))}
       </ul>
-      <p className="text-center text-xs text-sub-strong">右が今週</p>
+      {/* 目盛りの代わりに、いちばん多い週・今週の数字を見える文字で出す（U8） */}
+      <p aria-hidden className="mt-1 flex justify-between text-xs font-bold text-sub-strong">
+        <span>最大 {format(Math.max(0, ...values))}</span>
+        <span>右が今週 {format(values[values.length - 1] ?? 0)}</span>
+      </p>
     </section>
   );
 }

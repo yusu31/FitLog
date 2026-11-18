@@ -22,6 +22,8 @@ import {
   describeItem,
   normalizeComment,
   stampState,
+  stampStateWithPending,
+  type PendingStamp,
   type StampKey,
 } from '@/lib/feed';
 import { LateTag } from '@/components/fitlog/late-tag';
@@ -44,6 +46,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
   const deleteReaction = useDeleteReaction();
   const [openComments, setOpenComments] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingStamp | null>(null);
   const { title, detail } = describeItem(item);
   const busy = addReaction.isPending || deleteReaction.isPending;
 
@@ -52,10 +55,12 @@ export function FeedCard({ item }: { item: FeedItem }) {
   async function toggle(key: StampKey) {
     const { mine } = stampState(item.stamps, key);
     setNotice(null);
+    setPending({ key, add: mine === null, base: item.stamps });
     try {
       if (mine) unwrap(await deleteReaction.mutateAsync({ id: item.id, reactionId: mine }));
       else unwrap(await addReaction.mutateAsync({ id: item.id, data: { id: crypto.randomUUID(), stampKey: key } }));
     } catch (e) {
+      setPending(null);
       setNotice(sendErrorText(e, FEED_MESSAGES.stampFailed));
     } finally {
       void refresh();
@@ -89,7 +94,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
 
       <ul aria-label={`${item.author.name}の${title}へのスタンプ`} className="flex flex-wrap gap-1.5">
         {STAMP_KEYS[item.kind].map((key) => {
-          const { count, mine } = stampState(item.stamps, key);
+          const { count, mine } = stampStateWithPending(item.stamps, key, pending);
           // 自分の足跡には自分でスタンプを付けない（U11）。もらった分だけ見せる
           if (isOwn) {
             return count > 0 ? (
@@ -100,7 +105,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
           }
           return (
             <li key={key}>
-              <StampButton stampKey={key} count={count} pressed={mine !== null} disabled={!online || busy} onClick={() => void toggle(key)} />
+              <StampButton compact stampKey={key} count={count} pressed={mine !== null} disabled={!online || busy} onClick={() => void toggle(key)} />
             </li>
           );
         })}
