@@ -50,3 +50,24 @@ export function StampButton({
     </button>
   );
 }
+
+// 自分の記録にもらったスタンプ。押せない（自分の記録には自分でスタンプを付けない）ので、ボタンにせず絵と数だけ見せる。
+// 読み上げは「ナイス 2」
+export function StampChip({ stampKey, count }: { stampKey: StampKey; count: number }) {
+  const label = STAMP_LABELS[stampKey];
+  return (
+    <span
+      role="img"
+      aria-label={`${label} ${count}`}
+      className="flex min-h-14 min-w-16 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 border-line bg-white px-2.5 py-1.5 text-sub-strong"
+    >
+      <span aria-hidden className="flex items-center gap-1">
+        <span className="text-[26px] leading-none">{STAMP_EMOJI[stampKey]}</span>
+        <span className="fl-num text-base">{count}</span>
+      </span>
+      <span aria-hidden className="text-[11px] leading-none font-extrabold">
+        {label}
+      </span>
+    </span>
+  );
+}

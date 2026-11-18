@@ -41,10 +41,10 @@ export const visibleToMe = (db: Db, userId: string) => or(eq(records.userId, use
 
 // 見られる記録を1件引く（スタンプ・コメントを付ける前の確認）。無い・別のグループの人の・グループに入っていない人から見た他人のものは、どれも undefined（呼び出し側が同じ 404 にする）。
 // id が UUID の形でないときは DB を引かない（uuid 列に渡すとエラー 500 になるため）
-export async function findVisibleRecord(db: Db, userId: string, recordId: string): Promise<{ id: string; kind: RecordKind } | undefined> {
+export async function findVisibleRecord(db: Db, userId: string, recordId: string): Promise<{ id: string; kind: RecordKind; userId: string } | undefined> {
   if (!isUuid(recordId)) return undefined;
   const [row] = await db
-    .select({ id: records.id, kind: records.kind })
+    .select({ id: records.id, kind: records.kind, userId: records.userId })
     .from(records)
     .where(and(eq(records.id, recordId.toLowerCase()), visibleToMe(db, userId)));
   return row;

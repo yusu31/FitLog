@@ -107,7 +107,7 @@ describe('仲間タブの新着の印（結合: 本物の PostgreSQL・better-au
     const mine = await createRecord(a1);
     await markSeen(a1);
 
-    await http().post(`/api/records/${mine}/reactions`).set('Cookie', a1).send({ id: randomUUID(), stampKey: 'nice' }).expect(201);
+    await http().post(`/api/records/${mine}/reactions`).set('Cookie', a1).send({ id: randomUUID(), stampKey: 'nice' }).expect(403);
     await http().post(`/api/records/${mine}/comments`).set('Cookie', a1).send({ id: randomUUID(), body: '自分で' }).expect(201);
     expect(await hasNew(a1)).toBe(false);
 

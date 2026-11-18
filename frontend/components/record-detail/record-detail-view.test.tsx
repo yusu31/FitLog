@@ -442,6 +442,10 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
 
   describe('スタンプとコメント', () => {
     const rest = { [REC]: ok(restRecord('r1', '2026-10-22')) };
+    // 自分の記録（from=me）にはスタンプを押せない（U11）。押すテストは仲間の記録として開く
+    beforeEach(() => {
+      search = 'id=r1&by=u2';
+    });
 
     it('スタンプの数と自分が付けたものをサーバーの値で出す。休みには休み用の2つだけ', async () => {
       install({ ...rest, [REACTIONS]: ok({ items: [{ stampKey: 'rest_slow', count: 2, mine: 'x1' }] }) });
@@ -489,6 +493,23 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
       const user = userEvent.setup();
       await user.click(await screen.findByRole('button', { name: 'またあした' }));
       expect(await screen.findByRole('alert')).toHaveTextContent('スタンプを送れませんでした');
+    });
+
+    it('U11: 自分の記録では、押すボタンを出さず、もらったスタンプだけを数つきで出す', async () => {
+      search = 'id=r1&from=me';
+      install({ ...rest, [REACTIONS]: ok({ items: [{ stampKey: 'rest_slow', count: 2, mine: null }] }) });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByRole('img', { name: 'ゆっくりね 2' })).toBeInTheDocument();
+      expect(screen.getByRole('list', { name: 'もらったスタンプ' }).querySelectorAll('button')).toHaveLength(0);
+      expect(screen.queryByRole('button', { name: 'ゆっくりね 2' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'またあした' })).not.toBeInTheDocument();
+    });
+
+    it('U11: 自分の記録でまだスタンプが無いときは、その旨を出す', async () => {
+      search = 'id=r1&from=me';
+      install(rest);
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText('まだスタンプはもらっていないよ')).toBeInTheDocument();
     });
 
     it('コメントが0件なら「まだないよ」', async () => {

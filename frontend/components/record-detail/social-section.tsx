@@ -17,9 +17,10 @@ import {
   useListReactions,
   type CommentResponse,
   type FeedItemKind,
+  type FeedStamp,
 } from '@/lib/api/generated';
 import { useAppSession } from '@/lib/use-app-session';
-import { StampButton } from '@/components/friends/stamp-button';
+import { StampButton, StampChip } from '@/components/friends/stamp-button';
 import { COMMENT_MAX, STAMP_KEYS, normalizeComment, stampState, type StampKey } from '@/lib/feed';
 import { formatJstTime, formatMonthDay } from '@/lib/format';
 import { FEED_MESSAGES } from '@/lib/messages';
@@ -27,18 +28,19 @@ import { useOnline } from '@/lib/use-browser-state';
 
 // S-21 のスタンプとコメント。仲間タブの足跡カード（feed-card.tsx）と同じ文言・スタンプの鍵を使う。
 // 数と「自分が付けた」・コメントの一覧はサーバーの値。付け外し・投稿・削除のあとは取り直す。電波があるときだけ押せる（F-30）
-export function SocialSection({ recordId, kind }: { recordId: string; kind: FeedItemKind }) {
+export function SocialSection({ recordId, kind, mine }: { recordId: string; kind: FeedItemKind; mine: boolean }) {
   const online = useOnline();
   return (
     <div className="space-y-4">
-      <Stamps recordId={recordId} kind={kind} online={online} />
+      <Stamps recordId={recordId} kind={kind} online={online} mine={mine} />
       <Comments recordId={recordId} online={online} />
       {!online && <p className="text-center text-xs font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
     </div>
   );
 }
 
-function Stamps({ recordId, kind, online }: { recordId: string; kind: FeedItemKind; online: boolean }) {
+// mine（自分の記録）では、スタンプは仲間からもらうもの。押せず、もらった数だけ見せる（U11）
+function Stamps({ recordId, kind, online, mine: isMine }: { recordId: string; kind: FeedItemKind; online: boolean; mine: boolean }) {
   const queryClient = useQueryClient();
   const { data, isError } = useListReactions(recordId);
   const addReaction = useAddReaction();
@@ -70,6 +72,8 @@ function Stamps({ recordId, kind, online }: { recordId: string; kind: FeedItemKi
         <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
           {FEED_MESSAGES.stampsLoadFailed}
         </p>
+      ) : isMine ? (
+        <ReceivedStamps stamps={stamps} kind={kind} loaded={data !== undefined} />
       ) : (
         <ul aria-label="スタンプ" className="flex flex-wrap gap-1.5">
           {STAMP_KEYS[kind].map((key) => {
@@ -94,6 +98,21 @@ function Stamps({ recordId, kind, online }: { recordId: string; kind: FeedItemKi
         </p>
       )}
     </section>
+  );
+}
+
+function ReceivedStamps({ stamps, kind, loaded }: { stamps: readonly FeedStamp[]; kind: FeedItemKind; loaded: boolean }) {
+  const received = STAMP_KEYS[kind].map((key) => ({ key, count: stampState(stamps, key).count })).filter((s) => s.count > 0);
+  if (!loaded) return null;
+  if (received.length === 0) return <p className="fl-slab px-4 py-4 text-center text-sm font-bold text-sub-strong">{FEED_MESSAGES.stampsNoneYet}</p>;
+  return (
+    <ul aria-label="もらったスタンプ" className="flex flex-wrap gap-1.5">
+      {received.map(({ key, count }) => (
+        <li key={key}>
+          <StampChip stampKey={key} count={count} />
+        </li>
+      ))}
+    </ul>
   );
 }
 

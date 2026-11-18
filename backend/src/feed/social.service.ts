@@ -31,6 +31,10 @@ export class SocialService {
     const input = parseReactionInput(raw);
     const record = await findVisibleRecord(this.db, userId, recordId);
     if (!record) throw recordNotFound();
+    // 自分の記録には自分でスタンプを付けない（U11）。仲間からもらうもの
+    if (record.userId === userId) {
+      throw new ForbiddenException({ code: 'FORBIDDEN', message: '自分の記録にはスタンプを付けられません', details: null });
+    }
     if (!stampFitsKind(input.stampKey, record.kind)) {
       throw new ConflictException({
         code: 'RECORD_KIND_MISMATCH',
