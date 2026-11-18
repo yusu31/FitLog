@@ -19,10 +19,13 @@ describe('JAPAN_ROUTE（ルートの定義）', () => {
     expect(JAPAN_ROUTE.at(-1)).toMatchObject({ name: '稚内', km: 3000 });
     expect(TOTAL_KM).toBe(3000);
   });
-  it('略図の座標は、隣の地点から 40 以内（線が飛ばない）', () => {
+  it('座標は日本の範囲内で、隣の地点から 4 度以内（線が飛ばない）', () => {
     for (let i = 1; i < JAPAN_ROUTE.length; i++) {
       const [a, b] = [JAPAN_ROUTE[i - 1], JAPAN_ROUTE[i]];
-      expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeLessThan(45);
+      expect(Math.hypot(b.lng - a.lng, b.lat - a.lat)).toBeLessThan(4);
+      expect(b.lat).toBeGreaterThan(a.lat - 0.5); // 北へ進む
+      expect(b.lng).toBeGreaterThan(122);
+      expect(b.lng).toBeLessThan(146);
     }
   });
 });
@@ -31,7 +34,7 @@ describe('locateOnRoute（累計距離から今いる場所を出す）', () => 
   it('0m は出発点（鹿児島）', () => {
     const p = locateOnRoute(0);
     expect(p.name).toBe('鹿児島');
-    expect([p.x, p.y]).toEqual([JAPAN_ROUTE[0].x, JAPAN_ROUTE[0].y]);
+    expect([p.lng, p.lat]).toEqual([JAPAN_ROUTE[0].lng, JAPAN_ROUTE[0].lat]);
     expect(p.lap).toBe(1);
   });
   it('地点の手前（境界の1m前）は直前の地点の名前のまま', () => {
@@ -42,13 +45,13 @@ describe('locateOnRoute（累計距離から今いる場所を出す）', () => 
     const second = JAPAN_ROUTE[1];
     const p = locateOnRoute(second.km * 1000);
     expect(p.name).toBe(second.name);
-    expect([p.x, p.y]).toEqual([second.x, second.y]);
+    expect([p.lng, p.lat]).toEqual([second.lng, second.lat]);
   });
   it('2地点の真ん中では座標も真ん中（線形に補間する）', () => {
     const [a, b] = [JAPAN_ROUTE[0], JAPAN_ROUTE[1]];
     const p = locateOnRoute(((a.km + b.km) / 2) * 1000);
-    expect(p.x).toBeCloseTo((a.x + b.x) / 2);
-    expect(p.y).toBeCloseTo((a.y + b.y) / 2);
+    expect(p.lng).toBeCloseTo((a.lng + b.lng) / 2);
+    expect(p.lat).toBeCloseTo((a.lat + b.lat) / 2);
   });
   it('終点（稚内）の 1m 手前は、まだ1周目の稚内の手前（札幌のあたり）', () => {
     const p = locateOnRoute(TOTAL_KM * 1000 - 1);
@@ -59,14 +62,14 @@ describe('locateOnRoute（累計距離から今いる場所を出す）', () => 
     const p = locateOnRoute(TOTAL_KM * 1000);
     expect(p.lap).toBe(2);
     expect(p.name).toBe('鹿児島');
-    expect([p.x, p.y]).toEqual([JAPAN_ROUTE[0].x, JAPAN_ROUTE[0].y]);
+    expect([p.lng, p.lat]).toEqual([JAPAN_ROUTE[0].lng, JAPAN_ROUTE[0].lat]);
   });
   it('2周目も同じ道を進む（1周ぶん引いた距離と同じ場所）。3周目以降も同様', () => {
     const base = locateOnRoute(1_000_000);
     const second = locateOnRoute(1_000_000 + TOTAL_KM * 1000);
     const third = locateOnRoute(1_000_000 + 2 * TOTAL_KM * 1000);
-    expect([second.name, second.x, second.y]).toEqual([base.name, base.x, base.y]);
-    expect([third.name, third.x, third.y]).toEqual([base.name, base.x, base.y]);
+    expect([second.name, second.lng, second.lat]).toEqual([base.name, base.lng, base.lat]);
+    expect([third.name, third.lng, third.lat]).toEqual([base.name, base.lng, base.lat]);
     expect([base.lap, second.lap, third.lap]).toEqual([1, 2, 3]);
   });
   it('負の値や NaN は 0 として扱う', () => {

@@ -140,6 +140,17 @@ describe('RunView（S-13 記録（ラン））', () => {
         expect(await screen.findByText('次の熊本まで 5.0km')).toBeInTheDocument();
         expect(screen.queryByText(/に着きました/)).not.toBeInTheDocument();
       });
+      it('入力の画面と保存後の欄の両方から、日本縦断（/me/stats）へ行ける', async () => {
+        installFakeApi({ [POST]: { status: 201, body: { id: 'x' } }, [STATS_URL]: { status: 200, body: { totalRunDistanceM: 160_000 } } });
+        const user = userEvent.setup();
+        renderWithQuery(<RunView />);
+        expect(screen.getByRole('link', { name: '日本縦断' })).toHaveAttribute('href', '/me/stats');
+        await waitFor(() => expect(calls).toContain(STATS_URL));
+        await fill(user, '5', '30');
+        await user.click(save());
+        await screen.findByTestId('trek-progress');
+        expect(screen.getByRole('link', { name: '日本地図で見る' })).toHaveAttribute('href', '/me/stats');
+      });
       it('累計が読めていないときは、日本縦断の欄を出さない', async () => {
         installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
         const user = userEvent.setup();
