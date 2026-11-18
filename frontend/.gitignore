@@ -46,3 +46,8 @@ AGENTS.md
 # Playwright の実行結果
 /test-results/
 /playwright-report/
+
+# 総合テスト（02-8）の監査: シードの出力と基準画像（容量が大きいので git に入れない）
+e2e/audit/.seed.json
+e2e/audit/__screenshots__/
+e2e/audit/out/
