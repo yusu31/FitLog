@@ -13,8 +13,16 @@ describe('resolveSession（電波なしで開き直してもログイン画面�
     });
   });
 
-  it('確認中（isPending）は未決のまま。控えは使わない', () => {
+  it('確認中（isPending）でも、控えがあればその人として先に画面を開く（S3。確認は裏で続く）', () => {
     expect(resolveSession({ data: null, isPending: true, error: null }, cached)).toEqual({
+      session: { user: { id: 'u9', name: '控え' } },
+      save: null,
+      clear: false,
+    });
+  });
+
+  it('確認中で控えも無ければ、未決のまま（初回ログイン前）', () => {
+    expect(resolveSession({ data: null, isPending: true, error: null }, null)).toEqual({
       session: null,
       save: null,
       clear: false,
