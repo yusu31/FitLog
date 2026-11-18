@@ -33,6 +33,7 @@ class Tracker {
 
   // 最初の画面（操作ではない）
   async start(label = '最初の画面') {
+    await this.page.waitForLoadState('networkidle');
     await this.snap(label, null);
   }
 
@@ -100,7 +101,7 @@ test('T2 前回と同じメニューで今日の筋トレを始める', async ({
   await page.goto('/today/');
   const t = new Tracker(page, 'T2');
   await t.start();
-  await t.click(page.getByRole('link', { name: /ルーティンから始める/ }).first(), 'ルーティンから始める');
+  await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
   t.finish();
 });
