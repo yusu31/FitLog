@@ -136,6 +136,22 @@ export const GPX_MESSAGES = {
   offline: '電波のない間は GPX を選べません。電波の良い所で ためしてね',
 } as const;
 
+// GPS で記録する（Web 版）。使えない理由は、責めずに事実と次にできることだけを書く
+export const GPS_MESSAGES = {
+  start: 'GPS で記録する',
+  hint: '走り終えたら「終了」で、距離と時間が入力欄に入ります。',
+  searching: 'GPS をさがしています。空の見える所で少し待ってね',
+  keepScreenOn: '画面を点けたままにします。画面が消えたり別のアプリを開いたりすると、記録は止まります',
+  noWakeLock: 'この端末は 画面を点けたままにできません。画面を消さずに走ってね（消えると記録が止まります）',
+  paused: '一時停止中',
+  unsupported: 'この端末では 位置情報が使えません。距離と時間を手で入れて記録できます',
+  denied: '位置情報の使用が 許可されていません。ブラウザの設定で許可すると使えます。手で入れて記録もできます',
+  unavailable: '位置が取れませんでした。空の見える所で もう一度ためしてね',
+  TOO_SHORT: 'まだ短くて 記録にできません（0.1km・1分から）。続けるか、やめてね',
+  OUT_OF_RANGE: '距離か時間が 範囲（200km・24時間）を超えています。手で入れて記録できます',
+  filled: 'GPS の記録を入れました。内容を見て 保存してね',
+} as const;
+
 // 保存したあとの結果の一言（距離と時間を添える）
 export const runSavedMessage = (distanceM: number, durationS: number): string =>
   `${formatDistance(distanceM)} を ${formatDuration(durationS)} で。${RUN_MESSAGES.tail}`;
