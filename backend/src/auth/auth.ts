@@ -12,6 +12,14 @@ const authLogger = new Logger('Auth');
 
 const MAX_NAME_LENGTH = 30;
 
+// 数え方は画面の maxLength（UTF-16 の長さ）と同じにそろえる
+function assertValidName(name: string): void {
+  const length = name.trim().length;
+  if (length < 1 || length > MAX_NAME_LENGTH) {
+    throw new APIError('BAD_REQUEST', { message: `表示名は1〜${MAX_NAME_LENGTH}文字にしてください` });
+  }
+}
+
 // 認証の設定（docs/design.md 2章）。メール＋パスワードで登録・ログインし、Cookie でセッションを持つ。
 // 受け付けるパスは /api/auth/*（sign-up/email・sign-in/email・sign-out・get-session ほか）。
 export function createAuth(db: Db, storage: VideoStorage = createVideoStorage()) {
@@ -41,11 +49,14 @@ export function createAuth(db: Db, storage: VideoStorage = createVideoStorage())
       user: {
         create: {
           before: (user) => {
-            // 数え方は画面の maxLength（UTF-16 の長さ）と同じにそろえる
-            const length = user.name.trim().length;
-            if (length < 1 || length > MAX_NAME_LENGTH) {
-              throw new APIError('BAD_REQUEST', { message: `表示名は1〜${MAX_NAME_LENGTH}文字にしてください` });
-            }
+            assertValidName(user.name);
+            return Promise.resolve();
+          },
+        },
+        // 名前の変更（/update-user）でも、登録時と同じ境界を守る。name を含まない更新（アバターなど）は素通し
+        update: {
+          before: (user) => {
+            if (user.name !== undefined) assertValidName(user.name);
             return Promise.resolve();
           },
         },

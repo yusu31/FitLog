@@ -44,6 +44,18 @@ export const GROUP_MESSAGES = {
   pasteInvalid: '招待リンクが読み取れませんでした。届いたリンクをそのまま貼ってください',
 } as const;
 
+// アカウントの設定（表示名・パスワードの変更。F2-a）。本人の落ち度にしない
+export const ACCOUNT_MESSAGES = {
+  nameEmpty: '表示名を入れてください（30字まで）',
+  nameSaved: '保存しました',
+  nameFailed: '保存できませんでした。少し待って、もう一度お試しください',
+  passwordChanged: '変更しました。ほかの端末では、ログインし直しになります',
+  passwordWrong: '今のパスワードが違います。入れ直してください',
+  passwordShort: '新しいパスワードは8文字以上にしてください',
+  passwordFailed: '変更できませんでした。入力を確かめて、もう一度お試しください',
+  network: '通信できませんでした。電波の良い所でもう一度お試しください',
+} as const;
+
 // API の応答の code（design.md 5章）→ 画面の文言
 export const GROUP_ERROR_BY_CODE: Record<string, string> = {
   GROUP_FULL: 'このグループは満員です（5人まで）。だれかが出ると、また入れます',

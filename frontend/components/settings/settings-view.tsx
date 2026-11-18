@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Info, LogOut, SquarePlus, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, LogOut, SquarePlus, UserRound, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
@@ -75,6 +75,18 @@ export function SettingsView() {
             設定
           </h2>
           <ul className="space-y-2">
+            <li>
+              <Link
+                href="/settings/account"
+                className="fl-slab flex min-h-16 items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+              >
+                <RowIcon>
+                  <UserRound aria-hidden className="size-5" />
+                </RowIcon>
+                <span className="min-w-0 flex-1 truncate font-extrabold">アカウントの設定</span>
+                <ChevronRight aria-hidden className="size-5 shrink-0 text-sub" />
+              </Link>
+            </li>
             <li>
               {groupLabel === null ? (
                 <div aria-busy="true" aria-label="グループを読み込み中" className="h-16 animate-pulse rounded-fl bg-face" />

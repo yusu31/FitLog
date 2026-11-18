@@ -158,6 +158,53 @@ describe('認証（結合: 本物の PostgreSQL・better-auth）', () => {
     await signUp({ ...credentials, name: 'あ'.repeat(30) }).expect(200);
   });
 
+  // T-AUTH-14: 表示名の変更（F2-a）。1〜30 文字の境界を登録時と同じにそろえる。画面を通さず API を直接呼ぶ人も止める
+  it('表示名を変更できる（1〜30 文字。空・31 文字は 400 で、元の名前のまま）', async () => {
+    const cookie = cookieOf(await signUp().expect(200));
+    const update = (name: string) =>
+      request(app.getHttpServer()).post('/api/auth/update-user').set('Origin', TEST_ORIGIN).set('Cookie', cookie).send({ name });
+    const nameInDb = () => withPool(url!, async (pool) => (await pool.query('select name from users')).rows[0].name);
+
+    expect((await update('')).status).toBe(400);
+    expect((await update('あ'.repeat(31))).status).toBe(400);
+    expect(await nameInDb()).toBe('たろう');
+
+    await update('あ'.repeat(30)).expect(200);
+    expect(await nameInDb()).toBe('あ'.repeat(30));
+    await update('はなこ').expect(200);
+    expect(await nameInDb()).toBe('はなこ');
+  });
+
+  // T-AUTH-15: パスワードの変更（F2-a）。今のパスワードが違えば拒否・新しいほうが 8 文字未満でも拒否。
+  // 成功したら新しいパスワードでログインでき、古いパスワードは使えない。他の端末のセッションは切れる
+  it('パスワードを変更できる（今のが違う・新しいのが短いと拒否。他の端末の Cookie は無効になる）', async () => {
+    const first = cookieOf(await signUp().expect(200));
+    const second = cookieOf(
+      await request(app.getHttpServer())
+        .post('/api/auth/sign-in/email')
+        .set('Origin', TEST_ORIGIN)
+        .send({ email: credentials.email, password: credentials.password })
+        .expect(200),
+    );
+    const change = (currentPassword: string, newPassword: string) =>
+      request(app.getHttpServer())
+        .post('/api/auth/change-password')
+        .set('Origin', TEST_ORIGIN)
+        .set('Cookie', first)
+        .send({ currentPassword, newPassword, revokeOtherSessions: true });
+    const login = (password: string) =>
+      request(app.getHttpServer()).post('/api/auth/sign-in/email').set('Origin', TEST_ORIGIN).send({ email: credentials.email, password });
+
+    expect((await change('wrong-password-123', 'new-password-123')).status).toBe(400);
+    expect((await change(credentials.password, '1234567')).status).toBe(400);
+    await login(credentials.password).expect(200);
+
+    await change(credentials.password, 'new-password-123').expect(200);
+    await login(credentials.password).expect(401);
+    await login('new-password-123').expect(200);
+    await request(app.getHttpServer()).get(PROTECTED).set('Cookie', second).expect(401);
+  });
+
   // T-AUTH-08: 偽の Cookie は通さない
   it('偽の Cookie では 401', async () => {
     await request(app.getHttpServer()).get(PROTECTED).set('Cookie', 'better-auth.session_token=forged.value').expect(401);
