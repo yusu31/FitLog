@@ -55,4 +55,10 @@ describe('SaveRoutine（記録の詳細の「ルーティンに保存」。F3）
     await waitFor(() => expect(button).toBeDisabled());
     expect(screen.getByText('電波があるときに保存できます')).toBeInTheDocument();
   });
+
+  it('A02-10: 保存ボタンの下に、何が起きるかの説明を1行出す', () => {
+    installFakeApi({});
+    renderWithQuery(<SaveRoutine recordId="r1" />);
+    expect(screen.getByText(/今日の画面から ワンタップで始められます/)).toBeInTheDocument();
+  });
 });
