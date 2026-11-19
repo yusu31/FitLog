@@ -476,6 +476,28 @@
         ]
       }
     },
+    "/api/me/export.csv": {
+      "get": {
+        "operationId": "exportRecordsCsv",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "CSV（先頭に BOM・改行は CRLF）",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分の筋トレのセット・ランの記録を CSV（UTF-8 BOM 付き）で返す",
+        "tags": [
+          "export"
+        ]
+      }
+    },
     "/api/records": {
       "post": {
         "operationId": "createRecord",
