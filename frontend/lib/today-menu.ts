@@ -2,6 +2,7 @@
 // 材料は「筋トレの記録の一覧（新しい順）」。今日の日付の記録は「今日やった分」、それより前で一番新しい記録が「前回」。
 import type { RecordDetailResponse, RecordedExercise } from '@/lib/api/generated';
 import { suggestNext } from '@/lib/menu-suggestion';
+import { daysBetween } from '@/lib/welcome-back';
 
 export type SetValue = { weightKg: number; reps: number };
 
@@ -47,13 +48,16 @@ export function buildMenu(workouts: readonly RecordDetailResponse[], today: stri
     }
   }
 
+  // 前回からのあいた日数（休み明けは前回と同じ値を目標にする。A02-5）
+  const daysSince = previous ? daysBetween(previous.localDate, today) : null;
+
   const toItem = (exerciseId: string, name: string, first: SetValue | null, last: SetValue | null): MenuItem => {
     const sets = todaySets.get(exerciseId)?.sets ?? [];
     return {
       exerciseId,
       name,
       previous: first,
-      suggestion: last ? suggestNext(last) : null,
+      suggestion: last ? suggestNext(last, daysSince) : null,
       done: sets.length > 0,
       todayLast: sets.length > 0 ? valueOf(sets[sets.length - 1]) : null,
     };

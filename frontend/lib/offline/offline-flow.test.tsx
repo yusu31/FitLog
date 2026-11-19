@@ -5,6 +5,7 @@ import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { Providers } from '@/app/providers';
 import { useRecordMutations } from '@/lib/mutations';
 import { resetRejectedSends } from './rejected';
+import { resetSentNotice } from './sent-notice';
 import { createQueuePersister, QUEUE_STORAGE_KEY, type QueueStorage } from './persister';
 import { AUTH_RETRY_MS, PARENT_MISSING_MAX_RETRIES, RETRY_BACKOFF_MS } from './retry-policy';
 
@@ -66,6 +67,7 @@ function Probe() {
 const NOW = '2026-11-04T03:00:00.000Z';
 
 function mount(storage: QueueStorage) {
+  resetSentNotice(); // 再読み込み（ページを開き直すと、モジュールの控えは空に戻る）
   return render(
     <Providers persister={createQueuePersister(storage)}>
       <Probe />
@@ -84,6 +86,7 @@ beforeEach(() => {
   session = { data: { user: { id: 'u1' } }, isPending: false };
   replies = {};
   resetRejectedSends();
+  resetSentNotice();
   onlineManager.setOnline(true);
   installFetch();
 });

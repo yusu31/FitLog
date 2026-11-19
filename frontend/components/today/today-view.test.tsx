@@ -1,4 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
+import { resetSentNotice } from '@/lib/offline/sent-notice';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
@@ -34,6 +35,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   onlineManager.setOnline(true);
+  resetSentNotice();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
