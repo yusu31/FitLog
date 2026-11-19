@@ -1,3 +1,5 @@
+import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 import { cn } from 'cn';
 import { AVATAR_BG } from '@/components/friends/member-list';
 import type { FriendGhost } from '@/lib/use-friend-ghosts';
@@ -5,11 +7,24 @@ import { FRIEND_MESSAGES } from '@/lib/messages';
 
 // 仲間と くらべる（F-16）。並べる仲間を選ぶボタン（最大4人）。前回が無い仲間はグレーで押せない
 export function FriendPicker({ friends, selected, onToggle }: { friends: FriendGhost[]; selected: string[]; onToggle: (id: string) => void }) {
+  // 筋トレ中は畳んでおく。比べられている感じを出さず、見たい人だけ開く（A02-11）
+  const [open, setOpen] = useState(false);
   if (friends.length === 0) return null;
   return (
     <section aria-label={FRIEND_MESSAGES.heading} className="w-full">
-      <h2 className="pb-1.5 text-xs font-bold tracking-widest text-sub">{FRIEND_MESSAGES.heading}</h2>
-      <ul className="flex flex-wrap gap-2">
+      <h2 className="text-xs font-bold tracking-widest text-sub">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="flex min-h-11 w-full items-center justify-between gap-2 rounded-fl px-1 text-left outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        >
+          {FRIEND_MESSAGES.heading}
+          {selected.length > 0 && <span className="text-sub-strong">{selected.length}人 えらび中</span>}
+          <ChevronDown aria-hidden className={cn('size-5 shrink-0 transition-transform motion-reduce:transition-none', open && 'rotate-180')} />
+        </button>
+      </h2>
+      {open && <ul className="flex flex-wrap gap-2 pt-1">
         {friends.map((f) => {
           const empty = f.value === null;
           const on = selected.includes(f.id);
@@ -35,7 +50,7 @@ export function FriendPicker({ friends, selected, onToggle }: { friends: FriendG
             </li>
           );
         })}
-      </ul>
+      </ul>}
     </section>
   );
 }
