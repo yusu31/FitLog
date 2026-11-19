@@ -31,6 +31,13 @@ describe('RestView（S-14 おやすみ）', () => {
     expect(screen.getByRole('link', { name: REST_MESSAGES.back })).toHaveAttribute('href', '/today');
   });
 
+  it('「やっぱり記録する」は種目選び（/exercises）へのリンクで、「もどる」より先に押しやすい大きさ', () => {
+    render(<RestView />);
+    const link = screen.getByRole('link', { name: 'やっぱり記録する' });
+    expect(link).toHaveAttribute('href', '/exercises');
+    expect(link.className).toMatch(/min-h-11/);
+  });
+
   it('タブの無い全画面（下のタブを出さない）', () => {
     render(<RestView />);
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument();

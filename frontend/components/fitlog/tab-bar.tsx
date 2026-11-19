@@ -25,6 +25,9 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
   const pathname = usePathname() ?? '';
   const unread = useGetFeedUnread({ query: { enabled: signedIn, staleTime: UNREAD_REFRESH_MS, refetchInterval: UNREAD_REFRESH_MS, retry: false } });
   const hasNew = unread.data?.status === 200 && unread.data.data.hasNew;
+  // 件数（A04-9）。API が newCount を返すようになったらその数字を出す。返さない間は「新」の字（無印の赤い点にしない）
+  const body = (unread.data?.status === 200 ? unread.data.data : undefined) as { newCount?: unknown } | undefined;
+  const newCount = typeof body?.newCount === 'number' && body.newCount > 0 ? body.newCount : undefined;
   return (
     <nav aria-label="メイン" className="fixed bottom-0 left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 border-t-2 border-line bg-white">
       <ul className="flex justify-around px-3 pt-1.5 pb-[max(10px,env(safe-area-inset-bottom))]">
@@ -47,14 +50,16 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
                   <Icon aria-hidden className="size-6" strokeWidth={active ? 2.6 : 2.2} />
                   {dot && (
                     <span
-                      data-testid="friends-new-dot"
+                      data-testid="friends-new-badge"
                       aria-hidden
-                      className="absolute -top-0.5 -right-1 size-2.5 rounded-full bg-coral ring-2 ring-white"
-                    />
+                      className="absolute -top-1.5 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral-strong px-1 text-[10px] leading-none font-extrabold text-white ring-2 ring-white"
+                    >
+                      {newCount === undefined ? '新' : newCount > 9 ? '9+' : newCount}
+                    </span>
                   )}
                 </span>
                 {label}
-                {dot && <span className="sr-only">（新着あり）</span>}
+                {dot && <span className="sr-only">{newCount === undefined ? '（新着あり）' : `（新着${newCount}件）`}</span>}
               </Link>
             </li>
           );

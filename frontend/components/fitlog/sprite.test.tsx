@@ -55,3 +55,23 @@ describe('Sprite', () => {
     }
   });
 });
+
+// A13-4: キャラは決まった位置（右上の角）に固定し、見出し・数字に重ねない
+describe('Sprite の位置（placement）', () => {
+  beforeEach(() => {
+    mockReducedMotion(false);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('corner は右上の角に絶対配置し、タップを邪魔しない', () => {
+    render(<Sprite pose="idle" placement="corner" />);
+    const el = screen.getByTestId('sprite');
+    expect(el).toHaveClass('absolute', 'top-0', 'right-4', 'pointer-events-none');
+    expect(el).toHaveStyle({ width: '72px', height: '72px' });
+  });
+
+  it('既定（inline）は従来どおり relative', () => {
+    render(<Sprite pose="idle" />);
+    expect(screen.getByTestId('sprite')).toHaveClass('relative');
+  });
+});

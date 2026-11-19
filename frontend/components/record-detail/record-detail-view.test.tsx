@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getCopyPlan, resetCopyPlan } from '@/lib/copy-plan';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
@@ -32,7 +32,12 @@ const HANAKO = { ...ME, id: 'u2', name: 'はなこ' };
 const comment = (id: string, body: string, author = HANAKO) => ({ id, recordId: 'r1', body, createdAt: '2026-11-02T10:11:00.000Z', author });
 // スタンプ・コメントは空が既定。テストごとに上書きできる
 const install = (routes: Parameters<typeof installFakeApi>[0]) =>
-  installFakeApi({ [REACTIONS]: ok({ items: [] }), [COMMENTS]: ok({ items: [] }), ...routes });
+  installFakeApi({
+    [REACTIONS]: ok({ items: [] }),
+    [COMMENTS]: ok({ items: [] }),
+    '/api/groups/current': ok({ id: 'g1', name: 'チーム', members: [ME, HANAKO] }),
+    ...routes,
+  });
 // workout() は localDate の 03:00Z に記録した扱い。前回の問い合わせは before=その時刻
 const prevUrl = (exercise: string, date = '2026-10-22') =>
   `/api/exercises/${exercise}/previous?before=${encodeURIComponent(`${date}T03:00:00.000Z`)}`;
@@ -194,15 +199,16 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
       });
       renderWithQuery(<RecordDetailView />);
       expect(await screen.findByText('前回超え +2')).toBeInTheDocument(); // セット1
-      expect(screen.getByText('前回と おなじ')).toBeInTheDocument(); // セット2
+      expect(screen.queryByText('前回と おなじ')).not.toBeInTheDocument(); // セット2は変化なしなので出さない（A05-2）
       expect(screen.getByText('ちゃんと 記録したよ。むりしない日もOK')).toBeInTheDocument(); // セット3
       expect(screen.getAllByText('ベスト')).toHaveLength(1); // 60×12=720 だけが 600 を超える
     });
 
-    it('前回が無い種目は「記録したよ」（比べる相手がいない）', async () => {
+    it('前回が無い種目は、結果の行を出さない（比べる相手がいない。A05-2）', async () => {
       install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
       renderWithQuery(<RecordDetailView />);
-      expect(await screen.findAllByText('記録したよ')).toHaveLength(2);
+      await screen.findByText('60kg × 10');
+      expect(screen.queryByText('記録したよ')).not.toBeInTheDocument();
     });
 
     it('セットが0件でも崩れず、案内を出す', async () => {
@@ -637,5 +643,92 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     await screen.findByText('60kg × 10');
     await screen.findAllByText('前回超え +2');
     for (const word of FORBIDDEN_WORDS) expect(container.textContent).not.toContain(word);
+  });
+});
+
+// 束 B06（記録の詳細の分かりにくさ。A05-1〜6・A04-5）
+describe('RecordDetailView（B06）', () => {
+  it('A05-1: 自分の記録には、コメントの入力欄と送るボタンを出さない。もらったコメントは見える', async () => {
+    install({ [REC]: ok(restRecord('r1', '2026-10-22')), [COMMENTS]: ok({ items: [comment('c1', 'ナイス！')] }) });
+    renderWithQuery(<RecordDetailView />);
+    expect(await screen.findByRole('list', { name: 'コメント一覧' })).toHaveTextContent('ナイス！');
+    expect(screen.queryByLabelText(/自由に書く/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '送る' })).not.toBeInTheDocument();
+  });
+
+  it('A05-1: 自分の記録では「スタンプとコメントを付けられます」の電波なし案内も出さない', async () => {
+    install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+    renderWithQuery(<RecordDetailView />);
+    await screen.findByText('まだスタンプはもらっていないよ');
+    onlineManager.setOnline(false);
+    await waitFor(() => expect(screen.queryByText(/スタンプとコメントを付けられます/)).not.toBeInTheDocument());
+  });
+
+  it('A05-2: セットの結果は、変化があるとき（前回超え・下回り）だけ出す。「おなじ」「記録したよ」は出さない', async () => {
+    install({
+      [REC]: ok(workout('r1', '2026-10-22', [{ id: 'sq', name: 'スクワット', sets: [[60, 12], [60, 10], [60, 8]] }])),
+      [prevUrl('sq')]: ok(prev([[60, 10], [60, 10], [60, 10]], 600)),
+    });
+    renderWithQuery(<RecordDetailView />);
+    expect(await screen.findByText('前回超え +2')).toBeInTheDocument();
+    expect(screen.getByText('ちゃんと 記録したよ。むりしない日もOK')).toBeInTheDocument();
+    expect(screen.queryByText('前回と おなじ')).not.toBeInTheDocument();
+    expect(screen.queryByText('記録したよ')).not.toBeInTheDocument();
+  });
+
+  describe('A05-3/5: 見出しで誰の記録かを出す', () => {
+    it('自分の記録は「あなたの記録」', async () => {
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText('あなたの記録')).toBeInTheDocument();
+    });
+
+    it('仲間の記録は「◯◯さんの記録」。抜けた仲間なら「仲間の記録」', async () => {
+      search = 'id=r1&by=u2';
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+      const { unmount } = renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText('はなこさんの記録')).toBeInTheDocument();
+      unmount();
+
+      search = 'id=r1&by=u9';
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText('仲間の記録')).toBeInTheDocument();
+    });
+
+    it('入口（自分・仲間）によらず、日付は見出しのそばに出る', async () => {
+      install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByText('10/22')).toBeInTheDocument();
+    });
+  });
+
+  it('A05-4: 「コピーして始める」の下に、何が起きるかの説明を添える', async () => {
+    search = 'id=r1&by=u2';
+    install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), '/api/exercises': ok([]) });
+    renderWithQuery(<RecordDetailView />);
+    await screen.findByRole('button', { name: 'コピーして始める' });
+    expect(screen.getByText(/この内容で今日を始めます/)).toBeInTheDocument();
+  });
+
+  it('A05-6: 「この記録を 消す」は、スタンプ・コメントより下の「記録の削除」の枠に置く', async () => {
+    install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+    renderWithQuery(<RecordDetailView />);
+    const del = await screen.findByRole('region', { name: '記録の削除' });
+    expect(within(del).getByRole('button', { name: /この記録を 消す/ })).toBeInTheDocument();
+    const comments = screen.getByRole('region', { name: /^コメント/ });
+    expect(comments.compareDocumentPosition(del) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('A04-5: コメントの見出しに件数を出す（仲間タブのカードと同じ「コメント N」。0件は数を付けない）', async () => {
+    search = 'id=r1&by=u2';
+    install({ [REC]: ok(restRecord('r1', '2026-10-22')), [COMMENTS]: ok({ items: [comment('c1', 'a'), comment('c2', 'b')] }) });
+    const { unmount } = renderWithQuery(<RecordDetailView />);
+    expect(await screen.findByRole('heading', { level: 2, name: 'コメント 2' })).toBeInTheDocument();
+    unmount();
+
+    install({ [REC]: ok(restRecord('r1', '2026-10-22')) });
+    renderWithQuery(<RecordDetailView />);
+    expect(await screen.findByRole('heading', { level: 2, name: 'コメント' })).toBeInTheDocument();
   });
 });

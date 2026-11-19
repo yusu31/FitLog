@@ -60,6 +60,18 @@ describe('VideoRecorder', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('カメラ');
   });
 
+  it('カメラが使えないときは、直し方を3つの手順で出し、「あとで撮る」で閉じられる', async () => {
+    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('denied'));
+    const onClose = vi.fn();
+    render(<VideoRecorder recordId="r1" onClose={onClose} />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('カメラを使えませんでした');
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.queryByRole('button', { name: '撮る' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'あとで撮る' }));
+    expect(onClose).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'やめる' })).not.toBeInTheDocument();
+  });
+
   it('閉じるとカメラを止める', async () => {
     const { unmount } = render(<VideoRecorder recordId="r1" onClose={() => {}} />);
     await screen.findByRole('button', { name: '撮る' });

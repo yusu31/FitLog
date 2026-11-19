@@ -129,8 +129,8 @@ for (const state of ['active', 'new'] as const) {
           await page.waitForTimeout(300);
           const data = await collect(page);
           writeFileSync(join(dir, `${shot.name}.json`), JSON.stringify({ ...data, url: new URL(page.url()).pathname + new URL(page.url()).search }, null, 1), 'utf-8');
-          // 地図（canvas）と動画は揺れるので隠して撮る
-          await page.screenshot({ path: join(dir, `${shot.name}.png`), fullPage: true, mask: [page.locator('canvas'), page.locator('video')] });
+          // 地図（canvas）と動画は揺れるので隠して撮る。隠す色は既定のマゼンタだと「壊れた地図」に見えるので、灰色にする（V0: A07-8 の原因）
+          await page.screenshot({ path: join(dir, `${shot.name}.png`), fullPage: true, mask: [page.locator('canvas'), page.locator('video')], maskColor: '#e5e7eb' });
         } catch (e) {
           writeFileSync(join(dir, `${shot.name}.error.txt`), String(e).slice(0, 600), 'utf-8');
         }

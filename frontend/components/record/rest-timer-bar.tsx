@@ -34,9 +34,9 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
       <p role="status" className="sr-only">
         {done ? '休憩おわり' : '休憩をはじめました'}
       </p>
-      <div className="flex items-center gap-3">
-        <Timer aria-hidden className="size-5 shrink-0 text-teal-dark" />
-        <p aria-hidden className="flex-1 font-extrabold">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Timer aria-hidden className="hidden size-5 shrink-0 text-teal-dark min-[260px]:block" />
+        <p aria-hidden className="min-w-0 flex-1 basis-28 font-extrabold">
           {done ? (
             '休憩おわり。次のセットへ'
           ) : (
@@ -52,7 +52,7 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
               aria-label="休憩を15秒短くする"
               disabled={total <= REST_MIN_S}
               onClick={() => change(-1)}
-              className="flex size-11 items-center justify-center rounded-fl bg-white text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
+              className="flex size-11 shrink-0 items-center justify-center rounded-fl bg-white text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
             >
               <Minus aria-hidden className="size-5" />
             </button>
@@ -61,7 +61,7 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
               aria-label="休憩を15秒長くする"
               disabled={total >= REST_MAX_S}
               onClick={() => change(1)}
-              className="flex size-11 items-center justify-center rounded-fl bg-white text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
+              className="flex size-11 shrink-0 items-center justify-center rounded-fl bg-white text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
             >
               <Plus aria-hidden className="size-5" />
             </button>
