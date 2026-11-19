@@ -78,9 +78,10 @@ export function RoutineStarter({ day }: { day: DayMode }) {
               aria-label={ROUTINE_MESSAGES.deleteLabel(r.name)}
               disabled={!online || deleteRoutine.isPending}
               onClick={() => setConfirming(r)}
-              className="flex size-11 shrink-0 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
+              className="flex min-h-11 shrink-0 items-center justify-center gap-0.5 rounded-fl px-2 text-xs font-extrabold text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
             >
-              <X aria-hidden className="size-5" />
+              <X aria-hidden className="size-4" />
+              消す
             </button>
           </li>
         ))}

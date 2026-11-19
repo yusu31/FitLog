@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { LogOut } from 'lucide-react';
 import { useState } from 'react';
+import { ThickButton } from '@/components/fitlog/thick-button';
 import { ConfirmDialog } from '@/components/fitlog/confirm-dialog';
 import { getGetCurrentGroupQueryKey, useLeaveGroup } from '@/lib/api/generated';
 import { GROUP_MESSAGES, groupErrorMessage } from '@/lib/messages';
@@ -35,14 +36,13 @@ export function LeaveGroup({ onLeft }: { onLeft?: () => void }) {
 
   return (
     <section aria-label="グループを出る" className="pt-2 pb-6">
-      <button
-        type="button"
-        onClick={() => setConfirming(true)}
-        className="mx-auto flex min-h-11 items-center gap-1.5 rounded-fl px-3 text-sm font-bold text-sub outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
-      >
-        <LogOut aria-hidden className="size-4" />
+      <p className="pb-2 text-sm text-sub-strong [word-break:auto-phrase]">
+        出ると、仲間の記録が見えなくなります。あなたの記録は残ります。
+      </p>
+      <ThickButton tone="white" size="sm" onClick={() => setConfirming(true)}>
+        <LogOut aria-hidden />
         グループを出る
-      </button>
+      </ThickButton>
       {error && (
         <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
           {error}

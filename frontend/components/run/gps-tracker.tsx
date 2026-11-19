@@ -181,6 +181,11 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
           <Navigation aria-hidden className="size-5 shrink-0" />
           <span>{GPS_MESSAGES.start}</span>
         </button>
+        {!isNativeApp() && (
+          <p role="note" aria-label="走る前に" className="rounded-fl bg-gold-light px-4 py-3 text-sm font-extrabold text-ink">
+            {GPS_MESSAGES.webNotice}
+          </p>
+        )}
         <p className="text-xs text-sub-strong">{GPS_MESSAGES.hint}</p>
         {problem && <ProblemNote problem={problem} />}
       </div>
@@ -208,7 +213,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
         </p>
       )}
       {phase === 'running' && (
-        <p className="text-xs font-bold text-sub-strong">
+        <p role="note" aria-label="画面について" className="rounded-fl bg-gold-light px-4 py-3 text-sm font-extrabold text-ink">
           {isNativeApp() ? GPS_MESSAGES.appBackground : wakeLockMissing ? GPS_MESSAGES.noWakeLock : GPS_MESSAGES.keepScreenOn}
         </p>
       )}

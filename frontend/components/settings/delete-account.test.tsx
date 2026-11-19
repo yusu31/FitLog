@@ -35,6 +35,15 @@ describe('DeleteAccount（退会）', () => {
     expect(deleteUser).not.toHaveBeenCalled();
   });
 
+  // A10-1: ログアウトと同じ太いボタンにしない（誤タップを防ぐ）。小さな文字リンクの見た目で、的は 44px
+  it('「退会の手続きへ」は太いボタンではなく文字リンクの見た目で、的は 44px 以上', () => {
+    render(<DeleteAccount />);
+    const start = screen.getByRole('button', { name: '退会の手続きへ' });
+    expect(start.className).not.toMatch(/fl-thick/);
+    expect(start.className).toMatch(/underline/);
+    expect(start.className).toMatch(/min-h-11/);
+  });
+
   it('「やめる」で確認の欄を閉じ、何も送らない', async () => {
     const user = userEvent.setup();
     await openConfirm(user);

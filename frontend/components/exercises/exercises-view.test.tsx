@@ -18,6 +18,7 @@ const EXERCISES = [
   { id: 'e-fly', name: 'ダンベルフライ', bodyPart: 'chest', isCustom: false, trialWeightKg: 10, trialReps: 12 },
   { id: 'e-row', name: 'ベントオーバーロウ', bodyPart: 'back', isCustom: false, trialWeightKg: 30, trialReps: 10 },
   { id: 'e-squat', name: 'スクワット', bodyPart: 'legs', isCustom: false, trialWeightKg: 40, trialReps: 10 },
+  { id: 'e-pushup', name: '腕立て伏せ', bodyPart: 'chest', isCustom: false, trialWeightKg: 0, trialReps: 10 },
   { id: 'e-mine', name: 'ケトルベルスイング', bodyPart: 'glutes', isCustom: true, trialWeightKg: null, trialReps: null },
 ];
 
@@ -251,6 +252,61 @@ describe('ExercisesView（S-11 種目を選ぶ）', () => {
       await screen.findByRole('region', { name: '最近やった種目' });
       await user.click(within(screen.getByRole('group', { name: '部位で絞る' })).getByRole('button', { name: '胸で絞る' }));
       expect(screen.queryByRole('region', { name: '最近やった種目' })).not.toBeInTheDocument();
+    });
+  });
+
+  // A01-9: 長い一覧から初心者が選びにくい → 先頭に数種目を固定。部位のボタンは横に流さず折り返して見切れを防ぐ
+  describe('はじめての人向け（A01-9）', () => {
+    it('先頭に「はじめての人向け」を出し、決めた順（腕立て伏せ → スクワット）で、一覧にある種目だけ並べる', async () => {
+      renderView();
+      const section = await screen.findByRole('region', { name: 'はじめての人向け' });
+      const links = within(section).getAllByRole('link');
+      expect(links.map((l) => l.textContent)).toEqual([expect.stringContaining('腕立て伏せ'), expect.stringContaining('スクワット')]);
+      expect(links[0]).toHaveAttribute('href', '/record?exercise=e-pushup');
+    });
+
+    it('検索中・部位で絞っている間は出さない', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await screen.findByRole('region', { name: 'はじめての人向け' });
+      await user.click(within(screen.getByRole('group', { name: '部位で絞る' })).getByRole('button', { name: '背中で絞る' }));
+      expect(screen.queryByRole('region', { name: 'はじめての人向け' })).not.toBeInTheDocument();
+    });
+
+    it('部位のボタンは折り返して並べる（横に流して見切れさせない）', async () => {
+      renderView();
+      await screen.findByRole('link', { name: /ベンチプレス/ });
+      expect(screen.getByRole('group', { name: '部位で絞る' }).className).toContain('flex-wrap');
+    });
+  });
+
+  // A01-10: 下に固定の「種目を追加」が最後の行に重ならないよう、一覧の末尾に固定ボタンの高さ分の余白を取る
+  it('一覧の末尾に、固定ボタンの高さ分の余白がある（A01-10）', async () => {
+    renderView();
+    await screen.findByRole('link', { name: /ベンチプレス/ });
+    expect(screen.getByTestId('footer-spacer')).toHaveClass('h-24');
+  });
+
+  // A01-11: 「40kg ×10」は自分の記録ではない → 「目安」の札を付け、記録がまだ無い人には数字を出さない
+  describe('お試しの値は目安（A01-11）', () => {
+    const done = [
+      { id: 'r1', kind: 'workout', recordedAt: '2026-11-02T03:00:00.000Z', localDate: '2026-11-02', exercises: [{ exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ id: 's', setNo: 1, weightKg: 40, reps: 10 }] }] },
+    ];
+
+    it('記録がまだ無いときは、お試しの数字を出さない', async () => {
+      renderView();
+      const bench = await screen.findByRole('link', { name: /ベンチプレス/ });
+      expect(bench).not.toHaveTextContent('40');
+      expect(screen.queryByText('目安')).not.toBeInTheDocument();
+    });
+
+    it('記録があるときは、数字に「目安」の札を付ける。自分で追加した種目には出さない', async () => {
+      replies['GET /api/records?kind=workout&limit=5'] = [{ status: 200, body: { items: done, nextCursor: null } }];
+      renderView();
+      const bench = await screen.findAllByRole('link', { name: /ベンチプレス/ });
+      await waitFor(() => expect(within(bench[0]).getByText('目安')).toBeInTheDocument());
+      expect(within(bench[0]).getByText(/40/)).toBeInTheDocument();
+      expect(within(screen.getByRole('link', { name: /ケトルベルスイング/ })).queryByText('目安')).not.toBeInTheDocument();
     });
   });
 

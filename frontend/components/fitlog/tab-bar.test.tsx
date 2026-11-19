@@ -35,14 +35,14 @@ describe('TabBar の新着の点', () => {
     installFakeApi({ 'GET /api/feed/unread': { status: 200, body: { hasNew: true } } });
     render(<TabBar signedIn />);
     expect(await screen.findByRole('link', { name: '仲間（新着あり）' })).toBeInTheDocument();
-    expect(screen.getByTestId('friends-new-dot')).toBeInTheDocument();
+    expect(screen.getByTestId('friends-new-badge')).toBeInTheDocument();
   });
 
   it('新着がなければ点を出さない', async () => {
     pathname = '/today/';
     render(<TabBar signedIn />);
     await waitFor(() => expect(calls).toContain('GET /api/feed/unread'));
-    expect(screen.queryByTestId('friends-new-dot')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('friends-new-badge')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: '仲間' })).toBeInTheDocument();
   });
 
@@ -51,12 +51,37 @@ describe('TabBar の新着の点', () => {
     installFakeApi({ 'GET /api/feed/unread': { status: 200, body: { hasNew: true } } });
     render(<TabBar signedIn />);
     await waitFor(() => expect(calls).toContain('GET /api/feed/unread'));
-    expect(screen.queryByTestId('friends-new-dot')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('friends-new-badge')).not.toBeInTheDocument();
   });
 
   it('ログインしていなければ新着を問い合わせない', () => {
     pathname = '/today/';
     render(<TabBar signedIn={false} />);
     expect(calls).toHaveLength(0);
+  });
+});
+
+// A04-9: 赤い点では何か分からない。件数の数字（件数が分からないときは「新」の字）にする
+describe('TabBar の新着の数字', () => {
+  it('新着の件数が分かれば数字を出し、読み上げでも件数を伝える', async () => {
+    pathname = '/today/';
+    installFakeApi({ 'GET /api/feed/unread': { status: 200, body: { hasNew: true, newCount: 3 } } });
+    render(<TabBar signedIn />);
+    expect(await screen.findByRole('link', { name: '仲間（新着3件）' })).toBeInTheDocument();
+    expect(screen.getByTestId('friends-new-badge')).toHaveTextContent('3');
+  });
+
+  it('10件以上は 9+ と短くする', async () => {
+    pathname = '/today/';
+    installFakeApi({ 'GET /api/feed/unread': { status: 200, body: { hasNew: true, newCount: 12 } } });
+    render(<TabBar signedIn />);
+    expect(await screen.findByTestId('friends-new-badge')).toHaveTextContent('9+');
+  });
+
+  it('件数が分からないときは「新」の字を出す（無印の点にしない）', async () => {
+    pathname = '/today/';
+    installFakeApi({ 'GET /api/feed/unread': { status: 200, body: { hasNew: true } } });
+    render(<TabBar signedIn />);
+    expect(await screen.findByTestId('friends-new-badge')).toHaveTextContent('新');
   });
 });

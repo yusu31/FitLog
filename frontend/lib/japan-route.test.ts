@@ -4,16 +4,16 @@ import { JAPAN_ROUTE, TOTAL_KM, locateOnRoute, nextText, trekProgress, trekText 
 // 日本縦断（F-28。docs/testing-design.md 3-17）の現在地の計算。ルートは鹿児島から稚内まで、累計 km の昇順
 
 describe('JAPAN_ROUTE（ルートの定義）', () => {
-  it('先頭は 0km、累計 km は厳密に増え、地点は10以上ある', () => {
+  it('先頭は 0km、累計 km は厳密に増え、地点は20以上ある', () => {
     expect(JAPAN_ROUTE[0].km).toBe(0);
-    expect(JAPAN_ROUTE.length).toBeGreaterThanOrEqual(10);
+    expect(JAPAN_ROUTE.length).toBeGreaterThanOrEqual(20);
     for (let i = 1; i < JAPAN_ROUTE.length; i++) expect(JAPAN_ROUTE[i].km).toBeGreaterThan(JAPAN_ROUTE[i - 1].km);
   });
   // T-RUNP-01（U7）: 最初の目標を近くする。地点は誰でも知っている主要都市だけ
-  it('最初の目標は 200km 以内（熊本）で、どの区間も 450km 以内', () => {
+  it('最初の目標は 200km 以内（熊本）で、どの区間も 250km 以内（A07-10: 進みを実感しやすいよう細かく刻む）', () => {
     expect(JAPAN_ROUTE[1].name).toBe('熊本');
     expect(JAPAN_ROUTE[1].km).toBeLessThanOrEqual(200);
-    for (let i = 1; i < JAPAN_ROUTE.length; i++) expect(JAPAN_ROUTE[i].km - JAPAN_ROUTE[i - 1].km).toBeLessThanOrEqual(450);
+    for (let i = 1; i < JAPAN_ROUTE.length; i++) expect(JAPAN_ROUTE[i].km - JAPAN_ROUTE[i - 1].km).toBeLessThanOrEqual(250);
   });
   it('終点は稚内の 3000km のまま（1周の長さは変えない）', () => {
     expect(JAPAN_ROUTE.at(-1)).toMatchObject({ name: '稚内', km: 3000 });
@@ -56,7 +56,7 @@ describe('locateOnRoute（累計距離から今いる場所を出す）', () => 
   it('終点（稚内）の 1m 手前は、まだ1周目の稚内の手前（札幌のあたり）', () => {
     const p = locateOnRoute(TOTAL_KM * 1000 - 1);
     expect(p.lap).toBe(1);
-    expect(p.name).toBe('旭川');
+    expect(p.name).toBe('名寄');
   });
   it('終点ちょうどで1周を達成し、2周目の出発点（鹿児島）に戻る', () => {
     const p = locateOnRoute(TOTAL_KM * 1000);
@@ -87,7 +87,7 @@ describe('nextText（次の地点まで。ゴールまでの残りは出さな�
     expect(nextText(locateOnRoute(12300))).toBe('次の熊本まで 157.7km');
   });
   it('地点ちょうどに着いたら、そのひとつ先の地点を言う（0km とは言わない）', () => {
-    expect(nextText(locateOnRoute(270_000))).toBe('次の広島まで 290.0km');
+    expect(nextText(locateOnRoute(270_000))).toBe('次の下関まで 60.0km');
   });
   it('1周の最後の区間では稚内、1周したら2周目の最初の地点（福岡）を言う', () => {
     expect(nextText(locateOnRoute(2_900_000))).toContain('次の稚内まで');

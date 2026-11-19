@@ -132,7 +132,7 @@ export function RecordDetailView() {
     <FullScreen>
       {header}
       <div className="flex-1 space-y-4 px-4 pt-2 pb-8">
-        <Heading record={record} />
+        <Heading record={record} mine={mine} by={by} />
         {notice && (
           <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
             {notice}
@@ -153,13 +153,13 @@ export function RecordDetailView() {
         {mine && <RecordMemo recordId={record.id} note={record.note} rpe={record.rpe} />}
         <SocialSection recordId={record.id} kind={record.kind} mine={mine} />
         {mine && (
-          <div className="pt-2">
-            <ThickButton tone="coral" size="sm" className="w-full" disabled={!online} onClick={() => setConfirming(true)}>
+          <section aria-label={DETAIL_MESSAGES.deleteRegion} className="mt-10 border-t-2 border-line pt-6">
+            <ThickButton tone="coral" size="sm" className="mx-auto flex" disabled={!online} onClick={() => setConfirming(true)}>
               <Trash2 aria-hidden />
               {DETAIL_MESSAGES.deleteButton}
             </ThickButton>
             {!online && <p className="mt-2 text-center text-xs text-sub-strong">{ME_MESSAGES.offlineNote}</p>}
-          </div>
+          </section>
         )}
       </div>
       <ConfirmDialog
@@ -181,9 +181,10 @@ const KIND_LABEL = {
 } as const;
 
 // 種類（見出し）と、日本時間の日付・曜日・時刻
-function Heading({ record }: { record: RecordDetailResponse }) {
+function Heading({ record, mine, by }: { record: RecordDetailResponse; mine: boolean; by: string }) {
   return (
     <div>
+      {mine ? <p className="text-sm font-extrabold text-sub-strong">{DETAIL_MESSAGES.ownerMine}</p> : <FriendOwner by={by} />}
       <h1 className="flex items-center gap-2 text-[28px] leading-tight font-extrabold">
         {record.kind === 'rest' && (
           <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-grape-dark text-white">
@@ -200,6 +201,13 @@ function Heading({ record }: { record: RecordDetailResponse }) {
       </p>
     </div>
   );
+}
+
+// 仲間の記録の持ち主の名前（A05-3・A05-5）。グループの顔ぶれから引く。抜けた仲間・by が無いときは「仲間の記録」
+function FriendOwner({ by }: { by: string }) {
+  const { data } = useGetCurrentGroup({ query: { enabled: by !== '' } });
+  const name = data?.status === 200 ? (data.data.members.find((m) => m.id === by)?.name ?? null) : null;
+  return <p className="text-sm font-extrabold text-sub-strong">{DETAIL_MESSAGES.ownerFriend(name)}</p>;
 }
 
 // 仲間のメニューをコピーして始める（F-24）。種目と回数・重さを、今日の記録画面に「やる予定」として渡す。
@@ -242,6 +250,7 @@ function CopyButton({ record, fromUserId }: { record: RecordDetailResponse; from
       <ThickButton size="sm" className="w-full" disabled={!online || busy} onClick={() => void onCopy()}>
         {busy ? FRIEND_MESSAGES.copying : FRIEND_MESSAGES.copyButton}
       </ThickButton>
+      <p className="mt-2 text-center text-xs font-bold text-sub-strong">{DETAIL_MESSAGES.copyExplain}</p>
       {!online && <p className="mt-2 text-center text-xs text-sub-strong">{FRIEND_MESSAGES.copyOffline}</p>}
       {error && (
         <p role="alert" className="mt-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
@@ -286,7 +295,9 @@ function ExerciseBlock({ exercise, recordedAt, mine }: { exercise: RecordedExerc
               <span className="w-12 shrink-0 text-xs font-bold text-sub-strong">セット{s.setNo}</span>
               <span className="fl-num min-w-0 flex-1 text-xl">{formatSet(s)}</span>
               {o?.isBest && <span className="fl-tag bg-gold !py-0 !text-xs !leading-4 text-ink">{RECORD_MESSAGES.best}</span>}
-              {o && <span className="w-full pl-[60px] text-xs font-bold text-sub-strong">{resultText(o.result, o.diff)}</span>}
+              {o && (o.result === 'up' || o.result === 'down') && (
+                <span className="w-full pl-[60px] text-xs font-bold text-sub-strong">{resultText(o.result, o.diff)}</span>
+              )}
             </li>
           );
         })}
@@ -295,8 +306,8 @@ function ExerciseBlock({ exercise, recordedAt, mine }: { exercise: RecordedExerc
   );
 }
 
-const resultText = (result: 'up' | 'same' | 'down' | null, diff: number): string =>
-  result === 'up' ? ghostUpMessage(diff) : result === 'same' ? GHOST_MESSAGES.same : result === 'down' ? GHOST_MESSAGES.down : RECORD_MESSAGES.recorded;
+// 変化があるとき（前回超え・下回り）だけ出す。「おなじ」「記録したよ」は並ぶと伸びた所が埋もれるので出さない（A05-2）
+const resultText = (result: 'up' | 'down', diff: number): string => (result === 'up' ? ghostUpMessage(diff) : GHOST_MESSAGES.down);
 
 function Run({ distanceM, durationS }: { distanceM: number; durationS: number }) {
   const pace = formatPace(distanceM, durationS);
