@@ -905,6 +905,27 @@ export type GetFeedParams = {
   cursor?: string;
 };
 
+const getHeaders = (...sources: (RequestInit['headers'] | Record<string, string | undefined>)[]) => {
+  const seen = new Set<string>();
+  const layers: [string, string | readonly string[]][][] = [];
+  for (const source of sources.reverse()) {
+    if (!source) continue;
+    const entries = source instanceof Headers
+      ? source.entries()
+      : Symbol.iterator in source
+        ? Array.from(source as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string])
+        : Object.entries<string | readonly string[] | undefined>(source);
+    const layer: [string, string | readonly string[]][] = [];
+    for (const [name, value] of entries) {
+      if (value !== undefined && !seen.has(name.toLowerCase())) layer.push([name, value]);
+    }
+    for (const [name] of layer) seen.add(name.toLowerCase());
+    layers.push(layer);
+  }
+  return Object.fromEntries(layers.reverse().flat()) as Extract<RequestInit['headers'], Record<string, unknown>>;
+};
+
+
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
   for (const key of Object.keys(query)) {
@@ -994,6 +1015,7 @@ export type GetHealthQueryResult = NonNullable<Awaited<ReturnType<typeof getHeal
 export type GetHealthQueryError = unknown
 
 
+/** @summary 生きているかの確認（DB には触れない） */
 export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TError = unknown>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealth>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1004,6 +1026,7 @@ export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TErr
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 生きているかの確認（DB には触れない） */
 export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealth>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1014,14 +1037,12 @@ export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TErr
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 生きているかの確認（DB には触れない） */
 export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealth>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 生きているかの確認（DB には触れない）
- */
-
+/** @summary 生きているかの確認（DB には触れない） */
 export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealth>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -1121,6 +1142,7 @@ export type GetHealthDbQueryResult = NonNullable<Awaited<ReturnType<typeof getHe
 export type GetHealthDbQueryError = ErrorResponse
 
 
+/** @summary DB まで届くかの確認 */
 export function useGetHealthDb<TData = Awaited<ReturnType<typeof getHealthDb>>, TError = ErrorResponse>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthDb>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1131,6 +1153,7 @@ export function useGetHealthDb<TData = Awaited<ReturnType<typeof getHealthDb>>, 
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary DB まで届くかの確認 */
 export function useGetHealthDb<TData = Awaited<ReturnType<typeof getHealthDb>>, TError = ErrorResponse>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthDb>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1141,14 +1164,12 @@ export function useGetHealthDb<TData = Awaited<ReturnType<typeof getHealthDb>>, 
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary DB まで届くかの確認 */
 export function useGetHealthDb<TData = Awaited<ReturnType<typeof getHealthDb>>, TError = ErrorResponse>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthDb>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary DB まで届くかの確認
- */
-
+/** @summary DB まで届くかの確認 */
 export function useGetHealthDb<TData = Awaited<ReturnType<typeof getHealthDb>>, TError = ErrorResponse>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthDb>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -1199,25 +1220,11 @@ export const getCreateGroupUrl = () => {
  */
 export const createGroup = async (createGroupRequest: CreateGroupRequest, options?: RequestInit): Promise<createGroupResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getCreateGroupUrl(),
+  const res = await fetch(getCreateGroupUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(createGroupRequest)
   }
 )
@@ -1267,9 +1274,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type CreateGroupMutationError = ErrorResponse
     export type CreateGroupMutationVariables = {data: CreateGroupRequest}
 
-    /**
- * @summary グループを作る（作った人が最初のメンバー）
- */
+    /** @summary グループを作る（作った人が最初のメンバー） */
 export const useCreateGroup = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGroup>>, TError,CreateGroupMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1362,6 +1367,7 @@ export type GetCurrentGroupQueryResult = NonNullable<Awaited<ReturnType<typeof g
 export type GetCurrentGroupQueryError = ErrorResponse
 
 
+/** @summary 今のグループとメンバーを返す */
 export function useGetCurrentGroup<TData = Awaited<ReturnType<typeof getCurrentGroup>>, TError = ErrorResponse>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentGroup>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1372,6 +1378,7 @@ export function useGetCurrentGroup<TData = Awaited<ReturnType<typeof getCurrentG
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 今のグループとメンバーを返す */
 export function useGetCurrentGroup<TData = Awaited<ReturnType<typeof getCurrentGroup>>, TError = ErrorResponse>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentGroup>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1382,14 +1389,12 @@ export function useGetCurrentGroup<TData = Awaited<ReturnType<typeof getCurrentG
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 今のグループとメンバーを返す */
 export function useGetCurrentGroup<TData = Awaited<ReturnType<typeof getCurrentGroup>>, TError = ErrorResponse>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentGroup>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 今のグループとメンバーを返す
- */
-
+/** @summary 今のグループとメンバーを返す */
 export function useGetCurrentGroup<TData = Awaited<ReturnType<typeof getCurrentGroup>>, TError = ErrorResponse>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentGroup>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -1494,9 +1499,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type CreateInvitationMutationError = ErrorResponse
 
 
-    /**
- * @summary 招待リンクを作る（値はこの応答の1回だけ）
- */
+    /** @summary 招待リンクを作る（値はこの応答の1回だけ） */
 export const useCreateInvitation = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvitation>>, TError,void, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1594,9 +1597,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type RevokeInvitationMutationError = ErrorResponse
     export type RevokeInvitationMutationVariables = {id: string}
 
-    /**
- * @summary 招待リンクを取り消す（2回目以降も 204）
- */
+    /** @summary 招待リンクを取り消す（2回目以降も 204） */
 export const useRevokeInvitation = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeInvitation>>, TError,RevokeInvitationMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1694,9 +1695,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type LeaveGroupMutationError = ErrorResponse
 
 
-    /**
- * @summary グループを出る（グループは残る）
- */
+    /** @summary グループを出る（グループは残る） */
 export const useLeaveGroup = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveGroup>>, TError,void, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1794,6 +1793,7 @@ export type GetInvitationQueryResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetInvitationQueryError = ErrorResponse
 
 
+/** @summary 招待の中身（グループ名と今の人数）を見る。ログイン不要 */
 export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation>>, TError = ErrorResponse>(
  token: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1804,6 +1804,7 @@ export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 招待の中身（グループ名と今の人数）を見る。ログイン不要 */
 export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation>>, TError = ErrorResponse>(
  token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1814,14 +1815,12 @@ export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 招待の中身（グループ名と今の人数）を見る。ログイン不要 */
 export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation>>, TError = ErrorResponse>(
  token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 招待の中身（グループ名と今の人数）を見る。ログイン不要
- */
-
+/** @summary 招待の中身（グループ名と今の人数）を見る。ログイン不要 */
 export function useGetInvitation<TData = Awaited<ReturnType<typeof getInvitation>>, TError = ErrorResponse>(
  token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvitation>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -1936,9 +1935,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type AcceptInvitationMutationError = ErrorResponse
     export type AcceptInvitationMutationVariables = {token: string}
 
-    /**
- * @summary 招待リンクでグループに参加する
- */
+    /** @summary 招待リンクでグループに参加する */
 export const useAcceptInvitation = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptInvitation>>, TError,AcceptInvitationMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2024,6 +2021,7 @@ export type ListExercisesQueryResult = NonNullable<Awaited<ReturnType<typeof lis
 export type ListExercisesQueryError = unknown
 
 
+/** @summary 一覧の種目と、自分が追加した種目を返す（部位の順） */
 export function useListExercises<TData = Awaited<ReturnType<typeof listExercises>>, TError = unknown>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -2034,6 +2032,7 @@ export function useListExercises<TData = Awaited<ReturnType<typeof listExercises
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 一覧の種目と、自分が追加した種目を返す（部位の順） */
 export function useListExercises<TData = Awaited<ReturnType<typeof listExercises>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -2044,14 +2043,12 @@ export function useListExercises<TData = Awaited<ReturnType<typeof listExercises
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 一覧の種目と、自分が追加した種目を返す（部位の順） */
 export function useListExercises<TData = Awaited<ReturnType<typeof listExercises>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 一覧の種目と、自分が追加した種目を返す（部位の順）
- */
-
+/** @summary 一覧の種目と、自分が追加した種目を返す（部位の順） */
 export function useListExercises<TData = Awaited<ReturnType<typeof listExercises>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExercises>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -2107,25 +2104,11 @@ export const getCreateExerciseUrl = () => {
  */
 export const createExercise = async (createExerciseRequest: CreateExerciseRequest, options?: RequestInit): Promise<createExerciseResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getCreateExerciseUrl(),
+  const res = await fetch(getCreateExerciseUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(createExerciseRequest)
   }
 )
@@ -2175,9 +2158,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type CreateExerciseMutationError = ErrorResponse
     export type CreateExerciseMutationVariables = {data: CreateExerciseRequest}
 
-    /**
- * @summary 自分用の種目を追加する
- */
+    /** @summary 自分用の種目を追加する */
 export const useCreateExercise = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExercise>>, TError,CreateExerciseMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2286,6 +2267,7 @@ export type GetPreviousQueryResult = NonNullable<Awaited<ReturnType<typeof getPr
 export type GetPreviousQueryError = ErrorResponse
 
 
+/** @summary 前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト） */
 export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, TError = ErrorResponse>(
  id: string,
     params: undefined |  GetPreviousParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData>> & Pick<
@@ -2297,6 +2279,7 @@ export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, 
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト） */
 export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, TError = ErrorResponse>(
  id: string,
     params?: GetPreviousParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData>> & Pick<
@@ -2308,15 +2291,13 @@ export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, 
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト） */
 export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, TError = ErrorResponse>(
  id: string,
     params?: GetPreviousParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト）
- */
-
+/** @summary 前回（同じ種目の直近の記録）と自己ベストを返す（ゴースト） */
 export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, TError = ErrorResponse>(
  id: string,
     params?: GetPreviousParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrevious>>, TError, TData>>, fetch?: RequestInit}
@@ -2378,25 +2359,11 @@ export const getCreateRecordUrl = () => {
  */
 export const createRecord = async (createRecordRequest: CreateRecordRequest, options?: RequestInit): Promise<createRecordResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getCreateRecordUrl(),
+  const res = await fetch(getCreateRecordUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(createRecordRequest)
   }
 )
@@ -2446,9 +2413,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type CreateRecordMutationError = ErrorResponse
     export type CreateRecordMutationVariables = {data: CreateRecordRequest}
 
-    /**
- * @summary 記録（筋トレ・ラン・休み）を作る。冪等
- */
+    /** @summary 記録（筋トレ・ラン・休み）を作る。冪等 */
 export const useCreateRecord = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRecord>>, TError,CreateRecordMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2548,6 +2513,7 @@ export type ListRecordsQueryResult = NonNullable<Awaited<ReturnType<typeof listR
 export type ListRecordsQueryError = ErrorResponse
 
 
+/** @summary 自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む */
 export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, TError = ErrorResponse>(
  params: undefined |  ListRecordsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -2558,6 +2524,7 @@ export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, 
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む */
 export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, TError = ErrorResponse>(
  params?: ListRecordsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -2568,14 +2535,12 @@ export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, 
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む */
 export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, TError = ErrorResponse>(
  params?: ListRecordsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む
- */
-
+/** @summary 自分の記録の一覧（新しい順）。筋トレは種目ごとのセットを含む */
 export function useListRecords<TData = Awaited<ReturnType<typeof listRecords>>, TError = ErrorResponse>(
  params?: ListRecordsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRecords>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -2642,25 +2607,11 @@ export const getAddSetUrl = (id: string,) => {
 export const addSet = async (id: string,
     createSetRequest: CreateSetRequest, options?: RequestInit): Promise<addSetResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getAddSetUrl(id),
+  const res = await fetch(getAddSetUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(createSetRequest)
   }
 )
@@ -2710,9 +2661,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type AddSetMutationError = ErrorResponse
     export type AddSetMutationVariables = {id: string;data: CreateSetRequest}
 
-    /**
- * @summary 筋トレの記録にセットを足す。冪等
- */
+    /** @summary 筋トレの記録にセットを足す。冪等 */
 export const useAddSet = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSet>>, TError,AddSetMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2815,9 +2764,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type EndWorkoutMutationError = ErrorResponse
     export type EndWorkoutMutationVariables = {id: string}
 
-    /**
- * @summary 筋トレを「今日はここまで」で終える（N1）。冪等
- */
+    /** @summary 筋トレを「今日はここまで」で終える（N1）。冪等 */
 export const useEndWorkout = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endWorkout>>, TError,EndWorkoutMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2867,25 +2814,11 @@ export const getUpdateRecordMemoUrl = (id: string,) => {
 export const updateRecordMemo = async (id: string,
     memoRequest: MemoRequest, options?: RequestInit): Promise<updateRecordMemoResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getUpdateRecordMemoUrl(id),
+  const res = await fetch(getUpdateRecordMemoUrl(id),
   {
     ...options,
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(memoRequest)
   }
 )
@@ -2935,9 +2868,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type UpdateRecordMemoMutationError = ErrorResponse
     export type UpdateRecordMemoMutationVariables = {id: string;data: MemoRequest}
 
-    /**
- * @summary 記録にメモ・きつさ（RPE）を書く（F5）。自分の記録だけ。送った項目だけ変える
- */
+    /** @summary 記録にメモ・きつさ（RPE）を書く（F5）。自分の記録だけ。送った項目だけ変える */
 export const useUpdateRecordMemo = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRecordMemo>>, TError,UpdateRecordMemoMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3030,6 +2961,7 @@ export type GetRecordQueryResult = NonNullable<Awaited<ReturnType<typeof getReco
 export type GetRecordQueryError = ErrorResponse
 
 
+/** @summary 記録の詳細（セット・ラン）。自分か同じグループの人の記録だけ */
 export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TError = ErrorResponse>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3040,6 +2972,7 @@ export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TErr
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 記録の詳細（セット・ラン）。自分か同じグループの人の記録だけ */
 export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3050,14 +2983,12 @@ export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TErr
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 記録の詳細（セット・ラン）。自分か同じグループの人の記録だけ */
 export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 記録の詳細（セット・ラン）。自分か同じグループの人の記録だけ
- */
-
+/** @summary 記録の詳細（セット・ラン）。自分か同じグループの人の記録だけ */
 export function useGetRecord<TData = Awaited<ReturnType<typeof getRecord>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecord>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -3162,9 +3093,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type DeleteRecordMutationError = ErrorResponse
     export type DeleteRecordMutationVariables = {id: string}
 
-    /**
- * @summary 記録を取り消す。自分のだけ。セット・ランの詳細も一緒に消える
- */
+    /** @summary 記録を取り消す。自分のだけ。セット・ランの詳細も一緒に消える */
 export const useDeleteRecord = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRecord>>, TError,DeleteRecordMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3264,9 +3193,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type DeleteSetMutationError = ErrorResponse
     export type DeleteSetMutationVariables = {id: string;setId: string}
 
-    /**
- * @summary セットを取り消す。自分のだけ
- */
+    /** @summary セットを取り消す。自分のだけ */
 export const useDeleteSet = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSet>>, TError,DeleteSetMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3366,6 +3293,7 @@ export type GetWeekQueryResult = NonNullable<Awaited<ReturnType<typeof getWeek>>
 export type GetWeekQueryError = ErrorResponse
 
 
+/** @summary その日を含む週（月曜〜日曜）の、自分の7マスを返す */
 export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError = ErrorResponse>(
  params: GetWeekParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3376,6 +3304,7 @@ export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError =
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary その日を含む週（月曜〜日曜）の、自分の7マスを返す */
 export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError = ErrorResponse>(
  params: GetWeekParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3386,14 +3315,12 @@ export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError =
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary その日を含む週（月曜〜日曜）の、自分の7マスを返す */
 export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError = ErrorResponse>(
  params: GetWeekParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary その日を含む週（月曜〜日曜）の、自分の7マスを返す
- */
-
+/** @summary その日を含む週（月曜〜日曜）の、自分の7マスを返す */
 export function useGetWeek<TData = Awaited<ReturnType<typeof getWeek>>, TError = ErrorResponse>(
  params: GetWeekParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWeek>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -3500,6 +3427,7 @@ export type GetHeatmapQueryResult = NonNullable<Awaited<ReturnType<typeof getHea
 export type GetHeatmapQueryError = ErrorResponse
 
 
+/** @summary その日を含む週（月曜〜日曜）の、自分のセット数を部位ごとに返す */
 export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TError = ErrorResponse>(
  params: GetHeatmapParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3510,6 +3438,7 @@ export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TE
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary その日を含む週（月曜〜日曜）の、自分のセット数を部位ごとに返す */
 export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TError = ErrorResponse>(
  params: GetHeatmapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3520,14 +3449,12 @@ export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TE
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary その日を含む週（月曜〜日曜）の、自分のセット数を部位ごとに返す */
 export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TError = ErrorResponse>(
  params: GetHeatmapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary その日を含む週（月曜〜日曜）の、自分のセット数を部位ごとに返す
- */
-
+/** @summary その日を含む週（月曜〜日曜）の、自分のセット数を部位ごとに返す */
 export function useGetHeatmap<TData = Awaited<ReturnType<typeof getHeatmap>>, TError = ErrorResponse>(
  params: GetHeatmapParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHeatmap>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -3634,6 +3561,7 @@ export type GetStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getStats
 export type GetStatsQueryError = ErrorResponse
 
 
+/** @summary 1年分のマス・今月の数字・直近12週・スタンプを、自分の記録から返す */
 export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorResponse>(
  params: GetStatsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3644,6 +3572,7 @@ export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 1年分のマス・今月の数字・直近12週・スタンプを、自分の記録から返す */
 export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorResponse>(
  params: GetStatsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3654,14 +3583,12 @@ export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 1年分のマス・今月の数字・直近12週・スタンプを、自分の記録から返す */
 export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorResponse>(
  params: GetStatsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 1年分のマス・今月の数字・直近12週・スタンプを、自分の記録から返す
- */
-
+/** @summary 1年分のマス・今月の数字・直近12週・スタンプを、自分の記録から返す */
 export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorResponse>(
  params: GetStatsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStats>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -3754,6 +3681,7 @@ export type ListRoutinesQueryResult = NonNullable<Awaited<ReturnType<typeof list
 export type ListRoutinesQueryError = unknown
 
 
+/** @summary 自分のルーティンの一覧（保存した順）と上限 */
 export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>, TError = unknown>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3764,6 +3692,7 @@ export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分のルーティンの一覧（保存した順）と上限 */
 export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3774,14 +3703,12 @@ export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分のルーティンの一覧（保存した順）と上限 */
 export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 自分のルーティンの一覧（保存した順）と上限
- */
-
+/** @summary 自分のルーティンの一覧（保存した順）と上限 */
 export function useListRoutines<TData = Awaited<ReturnType<typeof listRoutines>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRoutines>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -3842,25 +3769,11 @@ export const getCreateRoutineUrl = () => {
  */
 export const createRoutine = async (createRoutineRequest: CreateRoutineRequest, options?: RequestInit): Promise<createRoutineResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getCreateRoutineUrl(),
+  const res = await fetch(getCreateRoutineUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(createRoutineRequest)
   }
 )
@@ -3910,9 +3823,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type CreateRoutineMutationError = ErrorResponse
     export type CreateRoutineMutationVariables = {data: CreateRoutineRequest}
 
-    /**
- * @summary 自分の筋トレの記録1件から、種目と回数・重さを写してルーティンを保存する
- */
+    /** @summary 自分の筋トレの記録1件から、種目と回数・重さを写してルーティンを保存する */
 export const useCreateRoutine = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRoutine>>, TError,CreateRoutineMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -4010,9 +3921,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type DeleteRoutineMutationError = ErrorResponse
     export type DeleteRoutineMutationVariables = {id: string}
 
-    /**
- * @summary 自分のルーティンを消す
- */
+    /** @summary 自分のルーティンを消す */
 export const useDeleteRoutine = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRoutine>>, TError,DeleteRoutineMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -4112,6 +4021,7 @@ export type GetFeedQueryResult = NonNullable<Awaited<ReturnType<typeof getFeed>>
 export type GetFeedQueryError = ErrorResponse
 
 
+/** @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す */
 export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
  params: GetFeedParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4122,6 +4032,7 @@ export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError =
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す */
 export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
  params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4132,14 +4043,12 @@ export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError =
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す */
 export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
  params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す
- */
-
+/** @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す */
 export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
  params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -4232,6 +4141,7 @@ export type GetFeedUnreadQueryResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetFeedUnreadQueryError = unknown
 
 
+/** @summary 仲間タブに新着があるか（下のタブの点に使う。F4） */
 export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread>>, TError = unknown>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4242,6 +4152,7 @@ export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 仲間タブに新着があるか（下のタブの点に使う。F4） */
 export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4252,14 +4163,12 @@ export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 仲間タブに新着があるか（下のタブの点に使う。F4） */
 export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 仲間タブに新着があるか（下のタブの点に使う。F4）
- */
-
+/** @summary 仲間タブに新着があるか（下のタブの点に使う。F4） */
 export function useGetFeedUnread<TData = Awaited<ReturnType<typeof getFeedUnread>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeedUnread>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -4357,9 +4266,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type MarkFeedSeenMutationError = unknown
 
 
-    /**
- * @summary 仲間タブを見た。新着の基準を今にする（F4）。何度呼んでもよい
- */
+    /** @summary 仲間タブを見た。新着の基準を今にする（F4）。何度呼んでもよい */
 export const useMarkFeedSeen = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markFeedSeen>>, TError,void, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -4452,6 +4359,7 @@ export type ListCommentsQueryResult = NonNullable<Awaited<ReturnType<typeof list
 export type ListCommentsQueryError = ErrorResponse
 
 
+/** @summary 記録のコメント一覧（古い順・全件） */
 export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = ErrorResponse>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4462,6 +4370,7 @@ export function useListComments<TData = Awaited<ReturnType<typeof listComments>>
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 記録のコメント一覧（古い順・全件） */
 export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4472,14 +4381,12 @@ export function useListComments<TData = Awaited<ReturnType<typeof listComments>>
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 記録のコメント一覧（古い順・全件） */
 export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 記録のコメント一覧（古い順・全件）
- */
-
+/** @summary 記録のコメント一覧（古い順・全件） */
 export function useListComments<TData = Awaited<ReturnType<typeof listComments>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComments>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -4541,25 +4448,11 @@ export const getAddCommentUrl = (id: string,) => {
 export const addComment = async (id: string,
     createCommentRequest: CreateCommentRequest, options?: RequestInit): Promise<addCommentResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getAddCommentUrl(id),
+  const res = await fetch(getAddCommentUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(createCommentRequest)
   }
 )
@@ -4609,9 +4502,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type AddCommentMutationError = ErrorResponse
     export type AddCommentMutationVariables = {id: string;data: CreateCommentRequest}
 
-    /**
- * @summary 記録にコメント（1〜50字）を付ける。冪等
- */
+    /** @summary 記録にコメント（1〜50字）を付ける。冪等 */
 export const useAddComment = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addComment>>, TError,AddCommentMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -4704,6 +4595,7 @@ export type ListReactionsQueryResult = NonNullable<Awaited<ReturnType<typeof lis
 export type ListReactionsQueryError = ErrorResponse
 
 
+/** @summary 記録のスタンプの集計（スタンプごとの数と、自分のスタンプの id） */
 export function useListReactions<TData = Awaited<ReturnType<typeof listReactions>>, TError = ErrorResponse>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4714,6 +4606,7 @@ export function useListReactions<TData = Awaited<ReturnType<typeof listReactions
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 記録のスタンプの集計（スタンプごとの数と、自分のスタンプの id） */
 export function useListReactions<TData = Awaited<ReturnType<typeof listReactions>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4724,14 +4617,12 @@ export function useListReactions<TData = Awaited<ReturnType<typeof listReactions
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 記録のスタンプの集計（スタンプごとの数と、自分のスタンプの id） */
 export function useListReactions<TData = Awaited<ReturnType<typeof listReactions>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 記録のスタンプの集計（スタンプごとの数と、自分のスタンプの id）
- */
-
+/** @summary 記録のスタンプの集計（スタンプごとの数と、自分のスタンプの id） */
 export function useListReactions<TData = Awaited<ReturnType<typeof listReactions>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReactions>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
@@ -4803,25 +4694,11 @@ export const getAddReactionUrl = (id: string,) => {
 export const addReaction = async (id: string,
     createReactionRequest: CreateReactionRequest, options?: RequestInit): Promise<addReactionResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getAddReactionUrl(id),
+  const res = await fetch(getAddReactionUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(createReactionRequest)
   }
 )
@@ -4871,9 +4748,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type AddReactionMutationError = ErrorResponse
     export type AddReactionMutationVariables = {id: string;data: CreateReactionRequest}
 
-    /**
- * @summary 記録にスタンプを付ける。冪等（同じ人が同じスタンプを2回付けても1件のまま）
- */
+    /** @summary 記録にスタンプを付ける。冪等（同じ人が同じスタンプを2回付けても1件のまま） */
 export const useAddReaction = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addReaction>>, TError,AddReactionMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -4978,9 +4853,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type DeleteReactionMutationError = ErrorResponse
     export type DeleteReactionMutationVariables = {id: string;reactionId: string}
 
-    /**
- * @summary 自分のスタンプを外す
- */
+    /** @summary 自分のスタンプを外す */
 export const useDeleteReaction = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReaction>>, TError,DeleteReactionMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -5083,9 +4956,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type DeleteCommentMutationError = ErrorResponse
     export type DeleteCommentMutationVariables = {id: string}
 
-    /**
- * @summary 自分のコメントを消す
- */
+    /** @summary 自分のコメントを消す */
 export const useDeleteComment = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteComment>>, TError,DeleteCommentMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -5145,25 +5016,11 @@ export const getIssueVideoUploadUrl = (id: string,) => {
 export const issueVideoUpload = async (id: string,
     createVideoUploadRequest: CreateVideoUploadRequest, options?: RequestInit): Promise<issueVideoUploadResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-const res = await fetch(getIssueVideoUploadUrl(id),
+  const res = await fetch(getIssueVideoUploadUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(createVideoUploadRequest)
   }
 )
@@ -5213,9 +5070,7 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
     export type IssueVideoUploadMutationError = ErrorResponse
     export type IssueVideoUploadMutationVariables = {id: string;data: CreateVideoUploadRequest}
 
-    /**
- * @summary 筋トレの記録に付ける動画を置く署名付き POST を発行する。やり直しは同じ記録にもう一度呼ぶ
- */
+    /** @summary 筋トレの記録に付ける動画を置く署名付き POST を発行する。やり直しは同じ記録にもう一度呼ぶ */
 export const useIssueVideoUpload = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueVideoUpload>>, TError,IssueVideoUploadMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationResult<
@@ -5313,6 +5168,7 @@ export type GetVideoUrlQueryResult = NonNullable<Awaited<ReturnType<typeof getVi
 export type GetVideoUrlQueryError = ErrorResponse
 
 
+/** @summary 動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ */
 export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, TError = ErrorResponse>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -5323,6 +5179,7 @@ export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, 
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ */
 export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -5333,14 +5190,12 @@ export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, 
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ */
 export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary 動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ
- */
-
+/** @summary 動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ */
 export function useGetVideoUrl<TData = Awaited<ReturnType<typeof getVideoUrl>>, TError = ErrorResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideoUrl>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
