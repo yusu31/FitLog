@@ -7,13 +7,15 @@ import { useState } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { JapanMap } from '@/components/me/japan-map';
 import { useGetStats, type StatsResponse, type StatsWeek } from '@/lib/api/generated';
-import { WEEKDAYS, formatDistance, formatMonthDay, weekdayIndex } from '@/lib/format';
+import { formatDistance, formatMonthDay } from '@/lib/format';
 import { locateOnRoute, nextText, trekText } from '@/lib/japan-route';
 import { STAMP_LABEL, STATS_VIEWS, barRatios, buildGrid, weightEquivalent, type StatsView } from '@/lib/stats';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useRequireSession } from '@/lib/use-require-session';
 
-const STATUS_CLASS = { rec: 'bg-gold', rest: 'bg-grape', none: 'bg-line' } as const;
+const STATUS_CLASS = { rec: 'bg-gold', rest: 'bg-grape', none: 'bg-face' } as const;
+// 月曜始まり（マスの並びと同じ。A08-4）
+const WEEKDAY_HEAD = ['月', '火', '水', '木', '金', '土', '日'] as const;
 const STATUS_TEXT = { rec: '記録あり', rest: 'おやすみ', none: '' } as const;
 
 // S-35 記録をくわしく（docs/screen-design.md 4章・F-22・F-26・F-27・F-29）。自分タブから入る。
@@ -40,9 +42,7 @@ export function StatsPage() {
           <>
             <Calendar data={data} />
             <MonthNumbers data={data} />
-            <WeeklyChart title="週ごとの総重量" weeks={data.weekly} pick={(w) => w.totalWeightKg} format={(v) => `${v}kg`} />
-            <WeeklyChart title="週ごとのラン" weeks={data.weekly} pick={(w) => w.runDistanceM} format={formatDistance} />
-            <JapanTrek totalMeters={data.totalRunDistanceM} />
+            <TrainingTabs data={data} />
             <Stamps data={data} />
           </>
         ) : (
@@ -79,17 +79,21 @@ function Calendar({ data }: { data: StatsResponse }) {
           </button>
         ))}
       </div>
-      {view === 'week' && (
+      {view === 'year' ? (
+        <p data-testid="stats-weekdays" className="mt-3 text-xs font-bold text-sub-strong">
+          たては上から月〜日、よこは左から右へ週が進みます
+        </p>
+      ) : (
         <p aria-hidden data-testid="stats-weekdays" className="mt-3 grid grid-cols-7 gap-1 text-center text-xs font-bold text-sub-strong">
-          {cells.map((c, i) => (
-            <span key={i}>{c.date ? WEEKDAYS[weekdayIndex(c.date)] : ''}</span>
+          {WEEKDAY_HEAD.map((w) => (
+            <span key={w}>{w}</span>
           ))}
         </p>
       )}
       <ol
         aria-label={`${STATS_VIEWS.find((v) => v.view === view)!.label}のマス`}
         data-testid="stats-grid"
-        className={cn(view === 'week' ? 'mt-1' : 'mt-3', 'grid gap-1', view === 'year' ? 'grid-flow-col grid-rows-7' : 'grid-cols-7')}
+        className={cn(view === 'year' ? 'mt-2' : 'mt-1', 'grid gap-1', view === 'year' ? 'grid-flow-col grid-rows-7' : 'grid-cols-7')}
       >
         {cells.map((c, i) =>
           c.date === null ? (
@@ -112,6 +116,7 @@ function Calendar({ data }: { data: StatsResponse }) {
           </span>
         ))}
       </p>
+      <p className="mt-2 text-center text-xs text-sub-strong">切り替わるのはこのマスだけです。下の数字は今月、グラフは週ごとです</p>
     </section>
   );
 }
@@ -124,6 +129,9 @@ function MonthNumbers({ data }: { data: StatsResponse }) {
       <h2 id="stats-month" className="text-sm font-extrabold text-sub-strong">
         {Number(month.month.slice(5))}月の数字
       </h2>
+      <p className="text-xs text-sub-strong">
+        {formatMonthDay(`${month.month}-01`)}〜{formatMonthDay(data.today)}
+      </p>
       <dl className="mt-2 grid grid-cols-2 gap-3 text-center">
         <Stat label="動いた日" value={month.activeDays} unit="日" />
         <Stat label="おやすみ" value={month.restDays} unit="日" />
@@ -146,6 +154,48 @@ function Stat({ label, value, unit }: { label: string; value: number; unit: stri
   );
 }
 
+// 筋トレ・ランの切替（A08-8）。ランのタブにだけ、週ごとのランと日本縦断（F-28）を出す（縦に長いのを避ける）
+function TrainingTabs({ data }: { data: StatsResponse }) {
+  const weightTotal = data.weekly.reduce((sum, w) => sum + w.totalWeightKg, 0);
+  const runTotal = data.totalRunDistanceM + data.weekly.reduce((sum, w) => sum + w.runDistanceM, 0);
+  // 筋トレの記録が無くランだけの人は、最初からランを見せる
+  const [tab, setTab] = useState<'weight' | 'run'>(weightTotal === 0 && runTotal > 0 ? 'run' : 'weight');
+  return (
+    <>
+      <div role="group" aria-label="記録の種類" className="flex gap-2">
+        {(
+          [
+            ['weight', '筋トレ'],
+            ['run', 'ラン'],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={tab === key}
+            onClick={() => setTab(key)}
+            className={cn(
+              'min-h-11 flex-1 rounded-fl border-2 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+              tab === key ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-white text-teal-dark',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab === 'weight' ? (
+        <WeeklyChart title="週ごとの総重量" weeks={data.weekly} pick={(w) => w.totalWeightKg} format={(v) => `${v}kg`} />
+      ) : (
+        <>
+          <WeeklyChart title="週ごとのラン" weeks={data.weekly} pick={(w) => w.runDistanceM} format={formatDistance} />
+          <JapanTrek totalMeters={data.totalRunDistanceM} />
+        </>
+      )}
+    </>
+  );
+}
+
+// 週ごとのグラフ。始めた週（最初に0でない週）から右だけを出す（A08-2: 左の空っぽを見せない）。左端の週の日付と「今週」をラベルにする（A08-3）
 function WeeklyChart({
   title,
   weeks,
@@ -157,22 +207,46 @@ function WeeklyChart({
   pick: (w: StatsWeek) => number;
   format: (v: number) => string;
 }) {
-  const values = weeks.map(pick);
+  const start = weeks.findIndex((w) => pick(w) > 0);
+  if (start === -1) {
+    return (
+      <section aria-label={title} className="fl-slab px-4 py-3">
+        <h2 className="text-sm font-extrabold text-sub-strong">{title}</h2>
+        <p className="mt-2 rounded-lg bg-face px-3 py-6 text-center text-sm font-bold text-sub-strong">記録するとここに、週ごとのグラフが出ます</p>
+      </section>
+    );
+  }
+  const shown = weeks.slice(start);
+  const values = shown.map(pick);
   const ratios = barRatios(values);
+  const slot = Math.min(40, 240 / shown.length);
   return (
     <section aria-label={title} className="fl-slab px-4 py-3">
-      <h2 className="text-sm font-extrabold text-sub-strong">{title}（直近12週）</h2>
-      <svg viewBox="0 0 240 80" role="img" aria-label={`${title}の棒グラフ`} className="mt-2 w-full">
+      <h2 className="text-sm font-extrabold text-sub-strong">{title}</h2>
+      <svg viewBox={`0 0 ${shown.length * slot} 80`} role="img" aria-label={`${title}の棒グラフ`} className="mt-2 w-full">
         {/* 記録がない週も「空の箱」にならないよう、全部の週に薄い土台の線を引く（U8） */}
-        {weeks.map((w, i) => (
-          <rect key={`base-${w.weekStart}`} x={i * 20 + 3} y={78} width={14} height={2} rx={1} className="fill-line" />
+        {shown.map((w, i) => (
+          <rect key={`base-${w.weekStart}`} x={i * slot + slot * 0.15} y={78} width={slot * 0.7} height={2} rx={1} className="fill-line" />
         ))}
         {ratios.map((r, i) => (
-          <rect key={weeks[i].weekStart} x={i * 20 + 3} y={80 - r * 76} width={14} height={r * 76} rx={2} className={i === ratios.length - 1 ? 'fill-gold' : 'fill-teal'} />
+          <rect
+            key={shown[i].weekStart}
+            data-bar
+            x={i * slot + slot * 0.15}
+            y={80 - r * 76}
+            width={slot * 0.7}
+            height={r * 76}
+            rx={2}
+            className={i === ratios.length - 1 ? 'fill-gold' : 'fill-teal'}
+          />
         ))}
       </svg>
+      <p aria-hidden data-testid="chart-labels" className="flex justify-between text-xs font-bold text-sub-strong">
+        <span>{formatMonthDay(shown[0].weekStart)}の週</span>
+        <span>今週</span>
+      </p>
       <ul aria-label={`${title}の数字`} className="sr-only">
-        {weeks.map((w) => (
+        {shown.map((w) => (
           <li key={w.weekStart}>
             {formatMonthDay(w.weekStart)}の週 {format(pick(w))}
           </li>
@@ -223,10 +297,10 @@ function Stamps({ data }: { data: StatsResponse }) {
           <li
             key={s.key}
             data-earned={s.earned}
-            className={cn('rounded-lg px-1 py-3 text-center text-xs font-extrabold', s.earned ? 'bg-gold-light text-ink' : 'bg-face text-sub')}
+            className={cn('rounded-lg px-1 py-3 text-center text-xs font-extrabold', s.earned ? 'bg-gold-light text-ink' : 'bg-face text-sub-strong')}
           >
             <span aria-hidden className="block text-xl">
-              {s.earned ? '★' : '☆'}
+              {s.earned ? '★' : '○'}
             </span>
             {STAMP_LABEL[s.key]}
             {s.earnedAt && <span className="mt-0.5 block text-[11px] font-bold text-sub-strong">{shortDate(s.earnedAt)}</span>}

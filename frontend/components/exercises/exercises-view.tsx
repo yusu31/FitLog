@@ -26,6 +26,9 @@ import { useRequireSession } from '@/lib/use-require-session';
 
 const NAME_MAX = 30;
 
+// はじめての人向けに先頭へ固定する種目（A01-9）。部位が散らばるよう、胸・脚・背中・腹から1〜2つずつ。この順で並べ、一覧に無い名前は飛ばす
+const STARTER_NAMES = ['腕立て伏せ', 'スクワット', 'ダンベルプレス', 'ラットプルダウン', 'クランチ'];
+
 // 検索のための正規化: 前後の空白を除き、大文字小文字をそろえる
 const normalize = (text: string) => text.trim().toLowerCase();
 
@@ -59,6 +62,15 @@ export function ExercisesView() {
     for (const r of workouts.data.data.items) for (const ex of r.exercises ?? []) if (!ids.includes(ex.exerciseId)) ids.push(ex.exerciseId);
     return ids.flatMap((id) => exercises.find((e) => e.id === id) ?? []).slice(0, 5);
   }, [exercises, q, part, workouts.data]);
+
+  // 一覧を絞っていない間だけ、先頭に出す（探している種目の邪魔にしない）
+  const starters = useMemo(() => {
+    if (!exercises || q || part !== null) return [];
+    return STARTER_NAMES.flatMap((name) => exercises.find((e) => e.name === name && !e.isCustom) ?? []);
+  }, [exercises, q, part]);
+
+  // 自分の記録が1件でもあるか。無いうちは、お試しの数字を自分の数字に見せない（A01-11）
+  const hasRecords = workouts.data?.status === 200 && workouts.data.data.items.length > 0;
 
   const loading = !signedIn || isPending;
 
@@ -98,7 +110,7 @@ export function ExercisesView() {
         </div>
       </div>
 
-      <div role="group" aria-label="部位で絞る" className="flex gap-2 overflow-x-auto px-4 pt-3 pb-1">
+      <div role="group" aria-label="部位で絞る" className="flex flex-wrap gap-2 px-4 pt-3 pb-1">
         {[{ value: null, label: 'すべて' }, ...BODY_PART_ORDER.map((p) => ({ value: p, label: BODY_PART_LABEL[p] }))].map((o) => (
           <button
             key={o.label}
@@ -164,7 +176,21 @@ export function ExercisesView() {
           )}
         </div>
       ) : (
-        <div className="space-y-1 pb-6">
+        <div className="space-y-1">
+          {starters.length > 0 && (
+            <section aria-labelledby="starter-exercises">
+              <h2 id="starter-exercises" className="px-4 pt-4 pb-2 text-xs font-bold tracking-widest text-sub">
+                はじめての人向け
+              </h2>
+              <ul className="flex flex-col gap-2 px-4">
+                {starters.map((e) => (
+                  <li key={e.id}>
+                    <ExerciseRow exercise={e} day={day} showTrial={hasRecords} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {recent.length > 0 && (
             <section aria-labelledby="recent-exercises">
               <h2 id="recent-exercises" className="px-4 pt-4 pb-2 text-xs font-bold tracking-widest text-sub">
@@ -173,7 +199,7 @@ export function ExercisesView() {
               <ul className="flex flex-col gap-2 px-4">
                 {recent.map((e) => (
                   <li key={e.id}>
-                    <ExerciseRow exercise={e} day={day} />
+                    <ExerciseRow exercise={e} day={day} showTrial={hasRecords} />
                   </li>
                 ))}
               </ul>
@@ -187,19 +213,21 @@ export function ExercisesView() {
               <ul className="flex flex-col gap-2 px-4">
                 {items.map((e) => (
                   <li key={e.id}>
-                    <ExerciseRow exercise={e} day={day} />
+                    <ExerciseRow exercise={e} day={day} showTrial={hasRecords} />
                   </li>
                 ))}
               </ul>
             </section>
           ))}
+          {/* 下に固定の「種目を追加」が最後の行に重ならないよう、固定ボタンの高さ分の余白 */}
+          <div aria-hidden data-testid="footer-spacer" className="h-24" />
         </div>
       )}
     </FullScreen>
   );
 }
 
-function ExerciseRow({ exercise, day }: { exercise: ExerciseResponse; day: DayMode }) {
+function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse; day: DayMode; showTrial: boolean }) {
   const { id, name, bodyPart, isCustom, trialWeightKg, trialReps } = exercise;
   return (
     <Link
@@ -216,11 +244,14 @@ function ExerciseRow({ exercise, day }: { exercise: ExerciseResponse; day: DayMo
         <span className="block truncate font-extrabold">{name}</span>
         {isCustom && <span className="fl-tag mt-0.5 bg-gold !py-0 !text-xs !leading-4 text-ink">じぶんの</span>}
       </span>
-      {trialWeightKg !== null && trialReps !== null && (
-        <span className="fl-num shrink-0 text-lg text-ink">
-          {trialWeightKg}
-          <small className="mx-0.5 font-sans text-[11px] font-bold not-italic text-sub">kg ×</small>
-          {trialReps}
+      {showTrial && trialWeightKg !== null && trialReps !== null && (
+        <span className="flex shrink-0 flex-col items-end leading-tight">
+          <span className="text-[11px] font-bold text-sub-strong">目安</span>
+          <span className="fl-num text-lg text-ink">
+            {trialWeightKg}
+            <small className="mx-0.5 font-sans text-[11px] font-bold not-italic text-sub">kg ×</small>
+            {trialReps}
+          </span>
         </span>
       )}
       <ChevronRight aria-hidden className="size-5 shrink-0 text-sub" />

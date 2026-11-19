@@ -11,6 +11,12 @@ import { useOnline } from '@/lib/use-browser-state';
 // API の上限（records_note_ck・records_rpe_ck）と同じ
 export const NOTE_MAX = 200;
 const RPE_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+// きつさの目安（A03-7）。1・5・10 だけ添える。言葉は messages.ts の rpeLabel（1 らく 〜 10 限界）と合わせる
+const RPE_GUIDE = [
+  { value: 1, text: 'らく（ほとんど疲れない）' },
+  { value: 5, text: 'ややきつい（あと5回はできそう）' },
+  { value: 10, text: '限界（もう1回もできない）' },
+] as const;
 
 // 記録のメモ・きつさ（F5）。自分の記録の詳細（S-21）にだけ出す。サーバーの DB に置くので、保存は電波があるときだけ
 export function RecordMemo({ recordId, note, rpe }: { recordId: string; note?: string; rpe?: number }) {
@@ -65,6 +71,13 @@ export function RecordMemo({ recordId, note, rpe }: { recordId: string; note?: s
               </button>
             ))}
           </div>
+          <ul aria-label="きつさの目安" className="space-y-0.5 text-xs text-sub-strong">
+            {RPE_GUIDE.map((g) => (
+              <li key={g.value}>
+                <span className="fl-num font-extrabold text-ink">{g.value}</span> {g.text}
+              </li>
+            ))}
+          </ul>
         </div>
         <div className="space-y-2">
           <Label htmlFor="record-note" className="font-extrabold">

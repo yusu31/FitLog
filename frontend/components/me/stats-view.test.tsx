@@ -32,6 +32,15 @@ function statsOf(over: Partial<StatsResponse> = {}): StatsResponse {
   };
 }
 
+// 12週ぶんの週ごとの数字。2026-11-09（今週）から7日ずつさかのぼる
+function weeksOf(weight: (i: number) => number, run: (i: number) => number) {
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date('2026-11-09T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() - (11 - i) * 7);
+    return { weekStart: d.toISOString().slice(0, 10), totalWeightKg: weight(i), runDistanceM: run(i) };
+  });
+}
+
 function stubStats(body: unknown, status = 200) {
   vi.stubGlobal(
     'fetch',
@@ -74,15 +83,74 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
     expect(within(screen.getByTestId('stats-grid')).getByLabelText('11/10 おやすみ')).toHaveAttribute('data-status', 'rest');
   });
 
-  it('週の7マスには曜日が付く（U9）。月・年には付けない', async () => {
+  it('A08-4: 週・月・年のどのマスにも曜日の見出しが付く', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
     const row = await screen.findByTestId('stats-weekdays');
-    expect(row.textContent).toHaveLength(7);
     expect(row.textContent).toMatch(/^[日月火水木金土]{7}$/);
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: '月' }));
-    expect(screen.queryByTestId('stats-weekdays')).not.toBeInTheDocument();
+    expect(screen.getByTestId('stats-weekdays').textContent).toBe('月火水木金土日');
+    await user.click(screen.getByRole('button', { name: '年' }));
+    expect(screen.getByTestId('stats-weekdays')).toHaveTextContent('上から月〜日'); // 年はマスが細かいので、読み方の一文
+  });
+
+  it('A08-5: 上のマスだけが週・月・年で切り替わることを文で伝える。数字の見出しに期間（月初〜今日）を出す', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    expect(await screen.findByText(/切り替わるのはこのマスだけ/)).toBeInTheDocument();
+    const section = screen.getByText('11月の数字').closest('section')!;
+    expect(section).toHaveTextContent('11/1〜11/12');
+  });
+
+  it('A08-8: 筋トレ・ランの切替タブ。初期は筋トレ（総重量のグラフ）で、ランのグラフ・日本縦断は隠れている', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    expect(await screen.findByRole('region', { name: '週ごとの総重量' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '週ごとのラン' })).not.toBeInTheDocument();
+    expect(screen.queryByText('日本縦断')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '筋トレ' })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.setup().click(screen.getByRole('button', { name: 'ラン' }));
+    expect(screen.getByRole('button', { name: 'ラン' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('region', { name: '週ごとのラン' })).toBeInTheDocument();
+    expect(screen.getByText('日本縦断')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '週ごとの総重量' })).not.toBeInTheDocument();
+  });
+
+  it('A08-8: 筋トレの記録が無くランだけの人は、最初からランのタブで開く', async () => {
+    stubStats(statsOf({ weekly: weeksOf(() => 0, (i) => (i >= 9 ? 3000 : 0)) }));
+    renderWithQuery(<StatsPage />);
+    expect(await screen.findByRole('region', { name: '週ごとのラン' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ラン' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('A08-2・A08-3: グラフは記録を始めた週から右だけを出し、左端の週の日付と「今週」をラベルにする', async () => {
+    stubStats(statsOf({ weekly: weeksOf((i) => (i >= 9 ? 100 : 0), () => 0) }));
+    renderWithQuery(<StatsPage />);
+    const section = await screen.findByRole('region', { name: '週ごとの総重量' });
+    expect(within(section).getAllByRole('listitem')).toHaveLength(3);
+    expect(section.querySelectorAll('svg rect[data-bar]')).toHaveLength(3);
+    const labels = within(section).getByTestId('chart-labels');
+    expect(labels).toHaveTextContent('10/26の週');
+    expect(labels).toHaveTextContent('今週');
+  });
+
+  it('A08-2: まだ記録の無いほうのグラフは、空の棒でなく一言の案内にする', async () => {
+    stubStats(statsOf({ weekly: weeksOf(() => 0, () => 0), totalRunDistanceM: 0 }));
+    renderWithQuery(<StatsPage />);
+    const section = await screen.findByRole('region', { name: '週ごとの総重量' });
+    expect(section.querySelectorAll('svg rect[data-bar]')).toHaveLength(0);
+    expect(section).toHaveTextContent('記録するとここに');
+  });
+
+  it('A08-6・V-04: まだのスタンプは☆で欠けを見せない（星は獲得済みだけ）。文字は面の上で 4.5:1 以上の濃さ', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const stamps = (await screen.findByText('スタンプ帳')).closest('section')!;
+    const notYet = within(stamps).getByText('初めての5km').closest('li')!;
+    expect(notYet.textContent).not.toContain('☆');
+    expect(notYet.className).toContain('text-sub-strong');
+    expect(within(stamps).getByText('初めての記録').closest('li')!.textContent).toContain('★');
   });
 
   it('スタンプ帳は全部並べ、獲得済みとまだを文字でも区別する。「あと◯」は出さない', async () => {
@@ -107,11 +175,12 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
   it('日本縦断: 累計距離から今いる場所だけを文で出し、「あと◯km」は出さない（F-28）', async () => {
     stubStats(statsOf({ totalRunDistanceM: 300_000 }));
     renderWithQuery(<StatsPage />);
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'ラン' }));
     const trek = (await screen.findByText('日本縦断')).closest('section')!;
     expect(trek).toHaveTextContent('300km');
     expect(trek).toHaveTextContent('福岡');
     expect(within(trek).getByTestId('trek-total')).toHaveTextContent('300.0 km'); // 合計の走行距離
-    expect(trek).toHaveTextContent('次の広島まで 260.0km'); // 福岡(270km)の次は広島(560km)
+    expect(trek).toHaveTextContent('次の下関まで 30.0km'); // 福岡(270km)の次は下関(330km)
     expect(trek.textContent).not.toMatch(/あと|残り/);
     expect(within(trek).getByRole('img', { name: /福岡/ })).toBeInTheDocument();
   });
@@ -119,27 +188,29 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
   it('日本縦断: まだ走っていなくても出発点（鹿児島）で出す。3000km を超えたら2周目', async () => {
     stubStats(statsOf({ totalRunDistanceM: 0 }));
     const first = renderWithQuery(<StatsPage />);
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'ラン' }));
     expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('次の熊本まで 170.0km');
     first.unmount();
     stubStats(statsOf({ totalRunDistanceM: 3_500_000 }));
     renderWithQuery(<StatsPage />);
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'ラン' }));
     const second = (await screen.findByText('日本縦断')).closest('section')!;
     expect(second).toHaveTextContent('1回達成');
     expect(second).toHaveTextContent('2周目');
   });
 
-  it('グラフは、読み上げ用に週ごとの数字も持つ（直近12週）', async () => {
+  it('グラフは、読み上げ用に週ごとの数字も持つ（始めた週から）', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
     const list = await screen.findByRole('list', { name: '週ごとの総重量の数字' });
-    expect(within(list).getAllByRole('listitem')).toHaveLength(12);
-    expect(within(list).getAllByRole('listitem')[11]).toHaveTextContent('1100kg');
+    expect(within(list).getAllByRole('listitem')).toHaveLength(11); // 0kg の最初の1週は出さない（A08-2）
+    expect(within(list).getAllByRole('listitem')[10]).toHaveTextContent('1100kg');
   });
 
   it('U8: グラフに、いちばん多い週と今週の数字を見える文字で出す', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
-    const section = (await screen.findByText('週ごとの総重量（直近12週）')).closest('section')!;
+    const section = (await screen.findByRole('region', { name: '週ごとの総重量' }));
     expect(section).toHaveTextContent('最大');
     expect(section).toHaveTextContent('右が今週 1100kg');
   });

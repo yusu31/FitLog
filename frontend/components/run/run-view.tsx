@@ -92,15 +92,21 @@ export function RunView() {
     setGpxMessage(null);
   }
 
-  // GPS の記録が終わったら、GPX を選んだときと同じ形で入力欄とルートに入れる
+  // GPS の記録が終わったら、GPX を選んだときと同じ形で入力欄とルートに入れ、そのまま保存して完了画面へ進む（A07-5）。
+  // 入力欄に入れておくのは、保存できなかったときに、入力画面で内容を見てもう一度保存できるようにするため。
+  // 時間が取れていない（durationS が null）ときは保存できないので、入力画面に残して手で入れてもらう
   function onGpsFinish(run: GpxRun) {
     setKmText(String(run.distanceM / 1000));
     if (run.durationS !== null) {
       setMinText(String(Math.floor(run.durationS / 60)));
       setSecText(String(run.durationS % 60));
     }
-    setGpx({ name: 'GPS の記録', route: run.route, startedAt: run.startedAt });
+    const finished: Gpx = { name: 'GPS の記録', route: run.route, startedAt: run.startedAt };
+    setGpx(finished);
     setGpxMessage({ text: GPS_MESSAGES.filled, kind: 'info' });
+    if (run.durationS !== null && validateRun(run.distanceM, run.durationS) === null) {
+      void save(run.distanceM, run.durationS, finished);
+    }
   }
 
   async function onPickGpx(e: ChangeEvent<HTMLInputElement>) {
@@ -125,23 +131,29 @@ export function RunView() {
 
   // 記録の日時: GPX に開始時刻があればそれ（昔の走りも、その日の記録になる）。無い・未来（5分より先）なら今（きのうの分はきのうの12:00）。
   // あとから記録（late）は、きのうの分、または GPX の開始が今日（日本時間）より前のとき
-  function recordedAtOf(): { recordedAt: string; late: boolean } {
+  function recordedAtOf(source: Gpx | null): { recordedAt: string; late: boolean } {
     const now = new Date();
-    const started = gpx?.startedAt ? new Date(gpx.startedAt) : null;
+    const started = source?.startedAt ? new Date(source.startedAt) : null;
     if (started && started.getTime() <= now.getTime() + FUTURE_LIMIT_MS) {
       return { recordedAt: started.toISOString(), late: toLocalDate(started) < toLocalDate(now) };
     }
     return { recordedAt: recordedAtFor(day, now), late: day === 'yesterday' };
   }
 
-  async function onSave() {
+  function onSave() {
     if (sending || problem !== null) return;
+    void save(distanceM, durationS, gpx);
+  }
+
+  // 入力欄の値で保存する。GPS の終了からは、入力欄がまだ更新される前なので、値を引数で受ける
+  async function save(distanceM: number, durationS: number, source: Gpx | null) {
+    if (sending) return;
     setError(null);
-    const { recordedAt, late } = recordedAtOf();
+    const { recordedAt, late } = recordedAtOf(source);
     const data = {
       id: crypto.randomUUID(),
       kind: 'run' as const,
-      run: { distanceM, durationS, ...(gpx ? { route: gpx.route } : {}) },
+      run: { distanceM, durationS, ...(source ? { route: source.route } : {}) },
       recordedAt,
       ...(late ? { late: true } : {}),
     };
@@ -201,7 +213,7 @@ export function RunView() {
               <p className="text-xs font-extrabold tracking-widest text-sub">日本縦断</p>
               {trek.arrived && <p className="text-lg font-extrabold">{trek.arrived}に着きました！</p>}
               <p className="text-sm font-bold text-sub-strong">{trek.next}</p>
-              <Link href="/me/stats" className="inline-block py-2 text-sm font-extrabold text-teal-dark underline">
+              <Link href="/me/stats#japan-trek" className="inline-block py-2 text-sm font-extrabold text-teal-dark underline">
                 日本地図で見る
               </Link>
             </section>
@@ -228,7 +240,7 @@ export function RunView() {
           <X aria-hidden className="size-6" />
         </Link>
         <Link
-          href="/me/stats"
+          href="/me/stats#japan-trek"
           className="ml-auto flex min-h-11 items-center gap-1 rounded-fl px-3 text-sm font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <Map aria-hidden className="size-5" />
@@ -313,16 +325,16 @@ function GpxPicker({
         )}
       >
         <FileUp aria-hidden className="size-5 shrink-0" />
-        <span>GPX ファイルを選ぶ</span>
+        <span>ほかのアプリの記録を取り込む</span>
         <input type="file" accept=".gpx,application/gpx+xml" disabled={!online} onChange={onPick} className="sr-only" />
       </label>
-      <p className="text-xs text-sub-strong">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）の「GPX の書き出し」で手に入ります。</p>
+      <p className="text-xs text-sub-strong">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）で書き出した記録のファイル（GPX 形式）を選んでください。</p>
       {!online && <p className="text-sm font-bold text-sub-strong">{GPX_MESSAGES.offline}</p>}
       {gpx && (
         <p className="flex items-center justify-between gap-2 text-sm font-bold text-ink">
           <span>{gpx.name} を読み取りました</span>
           <button type="button" onClick={onClear} className="min-h-11 shrink-0 rounded-fl px-3 text-sm font-extrabold text-sub-strong underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
-            GPX をはずす
+            取り込みをはずす
           </button>
         </p>
       )}

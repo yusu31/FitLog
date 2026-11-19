@@ -80,6 +80,21 @@ describe('GpsTracker（GPS で記録する・Web 版）', () => {
     expect(screen.getByText(GPS_MESSAGES.keepScreenOn)).toBeInTheDocument();
   });
 
+  // A07-2: 画面を消すと止まることを、始める前から目立つ形で伝える。ポケットで走るなら Android アプリ
+  it('始める前に「画面を消さないでね」と「ポケットで走るなら Android アプリ」を目立つ枠で伝える', () => {
+    setup();
+    const notice = screen.getByRole('note', { name: '走る前に' });
+    expect(notice).toHaveTextContent(GPS_MESSAGES.webNotice);
+    expect(GPS_MESSAGES.webNotice).toContain('画面を消さない');
+    expect(GPS_MESSAGES.webNotice).toContain('Android アプリ');
+  });
+
+  it('動いている間も、画面を消さない案内を目立つ枠で出し続ける', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: GPS_MESSAGES.start }));
+    expect(screen.getByRole('note', { name: '画面について' })).toHaveTextContent(GPS_MESSAGES.keepScreenOn);
+  });
+
   it('位置が届くたびに距離・時間・ペースがその場で変わる（精度の悪い点は距離に足さない）', async () => {
     const { user } = setup();
     await user.click(screen.getByRole('button', { name: GPS_MESSAGES.start }));

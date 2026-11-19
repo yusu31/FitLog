@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Footprints, Moon, Plus, Sparkles } from 'lucide-react';
+import { Check, ChevronRight, Footprints, Moon, Plus, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -20,13 +20,14 @@ import {
   type WeekDay,
 } from '@/lib/api/generated';
 import { dayDateOf, withDay, type DayMode } from '@/lib/day-mode';
-import { formatSet } from '@/lib/format';
+import { WEEKDAYS, formatSet, weekdayIndex } from '@/lib/format';
 import { HOME_MESSAGES, LATE_MESSAGES, REST_MESSAGES, WORKOUT_END_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { todayPose } from '@/lib/today-pose';
 import { buildMenu, type MenuItem, type TodayMenu } from '@/lib/today-menu';
 import { shouldWelcomeBack } from '@/lib/welcome-back';
 import { RoutineStarter } from '@/components/routine/routine-starter';
+import { FriendsToday } from './friends-today';
 import { WeekStrip } from './week-strip';
 
 const LOAD_ERROR = '読み込めませんでした。電波の良い所で開き直してください';
@@ -70,7 +71,7 @@ export function TodayView() {
     <>
       <h1 className="sr-only">きょう</h1>
       {days.length === 7 ? (
-        <WeekStrip days={days} today={today} />
+        <WeekStrip days={days} today={today} selected={dayDateOf(day, new Date())} />
       ) : (
         <p role="alert" className="m-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
           {LOAD_ERROR}
@@ -78,8 +79,13 @@ export function TodayView() {
       )}
       <SyncBanner />
 
-      <div className="space-y-4 px-4 pt-4">
+      <div className="space-y-4 px-4 pt-4 pb-6">
+        {/* 仲間の今日の足跡（A02-1）。グループが無いときは招待の入口（A01-8）。きのうの画面では出さない */}
+        {day === 'today' && <FriendsToday today={today} />}
         <DaySwitch day={day} onChange={setDay} />
+        <DayHeading date={dayDateOf(day, new Date())} day={day} />
+        {/* ランの入口は上部に（A07-1）。休みの日でも出す（休みを残したまま、走った日の記録を足せる。UC-13） */}
+        <RunLink day={day} />
         {day === 'yesterday' && (
           <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">{LATE_MESSAGES.banner}</p>
         )}
@@ -97,9 +103,15 @@ export function TodayView() {
         ) : day === 'yesterday' ? (
           // きのうの分: 次の1枚と休みは出さず、種目を選んで記録する（きのうの休みは作れない）
           menu.items.length > 0 ? (
-            <Menu items={menu.items} day={day} />
+            <>
+              <Menu items={menu.items} day={day} />
+              <RoutineStarter day={day} />
+            </>
           ) : (
-            <LinkButton href={withDay('/exercises', day)}>種目を選ぶ</LinkButton>
+            <>
+              <LinkButton href={withDay('/exercises', day)}>種目を選ぶ</LinkButton>
+              <RoutineStarter day={day} />
+            </>
           )
         ) : (
           <>
@@ -115,17 +127,30 @@ export function TodayView() {
             ) : (
               <NextCard menu={menu} todayStatus={todayStatus} />
             )}
+            {/* 入口は上から「前回と同じで始める」→ ほかの始めかた（ルーティン）の順（A02-2） */}
+            {todayStatus !== 'rest' && <RoutineStarter day={day} />}
             {menu.items.length > 0 && <Menu items={menu.items} day={day} />}
           </>
         )}
 
-        {todayStatus !== 'rest' && <RoutineStarter day={day} />}
-        <RunLink day={day} />
         {/* 休みの日はおやすみの札、記録した日は「休む」と矛盾するので、どちらも出さない（N5） */}
         {day === 'today' && todayStatus === 'none' && <RestButton />}
       </div>
       {finished && <WorkoutSummary finished={finished} onClose={() => setFinished(null)} />}
     </>
+  );
+}
+
+// 選んだ日の見出し（A02-7）。「11月4日（水）の記録 今日」。何日の記録をしているかを文字で示す
+function DayHeading({ date, day }: { date: string; day: DayMode }) {
+  const label = `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日（${WEEKDAYS[weekdayIndex(date)]}）の記録`;
+  return (
+    <h2 className="text-lg font-extrabold">
+      {label}{' '}
+      <span className="rounded-full bg-teal-light px-2 py-0.5 align-middle text-xs font-extrabold text-teal-deep">
+        {day === 'today' ? LATE_MESSAGES.today : LATE_MESSAGES.yesterday}
+      </span>
+    </h2>
   );
 }
 
@@ -144,8 +169,8 @@ function DaySwitch({ day, onChange }: { day: DayMode; onChange: (next: DayMode) 
           aria-pressed={day === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            'min-h-11 flex-1 rounded-lg text-[15px] font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-            day === o.value ? 'bg-white text-ink shadow-sm' : 'text-sub-strong',
+            'min-h-12 flex-1 rounded-lg text-base font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+            day === o.value ? 'bg-teal-dark text-white shadow-sm' : 'text-sub-strong',
           )}
         >
           {o.label}
@@ -187,9 +212,12 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
       <p className="fl-num mt-1 text-lg">{WORKOUT_END_MESSAGES.count(session.exerciseCount, session.setCount)}</p>
       {next && <p className="mt-1 text-sm font-bold">次は {next.name}</p>}
       <LinkButton href={next ? recordHref(next.exerciseId) : '/exercises'}>{WORKOUT_END_MESSAGES.keepGoing}</LinkButton>
-      <ThickButton tone="white" className="mt-3" disabled={!online || sending} onClick={onEnd}>
-        {WORKOUT_END_MESSAGES.end}
-      </ThickButton>
+      {/* 主は「続ける」。「今日はここまで」は小さい副のボタン（A02-3） */}
+      <div className="mt-3 flex justify-center">
+        <ThickButton tone="white" size="sm" disabled={!online || sending} onClick={onEnd}>
+          {WORKOUT_END_MESSAGES.end}
+        </ThickButton>
+      </div>
       {!online && <p className="mt-2 text-xs font-bold">{WORKOUT_END_MESSAGES.offlineNote}</p>}
       {error && (
         <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
@@ -233,6 +261,12 @@ function NextCard({ menu, todayStatus }: { menu: TodayMenu; todayStatus: string 
       <CardFrame label="次の1枚" tone="grape" tag="REST">
         <h2 className="mt-3 text-2xl leading-snug font-extrabold">今日は おやすみ</h2>
         <p className="mt-1 text-sm leading-relaxed font-bold">休むのも、立派な記録です。また 気が向いたら 一緒に。</p>
+        <Link
+          href="/exercises"
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-extrabold text-white underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-white/60"
+        >
+          {REST_MESSAGES.changeMind}
+        </Link>
       </CardFrame>
     );
   }
@@ -264,7 +298,7 @@ function NextExercise({ item }: { item: MenuItem }) {
           <span className="fl-num text-2xl leading-none">{formatSet(item.suggestion)}</span>
         </p>
       )}
-      <LinkButton href={recordHref(item.exerciseId)}>はじめる</LinkButton>
+      <LinkButton href={recordHref(item.exerciseId)}>{item.previous ? '前回と同じで始める' : 'はじめる'}</LinkButton>
     </CardFrame>
   );
 }
@@ -360,6 +394,7 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
                   )}
                 </span>
                 {value && <span className="fl-num shrink-0 text-xl text-ink">{formatSet(value)}</span>}
+                <ChevronRight data-testid="row-arrow" aria-hidden className="size-5 shrink-0 text-sub-strong" />
               </Link>
             </li>
           );
@@ -418,10 +453,16 @@ function RestButton() {
 
   return (
     <div>
-      <ThickButton tone="white" disabled={sending} onClick={onRest}>
-        <Moon aria-hidden />
+      {/* 休むは目立たせない文字リンクの見た目（A02-4）。押せば休みの記録を作り、/rest で「やっぱり記録する」を選べる */}
+      <button
+        type="button"
+        disabled={sending}
+        onClick={onRest}
+        className="mx-auto flex min-h-11 items-center gap-1.5 px-3 text-sm font-extrabold text-sub-strong underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
+      >
+        <Moon aria-hidden className="size-4" />
         今日は休む
-      </ThickButton>
+      </button>
       {error && (
         <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
           {error}
@@ -431,12 +472,12 @@ function RestButton() {
   );
 }
 
-// ランの記録（S-13）への入口。休みの日でも出す（休みを残したまま、走った日の記録を足せる。UC-13）
+// ランの記録（S-13）への入口（上部に置く小さめのリンク。A07-1）
 function RunLink({ day }: { day: DayMode }) {
   return (
     <Link
       href={withDay('/run', day)}
-      className="fl-slab flex min-h-14 items-center justify-center gap-2 px-4 text-base font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+      className="fl-slab flex min-h-12 items-center justify-center gap-2 px-4 text-base font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
     >
       <Footprints aria-hidden className="size-5" />
       ランを記録
