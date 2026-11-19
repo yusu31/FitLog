@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, between, count, desc, eq, gt, inArray, lt, ne, or, sql } from 'drizzle-orm';
 import { weekDates } from '../common/week.js';
 import { DB, type Db } from '../db/db.module.js';
-import { comments, exercises, reactions, records, runDetails, users, workoutSets } from '../db/schema.js';
+import { comments, exercises, reactions, records, runDetails, users, videos, workoutSets } from '../db/schema.js';
 import { encodeCursor } from '../records/list-input.js';
 import { ownerInMyGroup } from '../records/record-access.js';
 import { FEED_PAGE_SIZE, parseFeedQuery } from './feed-input.js';
@@ -47,13 +47,14 @@ export class FeedService {
     const ids = page.map((r) => r.record.id);
 
     const seenAt = await this.watermark(userId);
-    const [exerciseNames, runs, stamps, commentCounts, totals, reactedMine] = await Promise.all([
+    const [exerciseNames, runs, stamps, commentCounts, totals, reactedMine, withVideo] = await Promise.all([
       this.exerciseNamesOf(ids),
       this.runsOf(ids),
       this.stampsOf(ids, userId),
       this.commentCountsOf(ids),
       this.totals(scope),
       this.myRecordsWithNewReactions(userId, seenAt, ids),
+      this.recordsWithVideo(ids),
     ]);
     const isNew = (record: (typeof page)[number]['record'], authorId: string) =>
       authorId === userId ? reactedMine.has(record.id) : record.createdAt > seenAt;
@@ -69,6 +70,7 @@ export class FeedService {
       ...(runs.has(record.id) ? { run: runs.get(record.id) } : {}),
       stamps: stamps.get(record.id) ?? [],
       commentCount: commentCounts.get(record.id) ?? 0,
+      ...(withVideo.has(record.id) ? { hasVideo: true } : {}),
       ...(isNew(record, authorId) ? { isNew: true } : {}),
     }));
 
@@ -122,6 +124,14 @@ export class FeedService {
         .where(and(eq(records.userId, userId), ne(comments.userId, userId), gt(comments.createdAt, seenAt), onlyIds)),
     ]);
     return new Set([...fromStamps, ...fromComments].map((r) => r.id));
+  }
+
+  // 動画が付いている記録の id（カードの再生の印。A06-4）。ids は足跡の1ページ分で、すでに見える範囲に絞られている。
+  // 印だけで、動画の id・URL は返さない（見られるかどうかは動画の API が決める）
+  private async recordsWithVideo(ids: string[]): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    const rows = await this.db.select({ recordId: videos.recordId }).from(videos).where(inArray(videos.recordId, ids));
+    return new Set(rows.map((r) => r.recordId));
   }
 
   // 種目名の要約。重複なし・最初にセットを足した順（記録の詳細と同じ並び）

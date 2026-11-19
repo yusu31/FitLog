@@ -705,6 +705,8 @@ export interface FeedItem {
   stamps: FeedStamp[];
   /** コメントの数 */
   commentCount: number;
+  /** 動画が付いている記録だけ true（カードに再生の印を出す。A06-4）。それ以外は省く。見られるかどうかは GET /videos/week の unlocked と GET /videos/{id}/url が決める */
+  hasVideo?: boolean;
   /** 新着の印（F4）。最後に仲間タブを見た時刻（POST /feed/seen）より後に来た仲間の記録と、仲間の新しいスタンプ・コメントが付いた自分の記録だけ true。それ以外は省く */
   isNew?: boolean;
 }
@@ -851,6 +853,52 @@ export interface VideoUploadResponse {
   visibleUntil: string;
 }
 
+export interface VideoWeekItem {
+  /** 動画の id。見るときの GET /videos/{id}/url に使う（locked のときは 403 VIDEO_LOCKED になる） */
+  id: string;
+  /** 動画を付けた記録の id */
+  recordId: string;
+  /** 運動した時刻（UTC） */
+  recordedAt: string;
+  /** 仲間に見える期限（今週の日曜 24:00 日本時間） */
+  visibleUntil: string;
+  /** 自分の動画なら true（条件なしで見られる） */
+  mine: boolean;
+  /** 撮った人 */
+  author: MemberResponse;
+}
+
+export interface VideoWeekResponse {
+  /** 今週の月曜の日付（日本時間） */
+  weekStart: string;
+  /** 自分が今週1本以上撮っていれば true。false のとき、mine=false の動画は見られない（ぼかして「1本撮ると見られる」を出す。URL を取ると 403 VIDEO_LOCKED）。mine=true の動画は条件なし */
+  unlocked: boolean;
+  /** 今週の同じグループの人（自分を含む）の動画。新しい順（運動した時刻の降順）。最大 100 件。グループに入っていなければ自分の分だけ */
+  items: VideoWeekItem[];
+}
+
+export interface MyVideoItem {
+  id: string;
+  /** 動画を付けた記録の id */
+  recordId: string;
+  /** 運動した時刻（UTC） */
+  recordedAt: string;
+  /** 日本時間の日付（YYYY-MM-DD） */
+  localDate: string;
+  /** 仲間に見える期限。本人はこれを過ぎても見られる */
+  visibleUntil: string;
+}
+
+export interface MyVideosResponse {
+  /** 新しい順（運動した時刻の降順。同じ時刻は記録 id の降順）。1回に 20 件 */
+  items: MyVideoItem[];
+  /**
+     * 続きがあるときの印。次の呼び出しの cursor にそのまま渡す。最後のページは null
+     * @nullable
+     */
+  nextCursor: string | null;
+}
+
 export interface VideoUrlResponse {
   /** 動画を見る署名付き URL（短い期限）。ログに出さない */
   url: string;
@@ -901,6 +949,11 @@ export type GetStatsParams = {
 export type GetFeedParams = {
   /** 日本時間の日付（YYYY-MM-DD）。この日を含む週（月曜〜日曜）を返す */
   weekStart: string;
+  /** 前の応答の nextCursor をそのまま渡す（続きを読む） */
+  cursor?: string;
+};
+
+export type GetMyVideosParams = {
   /** 前の応答の nextCursor をそのまま渡す（続きを読む） */
   cursor?: string;
 };
@@ -5081,6 +5134,260 @@ export const useIssueVideoUpload = <TError = ErrorResponse,
       > => {
       return useMutation(getIssueVideoUploadMutationOptions(options), queryClient);
     }
+
+export type getVideosThisWeekResponse200 = {
+  data: VideoWeekResponse
+  status: 200
+}
+
+export type getVideosThisWeekResponseSuccess = (getVideosThisWeekResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getVideosThisWeekResponse = (getVideosThisWeekResponseSuccess)
+
+export const getGetVideosThisWeekUrl = () => {
+
+
+
+
+  return `/api/videos/week`
+}
+
+/**
+ * @summary 今週の動画の一覧（仲間タブのサムネ列）。自分が今週撮っていなければ unlocked=false（仲間の分は見られない）
+ */
+export const getVideosThisWeek = async ( options?: RequestInit): Promise<getVideosThisWeekResponse> => {
+
+  const res = await fetch(getGetVideosThisWeekUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getVideosThisWeekResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getVideosThisWeekResponse
+}
+
+
+
+
+
+export const getGetVideosThisWeekQueryKey = () => {
+    return [
+    `/api/videos/week`
+    ] as const;
+    }
+
+
+export const getGetVideosThisWeekQueryOptions = <TData = Awaited<ReturnType<typeof getVideosThisWeek>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideosThisWeek>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVideosThisWeekQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVideosThisWeek>>> = ({ signal }) => getVideosThisWeek({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVideosThisWeek>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetVideosThisWeekQueryResult = NonNullable<Awaited<ReturnType<typeof getVideosThisWeek>>>
+export type GetVideosThisWeekQueryError = unknown
+
+
+/** @summary 今週の動画の一覧（仲間タブのサムネ列）。自分が今週撮っていなければ unlocked=false（仲間の分は見られない） */
+export function useGetVideosThisWeek<TData = Awaited<ReturnType<typeof getVideosThisWeek>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideosThisWeek>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getVideosThisWeek>>,
+          TError,
+          Awaited<ReturnType<typeof getVideosThisWeek>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 今週の動画の一覧（仲間タブのサムネ列）。自分が今週撮っていなければ unlocked=false（仲間の分は見られない） */
+export function useGetVideosThisWeek<TData = Awaited<ReturnType<typeof getVideosThisWeek>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideosThisWeek>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getVideosThisWeek>>,
+          TError,
+          Awaited<ReturnType<typeof getVideosThisWeek>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 今週の動画の一覧（仲間タブのサムネ列）。自分が今週撮っていなければ unlocked=false（仲間の分は見られない） */
+export function useGetVideosThisWeek<TData = Awaited<ReturnType<typeof getVideosThisWeek>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideosThisWeek>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 今週の動画の一覧（仲間タブのサムネ列）。自分が今週撮っていなければ unlocked=false（仲間の分は見られない） */
+export function useGetVideosThisWeek<TData = Awaited<ReturnType<typeof getVideosThisWeek>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getVideosThisWeek>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetVideosThisWeekQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type getMyVideosResponse200 = {
+  data: MyVideosResponse
+  status: 200
+}
+
+export type getMyVideosResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type getMyVideosResponseSuccess = (getMyVideosResponse200) & {
+  headers: Headers;
+};
+export type getMyVideosResponseError = (getMyVideosResponse400) & {
+  headers: Headers;
+};
+
+export type getMyVideosResponse = (getMyVideosResponseSuccess | getMyVideosResponseError)
+
+export const getGetMyVideosUrl = (params?: GetMyVideosParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/videos/mine?${stringifiedParams}` : `/api/videos/mine`
+}
+
+/**
+ * @summary 自分の過去の動画の一覧（「自分」タブのグリッド）。自分の分は条件なし・新しい順・20件ずつ
+ */
+export const getMyVideos = async (params?: GetMyVideosParams, options?: RequestInit): Promise<getMyVideosResponse> => {
+
+  const res = await fetch(getGetMyVideosUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getMyVideosResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getMyVideosResponse
+}
+
+
+
+
+
+export const getGetMyVideosQueryKey = (params?: GetMyVideosParams,) => {
+    return [
+    `/api/videos/mine`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMyVideosQueryOptions = <TData = Awaited<ReturnType<typeof getMyVideos>>, TError = ErrorResponse>(params?: GetMyVideosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyVideos>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyVideosQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyVideos>>> = ({ signal }) => getMyVideos(params, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyVideos>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMyVideosQueryResult = NonNullable<Awaited<ReturnType<typeof getMyVideos>>>
+export type GetMyVideosQueryError = ErrorResponse
+
+
+/** @summary 自分の過去の動画の一覧（「自分」タブのグリッド）。自分の分は条件なし・新しい順・20件ずつ */
+export function useGetMyVideos<TData = Awaited<ReturnType<typeof getMyVideos>>, TError = ErrorResponse>(
+ params: undefined |  GetMyVideosParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyVideos>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyVideos>>,
+          TError,
+          Awaited<ReturnType<typeof getMyVideos>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の過去の動画の一覧（「自分」タブのグリッド）。自分の分は条件なし・新しい順・20件ずつ */
+export function useGetMyVideos<TData = Awaited<ReturnType<typeof getMyVideos>>, TError = ErrorResponse>(
+ params?: GetMyVideosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyVideos>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyVideos>>,
+          TError,
+          Awaited<ReturnType<typeof getMyVideos>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の過去の動画の一覧（「自分」タブのグリッド）。自分の分は条件なし・新しい順・20件ずつ */
+export function useGetMyVideos<TData = Awaited<ReturnType<typeof getMyVideos>>, TError = ErrorResponse>(
+ params?: GetMyVideosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyVideos>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の過去の動画の一覧（「自分」タブのグリッド）。自分の分は条件なし・新しい順・20件ずつ */
+export function useGetMyVideos<TData = Awaited<ReturnType<typeof getMyVideos>>, TError = ErrorResponse>(
+ params?: GetMyVideosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyVideos>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyVideosQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export type getVideoUrlResponse200 = {
   data: VideoUrlResponse
