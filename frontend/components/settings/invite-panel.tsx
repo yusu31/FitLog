@@ -17,8 +17,11 @@ const formatJst = (iso: string) =>
     minute: '2-digit',
   }).format(new Date(iso));
 
+// LINE の共有画面を開く URL（Web Share API が無い端末の代わり。A09-1）
+const lineShareUrl = (url: string) => `https://line.me/R/share?text=${encodeURIComponent(`FitLog で一緒に記録しよう ${url}`)}`;
+
 // 招待リンクの値は、作った応答の1回だけ返る（DB にはハッシュだけ。design.md 4章）。
-// だから画面を閉じたらもう見られない。必要ならもう一度作る
+// だから画面を閉じたら同じリンクは見られない。必要なら、いつでも新しいリンクを作れる
 export function InvitePanel({ full }: { full: boolean }) {
   const createInvitation = useCreateInvitation();
   const revokeInvitation = useRevokeInvitation();
@@ -99,7 +102,7 @@ export function InvitePanel({ full }: { full: boolean }) {
             <p className="text-xs text-sub-strong [word-break:auto-phrase]">
               {formatJst(invitation.expiresAt)} まで使えます（7日間）。
               <br />
-              この画面を閉じると、もう表示されません
+              閉じても、いつでも新しいリンクを作れます
             </p>
           </div>
           <input
@@ -109,17 +112,28 @@ export function InvitePanel({ full }: { full: boolean }) {
             onFocus={(e) => e.currentTarget.select()}
             className="h-12 w-full rounded-lg border-2 border-input bg-white px-3 font-mono text-xs text-ink"
           />
+          {/* 送る（共有）を主にする。共有できない端末は LINE の共有 URL（A09-1） */}
+          {typeof navigator.share === 'function' ? (
+            <ThickButton onClick={onShare}>
+              <Share2 aria-hidden />
+              共有
+            </ThickButton>
+          ) : (
+            <a
+              href={lineShareUrl(invitation.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="fl-thick inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-fl bg-teal-dark text-lg font-extrabold tracking-wider text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40 [&_svg]:size-5"
+            >
+              <Send aria-hidden />
+              LINEで送る
+            </a>
+          )}
           <div className="flex gap-2">
-            <ThickButton size="sm" onClick={onCopy} className="flex-1">
+            <ThickButton tone="white" size="sm" onClick={onCopy} className="flex-1">
               {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
               {copied ? 'コピーしました' : 'コピー'}
             </ThickButton>
-            {typeof navigator.share === 'function' && (
-              <ThickButton tone="white" size="sm" onClick={onShare}>
-                <Share2 aria-hidden />
-                共有
-              </ThickButton>
-            )}
             <ThickButton tone="white" size="sm" onClick={onRevoke} disabled={revokeInvitation.isPending}>
               <X aria-hidden />
               取り消す

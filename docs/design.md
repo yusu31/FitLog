@@ -306,3 +306,12 @@ testing-design.md が「書かれていない」と洗い出した振る舞い�
 | スタンプと記録の種類（T-STP-06） | 休みの記録には休み用（`rest_slow`・`rest_again`）だけ、筋トレ・ランには通常（`nice`・`fire`・`clap`・`smile`）だけ。合わない組み合わせは 409 `RECORD_KIND_MISMATCH`。一覧は `backend/src/feed/stamps.ts` の定数が正で、画面設計書の表と同じ | 409 |
 | 空白だけのコメント（T-CMT-07） | 受け付けない（`trim()` して空なら 400）。それ以外は前後の空白も含めてそのまま保存する | 400 |
 | 週の合計の「記録した人数」 | 筋トレかランを記録した人だけ数える（休みは数えない）。自分が休んでも仲間の数字は減らず、増えもしない | — |
+
+### 共通の部品とトークン（束 B00・画面の置き換えは B13）
+
+| 項目 | 決めたこと |
+|---|---|
+| ボタンの型（A13-3） | `ThickButton` の `variant` で3つ: `primary`（濃ティールの厚みボタン・その画面で大事な1つ）／`secondary`（白地に枠・ほかの選択肢）／`link`（文字リンク・戻る・やめる。下線つき・高さ 44px 以上）。`variant` を渡さなければ従来どおり `tone` で決まる |
+| タブの印（A04-9） | 仲間タブの赤い点をやめ、バッジにする。API が `newCount` を返せばその数字（10件以上は `9+`）、返さない間は「新」の字。読み上げは「新着N件」。**件数を返すには `GET /feed/unread` に `newCount` を足す API 側の変更が要る（別の束）** |
+| キャラの位置（A13-4） | `Sprite` の `placement="corner"` で右上の角（72px・`pointer-events-none`）に固定。見出し側は `PageTitle` の `reserveCorner` で右を空ける |
+| 文字のトークン（A13-5・V-08） | `globals.css` に `--text-page-title: 28px`（h1）・`--text-section-title: 18px`・`--text-note: 13px`・`--color-note: #4b5563`。使うときは `text-page-title` などのクラス。16・18・32px の h1 と 11・12px の注記は B13 でトークンへ置き換える |

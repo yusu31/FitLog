@@ -44,13 +44,7 @@ export function MeView() {
           </Link>
         </section>
 
-        {runHeavy && <WeekRunSection />}
-
-        <HeatmapSection />
-
-        <RecordsList />
-
-        {/* S-35 記録をくわしく。ThickButton（white・lg）と同じ見た目のリンク */}
+        {/* S-35 記録をくわしく（A08-1: 見つけにくかったので、名前のすぐ下＝画面の上部に置く）。ThickButton（white・lg）と同じ見た目のリンク */}
         <Link
           href="/me/stats"
           className="fl-thick inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-white px-5 text-lg font-extrabold tracking-wider text-teal-dark outline-none [--thick:#b8e3e4] focus-visible:ring-4 focus-visible:ring-teal/40 [&_svg]:size-5 [&_svg]:shrink-0"
@@ -59,6 +53,11 @@ export function MeView() {
           記録をくわしく
         </Link>
 
+        {runHeavy && <WeekRunSection />}
+
+        <HeatmapSection />
+
+        <RecordsList />
       </div>
     </>
   );

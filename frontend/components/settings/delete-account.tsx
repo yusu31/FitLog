@@ -38,7 +38,7 @@ export function DeleteAccount() {
   }
 
   return (
-    <section aria-labelledby="delete-account-heading" className="space-y-3 pt-4">
+    <section aria-labelledby="delete-account-heading" className="space-y-3 pt-10">
       <h2 id="delete-account-heading" className="text-xs font-bold tracking-widest text-sub">
         {M.heading}
       </h2>
@@ -70,9 +70,13 @@ export function DeleteAccount() {
           </ThickButton>
         </form>
       ) : (
-        <ThickButton tone="white" onClick={() => setOpen(true)}>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex min-h-11 items-center rounded-fl px-1 text-sm font-bold text-sub-strong underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        >
           {M.start}
-        </ThickButton>
+        </button>
       )}
     </section>
   );

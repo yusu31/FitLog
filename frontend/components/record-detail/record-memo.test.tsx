@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { onlineManager } from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
@@ -79,5 +79,19 @@ describe('RecordMemo（メモ・きつさ。F5）', () => {
     renderWithQuery(<RecordMemo recordId="r1" />);
     const text = document.body.textContent ?? '';
     for (const word of FORBIDDEN_WORDS) expect(text).not.toContain(word);
+  });
+
+  it('A03-7: きつさの 1・5・10 の目安を添える', () => {
+    installFakeApi({});
+    renderWithQuery(<RecordMemo recordId="r1" />);
+    const guide = screen.getByRole('list', { name: 'きつさの目安' });
+    const items = within(guide).getAllByRole('listitem');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent('1');
+    expect(items[0]).toHaveTextContent('らく');
+    expect(items[1]).toHaveTextContent('5');
+    expect(items[2]).toHaveTextContent('10');
+    expect(items[2]).toHaveTextContent('限界');
+    for (const word of FORBIDDEN_WORDS) expect(guide.textContent).not.toContain(word);
   });
 });

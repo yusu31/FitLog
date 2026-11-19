@@ -36,6 +36,8 @@ class Tracker {
   // strict（E1）は見出し（h1）が出るまで必ず待つ。それ以外は待ちきれなくても撮影は続ける（オフラインの画面など）
   async settle(strict: boolean) {
     await this.page.waitForLoadState('networkidle').catch(() => undefined);
+    // 地図（MapLibre）が画面にあるときは、タイルとルートが描かれるまで待つ。通信が止んだ直後は灰色のまま写る（V0: A07-4）
+    if (await this.page.locator('.maplibregl-canvas').count()) await this.page.waitForTimeout(6000);
     const ready = this.page.waitForFunction(
       // textContent は <script> の中身まで数えるので、画面に見える文字（innerText）で見る
       () => ((document.querySelector('main') as HTMLElement | null)?.innerText ?? '').trim().length > 20 && !document.querySelector('[aria-busy="true"]'),
@@ -180,7 +182,7 @@ test('T8 6日ぶりに開いて、また始める', async ({ page }) => {
   await page.goto('/today/');
   const t = new Tracker(page, 'T8');
   await t.start();
-  await t.click(page.getByRole('link', { name: /はじめる|種目を選ぶ/ }).first(), 'はじめる');
+  await t.click(page.getByRole('link', { name: /はじめる|始める|種目を選ぶ/ }).first(), 'はじめる');
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
   t.finish();
 });
@@ -234,7 +236,7 @@ test('T3 GPS で走って保存し、日本縦断がどこまで進んだか見�
       value: { watchPosition: (f: Cb) => ((cb = f), 1), clearWatch: () => (cb = null) },
     });
     w.__emit = (northM: number) =>
-      cb?.({ coords: { latitude: northM / ((Math.PI / 180) * 6_371_008.8), longitude: 139.7, accuracy: 5 }, timestamp: Date.now() });
+      cb?.({ coords: { latitude: 35.68 + northM / ((Math.PI / 180) * 6_371_008.8), longitude: 139.75, accuracy: 5 }, timestamp: Date.now() });
   });
   await page.goto('/login/');
   await loginAs(page, 'active', s);
@@ -247,6 +249,8 @@ test('T3 GPS で走って保存し、日本縦断がどこまで進んだか見�
     await page.evaluate((m) => (window as unknown as { __emit: (n: number) => void }).__emit(m), i * 30);
     await page.clock.runFor(10_000);
   }
+  // 偽の時計を止めたままだと地図の描画（タイマー）が進まず、真っ白に写る（V0: A07-4）。走り終えたら実時間に戻す
+  await page.clock.resume();
   await t.click(page.getByRole('button', { name: '終了' }), '終了');
   await t.click(page.getByRole('button', { name: '保存する' }), '保存する');
   await t.click(page.getByRole('link', { name: /日本地図で見る/ }), '日本地図で見る');
@@ -263,7 +267,7 @@ test('T5 2秒動画を撮って、仲間の動画を見る（入口まで）', a
   await t.start();
   await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
-  await t.click(page.getByRole('button', { name: /2秒ラストレップを撮る/ }), '2秒ラストレップを撮る');
+  await t.click(page.getByRole('button', { name: /2秒動画を撮る/ }), '2秒動画を撮る');
   t.finish();
 });
 
