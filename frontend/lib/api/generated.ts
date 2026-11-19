@@ -654,6 +654,210 @@ export interface CreateRoutineRequest {
   recordId: string;
 }
 
+export interface LatestWeightResponse {
+  date: string;
+  kg: number;
+}
+
+export interface WeightPointResponse {
+  /** 測った日（日本時間の日付） */
+  date: string;
+  kg: number;
+  /**
+     * その日を含む7日間の平均（kg）
+     * @nullable
+     */
+  avg7: number | null;
+}
+
+export interface BodyResponse {
+  /**
+     * 身長（cm）。本人だけが見える
+     * @nullable
+     */
+  heightCm: number | null;
+  /**
+     * 最新の体重
+     * @nullable
+     */
+  latest: LatestWeightResponse | null;
+  /**
+     * 最新の体重と身長から出した BMI（小数1桁）。数字だけで、判定の言葉は返さない。どちらかが無ければ null
+     * @nullable
+     */
+  bmi: number | null;
+  /**
+     * 最新の測定日を含む7日間の平均（kg）
+     * @nullable
+     */
+  avg7: number | null;
+  /**
+     * 1つ前の測定からの増減（kg。減ったら負）。測定が2件未満なら null
+     * @nullable
+     */
+  deltaFromPrevious: number | null;
+  /** 直近120件（古い順） */
+  weights: WeightPointResponse[];
+}
+
+export interface HeightRequest {
+  /**
+     * 100〜250 の 0.1 刻み。null で消す
+     * @nullable
+     */
+  heightCm: number | null;
+}
+
+export interface WeightRequest {
+  /** 20〜300 の 0.1 刻み */
+  kg: number;
+}
+
+export interface OneRepMaxItem {
+  exerciseId: string;
+  name: string;
+  /** 推定1RM（kg）。重量×(1+回数/30)。1回はそのままの重さ */
+  kg: number;
+  /** その推定の元になったセットの重量（kg） */
+  weightKg: number;
+  /** その推定の元になったセットの回数 */
+  reps: number;
+  /** 回数が12回を超えると外れやすい。true のときは「目安」と表示する */
+  approximate: boolean;
+  /** その推定の元になったセットの記録の日 */
+  date: string;
+}
+
+export interface OneRepMaxResponse {
+  /** 推定1RM が高い順 */
+  items: OneRepMaxItem[];
+}
+
+/**
+ * 出せない理由。NO_WEIGHT=体重が無い・NO_DURATION=時間が測れない・TOO_SLOW=走る速さに届かない・REST=休み
+ * @nullable
+ */
+export type CaloriesResponseReason = typeof CaloriesResponseReason[keyof typeof CaloriesResponseReason] | null;
+
+
+export const CaloriesResponseReason = {
+  NO_WEIGHT: 'NO_WEIGHT',
+  NO_DURATION: 'NO_DURATION',
+  TOO_SLOW: 'TOO_SLOW',
+  REST: 'REST',
+} as const;
+
+export interface CaloriesResponse {
+  recordId: string;
+  /**
+     * 推定消費カロリー（kcal）。メッツ×時間(h)×体重(kg)×1.05。出せないとき null
+     * @nullable
+     */
+  kcal: number | null;
+  /**
+     * 使ったメッツ（出典: 身体活動のメッツ表 改訂第2版（2024））
+     * @nullable
+     */
+  mets: number | null;
+  /**
+     * 計算に使った時間（秒）。ランは記録の時間、筋トレは最初のセット〜最後のセット
+     * @nullable
+     */
+  durationSec: number | null;
+  /**
+     * 計算に使った体重（kg）。記録の日以前でいちばん新しい測定
+     * @nullable
+     */
+  weightKg: number | null;
+  /**
+     * 出せない理由。NO_WEIGHT=体重が無い・NO_DURATION=時間が測れない・TOO_SLOW=走る速さに届かない・REST=休み
+     * @nullable
+     */
+  reason: CaloriesResponseReason;
+}
+
+/**
+ * よくやる運動
+ * @nullable
+ */
+export type ProfileResponseFavoriteKind = typeof ProfileResponseFavoriteKind[keyof typeof ProfileResponseFavoriteKind] | null;
+
+
+export const ProfileResponseFavoriteKind = {
+  workout: 'workout',
+  run: 'run',
+  both: 'both',
+} as const;
+
+/**
+ * 動きやすい時間帯
+ * @nullable
+ */
+export type ProfileResponseActiveTime = typeof ProfileResponseActiveTime[keyof typeof ProfileResponseActiveTime] | null;
+
+
+export const ProfileResponseActiveTime = {
+  morning: 'morning',
+  noon: 'noon',
+  night: 'night',
+} as const;
+
+export interface ProfileResponse {
+  userId: string;
+  name: string;
+  /**
+     * 40字まで
+     * @nullable
+     */
+  bio: string | null;
+  /**
+     * よくやる運動
+     * @nullable
+     */
+  favoriteKind: ProfileResponseFavoriteKind;
+  /**
+     * 動きやすい時間帯
+     * @nullable
+     */
+  activeTime: ProfileResponseActiveTime;
+}
+
+/**
+ * @nullable
+ */
+export type ProfileRequestFavoriteKind = typeof ProfileRequestFavoriteKind[keyof typeof ProfileRequestFavoriteKind] | null;
+
+
+export const ProfileRequestFavoriteKind = {
+  workout: 'workout',
+  run: 'run',
+  both: 'both',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ProfileRequestActiveTime = typeof ProfileRequestActiveTime[keyof typeof ProfileRequestActiveTime] | null;
+
+
+export const ProfileRequestActiveTime = {
+  morning: 'morning',
+  noon: 'noon',
+  night: 'night',
+} as const;
+
+export interface ProfileRequest {
+  /**
+     * 前後の空白を除いて 1〜40字。空・省略は空にする
+     * @nullable
+     */
+  bio?: string | null;
+  /** @nullable */
+  favoriteKind?: ProfileRequestFavoriteKind;
+  /** @nullable */
+  activeTime?: ProfileRequestActiveTime;
+}
+
 export type FeedStampStampKey = typeof FeedStampStampKey[keyof typeof FeedStampStampKey];
 
 
@@ -3932,6 +4136,1013 @@ export const useDeleteRoutine = <TError = ErrorResponse,
       > => {
       return useMutation(getDeleteRoutineMutationOptions(options), queryClient);
     }
+
+export type getBodyResponse200 = {
+  data: BodyResponse
+  status: 200
+}
+
+export type getBodyResponseSuccess = (getBodyResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getBodyResponse = (getBodyResponseSuccess)
+
+export const getGetBodyUrl = () => {
+
+
+
+
+  return `/api/body`
+}
+
+/**
+ * @summary 自分の身長・体重の推移・BMI・7日平均と前回からの増減（判定の言葉は返さない）
+ */
+export const getBody = async ( options?: RequestInit): Promise<getBodyResponse> => {
+
+  const res = await fetch(getGetBodyUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getBodyResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getBodyResponse
+}
+
+
+
+
+
+export const getGetBodyQueryKey = () => {
+    return [
+    `/api/body`
+    ] as const;
+    }
+
+
+export const getGetBodyQueryOptions = <TData = Awaited<ReturnType<typeof getBody>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBody>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBodyQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBody>>> = ({ signal }) => getBody({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBody>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetBodyQueryResult = NonNullable<Awaited<ReturnType<typeof getBody>>>
+export type GetBodyQueryError = unknown
+
+
+/** @summary 自分の身長・体重の推移・BMI・7日平均と前回からの増減（判定の言葉は返さない） */
+export function useGetBody<TData = Awaited<ReturnType<typeof getBody>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBody>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBody>>,
+          TError,
+          Awaited<ReturnType<typeof getBody>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の身長・体重の推移・BMI・7日平均と前回からの増減（判定の言葉は返さない） */
+export function useGetBody<TData = Awaited<ReturnType<typeof getBody>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBody>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBody>>,
+          TError,
+          Awaited<ReturnType<typeof getBody>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の身長・体重の推移・BMI・7日平均と前回からの増減（判定の言葉は返さない） */
+export function useGetBody<TData = Awaited<ReturnType<typeof getBody>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBody>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の身長・体重の推移・BMI・7日平均と前回からの増減（判定の言葉は返さない） */
+export function useGetBody<TData = Awaited<ReturnType<typeof getBody>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBody>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetBodyQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type setHeightResponse200 = {
+  data: void
+  status: 200
+}
+
+export type setHeightResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type setHeightResponseSuccess = (setHeightResponse200) & {
+  headers: Headers;
+};
+export type setHeightResponseError = (setHeightResponse400) & {
+  headers: Headers;
+};
+
+export type setHeightResponse = (setHeightResponseSuccess | setHeightResponseError)
+
+export const getSetHeightUrl = () => {
+
+
+
+
+  return `/api/body/height`
+}
+
+/**
+ * @summary 自分の身長（cm）を保存する。null で消す
+ */
+export const setHeight = async (heightRequest: HeightRequest, options?: RequestInit): Promise<setHeightResponse> => {
+
+  const res = await fetch(getSetHeightUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
+    body: JSON.stringify(heightRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: setHeightResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as setHeightResponse
+}
+
+
+
+
+
+export const getSetHeightMutationKey = () => ['setHeight'] as const;
+
+export const getSetHeightMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setHeight>>, TError,SetHeightMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof setHeight>>, TError,SetHeightMutationVariables, TContext> => {
+
+const mutationKey = getSetHeightMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setHeight>>, SetHeightMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  setHeight(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetHeightMutationResult = NonNullable<Awaited<ReturnType<typeof setHeight>>>
+    export type SetHeightMutationBody = HeightRequest
+    export type SetHeightMutationError = ErrorResponse
+    export type SetHeightMutationVariables = {data: HeightRequest}
+
+    /** @summary 自分の身長（cm）を保存する。null で消す */
+export const useSetHeight = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setHeight>>, TError,SetHeightMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setHeight>>,
+        TError,
+        SetHeightMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetHeightMutationOptions(options), queryClient);
+    }
+
+export type setWeightResponse200 = {
+  data: void
+  status: 200
+}
+
+export type setWeightResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type setWeightResponseSuccess = (setWeightResponse200) & {
+  headers: Headers;
+};
+export type setWeightResponseError = (setWeightResponse400) & {
+  headers: Headers;
+};
+
+export type setWeightResponse = (setWeightResponseSuccess | setWeightResponseError)
+
+export const getSetWeightUrl = (date: string,) => {
+
+
+
+
+  return `/api/body/weights/${date}`
+}
+
+/**
+ * @summary その日の体重（kg）を保存する。同じ日は上書き
+ */
+export const setWeight = async (date: string,
+    weightRequest: WeightRequest, options?: RequestInit): Promise<setWeightResponse> => {
+
+  const res = await fetch(getSetWeightUrl(date),
+  {
+    ...options,
+    method: 'PUT',
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
+    body: JSON.stringify(weightRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: setWeightResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as setWeightResponse
+}
+
+
+
+
+
+export const getSetWeightMutationKey = () => ['setWeight'] as const;
+
+export const getSetWeightMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setWeight>>, TError,SetWeightMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof setWeight>>, TError,SetWeightMutationVariables, TContext> => {
+
+const mutationKey = getSetWeightMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setWeight>>, SetWeightMutationVariables> = (props) => {
+          const {date,data} = props ?? {};
+
+          return  setWeight(date,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetWeightMutationResult = NonNullable<Awaited<ReturnType<typeof setWeight>>>
+    export type SetWeightMutationBody = WeightRequest
+    export type SetWeightMutationError = ErrorResponse
+    export type SetWeightMutationVariables = {date: string;data: WeightRequest}
+
+    /** @summary その日の体重（kg）を保存する。同じ日は上書き */
+export const useSetWeight = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setWeight>>, TError,SetWeightMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setWeight>>,
+        TError,
+        SetWeightMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetWeightMutationOptions(options), queryClient);
+    }
+
+export type deleteWeightResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteWeightResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type deleteWeightResponseSuccess = (deleteWeightResponse204) & {
+  headers: Headers;
+};
+export type deleteWeightResponseError = (deleteWeightResponse404) & {
+  headers: Headers;
+};
+
+export type deleteWeightResponse = (deleteWeightResponseSuccess | deleteWeightResponseError)
+
+export const getDeleteWeightUrl = (date: string,) => {
+
+
+
+
+  return `/api/body/weights/${date}`
+}
+
+/**
+ * @summary その日の体重を消す
+ */
+export const deleteWeight = async (date: string, options?: RequestInit): Promise<deleteWeightResponse> => {
+
+  const res = await fetch(getDeleteWeightUrl(date),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteWeightResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as deleteWeightResponse
+}
+
+
+
+
+
+export const getDeleteWeightMutationKey = () => ['deleteWeight'] as const;
+
+export const getDeleteWeightMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteWeight>>, TError,DeleteWeightMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteWeight>>, TError,DeleteWeightMutationVariables, TContext> => {
+
+const mutationKey = getDeleteWeightMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteWeight>>, DeleteWeightMutationVariables> = (props) => {
+          const {date} = props ?? {};
+
+          return  deleteWeight(date,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteWeightMutationResult = NonNullable<Awaited<ReturnType<typeof deleteWeight>>>
+
+    export type DeleteWeightMutationError = ErrorResponse
+    export type DeleteWeightMutationVariables = {date: string}
+
+    /** @summary その日の体重を消す */
+export const useDeleteWeight = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteWeight>>, TError,DeleteWeightMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteWeight>>,
+        TError,
+        DeleteWeightMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteWeightMutationOptions(options), queryClient);
+    }
+
+export type getOneRepMaxResponse200 = {
+  data: OneRepMaxResponse
+  status: 200
+}
+
+export type getOneRepMaxResponseSuccess = (getOneRepMaxResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getOneRepMaxResponse = (getOneRepMaxResponseSuccess)
+
+export const getGetOneRepMaxUrl = () => {
+
+
+
+
+  return `/api/body/one-rm`
+}
+
+/**
+ * @summary 自分の種目ごとの推定1RM（Epley）。13回以上のセットが元のときは approximate
+ */
+export const getOneRepMax = async ( options?: RequestInit): Promise<getOneRepMaxResponse> => {
+
+  const res = await fetch(getGetOneRepMaxUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getOneRepMaxResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getOneRepMaxResponse
+}
+
+
+
+
+
+export const getGetOneRepMaxQueryKey = () => {
+    return [
+    `/api/body/one-rm`
+    ] as const;
+    }
+
+
+export const getGetOneRepMaxQueryOptions = <TData = Awaited<ReturnType<typeof getOneRepMax>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOneRepMax>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOneRepMaxQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOneRepMax>>> = ({ signal }) => getOneRepMax({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOneRepMax>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOneRepMaxQueryResult = NonNullable<Awaited<ReturnType<typeof getOneRepMax>>>
+export type GetOneRepMaxQueryError = unknown
+
+
+/** @summary 自分の種目ごとの推定1RM（Epley）。13回以上のセットが元のときは approximate */
+export function useGetOneRepMax<TData = Awaited<ReturnType<typeof getOneRepMax>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOneRepMax>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOneRepMax>>,
+          TError,
+          Awaited<ReturnType<typeof getOneRepMax>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の種目ごとの推定1RM（Epley）。13回以上のセットが元のときは approximate */
+export function useGetOneRepMax<TData = Awaited<ReturnType<typeof getOneRepMax>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOneRepMax>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOneRepMax>>,
+          TError,
+          Awaited<ReturnType<typeof getOneRepMax>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の種目ごとの推定1RM（Epley）。13回以上のセットが元のときは approximate */
+export function useGetOneRepMax<TData = Awaited<ReturnType<typeof getOneRepMax>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOneRepMax>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の種目ごとの推定1RM（Epley）。13回以上のセットが元のときは approximate */
+export function useGetOneRepMax<TData = Awaited<ReturnType<typeof getOneRepMax>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOneRepMax>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOneRepMaxQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type getCaloriesResponse200 = {
+  data: CaloriesResponse
+  status: 200
+}
+
+export type getCaloriesResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getCaloriesResponseSuccess = (getCaloriesResponse200) & {
+  headers: Headers;
+};
+export type getCaloriesResponseError = (getCaloriesResponse404) & {
+  headers: Headers;
+};
+
+export type getCaloriesResponse = (getCaloriesResponseSuccess | getCaloriesResponseError)
+
+export const getGetCaloriesUrl = (recordId: string,) => {
+
+
+
+
+  return `/api/body/calories/${recordId}`
+}
+
+/**
+ * @summary 自分の記録1件の推定消費カロリー（メッツ×時間×体重×1.05）。出せないときは kcal: null と理由
+ */
+export const getCalories = async (recordId: string, options?: RequestInit): Promise<getCaloriesResponse> => {
+
+  const res = await fetch(getGetCaloriesUrl(recordId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getCaloriesResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getCaloriesResponse
+}
+
+
+
+
+
+export const getGetCaloriesQueryKey = (recordId: string,) => {
+    return [
+    `/api/body/calories/${recordId}`
+    ] as const;
+    }
+
+
+export const getGetCaloriesQueryOptions = <TData = Awaited<ReturnType<typeof getCalories>>, TError = ErrorResponse>(recordId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCalories>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCaloriesQueryKey(recordId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCalories>>> = ({ signal }) => getCalories(recordId, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: recordId !== null && recordId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCalories>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCaloriesQueryResult = NonNullable<Awaited<ReturnType<typeof getCalories>>>
+export type GetCaloriesQueryError = ErrorResponse
+
+
+/** @summary 自分の記録1件の推定消費カロリー（メッツ×時間×体重×1.05）。出せないときは kcal: null と理由 */
+export function useGetCalories<TData = Awaited<ReturnType<typeof getCalories>>, TError = ErrorResponse>(
+ recordId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCalories>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCalories>>,
+          TError,
+          Awaited<ReturnType<typeof getCalories>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の記録1件の推定消費カロリー（メッツ×時間×体重×1.05）。出せないときは kcal: null と理由 */
+export function useGetCalories<TData = Awaited<ReturnType<typeof getCalories>>, TError = ErrorResponse>(
+ recordId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCalories>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCalories>>,
+          TError,
+          Awaited<ReturnType<typeof getCalories>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の記録1件の推定消費カロリー（メッツ×時間×体重×1.05）。出せないときは kcal: null と理由 */
+export function useGetCalories<TData = Awaited<ReturnType<typeof getCalories>>, TError = ErrorResponse>(
+ recordId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCalories>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の記録1件の推定消費カロリー（メッツ×時間×体重×1.05）。出せないときは kcal: null と理由 */
+export function useGetCalories<TData = Awaited<ReturnType<typeof getCalories>>, TError = ErrorResponse>(
+ recordId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCalories>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCaloriesQueryOptions(recordId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type getMyProfileResponse200 = {
+  data: ProfileResponse
+  status: 200
+}
+
+export type getMyProfileResponseSuccess = (getMyProfileResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getMyProfileResponse = (getMyProfileResponseSuccess)
+
+export const getGetMyProfileUrl = () => {
+
+
+
+
+  return `/api/body/profile`
+}
+
+/**
+ * @summary 自分のプロフィール（ひとこと・よくやる運動・動きやすい時間帯）
+ */
+export const getMyProfile = async ( options?: RequestInit): Promise<getMyProfileResponse> => {
+
+  const res = await fetch(getGetMyProfileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getMyProfileResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getMyProfileResponse
+}
+
+
+
+
+
+export const getGetMyProfileQueryKey = () => {
+    return [
+    `/api/body/profile`
+    ] as const;
+    }
+
+
+export const getGetMyProfileQueryOptions = <TData = Awaited<ReturnType<typeof getMyProfile>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyProfile>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyProfileQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyProfile>>> = ({ signal }) => getMyProfile({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyProfile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMyProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getMyProfile>>>
+export type GetMyProfileQueryError = unknown
+
+
+/** @summary 自分のプロフィール（ひとこと・よくやる運動・動きやすい時間帯） */
+export function useGetMyProfile<TData = Awaited<ReturnType<typeof getMyProfile>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyProfile>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getMyProfile>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分のプロフィール（ひとこと・よくやる運動・動きやすい時間帯） */
+export function useGetMyProfile<TData = Awaited<ReturnType<typeof getMyProfile>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyProfile>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getMyProfile>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分のプロフィール（ひとこと・よくやる運動・動きやすい時間帯） */
+export function useGetMyProfile<TData = Awaited<ReturnType<typeof getMyProfile>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyProfile>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分のプロフィール（ひとこと・よくやる運動・動きやすい時間帯） */
+export function useGetMyProfile<TData = Awaited<ReturnType<typeof getMyProfile>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyProfile>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyProfileQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type setMyProfileResponse200 = {
+  data: ProfileResponse
+  status: 200
+}
+
+export type setMyProfileResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type setMyProfileResponseSuccess = (setMyProfileResponse200) & {
+  headers: Headers;
+};
+export type setMyProfileResponseError = (setMyProfileResponse400) & {
+  headers: Headers;
+};
+
+export type setMyProfileResponse = (setMyProfileResponseSuccess | setMyProfileResponseError)
+
+export const getSetMyProfileUrl = () => {
+
+
+
+
+  return `/api/body/profile`
+}
+
+/**
+ * @summary 自分のプロフィールを保存する（置き換え。送らなかった欄は空になる）
+ */
+export const setMyProfile = async (profileRequest: ProfileRequest, options?: RequestInit): Promise<setMyProfileResponse> => {
+
+  const res = await fetch(getSetMyProfileUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
+    body: JSON.stringify(profileRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: setMyProfileResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as setMyProfileResponse
+}
+
+
+
+
+
+export const getSetMyProfileMutationKey = () => ['setMyProfile'] as const;
+
+export const getSetMyProfileMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyProfile>>, TError,SetMyProfileMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof setMyProfile>>, TError,SetMyProfileMutationVariables, TContext> => {
+
+const mutationKey = getSetMyProfileMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setMyProfile>>, SetMyProfileMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  setMyProfile(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetMyProfileMutationResult = NonNullable<Awaited<ReturnType<typeof setMyProfile>>>
+    export type SetMyProfileMutationBody = ProfileRequest
+    export type SetMyProfileMutationError = ErrorResponse
+    export type SetMyProfileMutationVariables = {data: ProfileRequest}
+
+    /** @summary 自分のプロフィールを保存する（置き換え。送らなかった欄は空になる） */
+export const useSetMyProfile = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyProfile>>, TError,SetMyProfileMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setMyProfile>>,
+        TError,
+        SetMyProfileMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetMyProfileMutationOptions(options), queryClient);
+    }
+
+export type getMateProfileResponse200 = {
+  data: ProfileResponse
+  status: 200
+}
+
+export type getMateProfileResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getMateProfileResponseSuccess = (getMateProfileResponse200) & {
+  headers: Headers;
+};
+export type getMateProfileResponseError = (getMateProfileResponse404) & {
+  headers: Headers;
+};
+
+export type getMateProfileResponse = (getMateProfileResponseSuccess | getMateProfileResponseError)
+
+export const getGetMateProfileUrl = (userId: string,) => {
+
+
+
+
+  return `/api/body/profile/${userId}`
+}
+
+/**
+ * @summary 同じグループの仲間のプロフィール。体重・身長は含まない
+ */
+export const getMateProfile = async (userId: string, options?: RequestInit): Promise<getMateProfileResponse> => {
+
+  const res = await fetch(getGetMateProfileUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getMateProfileResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getMateProfileResponse
+}
+
+
+
+
+
+export const getGetMateProfileQueryKey = (userId: string,) => {
+    return [
+    `/api/body/profile/${userId}`
+    ] as const;
+    }
+
+
+export const getGetMateProfileQueryOptions = <TData = Awaited<ReturnType<typeof getMateProfile>>, TError = ErrorResponse>(userId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMateProfile>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMateProfileQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMateProfile>>> = ({ signal }) => getMateProfile(userId, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMateProfile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMateProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getMateProfile>>>
+export type GetMateProfileQueryError = ErrorResponse
+
+
+/** @summary 同じグループの仲間のプロフィール。体重・身長は含まない */
+export function useGetMateProfile<TData = Awaited<ReturnType<typeof getMateProfile>>, TError = ErrorResponse>(
+ userId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMateProfile>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMateProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getMateProfile>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 同じグループの仲間のプロフィール。体重・身長は含まない */
+export function useGetMateProfile<TData = Awaited<ReturnType<typeof getMateProfile>>, TError = ErrorResponse>(
+ userId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMateProfile>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMateProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getMateProfile>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 同じグループの仲間のプロフィール。体重・身長は含まない */
+export function useGetMateProfile<TData = Awaited<ReturnType<typeof getMateProfile>>, TError = ErrorResponse>(
+ userId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMateProfile>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 同じグループの仲間のプロフィール。体重・身長は含まない */
+export function useGetMateProfile<TData = Awaited<ReturnType<typeof getMateProfile>>, TError = ErrorResponse>(
+ userId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMateProfile>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMateProfileQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export type getFeedResponse200 = {
   data: FeedResponse

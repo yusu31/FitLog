@@ -1155,6 +1155,305 @@
         ]
       }
     },
+    "/api/body": {
+      "get": {
+        "operationId": "getBody",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分の身長・体重の推移・BMI・7日平均と前回からの増減（判定の言葉は返さない）",
+        "tags": [
+          "body"
+        ]
+      }
+    },
+    "/api/body/height": {
+      "put": {
+        "operationId": "setHeight",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeightRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "保存した"
+          },
+          "400": {
+            "description": "100〜250 の 0.1 刻みでない（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分の身長（cm）を保存する。null で消す",
+        "tags": [
+          "body"
+        ]
+      }
+    },
+    "/api/body/weights/{date}": {
+      "put": {
+        "operationId": "setWeight",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeightRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "保存した"
+          },
+          "400": {
+            "description": "日付が YYYY-MM-DD でない・未来・kg が 20〜300 の 0.1 刻みでない（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "その日の体重（kg）を保存する。同じ日は上書き",
+        "tags": [
+          "body"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteWeight",
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "消した"
+          },
+          "404": {
+            "description": "無い・他の人のもの（WEIGHT_NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "その日の体重を消す",
+        "tags": [
+          "body"
+        ]
+      }
+    },
+    "/api/body/one-rm": {
+      "get": {
+        "operationId": "getOneRepMax",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OneRepMaxResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分の種目ごとの推定1RM（Epley）。13回以上のセットが元のときは approximate",
+        "tags": [
+          "body"
+        ]
+      }
+    },
+    "/api/body/calories/{recordId}": {
+      "get": {
+        "operationId": "getCalories",
+        "parameters": [
+          {
+            "name": "recordId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaloriesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・他の人の記録・UUID でない（RECORD_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分の記録1件の推定消費カロリー（メッツ×時間×体重×1.05）。出せないときは kcal: null と理由",
+        "tags": [
+          "body"
+        ]
+      }
+    },
+    "/api/body/profile": {
+      "get": {
+        "operationId": "getMyProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分のプロフィール（ひとこと・よくやる運動・動きやすい時間帯）",
+        "tags": [
+          "body"
+        ]
+      },
+      "put": {
+        "operationId": "setMyProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ひとこと 40字超・決まった値でない（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分のプロフィールを保存する（置き換え。送らなかった欄は空になる）",
+        "tags": [
+          "body"
+        ]
+      }
+    },
+    "/api/body/profile/{userId}": {
+      "get": {
+        "operationId": "getMateProfile",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "同じグループでない・存在しない（USER_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "同じグループの仲間のプロフィール。体重・身長は含まない",
+        "tags": [
+          "body"
+        ]
+      }
+    },
     "/api/feed": {
       "get": {
         "operationId": "getFeed",
@@ -3052,6 +3351,315 @@
           "name",
           "recordId"
         ]
+      },
+      "LatestWeightResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-11-18"
+          },
+          "kg": {
+            "type": "number",
+            "example": 70.2
+          }
+        },
+        "required": [
+          "date",
+          "kg"
+        ]
+      },
+      "WeightPointResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-11-18",
+            "description": "測った日（日本時間の日付）"
+          },
+          "kg": {
+            "type": "number",
+            "example": 70.2
+          },
+          "avg7": {
+            "type": "number",
+            "example": 70.4,
+            "nullable": true,
+            "description": "その日を含む7日間の平均（kg）"
+          }
+        },
+        "required": [
+          "date",
+          "kg",
+          "avg7"
+        ]
+      },
+      "BodyResponse": {
+        "type": "object",
+        "properties": {
+          "heightCm": {
+            "type": "number",
+            "example": 170,
+            "nullable": true,
+            "description": "身長（cm）。本人だけが見える"
+          },
+          "latest": {
+            "nullable": true,
+            "description": "最新の体重",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LatestWeightResponse"
+              }
+            ]
+          },
+          "bmi": {
+            "type": "number",
+            "example": 24.2,
+            "nullable": true,
+            "description": "最新の体重と身長から出した BMI（小数1桁）。数字だけで、判定の言葉は返さない。どちらかが無ければ null"
+          },
+          "avg7": {
+            "type": "number",
+            "example": 70.4,
+            "nullable": true,
+            "description": "最新の測定日を含む7日間の平均（kg）"
+          },
+          "deltaFromPrevious": {
+            "type": "number",
+            "example": -0.5,
+            "nullable": true,
+            "description": "1つ前の測定からの増減（kg。減ったら負）。測定が2件未満なら null"
+          },
+          "weights": {
+            "description": "直近120件（古い順）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeightPointResponse"
+            }
+          }
+        },
+        "required": [
+          "heightCm",
+          "latest",
+          "bmi",
+          "avg7",
+          "deltaFromPrevious",
+          "weights"
+        ]
+      },
+      "HeightRequest": {
+        "type": "object",
+        "properties": {
+          "heightCm": {
+            "type": "number",
+            "example": 170,
+            "nullable": true,
+            "description": "100〜250 の 0.1 刻み。null で消す"
+          }
+        },
+        "required": [
+          "heightCm"
+        ]
+      },
+      "WeightRequest": {
+        "type": "object",
+        "properties": {
+          "kg": {
+            "type": "number",
+            "example": 70.2,
+            "description": "20〜300 の 0.1 刻み"
+          }
+        },
+        "required": [
+          "kg"
+        ]
+      },
+      "OneRepMaxItem": {
+        "type": "object",
+        "properties": {
+          "exerciseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "スクワット"
+          },
+          "kg": {
+            "type": "number",
+            "example": 80,
+            "description": "推定1RM（kg）。重量×(1+回数/30)。1回はそのままの重さ"
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 60,
+            "description": "その推定の元になったセットの重量（kg）"
+          },
+          "reps": {
+            "type": "number",
+            "example": 10,
+            "description": "その推定の元になったセットの回数"
+          },
+          "approximate": {
+            "type": "boolean",
+            "example": false,
+            "description": "回数が12回を超えると外れやすい。true のときは「目安」と表示する"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-11-18",
+            "description": "その推定の元になったセットの記録の日"
+          }
+        },
+        "required": [
+          "exerciseId",
+          "name",
+          "kg",
+          "weightKg",
+          "reps",
+          "approximate",
+          "date"
+        ]
+      },
+      "OneRepMaxResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "推定1RM が高い順",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OneRepMaxItem"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CaloriesResponse": {
+        "type": "object",
+        "properties": {
+          "recordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kcal": {
+            "type": "number",
+            "example": 586,
+            "nullable": true,
+            "description": "推定消費カロリー（kcal）。メッツ×時間(h)×体重(kg)×1.05。出せないとき null"
+          },
+          "mets": {
+            "type": "number",
+            "example": 9.3,
+            "nullable": true,
+            "description": "使ったメッツ（出典: 身体活動のメッツ表 改訂第2版（2024））"
+          },
+          "durationSec": {
+            "type": "number",
+            "example": 3600,
+            "nullable": true,
+            "description": "計算に使った時間（秒）。ランは記録の時間、筋トレは最初のセット〜最後のセット"
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 60,
+            "nullable": true,
+            "description": "計算に使った体重（kg）。記録の日以前でいちばん新しい測定"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "NO_WEIGHT",
+              "NO_DURATION",
+              "TOO_SLOW",
+              "REST"
+            ],
+            "nullable": true,
+            "description": "出せない理由。NO_WEIGHT=体重が無い・NO_DURATION=時間が測れない・TOO_SLOW=走る速さに届かない・REST=休み"
+          }
+        },
+        "required": [
+          "recordId",
+          "kcal",
+          "mets",
+          "durationSec",
+          "weightKg",
+          "reason"
+        ]
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string",
+            "example": "朝ランしてます",
+            "nullable": true,
+            "description": "40字まで"
+          },
+          "favoriteKind": {
+            "type": "string",
+            "enum": [
+              "workout",
+              "run",
+              "both"
+            ],
+            "nullable": true,
+            "description": "よくやる運動"
+          },
+          "activeTime": {
+            "type": "string",
+            "enum": [
+              "morning",
+              "noon",
+              "night"
+            ],
+            "nullable": true,
+            "description": "動きやすい時間帯"
+          }
+        },
+        "required": [
+          "userId",
+          "name",
+          "bio",
+          "favoriteKind",
+          "activeTime"
+        ]
+      },
+      "ProfileRequest": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string",
+            "nullable": true,
+            "description": "前後の空白を除いて 1〜40字。空・省略は空にする"
+          },
+          "favoriteKind": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "workout",
+              "run",
+              "both"
+            ]
+          },
+          "activeTime": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "morning",
+              "noon",
+              "night"
+            ]
+          }
+        }
       },
       "FeedStamp": {
         "type": "object",

@@ -27,9 +27,19 @@ export const users = pgTable('users', {
   // 仲間タブの新着の印（F4）。最後に仲間タブを見た時刻。これより後に来た仲間の記録・自分の記録への反応が「新着」。
   // 一度も見ていなければ null（基準は登録した時刻）。端末ではなくサーバーに持つので、スマホと PC で同じ印になる
   feedSeenAt: timestamp('feed_seen_at', { withTimezone: true }),
+  // からだ（B14a）。身長は本人だけが見える。ひとこと・よくやる運動・動きやすい時間帯は同じグループの仲間にも見える（すべて任意＝null）
+  heightCm: numeric('height_cm', { precision: 4, scale: 1 }),
+  bio: text('bio'),
+  favoriteKind: text('favorite_kind'),
+  activeTime: text('active_time'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [
+  check('users_height_ck', sql`${t.heightCm} is null or ${t.heightCm} between 100 and 250`),
+  check('users_bio_ck', sql`${t.bio} is null or char_length(${t.bio}) between 1 and 40`),
+  check('users_favorite_kind_ck', sql`${t.favoriteKind} is null or ${t.favoriteKind} in ('workout', 'run', 'both')`),
+  check('users_active_time_ck', sql`${t.activeTime} is null or ${t.activeTime} in ('morning', 'noon', 'night')`),
+]);
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
@@ -338,5 +348,27 @@ export const routineSets = pgTable(
     check('routine_sets_set_no_ck', sql`${t.setNo} between 1 and 99`),
     check('routine_sets_weight_ck', sql`${t.weightKg} between 0 and 500 and (${t.weightKg} * 2) = trunc(${t.weightKg} * 2)`),
     check('routine_sets_reps_ck', sql`${t.reps} between 1 and 999`),
+  ],
+);
+
+// ── からだ（B14a）：体重 ───────────────────────────────────────────────────
+// 日ごとに1行（user_id＋測った日で一意＝同じ日は上書き）。本人だけが見える。kg は 20〜300 の 0.1 刻み
+export const BODY_KINDS = ['workout', 'run', 'both'] as const;
+export const ACTIVE_TIMES = ['morning', 'noon', 'night'] as const;
+export const BIO_MAX = 40;
+export const bodyWeights = pgTable(
+  'body_weights',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    measuredOn: date('measured_on').notNull(),
+    kg: numeric('kg', { precision: 4, scale: 1 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('body_weights_user_date_uq').on(t.userId, t.measuredOn),
+    check('body_weights_kg_ck', sql`${t.kg} between 20 and 300`),
   ],
 );
