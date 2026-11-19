@@ -32,20 +32,42 @@ class Tracker {
     this.steps.push({ k, label, url, scrollY, inLowerHalf: lower });
   }
 
+  // 画面が落ち着くまで待つ: 通信が止み、本文に文字が出て、読み込み中の印（aria-busy="true"）が消える。
+  // strict（E1）は見出し（h1）が出るまで必ず待つ。それ以外は待ちきれなくても撮影は続ける（オフラインの画面など）
+  async settle(strict: boolean) {
+    await this.page.waitForLoadState('networkidle').catch(() => undefined);
+    const ready = this.page.waitForFunction(
+      // textContent は <script> の中身まで数えるので、画面に見える文字（innerText）で見る
+      () => ((document.querySelector('main') as HTMLElement | null)?.innerText ?? '').trim().length > 20 && !document.querySelector('[aria-busy="true"]'),
+      undefined,
+      { timeout: 30_000 },
+    );
+    if (strict) {
+      await ready;
+      await this.page.locator('h1').first().waitFor({ timeout: 30_000 });
+    } else {
+      await ready.catch(() => undefined);
+    }
+  }
+
   // 最初の画面（操作ではない）
   async start(label = '最初の画面') {
-    await this.page.waitForLoadState('networkidle');
+    await this.settle(false);
     await this.snap(label, null);
   }
 
   // 押す・選ぶ（1操作）。押した要素が画面の下半分にあるかも記録（親指の届きやすさ）
-  async click(target: Locator, label: string) {
+  // 押した後、画面が落ち着いてから撮る（利用者が実際に見る画面にするため）。
+  // 開発サーバーは初めて開く画面をその場で組み立てる（Rendering…）ので、400ms だけ待つと空白や読み込み中の枠が写った（2026-11-19 の P2 で判明）。
+  // 通信が落ち着き、本文に文字が出るまで待つ。操作数の数え方は変わらない
+  async click(target: Locator, label: string, opts: { settle?: boolean } = {}) {
     const box = await target.boundingBox();
     const vh = this.page.viewportSize()?.height ?? 844;
     const lower = box ? box.y + box.height / 2 > vh / 2 : null;
     await target.click();
     this.ops++;
     await this.page.waitForTimeout(400);
+    await this.settle(opts.settle ?? false);
     await this.snap(label, lower);
   }
 
@@ -254,6 +276,28 @@ test('T5b 仲間の足跡のくわしく見る（動画再生の入口）', asyn
   await t.start();
   await t.click(tab(page, '仲間'), 'タブ「仲間」');
   await t.click(page.locator('li').filter({ hasText: 'ユウスケ' }).first().getByRole('link', { name: 'くわしく見る' }), 'くわしく見る');
+  t.finish();
+});
+
+// E1: アプリの中を見て回る（P2 の盲検評価用。タスクではないので合否の線は当てはめない）。
+// ツリー・ファーストクリックでは「押した後の挙動」が見えないため、自分の足跡と仲間の足跡の詳細、自分タブからの記録の詳細を、操作の結果の画面ごと残す
+test('E1 アプリの中を見て回る（自分と仲間の足跡の詳細を開く）', async ({ page }) => {
+  const s = seed();
+  await page.goto('/login/');
+  await loginAs(page, 'active', s);
+  await page.goto('/today/');
+  const t = new Tracker(page, 'E1');
+  await t.start();
+  const settle = { settle: true };
+  await t.click(tab(page, '仲間'), 'タブ「仲間」', settle);
+  const self = page.locator('li').filter({ hasText: s.users.active.name }).filter({ has: page.getByRole('link', { name: 'くわしく見る' }) }).first();
+  await t.click(self.getByRole('link', { name: 'くわしく見る' }), '自分の足跡の「くわしく見る」', settle);
+  await t.click(page.getByRole('link', { name: /にもどる$/ }).first(), '画面上の「仲間にもどる」', settle);
+  await t.click(page.locator('li').filter({ hasText: 'ユウスケ' }).first().getByRole('link', { name: 'くわしく見る' }), '仲間（ユウスケ）の足跡の「くわしく見る」', settle);
+  // 詳細画面には下タブが無いので、いったん戻ってから「自分」へ
+  await t.click(page.getByRole('link', { name: /にもどる$/ }).first(), '画面上の「仲間にもどる」', settle);
+  await t.click(tab(page, '自分'), 'タブ「自分」', settle);
+  await t.click(page.getByRole('link', { name: /ベンチプレス ほか1種目/ }).first(), '自分の記録（11/17）を開く', settle);
   t.finish();
 });
 
