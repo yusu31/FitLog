@@ -1,14 +1,13 @@
 'use client';
 
-import { Check, Clock, KeyRound } from 'lucide-react';
+import { Check, Clock, KeyRound, WifiOff } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { getRejectedSends, subscribeRejectedSends } from '@/lib/offline/rejected';
 import { SYNC_MESSAGES } from '@/lib/messages';
+import { useSentNotice } from '@/lib/offline/sent-notice';
 import { isWaiting, useQueueSummary } from '@/lib/offline/sync-status';
 import { useOnline } from '@/lib/use-browser-state';
-
-export const SENT_VISIBLE_MS = 3000;
 
 // ログイン後に戻る先（いま開いている画面）。帯が出るのは画面を開いたあとなので、ブラウザの位置をそのまま読む
 const currentPath = (): string => (typeof window === 'undefined' ? '/today' : window.location.pathname + window.location.search);
@@ -22,36 +21,16 @@ export function SyncBanner() {
   const rejectedCount = useSyncExternalStore(subscribeRejectedSends, () => getRejectedSends().length, () => 0);
 
   const waiting = isWaiting(summary, online);
-  // 一度帯を出したら、全部送れるまで出し続ける（送っている途中で消えて、また出るのを避ける）。
-  // peak=帯を出している間の最大件数、base=そのとき外されていた件数、sent=「送ったよ」に出す件数（seq は出すたびに増やす）
-  const [track, setTrack] = useState<{ peak: number; base: number; sent: { n: number; seq: number } | null }>({ peak: 0, base: 0, sent: null });
+  // 「送ったよ」の控えは画面の外に持つ（画面を移っても消えない。lib/offline/sent-notice.ts）
+  const { peak, notice: sent } = useSentNotice(summary.count, waiting, rejectedCount);
   const [dismissed, setDismissed] = useState(0);
-
-  // 外部の状態（送信待ちの件数）に合わせて、描画の中で状態を進める（React の公式の書き方。effect で setState しない）
-  let next = track;
-  if (summary.count > 0 && (waiting || track.peak > 0)) {
-    if (summary.count > track.peak) next = { peak: summary.count, base: track.peak === 0 ? rejectedCount : track.base, sent: null };
-  } else if (summary.count === 0 && track.peak > 0) {
-    // 外された（送れなかった）分は「送ったよ」に数えない
-    const delivered = track.peak - (rejectedCount - track.base);
-    next = { peak: 0, base: 0, sent: delivered > 0 ? { n: delivered, seq: (track.sent?.seq ?? 0) + 1 } : null };
-  }
-  if (next !== track) setTrack(next);
-  const sent = track.sent;
-  const peak = track.peak;
-
-  const seq = sent?.seq;
-  useEffect(() => {
-    if (seq === undefined) return;
-    const timer = setTimeout(() => setTrack((t) => (t.sent?.seq === seq ? { ...t, sent: null } : t)), SENT_VISIBLE_MS);
-    return () => clearTimeout(timer);
-  }, [seq]);
 
   const showQueue = summary.count > 0 && (waiting || peak > 0);
   const showRejected = rejectedCount > dismissed;
 
   return (
     <div role="status" aria-live="polite" data-testid="sync-banner">
+      {!online && <Bar tone="face" icon={<WifiOff aria-hidden className="size-5" />} title={SYNC_MESSAGES.offline} note={SYNC_MESSAGES.offlineNote} />}
       {showQueue && summary.authExpired ? (
         <Bar tone="coral" icon={<KeyRound aria-hidden className="size-5" />} title={SYNC_MESSAGES.pending(summary.count)} note={SYNC_MESSAGES.authNote}>
           <Link

@@ -227,6 +227,9 @@ export const DETAIL_MESSAGES = {
 
 // 送信待ちの帯（screen-design.md「送信待ちの表示（F-30）」）。電波や通信のせいで、本人の落ち度ではない。責めない
 export const SYNC_MESSAGES = {
+  // 電波がないあいだ、画面の上に出しっぱなしにする帯（A11-2）
+  offline: '電波なし',
+  offlineNote: '記録はこの端末に保存するよ。つながったら自動で送るね',
   pending: (n: number): string => `送信待ち ${n}件`,
   savedNote: 'この端末に保存ずみ。つながったら自動で送るよ',
   retryNote: 'この端末に保存ずみ。順番に送りなおしているよ',
