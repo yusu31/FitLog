@@ -2317,6 +2317,126 @@ export function useGetPrevious<TData = Awaited<ReturnType<typeof getPrevious>>, 
 
 
 
+export type exportRecordsCsvResponse200 = {
+  data: string
+  status: 200
+}
+
+export type exportRecordsCsvResponseSuccess = (exportRecordsCsvResponse200) & {
+  headers: Headers;
+};
+;
+
+export type exportRecordsCsvResponse = (exportRecordsCsvResponseSuccess)
+
+export const getExportRecordsCsvUrl = () => {
+
+
+
+
+  return `/api/me/export.csv`
+}
+
+/**
+ * @summary 自分の筋トレのセット・ランの記録を CSV（UTF-8 BOM 付き）で返す
+ */
+export const exportRecordsCsv = async ( options?: RequestInit): Promise<exportRecordsCsvResponse> => {
+
+  const res = await fetch(getExportRecordsCsvUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: exportRecordsCsvResponse['data'] = body !== null ? body : ''
+  return { data, status: res.status, headers: res.headers } as exportRecordsCsvResponse
+}
+
+
+
+
+
+export const getExportRecordsCsvQueryKey = () => {
+    return [
+    `/api/me/export.csv`
+    ] as const;
+    }
+
+
+export const getExportRecordsCsvQueryOptions = <TData = Awaited<ReturnType<typeof exportRecordsCsv>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportRecordsCsv>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportRecordsCsvQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportRecordsCsv>>> = ({ signal }) => exportRecordsCsv({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportRecordsCsv>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ExportRecordsCsvQueryResult = NonNullable<Awaited<ReturnType<typeof exportRecordsCsv>>>
+export type ExportRecordsCsvQueryError = unknown
+
+
+/** @summary 自分の筋トレのセット・ランの記録を CSV（UTF-8 BOM 付き）で返す */
+export function useExportRecordsCsv<TData = Awaited<ReturnType<typeof exportRecordsCsv>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportRecordsCsv>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportRecordsCsv>>,
+          TError,
+          Awaited<ReturnType<typeof exportRecordsCsv>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の筋トレのセット・ランの記録を CSV（UTF-8 BOM 付き）で返す */
+export function useExportRecordsCsv<TData = Awaited<ReturnType<typeof exportRecordsCsv>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportRecordsCsv>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportRecordsCsv>>,
+          TError,
+          Awaited<ReturnType<typeof exportRecordsCsv>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の筋トレのセット・ランの記録を CSV（UTF-8 BOM 付き）で返す */
+export function useExportRecordsCsv<TData = Awaited<ReturnType<typeof exportRecordsCsv>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportRecordsCsv>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の筋トレのセット・ランの記録を CSV（UTF-8 BOM 付き）で返す */
+export function useExportRecordsCsv<TData = Awaited<ReturnType<typeof exportRecordsCsv>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportRecordsCsv>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getExportRecordsCsvQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export type createRecordResponse200 = {
   data: RecordResponse
   status: 200
