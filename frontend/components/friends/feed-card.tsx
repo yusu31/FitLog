@@ -1,9 +1,9 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { MessageCircle } from 'lucide-react';
+import { Dumbbell, Footprints, MessageCircle, Moon } from 'lucide-react';
 import Link from 'next/link';
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { cn } from 'cn';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,6 @@ import {
 } from '@/lib/api/generated';
 import {
   COMMENT_MAX,
-  QUICK_COMMENTS,
   STAMP_KEYS,
   describeItem,
   normalizeComment,
@@ -31,6 +30,7 @@ import { formatJstTime, formatMonthDay } from '@/lib/format';
 import { FEED_MESSAGES, FRIEND_MESSAGES } from '@/lib/messages';
 import { useOnline } from '@/lib/use-browser-state';
 import { useAppSession } from '@/lib/use-app-session';
+import { FRIENDS_TEXT, LIGHT_QUICK_COMMENTS } from './friends-text';
 import { AVATAR_BG } from './member-list';
 import { StampButton, StampChip } from './stamp-button';
 
@@ -46,6 +46,9 @@ export function FeedCard({ item }: { item: FeedItem }) {
   const deleteReaction = useDeleteReaction();
   const [openComments, setOpenComments] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [stampNote, setStampNote] = useState<string | null>(null);
+  // 「新着」の札は、そのカードを触ったら外す（A04-8）。サーバー側は、見たあと次に開いたときに外れる
+  const [seen, setSeen] = useState(false);
   const [pending, setPending] = useState<PendingStamp | null>(null);
   const { title, detail } = describeItem(item);
   const busy = addReaction.isPending || deleteReaction.isPending;
@@ -55,10 +58,12 @@ export function FeedCard({ item }: { item: FeedItem }) {
   async function toggle(key: StampKey) {
     const { mine } = stampState(item.stamps, key);
     setNotice(null);
+    setStampNote(null);
     setPending({ key, add: mine === null, base: item.stamps });
     try {
       if (mine) unwrap(await deleteReaction.mutateAsync({ id: item.id, reactionId: mine }));
       else unwrap(await addReaction.mutateAsync({ id: item.id, data: { id: crypto.randomUUID(), stampKey: key } }));
+      setStampNote(mine ? FRIENDS_TEXT.stampCancelled : FRIENDS_TEXT.stampSent);
     } catch (e) {
       setPending(null);
       setNotice(sendErrorText(e, FEED_MESSAGES.stampFailed));
@@ -67,8 +72,10 @@ export function FeedCard({ item }: { item: FeedItem }) {
     }
   }
 
+  const hasMine = !isOwn && STAMP_KEYS[item.kind].some((key) => stampState(item.stamps, key).mine !== null);
+  const KindIcon = item.kind === 'run' ? Footprints : item.kind === 'rest' ? Moon : Dumbbell;
   return (
-    <li className="fl-slab space-y-2 px-3 py-3">
+    <li className="fl-slab space-y-3 px-4 py-4" onClickCapture={() => setSeen(true)}>
       <div className="flex items-center gap-3">
         <span
           aria-hidden
@@ -80,13 +87,16 @@ export function FeedCard({ item }: { item: FeedItem }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] leading-tight font-extrabold">
             {item.author.name}
-            <span className="ml-2 text-sub-strong">{title}</span>
+            <span className="ml-2 inline-flex items-center gap-1 text-sub-strong">
+              <KindIcon aria-hidden data-testid="kind-icon" className="size-4 shrink-0 text-teal-dark" />
+              {title}
+            </span>
             {detail && <span className="ml-1.5 text-sm text-sub-strong">{detail}</span>}
           </p>
           <p className="mt-0.5 text-xs font-bold text-sub">
             {formatMonthDay(item.localDate)} {item.late ? <LateTag /> : formatJstTime(item.recordedAt)}
-            {item.isNew && (
-              <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-[11px] font-extrabold text-white">{FEED_MESSAGES.newTag}</span>
+            {item.isNew && !seen && (
+              <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-[11px] font-extrabold text-ink">{FEED_MESSAGES.newTag}</span>
             )}
           </p>
         </div>
@@ -109,7 +119,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
             </li>
           );
         })}
-        {item.kind === 'workout' && (
+        {item.kind !== 'rest' && (
           <li>
             <Link
               href={`/record-detail?id=${encodeURIComponent(item.id)}&by=${encodeURIComponent(item.author.id)}`}
@@ -132,6 +142,13 @@ export function FeedCard({ item }: { item: FeedItem }) {
         </li>
       </ul>
 
+      {stampNote && (
+        <p role="status" className="text-sm font-bold text-teal-deep">
+          {stampNote}
+        </p>
+      )}
+      {hasMine && !stampNote && <p className="text-xs font-bold text-sub-strong">{FRIENDS_TEXT.stampUndoHint}</p>}
+      {stampNote === FRIENDS_TEXT.stampSent && <p className="text-xs font-bold text-sub-strong">{FRIENDS_TEXT.stampUndoHint}</p>}
       {!online && <p className="text-xs font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
       {notice && (
         <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
@@ -149,6 +166,14 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
   const inputId = useId();
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [text, setText] = useState('');
+  const [sent, setSent] = useState<string[]>([]);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // 開いたら、そのコメント欄まで滑らかに動かす（画面がガクッと跳ばないように。A04-4）
+  useEffect(() => {
+    const calm = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    panelRef.current?.scrollIntoView?.({ behavior: calm ? 'auto' : 'smooth', block: 'nearest' });
+  }, []);
 
   async function send(raw: string): Promise<boolean> {
     const body = normalizeComment(raw);
@@ -160,6 +185,7 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
     try {
       unwrap(await addComment.mutateAsync({ id: item.id, data: { id: crypto.randomUUID(), body } }));
       setMessage({ kind: 'ok', text: FEED_MESSAGES.commentSent });
+      setSent((list) => [...list, body]);
       onSent();
       return true;
     } catch (e) {
@@ -175,9 +201,9 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
 
   const disabled = !online || addComment.isPending;
   return (
-    <div className="space-y-2 rounded-fl bg-face p-3">
+    <div ref={panelRef} className="space-y-2 rounded-fl bg-face p-3">
       <ul aria-label="定型コメント" className="flex flex-wrap gap-1.5">
-        {QUICK_COMMENTS[item.kind].map((body) => (
+        {LIGHT_QUICK_COMMENTS[item.kind].map((body) => (
           <li key={body}>
             <button
               type="button"
@@ -208,6 +234,15 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
           </ThickButton>
         </div>
       </form>
+      {sent.length > 0 && (
+        <ul aria-label={FRIENDS_TEXT.sentCommentsLabel} className="space-y-1">
+          {sent.map((body, i) => (
+            <li key={`${i}-${body}`} className="rounded-lg bg-white px-3 py-2 text-sm font-bold break-all">
+              {body}
+            </li>
+          ))}
+        </ul>
+      )}
       {message && (
         <p
           role={message.kind === 'error' ? 'alert' : 'status'}

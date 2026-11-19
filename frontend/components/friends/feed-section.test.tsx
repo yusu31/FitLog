@@ -16,7 +16,7 @@ const item = (over: Record<string, unknown>) => ({
   id: 'r1',
   kind: 'workout',
   recordedAt: '2026-11-02T10:10:00.000Z',
-  localDate: '2026-11-02',
+  localDate: toLocalDate(new Date()),
   author: HANAKO,
   exerciseNames: ['スクワット', 'ベンチプレス'],
   stamps: [],
@@ -284,7 +284,7 @@ describe('コメント', () => {
     renderFeed();
     await user.click(await screen.findByRole('button', { name: 'コメント' }));
     const quick = screen.getByRole('list', { name: '定型コメント' });
-    expect(within(quick).getAllByRole('button').map((b) => b.textContent)).toEqual(['ゆっくり休んでね', 'また一緒にやろう']);
+    expect(within(quick).getAllByRole('button').map((b) => b.textContent)).toEqual(['ゆっくり休んでね', 'おつかれさま', 'また一緒にやろう']);
   });
 
   it('定型コメントを押すと、本文そのままを POST し、「送ったよ」を出す', async () => {
@@ -386,5 +386,141 @@ describe('新着の印', () => {
     renderFeed();
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(calls.some((c) => c.url === '/api/feed/seen')).toBe(false);
+  });
+});
+
+// B05: 仲間タブの分かりにくさ（A04-1,2,3,4,6,8,10,12,13 / V-02,V-03）
+describe('B05 仲間タブの改善', () => {
+  it('A04-1: スタンプは絵文字の下に短い言葉が見える（読み上げだけではない）', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed() }];
+    renderFeed();
+    const button = await screen.findByRole('button', { name: 'おつかれ' });
+    const word = within(button).getByText('おつかれ');
+    expect(word.className).not.toContain('sr-only');
+  });
+
+  it('A04-2: 押すと「送ったよ」、もう一度押すと取り消せて「取り消したよ」。押した状態の案内も出る', async () => {
+    const user = userEvent.setup();
+    replies['GET /api/feed'] = [
+      { status: 200, body: feed() },
+      { status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'clap', count: 1, mine: 'rx' }] })] }) },
+      { status: 200, body: feed() },
+    ];
+    replies['POST /api/records/r1/reactions'] = [{ status: 201, body: { id: 'rx', recordId: 'r1', stampKey: 'clap' } }];
+    replies['DELETE /api/records/r1/reactions/rx'] = [{ status: 204 }];
+    renderFeed();
+    await user.click(await screen.findByRole('button', { name: 'おつかれ' }));
+    expect(await screen.findByText('スタンプを送ったよ')).toBeInTheDocument();
+    expect(screen.getByText('もう一度押すと取り消せます')).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'おつかれ 1' }));
+    expect(await screen.findByText('スタンプを取り消したよ')).toBeInTheDocument();
+  });
+
+  it('A04-3: 送ったコメントの文面が一覧に残る', async () => {
+    const user = userEvent.setup();
+    replies['GET /api/feed'] = [{ status: 200, body: feed() }];
+    replies['POST /api/records/r1/comments'] = [{ status: 201, body: { id: 'c1', recordId: 'r1', body: 'ナイス！', createdAt: '2026-11-02T10:11:00.000Z', author: HANAKO } }];
+    renderFeed();
+    await user.click(await screen.findByRole('button', { name: 'コメント' }));
+    await user.click(screen.getByRole('button', { name: 'ナイス！' }));
+    const sent = await screen.findByRole('list', { name: '送ったコメント' });
+    expect(within(sent).getByText('ナイス！')).toBeInTheDocument();
+  });
+
+  it('A04-4: コメント欄を開くと、そこまで滑らかにスクロールする', async () => {
+    const user = userEvent.setup();
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    replies['GET /api/feed'] = [{ status: 200, body: feed() }];
+    renderFeed();
+    await user.click(await screen.findByRole('button', { name: 'コメント' }));
+    expect(scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
+  });
+
+  it('A04-6: 定型コメントに軽い言葉がある', async () => {
+    const user = userEvent.setup();
+    replies['GET /api/feed'] = [{ status: 200, body: feed() }];
+    renderFeed();
+    await user.click(await screen.findByRole('button', { name: 'コメント' }));
+    const quick = within(screen.getByRole('list', { name: '定型コメント' })).getAllByRole('button').map((b) => b.textContent);
+    expect(quick).toEqual(['ナイス！', 'おつかれさま', 'いい調子！', 'さすが！', '今度いっしょにやろう']);
+  });
+
+  it('A04-8/V-02: 新着の札は触ると外れ、文字は紺（白字×コーラルにしない）', async () => {
+    const user = userEvent.setup();
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 'r1', isNew: true })] }) }];
+    renderFeed();
+    const tag = await screen.findByText('新着');
+    expect(tag.className).toContain('text-ink');
+    expect(tag.className).not.toContain('text-white');
+    await user.click(screen.getByRole('button', { name: 'コメント' }));
+    expect(screen.queryByText('新着')).not.toBeInTheDocument();
+  });
+
+  it('V-03: 押した状態の文字は濃いティール（4.5:1 以上）', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'clap', count: 1, mine: 'rx' }] })] }) }];
+    renderFeed();
+    const button = await screen.findByRole('button', { name: 'おつかれ 1' });
+    expect(button.className).toContain('text-teal-deep');
+    expect(button.className).not.toContain('text-teal-dark');
+  });
+
+  it('A04-10: 足跡に種目のアイコンが付く（筋トレ・ラン・休み）', async () => {
+    replies['GET /api/feed'] = [
+      {
+        status: 200,
+        body: feed({
+          items: [
+            item({ id: 'a' }),
+            item({ id: 'b', kind: 'run', exerciseNames: [], run: { distanceM: 5000, durationS: 1800 } }),
+            item({ id: 'c', kind: 'rest', exerciseNames: [] }),
+          ],
+        }),
+      },
+    ];
+    const { container } = renderFeed();
+    await screen.findByText('4人が記録');
+    expect(container.querySelectorAll('[data-testid="kind-icon"]')).toHaveLength(3);
+  });
+
+  it('A04-12: ランの足跡にも「くわしく見る」がある。休みにはない', async () => {
+    replies['GET /api/feed'] = [
+      {
+        status: 200,
+        body: feed({
+          items: [
+            item({ id: 'run1', kind: 'run', exerciseNames: [], run: { distanceM: 5000, durationS: 1800 } }),
+            item({ id: 'rest1', kind: 'rest', exerciseNames: [] }),
+          ],
+        }),
+      },
+    ];
+    renderFeed();
+    await screen.findByText('4人が記録');
+    const links = screen.getAllByRole('link', { name: 'くわしく見る' });
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute('href')).toMatch(/^\/record-detail\?id=run1&by=/);
+  });
+
+  it('A04-13: 今日の足跡だけ見せ、前の日の分は「前の日の足跡を見る」で開く', async () => {
+    const user = userEvent.setup();
+    replies['GET /api/feed'] = [
+      {
+        status: 200,
+        body: feed({ items: [item({ id: 't1' }), item({ id: 'o1', localDate: '2020-01-01', exerciseNames: ['デッドリフト'] })] }),
+      },
+    ];
+    renderFeed();
+    await screen.findByText('スクワット');
+    expect(screen.queryByText('デッドリフト')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /前の日の足跡を見る/ }));
+    expect(screen.getByText('デッドリフト')).toBeInTheDocument();
+  });
+
+  it('A04-13: 今日の足跡が無いときは一言を出し、前の日の分は開ける', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 'o1', localDate: '2020-01-01' })] }) }];
+    renderFeed();
+    expect(await screen.findByText('今日の足跡は まだないよ')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /前の日の足跡を見る/ })).toBeInTheDocument();
   });
 });
