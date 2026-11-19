@@ -252,7 +252,7 @@ test('T3 GPS で走って保存し、日本縦断がどこまで進んだか見�
   // 偽の時計を止めたままだと地図の描画（タイマー）が進まず、真っ白に写る（V0: A07-4）。走り終えたら実時間に戻す
   await page.clock.resume();
   await t.click(page.getByRole('button', { name: '終了' }), '終了');
-  await t.click(page.getByRole('button', { name: '保存する' }), '保存する');
+  // 終了を押すと、そのまま保存されて「記録したよ」の画面に変わる（B07）。以前の「保存する」ボタンは無い
   await t.click(page.getByRole('link', { name: /日本地図で見る/ }), '日本地図で見る');
   t.finish();
 });
