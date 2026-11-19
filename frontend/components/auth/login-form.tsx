@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { AuthLayout } from '@/components/auth/auth-layout';
+import { AuthLayout, AuthLinkButton } from '@/components/auth/auth-layout';
+import { PasswordField } from '@/components/auth/password-field';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,10 +48,9 @@ export function LoginForm() {
           <Label className="font-extrabold" htmlFor="email">メールアドレス</Label>
           <Input className="h-12 text-base" id="email" name="email" type="email" autoComplete="email" required />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="font-extrabold" htmlFor="password">パスワード</Label>
-          <Input className="h-12 text-base" id="password" name="password" type="password" autoComplete="current-password" required />
-        </div>
+        <PasswordField label="パスワード" autoComplete="current-password" />
+        {/* A01-6: 再設定の機能は作らない（要件）。管理者への連絡を案内する */}
+        <p className="text-sm text-sub">パスワードを忘れたら、グループの管理者に連絡してください</p>
         {error && (
           <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
             {error}
@@ -61,9 +60,11 @@ export function LoginForm() {
           {pending ? 'ログイン中…' : 'ログイン'}
         </ThickButton>
       </form>
-      <p className="text-center text-sm text-sub">
-        はじめての方は <Link href={withNext('/signup', next)} className="font-extrabold text-teal-dark underline underline-offset-4">新規登録</Link>
-      </p>
+      {/* A01-2: 新規登録は塗りのボタンとして、ログインの下に並べる */}
+      <div className="flex flex-col gap-2">
+        <p className="text-center text-sm text-sub">はじめての方は</p>
+        <AuthLinkButton href={withNext('/signup', next)}>新規登録</AuthLinkButton>
+      </div>
     </AuthLayout>
   );
 }
