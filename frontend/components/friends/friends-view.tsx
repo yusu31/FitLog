@@ -8,7 +8,8 @@ import { useGetCurrentGroup } from '@/lib/api/generated';
 import { InvitePanel } from '@/components/settings/invite-panel';
 import { GROUP_MESSAGES } from '@/lib/messages';
 import { FeedSection } from './feed-section';
-import { GroupSummary, MemberList } from './member-list';
+import { FRIENDS_TEXT } from './friends-text';
+import { GroupSummary } from './member-list';
 import { NoGroupGuide } from './no-group-guide';
 
 // S-20 仲間（docs/screen-design.md 4章）。グループがないときは「作る」と「招待リンクで参加する」の2つだけ（NoGroupGuide）。
@@ -34,13 +35,12 @@ export function FriendsView() {
           {/* 自分1人の間は、次の一手「仲間を招待」を上に出す（N6）。2人以上になったら設定の奥に戻す */}
           {data.data.members.length <= 1 && <InvitePanel full={false} />}
           <FeedSection />
-          <MemberList group={data.data} />
           <Link
             href="/settings/group"
             className="fl-slab flex min-h-14 items-center gap-3 px-4 py-3 font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             <Settings aria-hidden className="size-5 text-teal-dark" />
-            グループの設定（招待リンク・出る）
+            {FRIENDS_TEXT.groupSettings}
           </Link>
         </div>
       )}

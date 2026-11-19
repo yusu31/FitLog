@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 
-// GPS で記録する（#274）。本物のブラウザ・本物の画面で、開始→位置が届く→終了→入力欄に入る→保存、までを通す。
+// GPS で記録する（#274）。本物のブラウザ・本物の画面で、開始→位置が届く→終了→そのまま保存して完了画面、までを通す。
 // 位置情報は端末ごとに違い実時間で届くので、偽の位置情報（window.__emit）と偽の時計（page.clock）に差し替える。
 // 実際の GPS の精度・画面が消えたときの挙動は、実機でしか確かめられない
 test.use({ viewport: { width: 390, height: 844 } });
 
-test('GPS で記録して終了すると、距離と時間が入力欄に入り、保存できる', async ({ page }) => {
+test('GPS で記録して終了すると、入力画面に戻らずそのまま保存して完了画面へ進む', async ({ page }) => {
   const start = new Date('2026-11-19T06:00:00Z');
   await page.clock.install({ time: start });
   await page.addInitScript(() => {
@@ -49,12 +49,12 @@ test('GPS で記録して終了すると、距離と時間が入力欄に入り�
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   await page.screenshot({ path: 'test-results/gps-tracking-390.png' });
 
+  // A07-5: 終了すると入力画面には戻らず、そのまま保存して完了画面へ進む
   await page.getByRole('button', { name: '終了' }).click();
-  await expect(page.getByRole('textbox', { name: '距離（km）' })).toHaveValue('0.24');
-  await expect(page.getByRole('textbox', { name: '時間（分）' })).toHaveValue('1');
-  await expect(page.getByRole('textbox', { name: '時間（秒）' })).toHaveValue('30');
-  await expect(page.getByText('GPS の記録を入れました')).toBeVisible();
-
-  await page.getByRole('button', { name: '保存する' }).click();
-  await expect(page.getByRole('status').first()).toBeVisible();
+  // B10: 画面の上に「電波なし・送ったよ」の帯（role=status・ふだんは空）が入ったので、先頭の status ではなく、保存した結果の板（RUN）を指す
+  await expect(page.getByRole('status').filter({ hasText: 'RUN' })).toBeVisible();
+  // 距離と時間が取れて保存できたので、ペースが出ている（取れていなければ「--」）
+  await expect(page.getByTestId('pace')).not.toHaveText('--');
+  await expect(page.getByRole('button', { name: '今日へ' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '保存する' })).toHaveCount(0);
 });

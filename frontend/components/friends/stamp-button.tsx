@@ -27,7 +27,7 @@ export function StampButton({
   pressed: boolean;
   disabled: boolean;
   onClick: () => void;
-  // 足跡カード用。1行に収めて縦を短くする（U12）。ことばは読み上げ用に残し、見た目は絵と数だけ
+  // 足跡カード用。少し小さくする。絵の下の短いことばは、どちらでも見せる（絵だけでは意味が分からない。A04-1）
   compact?: boolean;
 }) {
   const label = STAMP_LABELS[stampKey];
@@ -40,8 +40,8 @@ export function StampButton({
       onClick={onClick}
       className={cn(
         'flex items-center justify-center rounded-2xl border-2 outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60',
-        compact ? 'min-h-11 min-w-11 gap-1 px-2.5' : 'min-h-14 min-w-16 flex-col gap-0.5 px-2.5 py-1.5',
-        pressed ? 'border-teal-dark bg-teal-light text-teal-dark' : 'border-line bg-white text-sub-strong',
+        compact ? 'min-h-14 min-w-14 flex-col gap-0.5 px-2 py-1' : 'min-h-14 min-w-16 flex-col gap-0.5 px-2.5 py-1.5',
+        pressed ? 'border-teal-dark bg-teal-light text-teal-deep' : 'border-line bg-white text-sub-strong',
       )}
     >
       <span className="flex items-center gap-1">
@@ -50,7 +50,7 @@ export function StampButton({
         </span>
         {count > 0 && <span className="fl-num text-base">{count}</span>}
       </span>
-      <span className={compact ? 'sr-only' : 'text-[11px] leading-none font-extrabold'}>{label}</span>
+      <span className="text-[11px] leading-none font-extrabold">{label}</span>
     </button>
   );
 }

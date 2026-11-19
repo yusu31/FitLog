@@ -75,7 +75,7 @@ export function StepperField({
             setTyping(null);
           }}
           className={cn(
-            'fl-num field-sizing-content max-w-[9ch] min-w-[2ch] rounded-lg bg-transparent text-center text-[56px] leading-none outline-none',
+            'fl-num field-sizing-content max-w-[9ch] min-w-[3ch] rounded-lg border-b-4 border-dashed border-line-dark bg-face text-center text-[56px] leading-none outline-none',
             'focus-visible:ring-4 focus-visible:ring-teal/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
             color ?? 'text-ink',
           )}

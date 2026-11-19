@@ -22,7 +22,22 @@ export const POSES = {
 export type PoseKey = keyof typeof POSES;
 
 // 飾りなので読み上げからは外す（ポーズの名前は data-pose に残す）。「動きを減らす」設定のときは1コマ目で止める
-export function Sprite({ pose, size = 128, className }: { pose: PoseKey; size?: number; className?: string }) {
+// placement: inline＝呼び出し側が置く（従来）／corner＝右上の角に固定（A13-4。見出し・数字に重ねない。見出し側は PageTitle の reserveCorner で右を空ける）
+export const CORNER_SPRITE_SIZE = 72;
+
+export function Sprite({
+  pose,
+  size,
+  className,
+  placement = 'inline',
+}: {
+  pose: PoseKey;
+  size?: number;
+  className?: string;
+  placement?: 'inline' | 'corner';
+}) {
+  const corner = placement === 'corner';
+  size ??= corner ? CORNER_SPRITE_SIZE : 128;
   const { frames, seq, ms } = POSES[pose];
   const reduced = usePrefersReducedMotion();
   const [step, setStep] = useState(0);
@@ -40,7 +55,7 @@ export function Sprite({ pose, size = 128, className }: { pose: PoseKey; size?: 
       data-testid="sprite"
       data-pose={pose}
       data-frame={current}
-      className={cn('relative', className)}
+      className={cn(corner ? 'pointer-events-none absolute top-0 right-4' : 'relative', className)}
       style={{ width: size, height: size }}
     >
       {Array.from({ length: frames }, (_, i) => (

@@ -5,6 +5,7 @@ import { createAuth } from './auth/auth.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { BodyModule } from './body/body.module.js';
 import { DB, Db, DbModule } from './db/db.module.js';
+import { ExportModule } from './export/export.module.js';
 import { ExercisesModule } from './exercises/exercises.module.js';
 import { FeedModule } from './feed/feed.module.js';
 import { GroupsModule } from './groups/groups.module.js';
@@ -18,6 +19,7 @@ import { VideosModule } from './videos/videos.module.js';
     DbModule,
     GroupsModule,
     ExercisesModule,
+    ExportModule,
     RecordsModule,
     RoutinesModule,
     BodyModule,

@@ -8,6 +8,7 @@ import { describeTotals } from '@/lib/feed';
 import { FEED_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { FeedCard } from './feed-card';
+import { FRIENDS_TEXT } from './friends-text';
 
 // 仲間の足跡（S-20。docs/screen-design.md 4章）。今週（日本時間の月曜〜日曜）のグループ合計と、新しい順の足跡。
 // 20件ずつ。「もっと見る」で、前の応答の nextCursor を渡して続きを読む（自分タブの記録の一覧と同じ作り）。
@@ -20,6 +21,7 @@ export function FeedSection() {
 function FeedPage({ weekStart, cursor, isFirst = false }: { weekStart: string; cursor: string | undefined; isFirst?: boolean }) {
   const { data, isPending, isError } = useGetFeed({ weekStart, ...(cursor ? { cursor } : {}) });
   const [more, setMore] = useState(false);
+  const [showOlder, setShowOlder] = useState(false);
   useMarkSeen(isFirst && !isPending && !isError && data?.status === 200);
 
   if (isPending) {
@@ -32,12 +34,21 @@ function FeedPage({ weekStart, cursor, isFirst = false }: { weekStart: string; c
       </p>
     );
   }
-  const { items, nextCursor, totals } = data.data;
+  const { items: allItems, nextCursor, totals } = data.data;
+  // 最初のページは「今日」の足跡だけ見せ、前の日の分と続きは1つのボタンの奥に置く（A04-13）
+  const today = toLocalDate(new Date());
+  const hideOlder = isFirst && !showOlder;
+  const olderCount = isFirst ? allItems.filter((i) => i.localDate !== today).length : 0;
+  const items = hideOlder ? allItems.filter((i) => i.localDate === today) : allItems;
+  const holdBack = hideOlder && olderCount > 0;
   return (
     <>
       {isFirst && <WeekTotals totals={totals} />}
       {isFirst && items.length === 0 && (
         <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{FEED_MESSAGES.empty}</p>
+      )}
+      {isFirst && allItems.length > 0 && items.length === 0 && (
+        <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{FRIENDS_TEXT.todayEmpty}</p>
       )}
       {items.length > 0 && (
         <ul aria-label="仲間の足跡" className="space-y-2">
@@ -46,7 +57,13 @@ function FeedPage({ weekStart, cursor, isFirst = false }: { weekStart: string; c
           ))}
         </ul>
       )}
-      {nextCursor &&
+      {holdBack && (
+        <ThickButton tone="white" size="sm" className="w-full" onClick={() => setShowOlder(true)}>
+          {FRIENDS_TEXT.showOlder(olderCount)}
+        </ThickButton>
+      )}
+      {!holdBack &&
+        nextCursor &&
         (more ? (
           <FeedPage weekStart={weekStart} cursor={nextCursor} />
         ) : (

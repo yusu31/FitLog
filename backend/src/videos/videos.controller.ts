@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Res } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -7,13 +7,14 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { ErrorResponse } from '../common/error-response.js';
 import { VideosService } from './videos.service.js';
-import { CreateVideoUploadRequest, VideoUploadResponse, VideoUrlResponse } from './videos.response.js';
+import { CreateVideoUploadRequest, MyVideosResponse, VideoUploadResponse, VideoUrlResponse, VideoWeekResponse } from './videos.response.js';
 
 // 動画（F-13。docs/design.md 4章）。すべてログイン必須（共通のガードが既定で守る）
 @ApiTags('videos')
@@ -37,6 +38,22 @@ export class VideosController {
     const { created, video } = await this.videos.issueUpload(session.user.id, recordId, body);
     if (!created) res.status(200);
     return video;
+  }
+
+  @Get('videos/week')
+  @ApiOperation({ operationId: 'getVideosThisWeek', summary: '今週の動画の一覧（仲間タブのサムネ列）。自分が今週撮っていなければ unlocked=false（仲間の分は見られない）' })
+  @ApiOkResponse({ type: VideoWeekResponse })
+  week(@Session() session: UserSession): Promise<VideoWeekResponse> {
+    return this.videos.weekList(session.user.id);
+  }
+
+  @Get('videos/mine')
+  @ApiOperation({ operationId: 'getMyVideos', summary: '自分の過去の動画の一覧（「自分」タブのグリッド）。自分の分は条件なし・新しい順・20件ずつ' })
+  @ApiQuery({ name: 'cursor', required: false, description: '前の応答の nextCursor をそのまま渡す（続きを読む）' })
+  @ApiOkResponse({ type: MyVideosResponse })
+  @ApiBadRequestResponse({ type: ErrorResponse, description: 'cursor が壊れている（VALIDATION_ERROR）' })
+  mine(@Session() session: UserSession, @Query('cursor') cursor?: string): Promise<MyVideosResponse> {
+    return this.videos.myList(session.user.id, { cursor });
   }
 
   @Get('videos/:id/url')

@@ -1,6 +1,7 @@
 // 記録画面（S-12）の純粋な計算（features.md 2.3・2.5・2.6、docs/testing-design.md 3-1・3-2）。
 // 比べ方・自己ベストの判定は共通の関数（lib/shared/ghost.ts）を使い、ここでは画面ならではの決まりだけを持つ。
 import type { PreviousSetResponse } from '@/lib/api/generated';
+import { isRestReturn, suggestNext } from '@/lib/menu-suggestion';
 import { compareSet, isPersonalBest, volumeOf, type GhostResult, type SetValue } from '@/lib/shared/ghost';
 
 export type { SetValue } from '@/lib/shared/ghost';
@@ -35,7 +36,8 @@ export const stepReps = (r: number, dir: 1 | -1): number => clampReps(r + dir);
 
 // --- 最初に入る値 ---
 export type DraftSource = 'previous' | 'trial' | 'none';
-export type InitialDraft = { draft: SetValue; ghost: SetValue | null; source: DraftSource };
+// restReturn: 休み明けで、目標を前回と同じ値にしたとき（理由を1行出す印。A02-5）
+export type InitialDraft = { draft: SetValue; ghost: SetValue | null; source: DraftSource; restReturn?: true };
 
 // 前回の同じセット番号 → 無ければ前回の最後のセット → 前回が無ければ種目のお試し値 → どれも無ければ空（0kg × 10回）。
 // ghost は「前回のバー」に出す比べる相手。お試しのときは「お試し」の札つきで出し、結果の比べには使わない（source で見分ける）
@@ -43,8 +45,16 @@ export function initialDraft(
   previousSets: readonly PreviousSetResponse[] | undefined,
   setNo: number,
   trial: SetValue | null,
+  // 渡すと、入力の初期値を今日の画面の「目標」（前回の最後のセットから決める）にそろえる。daysSince は前回からのあいた日数
+  goal?: { daysSince: number | null },
 ): InitialDraft {
   if (previousSets && previousSets.length > 0) {
+    if (goal) {
+      const last = previousSets[previousSets.length - 1];
+      const same = previousSets.find((s) => s.setNo === setNo) ?? last;
+      const target = suggestNext({ weightKg: last.weightKg, reps: last.reps }, goal.daysSince);
+      return { draft: target, ghost: same, source: 'previous', ...(isRestReturn(goal.daysSince) ? { restReturn: true as const } : {}) };
+    }
     const same = previousSets.find((s) => s.setNo === setNo) ?? previousSets[previousSets.length - 1];
     return { draft: { weightKg: same.weightKg, reps: same.reps }, ghost: same, source: 'previous' };
   }
