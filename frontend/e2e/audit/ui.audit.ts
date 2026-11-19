@@ -31,7 +31,7 @@ const SCREENS: Shot[] = [
   { name: 'settings-group', path: '/settings/group/' },
   { name: 'settings-credits', path: '/settings/credits/' },
   {
-    // 記録中の画面（ルーティンから始める）
+    // 記録中の画面（いつものメニューから始める）
     name: 'record',
     path: '/today/',
     prepare: async (page) => {
@@ -145,7 +145,7 @@ for (const state of ['active', 'new'] as const) {
       });
       if (!res.ok()) throw new Error(`login 失敗: ${res.status()}`);
       for (const shot of SCREENS) {
-        // 記録・詳細・結果シートは new 状態では道が無い（ルーティン・仲間なし）ので対象外（待ち続けて時間切れになるため）
+        // 記録・詳細・結果シートは new 状態では道が無い（いつものメニュー・仲間なし）ので対象外（待ち続けて時間切れになるため）
         if (state === 'new' && ['record', 'record-detail', 'record-result-sheet'].includes(shot.name)) continue;
         await shoot(shot);
       }

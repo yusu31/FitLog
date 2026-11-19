@@ -2,7 +2,7 @@ import type { StampKey, StatsCalendarDay, StatsResponse } from '@/lib/api/genera
 import { weekdayIndex } from '@/lib/format';
 import { weekDates, weekStartOf, type CellStatus } from '@/lib/shared/week';
 
-// 記録をくわしく（F-22 週・月・年／F-26 今月の数字／F-27 グラフ／F-29 スタンプ帳。docs/features.md 2.13）の画面側の純粋な関数。
+// 記録のまとめ（F-22 週・月・年／F-26 今月の数字／F-27 グラフ／F-29 スタンプ帳。docs/features.md 2.13）の画面側の純粋な関数。
 
 export type StatsView = 'week' | 'month' | 'year';
 export const STATS_VIEWS: ReadonlyArray<{ view: StatsView; label: string }> = [

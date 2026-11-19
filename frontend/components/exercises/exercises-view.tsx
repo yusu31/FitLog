@@ -93,7 +93,7 @@ export function ExercisesView() {
         >
           <X aria-hidden className="size-6" />
         </Link>
-        <h1 className="text-[28px] font-extrabold">種目を選ぶ</h1>
+        <h1 className="text-page-title font-extrabold">種目を選ぶ</h1>
       </header>
 
       <div className="px-4 pt-2">
@@ -179,7 +179,7 @@ export function ExercisesView() {
         <div className="space-y-1">
           {starters.length > 0 && (
             <section aria-labelledby="starter-exercises">
-              <h2 id="starter-exercises" className="px-4 pt-4 pb-2 text-xs font-bold tracking-widest text-sub">
+              <h2 id="starter-exercises" className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-sub">
                 はじめての人向け
               </h2>
               <ul className="flex flex-col gap-2 px-4">
@@ -193,7 +193,7 @@ export function ExercisesView() {
           )}
           {recent.length > 0 && (
             <section aria-labelledby="recent-exercises">
-              <h2 id="recent-exercises" className="px-4 pt-4 pb-2 text-xs font-bold tracking-widest text-sub">
+              <h2 id="recent-exercises" className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-sub">
                 最近やった種目
               </h2>
               <ul className="flex flex-col gap-2 px-4">
@@ -207,7 +207,7 @@ export function ExercisesView() {
           )}
           {groups.map(({ part, items }) => (
             <section key={part} aria-labelledby={`part-${part}`}>
-              <h2 id={`part-${part}`} className="px-4 pt-4 pb-2 text-xs font-bold tracking-widest text-sub">
+              <h2 id={`part-${part}`} className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-sub">
                 {BODY_PART_LABEL[part]}
               </h2>
               <ul className="flex flex-col gap-2 px-4">
@@ -242,14 +242,14 @@ function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse;
       </span>
       <span className="min-w-0 flex-1 leading-tight">
         <span className="block truncate font-extrabold">{name}</span>
-        {isCustom && <span className="fl-tag mt-0.5 bg-gold !py-0 !text-xs !leading-4 text-ink">じぶんの</span>}
+        {isCustom && <span className="fl-tag mt-0.5 bg-gold !py-0 !text-note !leading-4 text-ink">じぶんの</span>}
       </span>
       {showTrial && trialWeightKg !== null && trialReps !== null && (
         <span className="flex shrink-0 flex-col items-end leading-tight">
-          <span className="text-[11px] font-bold text-sub-strong">目安</span>
+          <span className="text-note font-bold text-sub-strong">目安</span>
           <span className="fl-num text-lg text-ink">
             {trialWeightKg}
-            <small className="mx-0.5 font-sans text-[11px] font-bold not-italic text-sub">kg ×</small>
+            <small className="mx-0.5 font-sans text-note font-bold not-italic text-sub">kg ×</small>
             {trialReps}
           </span>
         </span>
@@ -308,7 +308,7 @@ function AddExerciseForm({
           onChange={(e) => setName(e.target.value)}
           className="h-12 rounded-fl border-2 text-base font-bold"
         />
-        <p className="text-xs text-sub">{NAME_MAX}字まで。同じ名前は重ねて作れません。</p>
+        <p className="text-note text-sub">{NAME_MAX}字まで。同じ名前は重ねて作れません。</p>
       </div>
 
       <fieldset className="space-y-2">

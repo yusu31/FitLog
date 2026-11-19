@@ -35,7 +35,7 @@ export function AccountSettingsView() {
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
-        <h1 className="text-[28px] font-extrabold">アカウントの設定</h1>
+        <h1 className="text-page-title font-extrabold">アカウントの設定</h1>
       </header>
 
       {signedIn && user && (

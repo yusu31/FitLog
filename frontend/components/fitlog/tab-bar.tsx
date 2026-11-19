@@ -40,7 +40,7 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex h-13 w-21 flex-col items-center justify-center gap-0.5 rounded-fl text-[11px] font-bold outline-none',
+                  'flex h-13 w-21 flex-col items-center justify-center gap-0.5 rounded-fl text-note font-bold outline-none',
                   'focus-visible:ring-4 focus-visible:ring-teal/40',
                   // 選択中の文字は濃いティール（ティール10%の背景の上で 4.5 以上）
                   active ? 'bg-teal/10 text-teal-deep' : 'text-sub',
@@ -52,7 +52,7 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
                     <span
                       data-testid="friends-new-badge"
                       aria-hidden
-                      className="absolute -top-1.5 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral-strong px-1 text-[10px] leading-none font-extrabold text-white ring-2 ring-white"
+                      className="absolute -top-1.5 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral-strong px-1 text-note leading-none font-extrabold text-white ring-2 ring-white"
                     >
                       {newCount === undefined ? '新' : newCount > 9 ? '9+' : newCount}
                     </span>

@@ -107,7 +107,7 @@ export function RecordDetailView() {
       <FullScreen>
         {header}
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 pb-16 text-center">
-          <h1 className="text-xl font-extrabold">{DETAIL_MESSAGES.notFoundTitle}</h1>
+          <h1 className="text-page-title font-extrabold">{DETAIL_MESSAGES.notFoundTitle}</h1>
           <p className="text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.notFoundBody}</p>
           <Link href={back.href} className="mt-3 inline-flex min-h-11 items-center rounded-fl bg-teal-dark px-5 font-extrabold text-white">
             {back.label}
@@ -145,7 +145,7 @@ export function RecordDetailView() {
         {record.kind === 'run' && record.run && <Run distanceM={record.run.distanceM} durationS={record.run.durationS} />}
         {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} ghost={record.previousRun?.route} />}
         {record.kind === 'run' && record.run?.route && record.previousRun && (
-          <p className="text-center text-xs font-bold text-sub-strong">{ghostLegend(record.previousRun)}</p>
+          <p className="text-center text-note font-bold text-sub-strong">{ghostLegend(record.previousRun)}</p>
         )}
         {record.kind === 'rest' && (
           <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.restBody}</p>
@@ -158,7 +158,7 @@ export function RecordDetailView() {
               <Trash2 aria-hidden />
               {DETAIL_MESSAGES.deleteButton}
             </ThickButton>
-            {!online && <p className="mt-2 text-center text-xs text-sub-strong">{ME_MESSAGES.offlineNote}</p>}
+            {!online && <p className="mt-2 text-center text-note text-sub-strong">{ME_MESSAGES.offlineNote}</p>}
           </section>
         )}
       </div>
@@ -185,7 +185,7 @@ function Heading({ record, mine, by }: { record: RecordDetailResponse; mine: boo
   return (
     <div>
       {mine ? <p className="text-sm font-extrabold text-sub-strong">{DETAIL_MESSAGES.ownerMine}</p> : <FriendOwner by={by} />}
-      <h1 className="flex items-center gap-2 text-[28px] leading-tight font-extrabold">
+      <h1 className="flex items-center gap-2 text-page-title leading-tight font-extrabold">
         {record.kind === 'rest' && (
           <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-grape-dark text-white">
             <Moon className="size-4" />
@@ -250,8 +250,8 @@ function CopyButton({ record, fromUserId }: { record: RecordDetailResponse; from
       <ThickButton size="sm" className="w-full" disabled={!online || busy} onClick={() => void onCopy()}>
         {busy ? FRIEND_MESSAGES.copying : FRIEND_MESSAGES.copyButton}
       </ThickButton>
-      <p className="mt-2 text-center text-xs font-bold text-sub-strong">{DETAIL_MESSAGES.copyExplain}</p>
-      {!online && <p className="mt-2 text-center text-xs text-sub-strong">{FRIEND_MESSAGES.copyOffline}</p>}
+      <p className="mt-2 text-center text-note font-bold text-sub-strong">{DETAIL_MESSAGES.copyExplain}</p>
+      {!online && <p className="mt-2 text-center text-note text-sub-strong">{FRIEND_MESSAGES.copyOffline}</p>}
       {error && (
         <p role="alert" className="mt-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
           {error}
@@ -292,11 +292,11 @@ function ExerciseBlock({ exercise, recordedAt, mine }: { exercise: RecordedExerc
           const o = outcomes?.[i];
           return (
             <li key={s.id} className="fl-slab flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
-              <span className="w-12 shrink-0 text-xs font-bold text-sub-strong">セット{s.setNo}</span>
+              <span className="w-12 shrink-0 text-note font-bold text-sub-strong">セット{s.setNo}</span>
               <span className="fl-num min-w-0 flex-1 text-xl">{formatSet(s)}</span>
-              {o?.isBest && <span className="fl-tag bg-gold !py-0 !text-xs !leading-4 text-ink">{RECORD_MESSAGES.best}</span>}
+              {o?.isBest && <span className="fl-tag bg-gold !py-0 !text-note !leading-4 text-ink">{RECORD_MESSAGES.best}</span>}
               {o && (o.result === 'up' || o.result === 'down') && (
-                <span className="w-full pl-[60px] text-xs font-bold text-sub-strong">{resultText(o.result, o.diff)}</span>
+                <span className="w-full pl-[60px] text-note font-bold text-sub-strong">{resultText(o.result, o.diff)}</span>
               )}
             </li>
           );
@@ -323,7 +323,7 @@ function Run({ distanceM, durationS }: { distanceM: number; durationS: number })
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-bold text-sub-strong">{label}</dt>
+      <dt className="text-note font-bold text-sub-strong">{label}</dt>
       <dd className="fl-num mt-1 text-xl break-keep">{value}</dd>
     </div>
   );

@@ -60,11 +60,11 @@ afterEach(() => {
 });
 
 describe('RecordDetailView（S-21 記録の詳細）', () => {
-  describe('ルーティンに保存（F3）', () => {
-    it('自分の筋トレ（セットあり）には「ルーティンに保存」が出る', async () => {
+  describe('いつものメニューに保存（F3）', () => {
+    it('自分の筋トレ（セットあり）には「いつものメニューに保存」が出る', async () => {
       install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
       renderWithQuery(<RecordDetailView />);
-      expect(await screen.findByRole('button', { name: 'ルーティンに保存' })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: 'いつものメニューに保存' })).toBeInTheDocument();
     });
 
     it('仲間の記録・自分のランには出ない', async () => {
@@ -72,14 +72,14 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
       install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), '/api/exercises': ok([]), '/api/groups/current': ok({ id: 'g1', name: 'チーム', members: [ME, HANAKO] }) });
       const { unmount } = renderWithQuery(<RecordDetailView />);
       await screen.findByRole('button', { name: 'コピーして始める' });
-      expect(screen.queryByRole('button', { name: 'ルーティンに保存' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'いつものメニューに保存' })).not.toBeInTheDocument();
       unmount();
 
       search = 'id=r1&from=me';
       install({ [REC]: ok(runRecord('r1', '2026-10-22', 5000, 1800)) });
       renderWithQuery(<RecordDetailView />);
       await screen.findByRole('heading', { level: 1, name: 'ラン' });
-      expect(screen.queryByRole('button', { name: 'ルーティンに保存' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'いつものメニューに保存' })).not.toBeInTheDocument();
     });
   });
 

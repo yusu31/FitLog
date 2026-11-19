@@ -12,7 +12,7 @@ export function FriendPicker({ friends, selected, onToggle }: { friends: FriendG
   if (friends.length === 0) return null;
   return (
     <section aria-label={FRIEND_MESSAGES.heading} className="w-full">
-      <h2 className="text-xs font-bold tracking-widest text-sub">
+      <h2 className="text-note font-bold tracking-widest text-sub">
         <button
           type="button"
           aria-expanded={open}
@@ -41,11 +41,11 @@ export function FriendPicker({ friends, selected, onToggle }: { friends: FriendG
                   empty && 'opacity-50',
                 )}
               >
-                <span aria-hidden className="flex size-6 items-center justify-center rounded-full text-xs text-white" style={{ background: AVATAR_BG[f.shirtColor] ?? AVATAR_BG.navy }}>
+                <span aria-hidden className="flex size-6 items-center justify-center rounded-full text-note text-white" style={{ background: AVATAR_BG[f.shirtColor] ?? AVATAR_BG.navy }}>
                   {Array.from(f.name)[0]}
                 </span>
                 {f.name}
-                {empty && <span className="text-[11px] font-bold text-sub-strong">{FRIEND_MESSAGES.none}</span>}
+                {empty && <span className="text-note font-bold text-sub-strong">{FRIEND_MESSAGES.none}</span>}
               </button>
             </li>
           );

@@ -158,7 +158,7 @@ describe('MeView（S-30 自分）', () => {
     });
   });
 
-  describe('設定への入口・見た目だけの導線（ヒートマップ・記録をくわしく）', () => {
+  describe('設定への入口・見た目だけの導線（からだの図・記録のまとめ）', () => {
     beforeEach(() => installFakeApi({ [FIRST]: page([]) }));
 
     it('「設定」は /settings へのリンク（画面そのものは別の担当が作る）', async () => {
@@ -168,19 +168,19 @@ describe('MeView（S-30 自分）', () => {
       expect(screen.queryByRole('button', { name: /設定/ })).not.toBeInTheDocument();
     });
 
-    it('「記録をくわしく」は /me/stats（S-35）へのリンク。ヒートマップも置いてある', async () => {
+    it('「記録のまとめ」は /me/stats（S-35）へのリンク。からだの図も置いてある', async () => {
       renderWithQuery(<MeView />);
       await screen.findByText('まだ記録がありません');
-      expect(screen.getByRole('link', { name: /記録をくわしく/ })).toHaveAttribute('href', '/me/stats');
+      expect(screen.getByRole('link', { name: /記録のまとめ/ })).toHaveAttribute('href', '/me/stats');
       expect(screen.getByText('今週きたえたところ')).toBeInTheDocument();
     });
 
-    it('A08-1・N-09: 「記録をくわしく」と「設定」の入口は、ヒートマップ・記録の一覧より上（画面の上部）にある', async () => {
+    it('A08-1・N-09: 「記録のまとめ」と「設定」の入口は、からだの図・記録の一覧より上（画面の上部）にある', async () => {
       renderWithQuery(<MeView />);
       await screen.findByText('まだ記録がありません');
       const heat = screen.getByText('今週きたえたところ');
       const records = screen.getByText('まだ記録がありません');
-      for (const name of [/記録をくわしく/, /設定/]) {
+      for (const name of [/記録のまとめ/, /設定/]) {
         const link = screen.getByRole('link', { name });
         expect(link.compareDocumentPosition(heat) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(link.compareDocumentPosition(records) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

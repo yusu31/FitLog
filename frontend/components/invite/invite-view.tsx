@@ -68,9 +68,9 @@ export function InviteView() {
   return (
     <Frame>
       <section className="fl-stripes relative overflow-hidden rounded-fl bg-coral px-[18px] pt-3.5 pb-4 text-ink shadow-[0_4px_0_var(--color-coral-dark)]">
-        <span className="fl-tag bg-gold text-ink">INVITE</span>
+        <span className="fl-tag bg-gold text-ink">招待</span>
         <p className="mt-3 text-sm font-bold">グループに招待されています</p>
-        <h1 className="mt-1 text-2xl font-extrabold break-all">{groupName}</h1>
+        <h1 className="mt-1 text-page-title font-extrabold break-all">{groupName}</h1>
         <p className="mt-2 flex items-baseline gap-1.5 leading-none">
           <span className="fl-num text-5xl">{memberCount}</span>
           <span className="text-lg font-extrabold">人</span>
@@ -190,7 +190,7 @@ function Problem({ title, children, paste = true }: { title: string; children: R
           <Link2 aria-hidden className="size-5" />
         </span>
         <div>
-          <h1 className="text-lg font-extrabold">{title}</h1>
+          <h1 className="text-page-title font-extrabold">{title}</h1>
           <p className="mt-1 text-sm text-sub">{children}</p>
         </div>
       </section>

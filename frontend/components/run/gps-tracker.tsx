@@ -186,7 +186,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
             {GPS_MESSAGES.webNotice}
           </p>
         )}
-        <p className="text-xs text-sub-strong">{GPS_MESSAGES.hint}</p>
+        <p className="text-note text-sub-strong">{GPS_MESSAGES.hint}</p>
         {problem && <ProblemNote problem={problem} />}
       </div>
     );
@@ -247,7 +247,7 @@ function ProblemNote({ problem }: { problem: Problem }) {
 function Stat({ label, value, unit, big = false, testId }: { label: string; value: string; unit?: string; big?: boolean; testId: string }) {
   return (
     <div>
-      <dt className="text-xs font-extrabold text-sub-strong">{label}</dt>
+      <dt className="text-note font-extrabold text-sub-strong">{label}</dt>
       <dd className="flex items-baseline gap-1">
         <span data-testid={testId} className={big ? 'fl-num text-[56px] leading-none text-ink' : 'fl-num text-3xl text-ink'}>
           {value}

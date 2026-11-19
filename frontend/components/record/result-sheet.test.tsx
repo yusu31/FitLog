@@ -5,7 +5,7 @@ import { ResultSheet, type SheetData } from './result-sheet';
 
 const base: SheetData = { setId: 's1', result: 'up', diff: 100, isPersonalBest: false, summary: 'ベンチプレス 40kg × 10回' };
 
-// F-19: 祝福の中で、今日使った部位を光らせる（ヒートマップ F-12 と同じ体の図）
+// F-19: 祝福の中で、今日使った部位を光らせる（からだの図 F-12 と同じ体の図）
 describe('ResultSheet（今日きたえたところ F-19）', () => {
   it('使った部位だけを一番濃い色にし、部位名も文字で出す', () => {
     render(<ResultSheet sheet={{ ...base, parts: [BodyPart.chest, BodyPart.legs] }} onDismiss={() => {}} />);

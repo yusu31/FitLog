@@ -119,7 +119,7 @@ function CheerSprite({ pose }: { pose: 'pb' | 'cheer' }) {
   );
 }
 
-// 今日きたえた部位（F-19）。ヒートマップ（F-12）と同じ体の図で、使った部位だけを一番濃い色にする。色だけに頼らず、部位名も書く
+// 今日きたえた部位（F-19）。からだの図（F-12）と同じ体の図で、使った部位だけを一番濃い色にする。色だけに頼らず、部位名も書く
 function TodayParts({ parts, day }: { parts: readonly BodyPart[]; day?: 'today' | 'yesterday' }) {
   const levels = levelsOf(parts.map((bodyPart) => ({ bodyPart, sets: 4 })));
   const names = BODY_PART_ORDER.filter((p) => parts.includes(p)).map((p) => BODY_PART_LABEL[p]);

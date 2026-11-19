@@ -1,6 +1,6 @@
 import { BodyPart } from '@/lib/api/generated';
 
-// ヒートマップの部位（design.md の BodyPart）の日本語名。並びは API の一覧（部位の順）と同じ
+// からだの図の部位（design.md の BodyPart）の日本語名。並びは API の一覧（部位の順）と同じ
 export const BODY_PART_ORDER = [
   BodyPart.chest,
   BodyPart.back,

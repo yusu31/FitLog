@@ -14,7 +14,7 @@ describe('buildMenu（今日のメニューを組み立てる）', () => {
     expect(m.allDone).toBe(false);
   });
 
-  it('前回と同じ種目が同じ順で並び、前回の1セット目の値が付く。次の1枚は先頭', () => {
+  it('前回と同じ種目が同じ順で並び、前回の1セット目の値が付く。つぎにやることは先頭', () => {
     const prev = workout('r1', '2026-11-01', [squat([[60, 10], [60, 8]]), curl([[25, 12]])]);
     const m = buildMenu([prev], TODAY);
     expect(m.isFirstTime).toBe(false);
@@ -41,7 +41,7 @@ describe('buildMenu（今日のメニューを組み立てる）', () => {
     expect(buildMenu([prev], TODAY).items[0].suggestion).toEqual({ weightKg: 60, reps: 8 });
   });
 
-  it('今日すでにセットが入った種目は done。次の1枚は、まだの種目のうち先頭', () => {
+  it('今日すでにセットが入った種目は done。つぎにやることは、まだの種目のうち先頭', () => {
     const today = workout('r2', TODAY, [squat([[62.5, 10]])]);
     const prev = workout('r1', '2026-11-01', [squat([[60, 10]]), curl([[25, 12]])]);
     const m = buildMenu([today, prev], TODAY);
@@ -50,7 +50,7 @@ describe('buildMenu（今日のメニューを組み立てる）', () => {
     expect(m.next?.exerciseId).toBe('lc');
   });
 
-  it('全部できたら allDone で、次の1枚は無い', () => {
+  it('全部できたら allDone で、つぎにやることは無い', () => {
     const today = workout('r2', TODAY, [squat([[60, 10]]), curl([[25, 12]])]);
     const prev = workout('r1', '2026-11-01', [squat([[60, 10]]), curl([[25, 12]])]);
     const m = buildMenu([today, prev], TODAY);

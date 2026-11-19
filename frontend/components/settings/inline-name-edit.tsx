@@ -36,7 +36,7 @@ export function InlineNameEdit({ initialName, email }: { initialName: string; em
     <section aria-label="ユーザー情報" className="fl-slab space-y-2 px-4 py-3">
       <form onSubmit={onSubmit} className="flex items-end gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <label htmlFor="inline-name" className="text-xs font-bold text-sub-strong">
+          <label htmlFor="inline-name" className="text-note font-bold text-sub-strong">
             表示名
           </label>
           <input
