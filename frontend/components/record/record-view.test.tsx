@@ -28,7 +28,7 @@ const PREVIOUS = {
     sets: [
       { setNo: 1, weightKg: 40, reps: 10 },
       { setNo: 2, weightKg: 40, reps: 10 },
-      { setNo: 3, weightKg: 40, reps: 8 },
+      { setNo: 3, weightKg: 40, reps: 9 },
     ],
   },
   personalBest: { weightKg: 40, reps: 10, volume: 400 },
@@ -60,6 +60,9 @@ const echoSet = (result: string | null, isPersonalBest = false) => (call: Call) 
 });
 
 beforeEach(() => {
+  // 今は 2026-10-26 12:00（日本時間）。前回（10-25）から1日。休み明け（3日以上）にならない。Date だけ止め、タイマーは本物のまま
+  vi.useFakeTimers({ toFake: ['Date'], shouldAdvanceTime: true });
+  vi.setSystemTime(new Date('2026-10-26T03:00:00Z'));
   search = 'exercise=e-bench';
   calls = [];
   resetCurrentWorkout();
@@ -110,6 +113,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   onlineManager.setOnline(true);
   vi.unstubAllGlobals();
 });
@@ -130,6 +134,7 @@ const ready = async () => {
   await screen.findByRole('heading', { name: 'ベンチプレス' });
   await screen.findByText('前回のじぶん');
 };
+const openFriends = async () => userEvent.click(await screen.findByRole('button', { name: /仲間と くらべる/ }));
 const sheet = () => screen.queryByTestId('result-sheet');
 const setCalls = () => calls.filter((c) => c.method === 'POST' && /\/sets$/.test(c.url));
 
@@ -140,7 +145,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await ready();
       expect(weight()).toHaveValue(40);
       expect(reps()).toHaveValue(10);
-      expect(screen.getByText('1 セット目')).toBeInTheDocument();
+      expect(screen.getByText('いま 1セット目')).toBeInTheDocument();
     });
 
     it('前回のバーに「前回のじぶん 40kg × 10回」と、前回・今回の2本を出す', async () => {
@@ -160,13 +165,13 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       expect(Number.isNaN(Date.parse(before ?? ''))).toBe(false);
     });
 
-    it('前回が無ければ、種目のお試し値が入り、「お試し」の札が付く', async () => {
+    it('前回が無ければ、種目のお試し値が入り、「目安」の札が付く（A03-3）', async () => {
       handlers['GET /api/exercises/e-bench/previous'] = () => ({ status: 200, body: NO_PREVIOUS });
       renderView();
       await ready();
       expect(weight()).toHaveValue(40);
       expect(reps()).toHaveValue(10);
-      expect(within(screen.getByRole('group', { name: '前回との くらべ' })).getByText('お試し')).toBeInTheDocument();
+      expect(within(screen.getByRole('group', { name: '前回との くらべ' })).getByText('目安')).toBeInTheDocument();
     });
 
     it('前回もお試しも無い種目は、0kg × 10回から。比べる相手が無いと伝える', async () => {
@@ -178,14 +183,14 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       expect(reps()).toHaveValue(10);
     });
 
-    it('前回が3セットのとき、4セット目には前回の最後のセットの値が入る', async () => {
+    it('前回が3セットのとき、4セット目にも、目標（前回の最後の 40×9 から 40×10）が入る', async () => {
       const user = userEvent.setup();
       renderView();
       await ready();
       for (let i = 0; i < 3; i++) await user.click(doneButton());
-      await screen.findByText('4 セット目');
+      await screen.findByText('いま 4セット目');
       expect(weight()).toHaveValue(40);
-      expect(reps()).toHaveValue(8);
+      expect(reps()).toHaveValue(10);
     });
 
     it('種目が見つからないときは、種目を選び直す案内を出す', async () => {
@@ -238,39 +243,42 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     });
   });
 
-  // T-REST-08（F-34）: 「できた」で休憩タイマーが自動で始まる。きのうの分（あとから記録）では始めない
+  // T-REST-08（F-34）・A03-2: 休憩は自動で始めず、「休憩する」ボタンで始める。きのうの分（あとから記録）には出さない
   describe('休憩タイマー', () => {
     beforeEach(() => localStorage.clear());
 
-    it('「できた」を押すと休憩タイマーが始まり、スキップで閉じる。もう一度「できた」で開き直す', async () => {
+    it('「できた」を押しただけでは休憩は始まらない。「休憩する」で始まり、スキップで閉じる', async () => {
       const user = userEvent.setup();
       renderView();
       await ready();
-      expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '休憩する' })).not.toBeInTheDocument();
       await user.click(doneButton());
+      const start = await screen.findByRole('button', { name: '休憩する' });
+      expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
+      await user.click(start);
       expect(await screen.findByRole('region', { name: '休憩タイマー' })).toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: '休憩をスキップ' }));
       expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
-      await user.click(doneButton());
-      expect(await screen.findByRole('region', { name: '休憩タイマー' })).toBeInTheDocument();
     });
 
-    it('端末に控えた長さで始まる（変えた長さは次の「できた」に引き継ぐ）', async () => {
+    it('端末に控えた長さで始まる', async () => {
       localStorage.setItem('fitlog:rest-seconds', '120');
       const user = userEvent.setup();
       renderView();
       await ready();
       await user.click(doneButton());
+      await user.click(await screen.findByRole('button', { name: '休憩する' }));
       expect(await screen.findByTestId('rest-remaining')).toHaveTextContent('2:00');
     });
 
-    it('きのうの分（あとから記録）では始めない', async () => {
+    it('きのうの分（あとから記録）には「休憩する」を出さない', async () => {
       search = 'exercise=e-bench&day=yesterday';
       const user = userEvent.setup();
       renderView();
       await ready();
       await user.click(doneButton());
       await waitFor(() => expect(setCalls()).toHaveLength(1));
+      expect(screen.queryByRole('button', { name: '休憩する' })).not.toBeInTheDocument();
       expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
     });
   });
@@ -321,7 +329,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await user.click(screen.getByRole('button', { name: '回数を 1回 ふやす' }));
       await user.click(screen.getByRole('button', { name: '回数を 1回 ふやす' }));
       await user.click(doneButton());
-      await screen.findByText('2 セット目');
+      await screen.findByText('いま 2セット目');
       expect(reps()).toHaveValue(12); // 前回の2セット目は 10 回だが、直した 12 回を引き継ぐ
     });
 
@@ -330,7 +338,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       renderView();
       await ready();
       await user.click(doneButton());
-      await screen.findByText('2 セット目');
+      await screen.findByText('いま 2セット目');
       expect(reps()).toHaveValue(10);
     });
 
@@ -484,7 +492,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
         await ready();
         await user.click(doneButton());
         expect(sheet()).toHaveAttribute('data-motion', 'full');
-        expect(sheet()!.className).toMatch(/slide-in-from-bottom/);
+        expect(sheet()!.className).toMatch(/fade-in/);
       });
     });
   });
@@ -635,7 +643,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await ready();
       await userEvent.click(doneButton());
       await waitFor(() => expect(setCalls()).toHaveLength(1));
-      expect(screen.queryByRole('button', { name: '2秒ラストレップを撮る' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '2秒動画を撮る' })).not.toBeInTheDocument();
     });
   });
 
@@ -644,7 +652,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       vi.stubGlobal('MediaRecorder', { isTypeSupported: (m: string) => m === 'video/mp4' });
       Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: vi.fn() } });
     };
-    const entry = () => screen.queryByRole('button', { name: '2秒ラストレップを撮る' });
+    const entry = () => screen.queryByRole('button', { name: '2秒動画を撮る' });
 
     it('撮れる端末で、1セット できた後に出る。最初は出ない', async () => {
       stubCamera();
@@ -652,7 +660,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await ready();
       expect(entry()).not.toBeInTheDocument();
       await userEvent.click(doneButton());
-      expect(await screen.findByRole('button', { name: '2秒ラストレップを撮る' })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: '2秒動画を撮る' })).toBeInTheDocument();
     });
 
     it('撮れない端末（MediaRecorder なし）では出さない', async () => {
@@ -669,7 +677,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       renderView();
       await ready();
       await userEvent.click(doneButton());
-      await screen.findByRole('button', { name: '2秒ラストレップを撮る' });
+      await screen.findByRole('button', { name: '2秒動画を撮る' });
       act(() => onlineManager.setOnline(false));
       await waitFor(() => expect(entry()).not.toBeInTheDocument());
     });
@@ -679,6 +687,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     it('同じグループの仲間のボタンが出る。記録の無い仲間はグレーで押せず「まだ記録なし」', async () => {
       renderView();
       await ready();
+      await openFriends();
       const hanako = await screen.findByRole('button', { name: /はなこ/ });
       await waitFor(() => expect(screen.getByRole('button', { name: /たろう/ })).toBeDisabled());
       expect(screen.getByRole('button', { name: /たろう/ })).toHaveTextContent('まだ記録なし');
@@ -691,6 +700,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       renderView();
       await ready();
       expect(screen.queryByTestId('friend-marker-u2')).not.toBeInTheDocument();
+      await openFriends();
       const hanako = await screen.findByRole('button', { name: /はなこ/ });
       await waitFor(() => expect(hanako).toBeEnabled());
       await user.click(hanako);
@@ -702,6 +712,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     it('仲間の前回は friendId つきで取りに行く（自分の前回の問い合わせには friendId を付けない）', async () => {
       renderView();
       await ready();
+      await openFriends();
       await screen.findByRole('button', { name: /はなこ/ });
       const previousCalls = calls.filter((c) => /\/previous/.test(c.url));
       expect(previousCalls.some((c) => c.url.includes('friendId=u2'))).toBe(true);
@@ -782,11 +793,11 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
 
   // N3: 記録画面に「次の種目へ」が無く、×で閉じて種目を選び直す4手以上だった
   describe('次の種目へ（N3）', () => {
-    const TODAY_JST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const TODAY_JST = '2026-10-26'; // 固定した「今」（beforeEach で Date を止めた日）と同じ日
     const todayRec = {
       id: 'srv-rec',
       kind: 'workout',
-      recordedAt: new Date().toISOString(),
+      recordedAt: '2026-10-26T03:00:00.000Z',
       localDate: TODAY_JST,
       active: true,
       exercises: [{ exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ id: 's-1', setNo: 1, weightKg: 40, reps: 10 }] }],
@@ -830,11 +841,11 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
 
   // N2: ページを読み直すとメモリの「いまの記録」は消える。サーバーが「記録中」と返した記録を続きにする
   describe('読み直したあとも、同じ記録に足す（N2）', () => {
-    const TODAY_JST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const TODAY_JST = '2026-10-26'; // 固定した「今」（beforeEach で Date を止めた日）と同じ日
     const serverActive = {
       id: 'srv-rec',
       kind: 'workout',
-      recordedAt: new Date().toISOString(),
+      recordedAt: '2026-10-26T03:00:00.000Z',
       localDate: TODAY_JST,
       active: true,
       exercises: [{ exerciseId: 'e-bench', name: 'ベンチプレス', sets: [{ id: 's-1', setNo: 1, weightKg: 40, reps: 10 }] }],
@@ -848,7 +859,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     it('サーバーの記録中の記録のセットを出し、次は2セット目になる', async () => {
       renderView();
       await ready();
-      expect(await screen.findByText('2 セット目')).toBeInTheDocument();
+      expect(await screen.findByText('いま 2セット目')).toBeInTheDocument();
       expect(screen.getByRole('list', { name: /できたセット/ })).toBeInTheDocument();
     });
 
@@ -856,7 +867,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       const user = userEvent.setup();
       renderView();
       await ready();
-      await screen.findByText('2 セット目');
+      await screen.findByText('いま 2セット目');
       await user.click(doneButton());
       await waitFor(() => expect(setCalls()).toHaveLength(1));
       expect(setCalls()[0].url).toBe('/api/records/srv-rec/sets');
@@ -892,6 +903,165 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     await waitFor(() => expect(setCalls()).toHaveLength(1));
     const rid = calls.find((c) => c.method === 'POST' && c.url === '/api/records')!.body!.id as string;
     await waitFor(() => expect(bestCountOf(rid)).toBe(1));
+  });
+
+  // B04（記録中の分かりやすさ）。台帳 ID を題に付ける
+  describe('B04 記録中', () => {
+    const TWO_SETS = {
+      previous: {
+        recordedAt: '2026-10-25T09:12:00.000Z',
+        sets: [
+          { setNo: 1, weightKg: 40, reps: 10 },
+          { setNo: 2, weightKg: 40, reps: 8 },
+        ],
+      },
+      personalBest: { weightKg: 40, reps: 10, volume: 400 },
+    };
+    beforeEach(() => {
+      handlers['GET /api/exercises/e-bench/previous'] = () => ({ status: 200, body: TWO_SETS });
+    });
+
+    it('A02-5 入力の初期値は目標（前回の最後 40×8 → 40×9）と同じ。休み明けでなければ理由の1行は出さない', async () => {
+      renderView();
+      await ready();
+      expect(weight()).toHaveValue(40);
+      expect(reps()).toHaveValue(9);
+      expect(screen.queryByTestId('rest-return-note')).not.toBeInTheDocument();
+    });
+
+    it('A02-5 前回から3日以上あいたら、前回と同じ値（40×8）で始め、責めずに理由を1行出す', async () => {
+      vi.setSystemTime(new Date('2026-10-30T03:00:00Z'));
+      renderView();
+      await ready();
+      expect(reps()).toHaveValue(8);
+      expect(screen.getByTestId('rest-return-note')).toHaveTextContent('しばらく あいたので');
+    });
+
+    it('A02-11 「仲間と くらべる」は最初は畳まれ、開くと仲間が出る', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      const toggle = await screen.findByRole('button', { name: /仲間と くらべる/ });
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.queryByRole('button', { name: /はなこ/ })).not.toBeInTheDocument();
+      await user.click(toggle);
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(await screen.findByRole('button', { name: /はなこ/ })).toBeInTheDocument();
+    });
+
+    it('A03-1・A11-3 結果の板は画面の下に固定せず、「できた」の下に流す（入力欄を覆わない）', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      const box = sheet()!;
+      expect(box.closest('.fixed')).toBeNull();
+      expect(doneButton().compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('A12-3 「できた」は画面下に固定せず、入力欄のあとに置く', async () => {
+      renderView();
+      await ready();
+      expect(doneButton().closest('.sticky')).toBeNull();
+      expect(reps().compareDocumentPosition(doneButton()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('A03-2 「できた」のあとに「今日はここまで」が出る（今日の画面へ）。休憩は自動で始まらない', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      expect(screen.queryByRole('link', { name: /今日はここまで/ })).not.toBeInTheDocument();
+      await user.click(doneButton());
+      const stop = await screen.findByRole('link', { name: /今日はここまで/ });
+      expect(stop).toHaveAttribute('href', '/today');
+      expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
+    });
+
+    it('A03-3 バーに「前回」「今回」の文字と値、札は「お試し」でなく「目安」', async () => {
+      handlers['GET /api/exercises/e-bench/previous'] = () => ({ status: 200, body: NO_PREVIOUS });
+      renderView();
+      await ready();
+      const bar = screen.getByRole('group', { name: '前回との くらべ' });
+      expect(within(bar).getByText('目安')).toBeInTheDocument();
+      expect(within(bar).queryByText('お試し')).not.toBeInTheDocument();
+      expect(within(bar).getByText('今回').parentElement).toHaveTextContent('40kg × 10回');
+    });
+
+    it('A03-4 前回を読み込み中は「できた」が押せず、理由を1行出す。進み具合は文字でも出す', async () => {
+      handlers['GET /api/exercises/e-bench/previous'] = () => new Promise<Reply>(() => {});
+      renderView();
+      await screen.findByRole('heading', { name: 'ベンチプレス' });
+      expect(doneButton()).toBeDisabled();
+      expect(screen.getByText(/前回の記録を 読み込んでいます/)).toBeInTheDocument();
+      expect(screen.getByTestId('set-progress')).toHaveTextContent('0セット できた');
+    });
+
+    it('A03-4 進み具合の文字は、できたセットに合わせて変わる', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      expect(screen.getByTestId('set-progress')).toHaveTextContent('0セット できた（前回は2セット）');
+      await user.click(doneButton());
+      await waitFor(() => expect(screen.getByTestId('set-progress')).toHaveTextContent('1セット できた'));
+    });
+
+    it('A03-5 セットがあるとき ✕ を押すと「記録は残ります」と確認。「つづける」で戻り、「とじる」は今日の画面へ', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      await user.click(await screen.findByRole('button', { name: 'とじる' }));
+      const dialog = screen.getByRole('alertdialog');
+      expect(dialog).toHaveTextContent('記録は 残ります');
+      expect(within(dialog).getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today');
+      await user.click(within(dialog).getByRole('button', { name: 'つづける' }));
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    });
+
+    it('A03-5 まだ1セットも無いときは、確認なしで閉じる（リンク）', async () => {
+      renderView();
+      await ready();
+      expect(screen.getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today');
+    });
+
+    it('N-04 ✕・「今日はここまで」・確認の「とじる」は、きのうの分なら day=yesterday を引き継ぐ', async () => {
+      search = 'exercise=e-bench&day=yesterday';
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      expect(screen.getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today?day=yesterday');
+      await user.click(doneButton());
+      expect(await screen.findByRole('link', { name: /今日はここまで/ })).toHaveAttribute('href', '/today?day=yesterday');
+      await user.click(screen.getByRole('button', { name: 'とじる' }));
+      expect(within(screen.getByRole('alertdialog')).getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today?day=yesterday');
+    });
+
+    it('A03-6 数字は直接打てると文字で伝える', async () => {
+      renderView();
+      await ready();
+      expect(screen.getByText(/直接 入力できます/)).toBeInTheDocument();
+    });
+
+    it('A06-1・A06-2 動画の入口は「2秒動画を撮る」。専門語（ラストレップ）を使わず、最後の1回を2秒と言い換える', async () => {
+      vi.stubGlobal('MediaRecorder', { isTypeSupported: (m: string) => m === 'video/mp4' });
+      Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: vi.fn() } });
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      expect(await screen.findByRole('button', { name: '2秒動画を撮る' })).toBeInTheDocument();
+      expect(screen.getByText('最後の1回を 2秒だけ 動画に')).toBeInTheDocument();
+      expect(screen.queryByText(/ラストレップ/)).not.toBeInTheDocument();
+    });
+
+    it('A12-5 いまのセット番号は1つだけ（「いま 2セット目」）', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      await screen.findByText('いま 2セット目');
+      expect(screen.getAllByText(/セット目/)).toHaveLength(1);
+    });
   });
 
   it('責める言葉（禁止語）を画面に出さない（T-DATE-13・T-GHOST-13）', async () => {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { BodyPart } from '@/lib/api/generated';
 import { HEAT_COLORS } from '@/lib/heatmap';
 import { ResultSheet, type SheetData } from './result-sheet';
@@ -35,5 +35,35 @@ describe('ResultSheet（今月◯日目 F-20）', () => {
   it('monthDay が無ければ出さない（0 日目と間違えない）', () => {
     render(<ResultSheet sheet={base} onDismiss={() => {}} />);
     expect(screen.queryByTestId('month-day')).not.toBeInTheDocument();
+  });
+});
+
+// A02-8: きのうの記録なのに「今日きたえたところ」「今月◯日目」と出ていた。選んだ日に合わせて見出しを替え、日数には「今月の合計」を添える
+describe('ResultSheet（選んだ日に合わせた文言 A02-8）', () => {
+  it('今日の記録: 「今日きたえたところ」', () => {
+    render(<ResultSheet sheet={{ ...base, parts: [BodyPart.chest] }} onDismiss={() => {}} />);
+    expect(screen.getByTestId('today-parts')).toHaveTextContent('今日きたえたところ: 胸');
+  });
+  it('きのうの記録: 「きのうきたえたところ」', () => {
+    render(<ResultSheet sheet={{ ...base, day: 'yesterday', parts: [BodyPart.chest] }} onDismiss={() => {}} />);
+    expect(screen.getByTestId('today-parts')).toHaveTextContent('きのうきたえたところ: 胸');
+    expect(screen.getByTestId('today-parts')).not.toHaveTextContent('今日');
+  });
+  it('「今月 N 日目」には「（今月の合計）」を添える', () => {
+    render(<ResultSheet sheet={{ ...base, monthDay: 4 }} onDismiss={() => {}} />);
+    expect(screen.getByTestId('month-day')).toHaveTextContent('今月 4 日目（今月の合計）');
+  });
+});
+
+// A11-4: 電波が無く、応援キャラの画像が読み込めなかったとき、壊れた画像アイコンを出さない
+describe('ResultSheet（画像の読み込み失敗 A11-4）', () => {
+  it('キャラの画像は最初は出ていて、読み込みに失敗したら何も出さない', () => {
+    render(<ResultSheet sheet={base} onDismiss={() => {}} />);
+    const sprite = screen.getByTestId('sprite');
+    expect(sprite).toBeInTheDocument();
+    fireEvent.error(sprite.querySelector('img')!);
+    expect(screen.queryByTestId('sprite')).not.toBeInTheDocument();
+    // 文字の結果は残る
+    expect(screen.getByTestId('result-sheet')).toHaveTextContent('前回超え');
   });
 });

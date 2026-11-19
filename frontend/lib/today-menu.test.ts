@@ -28,12 +28,17 @@ describe('buildMenu（今日のメニューを組み立てる）', () => {
 
   it('提案（F-23）は前回の最後のセットから作る。前回の無い種目は null', () => {
     const today = workout('r2', TODAY, [curl([[25, 12]])]);
-    const prev = workout('r1', '2026-11-01', [squat([[60, 10], [60, 8]])]);
+    const prev = workout('r1', '2026-11-02', [squat([[60, 10], [60, 8]])]);
     const m = buildMenu([today, prev], TODAY);
     expect(m.items.map((i) => [i.exerciseId, i.suggestion])).toEqual([
       ['sq', { weightKg: 60, reps: 9 }],
       ['lc', null],
     ]);
+  });
+
+  it('休み明け（前回から3日以上）は、前回の最後のセットと同じ値を目標にする（A02-5）', () => {
+    const prev = workout('r1', '2026-11-01', [squat([[60, 10], [60, 8]])]);
+    expect(buildMenu([prev], TODAY).items[0].suggestion).toEqual({ weightKg: 60, reps: 8 });
   });
 
   it('今日すでにセットが入った種目は done。次の1枚は、まだの種目のうち先頭', () => {

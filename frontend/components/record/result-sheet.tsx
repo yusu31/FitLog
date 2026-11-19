@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from 'cn';
 import { BodyFigure } from '@/components/me/body-figure';
 import { Sprite } from '@/components/fitlog/sprite';
@@ -27,13 +27,24 @@ export type SheetData = {
   parts?: readonly BodyPart[];
   // 今月の何日目か（F-20）。分からないとき（まだ読み込めていない・電波なし）は出さない
   monthDay?: number;
+  // 記録する日（きのうの分のとき、見出しを「きのう」にする。A02-8）。無ければ今日
+  day?: 'today' | 'yesterday';
 };
 
 // 結果シート（features.md 2.6）。「できた」の直後に 3秒出し、タップで飛ばせる。
+// 画面の下に固定せず、セット一覧の流れの中（「できた」ボタンのすぐ下）に置く。入力欄やボタンを覆わない（A03-1・A11-3）
+
 // 動きを減らす設定のときは、動かさず表示だけにする。責める言葉・悪い色は使わない（下回りも同じ明るい面）
 export function ResultSheet({ sheet, onDismiss }: { sheet: SheetData | null; onDismiss: () => void }) {
   const reduced = usePrefersReducedMotion();
   const key = sheet?.setId;
+
+  // 応援キャラの画像を先に読み込んでおく。電波がない場所で最初に「できた」を押しても、端末に残った画像が使える（A11-4）
+  useEffect(() => {
+    for (const pose of ['cheer', 'pb'] as const) {
+      for (let i = 0; i < 2; i++) new Image().src = `/characters/${pose}_${i}.png`;
+    }
+  }, []);
 
   useEffect(() => {
     if (!key) return;
@@ -44,14 +55,14 @@ export function ResultSheet({ sheet, onDismiss }: { sheet: SheetData | null; onD
 
   // 読み上げ用の領域は常に置き、中身だけ出し入れする（あとから挿入された領域は読まれないことがあるため）
   return (
-    <div role="status" aria-live="polite" className="pointer-events-none fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2">
+    <div role="status" aria-live="polite" className="w-full">
       {sheet && <Body sheet={sheet} reduced={reduced} onDismiss={onDismiss} />}
     </div>
   );
 }
 
 function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolean; onDismiss: () => void }) {
-  const { result, diff, isPersonalBest, summary, note, parts, monthDay } = sheet;
+  const { result, diff, isPersonalBest, summary, note, parts, monthDay, day } = sheet;
   const gold = result === 'up' || isPersonalBest;
   const [upLabel, upAmount] = ghostUpMessage(diff).split(' ');
   return (
@@ -61,41 +72,55 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
       data-motion={reduced ? 'reduced' : 'full'}
       onClick={onDismiss}
       className={cn(
-        'pointer-events-auto relative block w-full rounded-t-2xl px-4 pt-5 pb-6 text-left text-ink outline-none',
+        'relative flex w-full items-start gap-2 rounded-fl px-4 py-4 text-left text-ink outline-none',
         'focus-visible:ring-4 focus-visible:ring-teal/40',
         gold ? 'bg-gold' : 'bg-teal-light',
-        !reduced && 'animate-in slide-in-from-bottom duration-300',
+        !reduced && 'animate-in fade-in duration-300',
       )}
     >
-      <Sprite pose={isPersonalBest ? 'pb' : 'cheer'} size={80} className="absolute right-3 -top-16" />
-      {isPersonalBest && <span className="fl-tag mb-2 bg-ink text-white">{RECORD_MESSAGES.best}</span>}
-      <p className="text-[26px] leading-tight font-extrabold">
-        {result === 'up' ? (
-          <>
-            {upLabel} <span className="fl-num text-[40px]">{upAmount}</span>
-          </>
-        ) : result === 'same' ? (
-          GHOST_MESSAGES.same
-        ) : result === 'down' ? (
-          GHOST_MESSAGES.down
-        ) : (
-          RECORD_MESSAGES.recorded
+      <span className="min-w-0 flex-1">
+        {isPersonalBest && <span className="fl-tag mb-2 bg-ink text-white">{RECORD_MESSAGES.best}</span>}
+        <span className="block text-[26px] leading-tight font-extrabold">
+          {result === 'up' ? (
+            <>
+              {upLabel} <span className="fl-num text-[40px]">{upAmount}</span>
+            </>
+          ) : result === 'same' ? (
+            GHOST_MESSAGES.same
+          ) : result === 'down' ? (
+            GHOST_MESSAGES.down
+          ) : (
+            RECORD_MESSAGES.recorded
+          )}
+        </span>
+        <span className="mt-1 block text-sm opacity-85">{summary}</span>
+        {monthDay !== undefined && (
+          <span data-testid="month-day" className="mt-1 block text-sm font-bold">
+            今月 <span className="fl-num text-xl">{monthDay}</span> 日目（今月の合計）
+          </span>
         )}
-      </p>
-      <p className="mt-1 text-sm opacity-85">{summary}</p>
-      {monthDay !== undefined && (
-        <p data-testid="month-day" className="mt-1 text-sm font-bold">
-          今月 <span className="fl-num text-xl">{monthDay}</span> 日目
-        </p>
-      )}
-      {note && <p className="mt-1 text-xs font-bold opacity-85">{note}</p>}
-      {parts && parts.length > 0 && <TodayParts parts={parts} />}
+        {note && <span className="mt-1 block text-base font-bold">{note}</span>}
+        {parts && parts.length > 0 && <TodayParts parts={parts} day={day} />}
+      </span>
+      <CheerSprite pose={isPersonalBest ? 'pb' : 'cheer'} />
     </button>
   );
 }
 
+// 応援キャラ。画像が読み込めなかったとき（電波がなく、まだ端末に無い画像）は、壊れた画像アイコンを出さず何も出さない（A11-4）。
+// <img> の読み込み失敗は伝わらない（bubble しない）ので、捕まえる側（capture）で受ける
+function CheerSprite({ pose }: { pose: 'pb' | 'cheer' }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <span onErrorCapture={() => setFailed(true)} className="shrink-0">
+      <Sprite pose={pose} size={64} />
+    </span>
+  );
+}
+
 // 今日きたえた部位（F-19）。ヒートマップ（F-12）と同じ体の図で、使った部位だけを一番濃い色にする。色だけに頼らず、部位名も書く
-function TodayParts({ parts }: { parts: readonly BodyPart[] }) {
+function TodayParts({ parts, day }: { parts: readonly BodyPart[]; day?: 'today' | 'yesterday' }) {
   const levels = levelsOf(parts.map((bodyPart) => ({ bodyPart, sets: 4 })));
   const names = BODY_PART_ORDER.filter((p) => parts.includes(p)).map((p) => BODY_PART_LABEL[p]);
   return (
@@ -104,7 +129,7 @@ function TodayParts({ parts }: { parts: readonly BodyPart[] }) {
         <BodyFigure view="front" levels={levels} size={36} />
         <BodyFigure view="back" levels={levels} size={36} />
       </div>
-      <p className="text-sm font-bold">今日きたえたところ: {names.join('・')}</p>
+      <p className="text-sm font-bold">{day === 'yesterday' ? 'きのう' : '今日'}きたえたところ: {names.join('・')}</p>
     </div>
   );
 }

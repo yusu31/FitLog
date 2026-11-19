@@ -27,3 +27,18 @@ describe('suggestNext', () => {
     expect(suggestNext({ weightKg: 0, reps: 15 })).toEqual({ weightKg: 0, reps: 16 });
   });
 });
+
+// A02-5: 休み明け（記録のない日が2日以上続いた＝あいた日数が3日以上）は、重さも回数も前回と同じ値を目標にする（責めない）
+describe('suggestNext（休み明け）', () => {
+  it('あいた日数が2日以下なら、いつもどおり1つ進める（境界: 2日）', () => {
+    expect(suggestNext({ weightKg: 40, reps: 10 }, 2)).toEqual({ weightKg: 40, reps: 11 });
+  });
+  it('あいた日数が3日以上（境界: 3日）なら、前回と同じ値', () => {
+    expect(suggestNext({ weightKg: 40, reps: 10 }, 3)).toEqual({ weightKg: 40, reps: 10 });
+    expect(suggestNext({ weightKg: 60, reps: REP_MAX }, 10)).toEqual({ weightKg: 60, reps: REP_MAX });
+  });
+  it('日数が分からない（null）ときは、いつもどおり', () => {
+    expect(suggestNext({ weightKg: 40, reps: 10 }, null)).toEqual({ weightKg: 40, reps: 11 });
+  });
+});
+

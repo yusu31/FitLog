@@ -79,6 +79,23 @@ describe('最初に入る値（features.md 2.3。前回の同じセット番号 
   });
 });
 
+// A02-5: 入力の初期値を、今日の画面の「目標」と同じ値にそろえる（前回の最後のセットから決める）
+describe('最初に入る値（目標にそろえる。A02-5）', () => {
+  it('前回の最後のセット（40×8）から決めた目標（40×9）が入る。バーの前回は同じセット番号のまま', () => {
+    expect(initialDraft(PREV, 1, null, { daysSince: 1 })).toEqual({ draft: { weightKg: 40, reps: 9 }, ghost: PREV[0], source: 'previous' });
+  });
+  it('上限（12回）に着いていれば、重さが上がって回数は8回に戻る', () => {
+    const prev = [{ setNo: 1, weightKg: 40, reps: 12 }];
+    expect(initialDraft(prev, 1, null, { daysSince: 2 }).draft).toEqual({ weightKg: 42.5, reps: 8 });
+  });
+  it('休み明け（3日以上あいた）は前回の最後のセットと同じ値で、restReturn の印が付く', () => {
+    expect(initialDraft(PREV, 1, null, { daysSince: 3 })).toEqual({ draft: { weightKg: 40, reps: 8 }, ghost: PREV[0], source: 'previous', restReturn: true });
+  });
+  it('前回が無いとき（お試し・空）は、目標を使わない', () => {
+    expect(initialDraft(undefined, 1, { weightKg: 25, reps: 12 }, { daysSince: 5 }).source).toBe('trial');
+  });
+});
+
 describe('セット番号', () => {
   it('消して穴があいても、いちばん大きい番号の次（番号の重複で 409 にならない）', () => {
     expect(nextSetNo([])).toBe(1);
