@@ -34,5 +34,5 @@ test('ラン画面の上に日本縦断への入口があり、押すと記録�
 
   await page.goto('/run/');
   await page.getByRole('link', { name: '日本縦断' }).click();
-  await expect(page).toHaveURL(/\/me\/stats\/?$/);
+  await expect(page).toHaveURL(/\/me\/stats\/?(#japan-trek)?$/);
 });

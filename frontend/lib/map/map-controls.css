@@ -1,0 +1,20 @@
+/* 地図の操作ボタンは既定で 29px 角。指で押しやすい 44px にそろえる（V-07）。
+   maplibre-gl.css より具体的な選択子にして、読み込む順に左右されないようにする */
+.maplibregl-ctrl-group button.maplibregl-ctrl-zoom-in,
+.maplibregl-ctrl-group button.maplibregl-ctrl-zoom-out {
+  width: 44px;
+  height: 44px;
+}
+
+/* 出典（クレジット）を開くボタン */
+.maplibregl-ctrl.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
+  width: 44px;
+  height: 44px;
+}
+
+/* 出典のリンク。文字は小さいままで、押せる高さだけ 44px にする */
+.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
