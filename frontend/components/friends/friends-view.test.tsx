@@ -174,6 +174,16 @@ describe('FriendsView（S-20 仲間）', () => {
       expect(screen.getAllByRole('link', { name: /グループの設定/ })).toHaveLength(1);
     });
 
+    // A14-2: 仲間タブに今週の2秒動画の列（閲覧条件は API の unlocked が決める。画面は鍵の枠を出すだけ）
+    it('今週の2秒動画の列を出す。自分が撮っていない間は、仲間の動画は鍵の枠', async () => {
+      replies['GET /api/videos/week'] = [
+        { status: 200, body: { weekStart: '2026-11-16', unlocked: false, items: [{ id: 'v1', recordId: 'r1', recordedAt: '2026-11-18T01:00:00.000Z', visibleUntil: '2026-11-22T15:00:00.000Z', mine: false, author: GROUP.members[1] }] } },
+      ];
+      renderView();
+      expect(await screen.findByRole('heading', { name: '今週の2秒動画' })).toBeInTheDocument();
+      expect(await screen.findByRole('img', { name: 'はなこ: 1本撮ると 見られます' })).toBeInTheDocument();
+    });
+
     // T-PEER-06（N6）: 仲間が自分1人の間だけ、仲間タブの上に招待のカードを出す（境界: 1人／2人）
     it('自分1人のときは「なかまを まねく」を出し、2人以上なら出さない', async () => {
       replies['GET /api/groups/current'] = [{ status: 200, body: { ...GROUP, members: [GROUP.members[0]] } }];

@@ -3,7 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { toLocalDate } from '@/lib/shared/local-date';
-import { calls, installFakeApi, renderWithQuery, restRecord, runRecord, workout } from '@/lib/test/fake-api';
+import { calls, installFakeApi as installApi, renderWithQuery, restRecord, runRecord, workout } from '@/lib/test/fake-api';
 import { MeView } from './me-view';
 
 const TODAY = toLocalDate(new Date());
@@ -27,6 +27,8 @@ vi.mock('@/lib/auth-client', () => ({
   },
 }));
 
+// 自分の過去の動画（MyVideoGrid）は、この画面のどのテストでも呼ばれる。決めていないテストでは「動画なし」を返す
+const installFakeApi: typeof installApi = (routes) => installApi({ '/api/videos/mine': { status: 200, body: { items: [], nextCursor: null } }, ...routes });
 const FIRST = '/api/records?limit=20';
 const ok = (body: unknown) => ({ status: 200, body });
 const page = (items: unknown[], nextCursor: string | null = null) => ok({ items, nextCursor });
@@ -128,6 +130,19 @@ describe('MeView（S-30 自分）', () => {
       const alert = await screen.findByRole('alert');
       expect(alert).toHaveTextContent('読み込めませんでした');
       expect(alert).not.toHaveTextContent('stack trace');
+    });
+  });
+
+  describe('自分の過去の動画（A04-10）', () => {
+    it('過去の2秒動画のグリッドを、記録の一覧の上に出す', async () => {
+      installFakeApi({
+        [FIRST]: page([]),
+        '/api/videos/mine': ok({ items: [{ id: 'v1', recordId: 'r1', recordedAt: '2026-11-02T01:00:00.000Z', localDate: '2026-11-02', visibleUntil: '2026-11-08T15:00:00.000Z' }], nextCursor: null }),
+        '/api/videos/v1/url': ok({ url: 'https://s3.example/v1', expiresInSeconds: 300 }),
+      });
+      renderWithQuery(<MeView />);
+      expect(await screen.findByRole('heading', { name: '自分の過去の2秒動画' })).toBeInTheDocument();
+      expect(await screen.findByLabelText('11/2の動画を開く')).toBeInTheDocument();
     });
   });
 
