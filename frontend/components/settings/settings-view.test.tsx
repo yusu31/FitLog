@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { SettingsView } from './settings-view';
@@ -8,7 +8,14 @@ const replace = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }), usePathname: () => '/settings/' }));
 const signOut = vi.fn();
 let session: { data: unknown; isPending: boolean } = { data: null, isPending: false };
-vi.mock('@/lib/auth-client', () => ({ authClient: { useSession: () => session, signOut: (...args: unknown[]) => signOut(...args) } }));
+const updateUser = vi.fn();
+vi.mock('@/lib/auth-client', () => ({
+  authClient: {
+    useSession: () => session,
+    signOut: (...args: unknown[]) => signOut(...args),
+    updateUser: (...args: unknown[]) => updateUser(...args),
+  },
+}));
 
 const SIGNED_IN = { data: { user: { id: 'u1', name: 'たろう', email: 'taro@example.com' } }, isPending: false };
 const GROUP = { id: 'g1', name: '朝トレ部', members: [{ id: 'u1', name: 'たろう', avatar: {} }] };
@@ -19,6 +26,9 @@ beforeEach(() => {
   groupReply = { status: 200, body: GROUP };
   replace.mockClear();
   signOut.mockReset();
+  updateUser.mockReset();
+  updateUser.mockResolvedValue({ data: {}, error: null });
+  localStorage.removeItem('fitlog:add-to-home-dismissed');
   signOut.mockResolvedValue(undefined);
   vi.stubGlobal(
     'fetch',
@@ -49,8 +59,61 @@ describe('SettingsView（S-31 設定）', () => {
   it('ユーザー情報（表示名・メール）を出す', () => {
     renderView();
     const section = screen.getByRole('region', { name: 'ユーザー情報' });
-    expect(section).toHaveTextContent('たろう');
+    expect(within(section).getByLabelText('表示名')).toHaveValue('たろう');
     expect(section).toHaveTextContent('taro@example.com');
+  });
+
+  // A10-4: 設定の上部で、そのまま名前を直せる（アカウントの設定を開かなくてよい）
+  it('上部の表示名の欄を直して保存すると、updateUser を呼んで保存できたことを知らせる', async () => {
+    const user = userEvent.setup();
+    renderView();
+    const input = screen.getByLabelText('表示名');
+    await user.clear(input);
+    await user.type(input, 'じろう');
+    await user.click(screen.getByRole('button', { name: '名前を保存' }));
+    expect(updateUser).toHaveBeenCalledWith({ name: 'じろう' });
+    expect(await screen.findByText('保存しました')).toBeInTheDocument();
+  });
+
+  it('表示名が空白だけなら送らずに知らせる', async () => {
+    const user = userEvent.setup();
+    renderView();
+    const input = screen.getByLabelText('表示名');
+    await user.clear(input);
+    await user.type(input, '   ');
+    await user.click(screen.getByRole('button', { name: '名前を保存' }));
+    expect(updateUser).not.toHaveBeenCalled();
+    expect(await screen.findByRole('alert')).toHaveTextContent('表示名を入れてください');
+  });
+
+  // A10-5: 追加済みなら説明を隠し、閉じるボタンで消せる
+  describe('「ホーム画面に追加」の説明', () => {
+    afterEach(() => Reflect.deleteProperty(window, 'matchMedia'));
+    const standalone = (matches: boolean) =>
+      Object.defineProperty(window, 'matchMedia', { value: () => ({ matches, addEventListener() {}, removeEventListener() {} }), configurable: true });
+
+    it('追加していなければ出す', () => {
+      standalone(false);
+      renderView();
+      expect(screen.getByRole('heading', { name: 'ホーム画面に追加' })).toBeInTheDocument();
+    });
+
+    it('ホーム画面から開いている（追加済み）なら出さない', () => {
+      standalone(true);
+      renderView();
+      expect(screen.queryByRole('heading', { name: 'ホーム画面に追加' })).not.toBeInTheDocument();
+    });
+
+    it('閉じるを押すと隠れ、次に開いても隠れたまま', async () => {
+      standalone(false);
+      const user = userEvent.setup();
+      const first = renderView();
+      await user.click(screen.getByRole('button', { name: 'ホーム画面に追加の説明を閉じる' }));
+      expect(screen.queryByRole('heading', { name: 'ホーム画面に追加' })).not.toBeInTheDocument();
+      first.unmount();
+      renderView();
+      expect(screen.queryByRole('heading', { name: 'ホーム画面に追加' })).not.toBeInTheDocument();
+    });
   });
 
   it('グループに入っていれば、グループ名を出し、グループの設定（S-32）へのリンクにする', async () => {

@@ -10,6 +10,7 @@ import { getGetCurrentGroupQueryKey, useAcceptInvitation, useGetInvitation } fro
 import { messageOf } from '@/lib/api/message';
 import { useAppSession } from '@/lib/use-app-session';
 import { withNext } from '@/lib/next-path';
+import { PasteInvite } from './paste-invite';
 
 // S-03 招待を受ける（docs/screen-design.md 1章）。グループ名と今の人数はログイン前でも見える。
 // 参加はログイン後。「登録して参加」「ログインして参加」を押して戻ったときだけ、押さなくても自動で参加する（N11）。
@@ -51,7 +52,7 @@ export function InviteView() {
     );
   }
   if (preview.isError || !preview.data) {
-    return <Problem title="読み込めませんでした">電波の良い所で、もう一度開いてください。</Problem>;
+    return <Problem title="読み込めませんでした" paste={false}>電波の良い所で、もう一度開いてください。</Problem>;
   }
   if (preview.data.status === 410) {
     return <Problem title="期限が切れています">招待リンクは7日間だけ使えます。仲間に、新しいリンクをもらってください。</Problem>;
@@ -181,7 +182,7 @@ function Frame({ children }: { children: ReactNode }) {
   );
 }
 
-function Problem({ title, children }: { title: string; children: ReactNode }) {
+function Problem({ title, children, paste = true }: { title: string; children: ReactNode; paste?: boolean }) {
   return (
     <Frame>
       <section className="fl-slab flex gap-3 px-4 py-4">
@@ -193,7 +194,11 @@ function Problem({ title, children }: { title: string; children: ReactNode }) {
           <p className="mt-1 text-sm text-sub">{children}</p>
         </div>
       </section>
-      <Link href="/friends" className="text-center text-sm font-extrabold text-teal-dark underline underline-offset-4">
+      {paste && <PasteInvite />}
+      <Link
+        href="/friends"
+        className="flex min-h-11 items-center justify-center text-sm font-extrabold text-teal-dark underline underline-offset-4"
+      >
         仲間タブへ
       </Link>
     </Frame>

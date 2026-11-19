@@ -4,10 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { InviteView } from './invite-view';
 
 const replace = vi.fn();
+const push = vi.fn();
 let search = 'token=tok_123';
 let session: { data: unknown; isPending: boolean } = { data: null, isPending: false };
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace }),
+  useRouter: () => ({ replace, push }),
   useSearchParams: () => new URLSearchParams(search),
 }));
 vi.mock('@/lib/auth-client', () => ({ authClient: { useSession: () => session } }));
@@ -18,6 +19,7 @@ const calls: string[] = [];
 
 beforeEach(() => {
   replace.mockReset();
+  push.mockReset();
   search = 'token=tok_123';
   session = { data: null, isPending: false };
   replies = {};
@@ -153,5 +155,41 @@ describe('InviteView（S-03 招待を受ける）', () => {
     renderView();
     expect(screen.getByRole('heading', { name: 'リンクが正しくありません' })).toBeInTheDocument();
     expect(calls).toEqual([]);
+  });
+
+  // A13-8: 使えないリンクのとき、貼り直す入力欄を出す（未ログイン・ログイン済みとも）
+  describe('使えないリンクのとき', () => {
+    it.each([
+      ['未ログイン', null],
+      ['ログイン済み', { user: { id: 'u2', name: 'はなこ' } }],
+    ])('%s でも、リンクを貼り直す欄を出し、貼ると新しい参加の画面へ移る', async (_label, data) => {
+      session = { data, isPending: false };
+      replies['GET /api/invitations/tok_123'] = { status: 404, body: { code: 'INVITATION_NOT_FOUND', message: 'x' } };
+      const user = userEvent.setup();
+      renderView();
+      expect(await screen.findByRole('heading', { name: 'このリンクは使えません' })).toBeInTheDocument();
+      await user.type(screen.getByLabelText('届いた招待リンク'), 'https://fitlog.example/invite?token=new_TOKEN-1');
+      await user.click(screen.getByRole('button', { name: '開く' }));
+      expect(push).toHaveBeenCalledWith('/invite?token=new_TOKEN-1');
+    });
+
+    it('読み取れない文字列を貼ったら、移らずに案内を出す', async () => {
+      replies['GET /api/invitations/tok_123'] = { status: 404, body: {} };
+      const user = userEvent.setup();
+      renderView();
+      await screen.findByRole('heading', { name: 'このリンクは使えません' });
+      await user.type(screen.getByLabelText('届いた招待リンク'), 'こんにちは');
+      await user.click(screen.getByRole('button', { name: '開く' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('招待リンクが読み取れませんでした');
+      expect(push).not.toHaveBeenCalled();
+    });
+
+    it('期限切れのときも貼り直せる。「仲間タブへ」は 24px 以上の的（min-h を持つ）', async () => {
+      replies['GET /api/invitations/tok_123'] = { status: 410, body: {} };
+      renderView();
+      await screen.findByRole('heading', { name: '期限が切れています' });
+      expect(screen.getByLabelText('届いた招待リンク')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: '仲間タブへ' }).className).toMatch(/min-h-11/);
+    });
   });
 });
