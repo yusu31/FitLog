@@ -33,8 +33,8 @@ export function SocialSection({ recordId, kind, mine }: { recordId: string; kind
   return (
     <div className="space-y-4">
       <Stamps recordId={recordId} kind={kind} online={online} mine={mine} />
-      <Comments recordId={recordId} online={online} />
-      {!online && <p className="text-center text-xs font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
+      <Comments recordId={recordId} online={online} mine={mine} />
+      {!online && !mine && <p className="text-center text-xs font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
     </div>
   );
 }
@@ -119,7 +119,7 @@ function ReceivedStamps({ stamps, kind, loaded }: { stamps: readonly FeedStamp[]
   );
 }
 
-function Comments({ recordId, online }: { recordId: string; online: boolean }) {
+function Comments({ recordId, online, mine }: { recordId: string; online: boolean; mine: boolean }) {
   const queryClient = useQueryClient();
   const { data: session } = useAppSession();
   const me = session?.user.id;
@@ -166,7 +166,7 @@ function Comments({ recordId, online }: { recordId: string; online: boolean }) {
   return (
     <section aria-labelledby="comments-heading" className="space-y-2">
       <h2 id="comments-heading" className="text-base font-extrabold">
-        {FEED_MESSAGES.commentsHeading}
+        {data !== undefined && !failed ? FEED_MESSAGES.commentsOpen(items.length) : FEED_MESSAGES.commentsHeading}
       </h2>
       {failed ? (
         <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
@@ -200,6 +200,7 @@ function Comments({ recordId, online }: { recordId: string; online: boolean }) {
           ))}
         </ul>
       )}
+      {!mine && (
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-2">
         <label htmlFor={inputId} className="text-xs font-bold text-sub-strong">
           {FEED_MESSAGES.commentInputLabel}
@@ -218,6 +219,7 @@ function Comments({ recordId, online }: { recordId: string; online: boolean }) {
           </ThickButton>
         </div>
       </form>
+      )}
       {message && (
         <p
           role={message.kind === 'error' ? 'alert' : 'status'}

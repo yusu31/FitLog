@@ -190,6 +190,10 @@ export const DETAIL_MESSAGES = {
   loadFailed: '読み込めませんでした。電波の良い所で開き直してください',
   removing: '消しています',
   deleteButton: 'この記録を 消す',
+  deleteRegion: '記録の削除',
+  ownerMine: 'あなたの記録',
+  ownerFriend: (name: string | null): string => (name ? `${name}さんの記録` : '仲間の記録'),
+  copyExplain: 'この内容で今日を始めます。記録はまだ作られず、「できた」を押したときに残ります',
   backMe: '自分にもどる',
   backFriends: '仲間にもどる',
 } as const;
