@@ -50,6 +50,16 @@ describe('FriendsToday（A01-8・A02-1 今日画面の上の仲間の足跡）',
     expect(calls.some((c) => c.includes('/api/feed'))).toBe(false);
   });
 
+  it("part='summary' は招待カードを出さず、part='invite' は招待だけを出す（P5 N1）", async () => {
+    installFakeApi({ [GROUP]: { status: 404, body: { message: 'なし' } } });
+    const a = renderWithQuery(<FriendsToday today={TODAY} part="summary" />);
+    await vi.waitFor(() => expect(calls).toContain(`GET ${GROUP}`));
+    expect(a.container).toBeEmptyDOMElement();
+    a.unmount();
+    renderWithQuery(<FriendsToday today={TODAY} part="invite" />);
+    expect(await screen.findByRole('region', { name: '仲間' })).toBeInTheDocument();
+  });
+
   it('自分1人のグループでも、招待の入口を出す', async () => {
     installFakeApi({ [GROUP]: ok(group(member('u1', 'わたし'))) });
     renderWithQuery(<FriendsToday today={TODAY} />);

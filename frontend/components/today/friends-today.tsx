@@ -30,16 +30,18 @@ const joinNames = (names: string[]): string =>
 
 // 今日画面の上の「仲間の今日の足跡」1行（A02-1）と、グループが無い・自分だけのときの招待の入口（A01-8）。
 // 仲間タブと同じフィード（GET /feed）を使う。足跡の最初の20件だけを見る。取れなかったときは何も出さない
-export function FriendsToday({ today }: { today: string }) {
+// part: 'summary'＝足跡の1行だけ（上）、'invite'＝招待の入口だけ（主ボタンの下。P5 N1）、省略＝両方
+export function FriendsToday({ today, part = 'all' }: { today: string; part?: 'all' | 'summary' | 'invite' }) {
   const group = useGetCurrentGroup();
   const { data: session } = useAppSession();
   const members = group.data?.status === 200 ? group.data.data.members.length : 0;
   const feed = useGetFeed({ weekStart: today }, { query: { enabled: members >= 2 } });
 
   if (group.isPending || group.isError || !group.data) return null;
-  if (group.data.status === 404) return <InviteCard noGroup />;
+  if (group.data.status === 404) return part === 'summary' ? null : <InviteCard noGroup />;
   if (group.data.status !== 200) return null;
-  if (members <= 1) return <InviteCard noGroup={false} />;
+  if (members <= 1) return part === 'summary' ? null : <InviteCard noGroup={false} />;
+  if (part === 'invite') return null;
 
   const items = feed.data?.status === 200 ? feed.data.data.items : null;
   if (!items) return null;

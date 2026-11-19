@@ -5,7 +5,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 // 「N件 送ったよ」を出すための控え（A11-1）。
 // 画面の部品（帯）の中に持つと、画面を移ったときに「送れた」が消えてしまうので、画面の外の小さな外部ストアに置く。
 // 帯が出ていない画面（記録・詳細など）でも、画面全体の入れ物（QueueOwner）が同じ控えを進める。
-export const SENT_VISIBLE_MS = 3000;
+export const SENT_VISIBLE_MS = 6000; // 3秒だと見落とすので6秒（P5 N2）
 
 export type SentNotice = { n: number; seq: number };
 export type SentState = { peak: number; notice: SentNotice | null };

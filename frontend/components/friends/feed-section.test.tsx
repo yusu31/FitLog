@@ -192,6 +192,16 @@ describe('スタンプ', () => {
     expect(screen.getByRole('button', { name: 'おつかれ' })).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('P5 N3: 自分の足跡の「くわしく見る」は自分用の詳細（from=me）へ。仲間の足跡は by 付きのまま', async () => {
+    const ME = { id: 'u1', name: 'わたし', avatar: HANAKO.avatar };
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 'mine1', author: ME }), item({ id: 'th1' })] }) }];
+    renderFeed();
+    await screen.findAllByRole('link', { name: 'くわしく見る' });
+    const hrefs = screen.getAllByRole('link', { name: 'くわしく見る' }).map((l) => l.getAttribute('href'));
+    expect(hrefs).toContain('/record-detail?id=mine1&from=me');
+    expect(hrefs.some((h) => h?.startsWith('/record-detail?id=th1&by=u2'))).toBe(true);
+  });
+
   it('U11: 自分の足跡には押すボタンを出さず、もらった分だけ数つきで出す', async () => {
     const ME = { id: 'u1', name: 'わたし', avatar: HANAKO.avatar };
     replies['GET /api/feed'] = [

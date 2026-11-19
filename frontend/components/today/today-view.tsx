@@ -81,7 +81,7 @@ export function TodayView() {
 
       <div className="space-y-4 px-4 pt-4 pb-6">
         {/* 仲間の今日の足跡（A02-1）。グループが無いときは招待の入口（A01-8）。きのうの画面では出さない */}
-        {day === 'today' && <FriendsToday today={today} />}
+        {day === 'today' && <FriendsToday today={today} part="summary" />}
         <DaySwitch day={day} onChange={setDay} />
         <DayHeading date={dayDateOf(day, new Date())} day={day} />
         {/* ランの入口は上部に（A07-1）。休みの日でも出す（休みを残したまま、走った日の記録を足せる。UC-13） */}
@@ -135,6 +135,8 @@ export function TodayView() {
 
         {/* 休みの日はおやすみの札、記録した日は「休む」と矛盾するので、どちらも出さない（N5） */}
         {day === 'today' && todayStatus === 'none' && <RestButton />}
+        {/* 招待の入口は主ボタンより下（P5 N1。上に置くと、6日ぶりの日に主ボタンが最初の画面の外に出る） */}
+        {day === 'today' && <FriendsToday today={today} part="invite" />}
       </div>
       {finished && <WorkoutSummary finished={finished} onClose={() => setFinished(null)} />}
     </>
