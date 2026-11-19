@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
+import { renderWithQuery, installFakeApi } from '@/lib/test/fake-api';
 import { AccountSettingsView } from './account-settings-view';
 
 const replace = vi.fn();
@@ -19,6 +20,7 @@ vi.mock('@/lib/auth-client', () => ({
 const SIGNED_IN = { data: { user: { id: 'u1', name: 'たろう', email: 'taro@example.com' } }, isPending: false };
 
 beforeEach(() => {
+  installFakeApi({});
   session = SIGNED_IN;
   replace.mockClear();
   updateUser.mockReset();
@@ -28,14 +30,24 @@ beforeEach(() => {
 });
 
 describe('AccountSettingsView（アカウントの設定）', () => {
+  it('B14b: 身長・プロフィールの編集（からだ）の区画がある', async () => {
+    installFakeApi({
+      'GET /api/body': { status: 200, body: { heightCm: 170, latest: null, bmi: null, avg7: null, deltaFromPrevious: null, weights: [] } },
+      'GET /api/body/profile': { status: 200, body: { userId: 'u1', name: 'たろう', bio: null, favoriteKind: null, activeTime: null } },
+    });
+    renderWithQuery(<AccountSettingsView />);
+    expect(await screen.findByLabelText('身長（cm）')).toHaveValue('170');
+    expect(screen.getByLabelText('ひとこと')).toBeInTheDocument();
+  });
+
   it('見出しと、設定へ戻るリンクを出す', () => {
-    render(<AccountSettingsView />);
+    renderWithQuery(<AccountSettingsView />);
     expect(screen.getByRole('heading', { level: 1, name: 'アカウントの設定' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '設定へ戻る' })).toHaveAttribute('href', '/settings');
   });
 
   it('表示名の欄に今の名前が入っていて、30 文字までに制限する', () => {
-    render(<AccountSettingsView />);
+    renderWithQuery(<AccountSettingsView />);
     const input = screen.getByLabelText('表示名');
     expect(input).toHaveValue('たろう');
     expect(input).toHaveAttribute('maxlength', '30');
@@ -43,7 +55,7 @@ describe('AccountSettingsView（アカウントの設定）', () => {
 
   it('表示名を変えて保存すると updateUser を呼び、保存できたことを知らせる', async () => {
     const user = userEvent.setup();
-    render(<AccountSettingsView />);
+    renderWithQuery(<AccountSettingsView />);
     const input = screen.getByLabelText('表示名');
     await user.clear(input);
     await user.type(input, 'はなこ');
@@ -54,7 +66,7 @@ describe('AccountSettingsView（アカウントの設定）', () => {
 
   it('表示名が空白だけなら、送らずに知らせる', async () => {
     const user = userEvent.setup();
-    render(<AccountSettingsView />);
+    renderWithQuery(<AccountSettingsView />);
     const input = screen.getByLabelText('表示名');
     await user.clear(input);
     await user.type(input, '   ');
@@ -66,14 +78,14 @@ describe('AccountSettingsView（アカウントの設定）', () => {
   it('名前の保存が通信で止まったら、責めない文言で知らせる', async () => {
     updateUser.mockRejectedValue(new TypeError('Failed to fetch'));
     const user = userEvent.setup();
-    render(<AccountSettingsView />);
+    renderWithQuery(<AccountSettingsView />);
     await user.click(screen.getByRole('button', { name: '名前を保存する' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('通信できませんでした');
   });
 
   it('パスワードを変えると、他の端末のログインを外す指定つきで changePassword を呼ぶ', async () => {
     const user = userEvent.setup();
-    render(<AccountSettingsView />);
+    renderWithQuery(<AccountSettingsView />);
     await user.type(screen.getByLabelText('今のパスワード'), 'correct-horse-battery');
     await user.type(screen.getByLabelText('新しいパスワード（8文字以上）'), 'new-password-123');
     await user.click(screen.getByRole('button', { name: 'パスワードを変更する' }));
@@ -90,7 +102,7 @@ describe('AccountSettingsView（アカウントの設定）', () => {
   it('今のパスワードが違うときは、その旨を日本語で知らせる', async () => {
     changePassword.mockResolvedValue({ data: null, error: { code: 'INVALID_PASSWORD', message: 'Invalid password' } });
     const user = userEvent.setup();
-    render(<AccountSettingsView />);
+    renderWithQuery(<AccountSettingsView />);
     await user.type(screen.getByLabelText('今のパスワード'), 'wrong-password-1');
     await user.type(screen.getByLabelText('新しいパスワード（8文字以上）'), 'new-password-123');
     await user.click(screen.getByRole('button', { name: 'パスワードを変更する' }));
@@ -99,13 +111,13 @@ describe('AccountSettingsView（アカウントの設定）', () => {
 
   it('ログインしていなければ、戻り先つきでログイン画面へ移す', () => {
     session = { data: null, isPending: false };
-    render(<AccountSettingsView />);
+    renderWithQuery(<AccountSettingsView />);
     expect(replace).toHaveBeenCalledWith('/login?next=%2Fsettings%2Faccount%2F');
     expect(screen.queryByLabelText('表示名')).not.toBeInTheDocument();
   });
 
   it('画面の文言に、使ってはいけない語を含まない', () => {
-    render(<AccountSettingsView />);
+    renderWithQuery(<AccountSettingsView />);
     const text = document.body.textContent ?? '';
     for (const word of FORBIDDEN_WORDS) expect(text).not.toContain(word);
   });

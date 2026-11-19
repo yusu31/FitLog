@@ -12,7 +12,7 @@ import { ConfirmDialog } from '@/components/fitlog/confirm-dialog';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
-import { useCreateExercise, useGetCurrentGroup, useGetPrevious, useGetRecord, useListExercises, type RecordDetailResponse, type RecordedExercise } from '@/lib/api/generated';
+import { useCreateExercise, useGetCalories, useGetCurrentGroup, useGetPrevious, useGetRecord, useListExercises, type RecordDetailResponse, type RecordedExercise } from '@/lib/api/generated';
 import { SaveRoutine } from '@/components/routine/save-routine';
 import { RecordMemo } from './record-memo';
 import { setCopyPlan } from '@/lib/copy-plan';
@@ -31,6 +31,7 @@ import { LateTag } from '@/components/fitlog/late-tag';
 import { DETAIL_MESSAGES, FRIEND_MESSAGES, GHOST_MESSAGES, ME_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
 import { setOutcomes } from '@/lib/record-detail';
+import { BODY_CONNECT_MESSAGES, formatKcal } from '@/lib/body/body';
 import { useOnline } from '@/lib/use-browser-state';
 import { useRequireSession } from '@/lib/use-require-session';
 
@@ -150,6 +151,7 @@ export function RecordDetailView() {
         {record.kind === 'rest' && (
           <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.restBody}</p>
         )}
+        {mine && record.kind !== 'rest' && <RecordKcal recordId={record.id} />}
         {mine && <RecordMemo recordId={record.id} note={record.note} rpe={record.rpe} />}
         <SocialSection recordId={record.id} kind={record.kind} mine={mine} />
         {mine && (
@@ -326,5 +328,18 @@ function Stat({ label, value }: { label: string; value: string }) {
       <dt className="text-xs font-bold text-sub-strong">{label}</dt>
       <dd className="fl-num mt-1 text-xl break-keep">{value}</dd>
     </div>
+  );
+}
+
+// 推定消費カロリー（B14b。自分の記録だけ）。体重が無い・時間が測れない・読み込めないときは何も出さない
+function RecordKcal({ recordId }: { recordId: string }) {
+  const { data } = useGetCalories(recordId);
+  const text = formatKcal(data?.status === 200 ? data.data.kcal : null);
+  if (!text) return null;
+  return (
+    <p data-testid="record-kcal" className="fl-slab px-4 py-3 text-center text-sm font-extrabold">
+      {text}
+      <span className="ml-2 text-xs font-bold text-sub-strong">{BODY_CONNECT_MESSAGES.kcalNote}</span>
+    </p>
   );
 }

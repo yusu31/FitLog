@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth-client';
 import { ACCOUNT_MESSAGES } from '@/lib/messages';
+import { BodySettings } from './body-settings';
 import { useAppSession } from '@/lib/use-app-session';
 import { useRequireSession } from '@/lib/use-require-session';
 
@@ -41,6 +42,7 @@ export function AccountSettingsView() {
       {signedIn && user && (
         <div className="space-y-5 px-4 pt-3 pb-10">
           <NameForm initialName={user.name} />
+          <BodySettings />
           <PasswordForm />
         </div>
       )}

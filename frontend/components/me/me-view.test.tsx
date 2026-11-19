@@ -158,6 +158,19 @@ describe('MeView（S-30 自分）', () => {
     });
   });
 
+  describe('からだの入口（B14b）', () => {
+    it('名前の下に「からだ」の区画（体重の7日平均）があり、からだ画面へ行ける', async () => {
+      installFakeApi({
+        [FIRST]: page([]),
+        [STATS]: ok(statsOf(0, 0)),
+        'GET /api/body': ok({ heightCm: 170, latest: { date: '2026-11-18', kg: 70.2 }, bmi: 24.3, avg7: 70.4, deltaFromPrevious: -0.5, weights: [] }),
+      });
+      renderWithQuery(<MeView />);
+      expect(await screen.findByText('70.4kg')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /からだを見る/ })).toHaveAttribute('href', '/me/body');
+    });
+  });
+
   describe('設定への入口・見た目だけの導線（ヒートマップ・記録をくわしく）', () => {
     beforeEach(() => installFakeApi({ [FIRST]: page([]) }));
 
