@@ -10,7 +10,9 @@ import { baseContentType, pickMimeType, uploadToS3 } from '@/lib/video/video-upl
 type Phase = 'starting' | 'ready' | 'recording' | 'sending' | 'done' | 'error';
 
 const SEND_ERROR = '送れませんでした。電波の良い所でもう一度ためしてください';
-const CAMERA_ERROR = 'カメラを使えませんでした。ブラウザの設定でカメラを許可してください';
+const CAMERA_ERROR = 'カメラを使えませんでした';
+// 直し方（A06-3）。許可を出しても直らないときは、記録は残っているので「あとで撮る」で閉じてよい
+const CAMERA_FIX_STEPS = ['アドレス欄の鍵（またはカメラ）のマークをタップ', '「カメラ」を「許可」に変える', 'この画面にもどって、もう一度ひらく'] as const;
 
 // この端末で2秒撮影ができるか（入口を出すかの判定）
 export function canRecordVideo(): boolean {
@@ -82,7 +84,20 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
   const busy = phase === 'recording' || phase === 'sending';
   return (
     <div role="dialog" aria-modal="true" aria-label="2秒ラストレップを撮る" className="fixed inset-0 z-30 flex flex-col bg-ink text-white">
-      <video ref={videoRef} playsInline muted className="min-h-0 w-full flex-1 bg-black object-cover" />
+      <video ref={videoRef} playsInline muted className={`min-h-0 w-full flex-1 bg-black object-cover ${phase === 'error' ? 'hidden' : ''}`} />
+      {phase === 'error' && (
+        <div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-y-auto px-6 py-4">
+          <p role="alert" className="text-lg font-extrabold">
+            {error}
+          </p>
+          <p className="text-sm font-bold">カメラの許可を直すと撮れます。記録はもう残っています。</p>
+          <ol className="list-decimal space-y-1 pl-5 text-sm font-bold">
+            {CAMERA_FIX_STEPS.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ol>
+        </div>
+      )}
       <div className="space-y-3 px-4 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
         <p role="status" aria-live="polite" className="text-center text-sm font-bold">
           {phase === 'starting' && 'カメラを準備しています'}
@@ -91,7 +106,7 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
           {phase === 'sending' && '送っています…'}
           {phase === 'done' && '保存しました。仲間にはその週の終わりまで見えます'}
         </p>
-        {error && (
+        {error && phase !== 'error' && (
           <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
             {error}
           </p>
@@ -102,7 +117,7 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
           </ThickButton>
         )}
         <ThickButton tone="white" size="sm" className="w-full" onClick={onClose} disabled={busy}>
-          {phase === 'done' ? 'とじる' : 'やめる'}
+          {phase === 'done' ? 'とじる' : phase === 'error' ? 'あとで撮る' : 'やめる'}
         </ThickButton>
       </div>
     </div>
