@@ -8,6 +8,7 @@ import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { AddToHome } from './add-to-home';
 import { DeleteAccount } from './delete-account';
+import { ExportRecords } from './export-records';
 import { InlineNameEdit } from './inline-name-edit';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { authClient } from '@/lib/auth-client';
@@ -109,6 +110,8 @@ export function SettingsView() {
         </section>
 
         <AddToHome />
+
+        <ExportRecords />
 
         <div className="space-y-2">
           <ThickButton tone="white" onClick={onSignOut}>

@@ -82,6 +82,15 @@ export const ACCOUNT_MESSAGES = {
   network: '通信できませんでした。電波の良い所でもう一度お試しください',
 } as const;
 
+// 記録の書き出し（C-01。設定 S-31）。本人の落ち度にしない
+export const EXPORT_MESSAGES = {
+  button: '記録を書き出す（CSV）',
+  busy: '書き出しています…',
+  hint: 'CSV は、表計算ソフトで開けるファイルです。自分の記録だけが入ります',
+  failed: '書き出せませんでした。少し待って、もう一度お試しください',
+  network: '通信できませんでした。電波の良い所でもう一度お試しください',
+} as const;
+
 // API の応答の code（design.md 5章）→ 画面の文言
 export const GROUP_ERROR_BY_CODE: Record<string, string> = {
   GROUP_FULL: 'このグループは満員です（5人まで）。だれかが出ると、また入れます',
