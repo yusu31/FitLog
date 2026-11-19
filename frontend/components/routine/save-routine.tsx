@@ -64,7 +64,8 @@ export function SaveRoutine({ recordId }: { recordId: string }) {
           <Bookmark aria-hidden />
           {ROUTINE_MESSAGES.saveButton}
         </ThickButton>
-        {!online && <p className="mt-2 text-center text-xs text-sub-strong">{ROUTINE_MESSAGES.saveOffline}</p>}
+        <p className="mt-2 text-center text-xs text-sub-strong">{ROUTINE_MESSAGES.saveHint}</p>
+        {!online && <p className="mt-1 text-center text-xs text-sub-strong">{ROUTINE_MESSAGES.saveOffline}</p>}
         {saved && (
           <p role="status" className="mt-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-bold text-ink">
             {ROUTINE_MESSAGES.saved(saved)}
