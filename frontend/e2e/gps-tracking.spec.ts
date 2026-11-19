@@ -56,5 +56,7 @@ test('GPS で記録して終了すると、距離と時間が入力欄に入り�
   await expect(page.getByText('GPS の記録を入れました')).toBeVisible();
 
   await page.getByRole('button', { name: '保存する' }).click();
-  await expect(page.getByRole('status').first()).toBeVisible();
+  // B10: 画面の上に「電波なし・送ったよ」の帯（role=status・ふだんは空）が入ったので、先頭の status ではなく、保存した結果の板を指す
+  await expect(page.getByRole('status').filter({ hasText: 'RUN' })).toBeVisible();
+  await expect(page.getByTestId('pace')).toBeVisible();
 });
