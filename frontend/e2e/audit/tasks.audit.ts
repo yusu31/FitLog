@@ -180,7 +180,7 @@ test('T8 6日ぶりに開いて、また始める', async ({ page }) => {
   await page.goto('/today/');
   const t = new Tracker(page, 'T8');
   await t.start();
-  await t.click(page.getByRole('link', { name: /はじめる|種目を選ぶ/ }).first(), 'はじめる');
+  await t.click(page.getByRole('link', { name: /はじめる|始める|種目を選ぶ/ }).first(), 'はじめる');
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
   t.finish();
 });
@@ -263,7 +263,7 @@ test('T5 2秒動画を撮って、仲間の動画を見る（入口まで）', a
   await t.start();
   await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
-  await t.click(page.getByRole('button', { name: /2秒ラストレップを撮る/ }), '2秒ラストレップを撮る');
+  await t.click(page.getByRole('button', { name: /2秒動画を撮る/ }), '2秒動画を撮る');
   t.finish();
 });
 
