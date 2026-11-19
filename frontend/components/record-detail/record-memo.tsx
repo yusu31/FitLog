@@ -51,7 +51,7 @@ export function RecordMemo({ recordId, note, rpe }: { recordId: string; note?: s
         <h2 id="memo-heading" className="font-extrabold">
           {M.heading}
         </h2>
-        <p className="text-xs text-sub">{M.onlyMe}</p>
+        <p className="text-note text-sub">{M.onlyMe}</p>
       </div>
       <form onSubmit={onSubmit} className="space-y-3">
         <div className="space-y-2">
@@ -71,7 +71,7 @@ export function RecordMemo({ recordId, note, rpe }: { recordId: string; note?: s
               </button>
             ))}
           </div>
-          <ul aria-label="きつさの目安" className="space-y-0.5 text-xs text-sub-strong">
+          <ul aria-label="きつさの目安" className="space-y-0.5 text-note text-sub-strong">
             {RPE_GUIDE.map((g) => (
               <li key={g.value}>
                 <span className="fl-num font-extrabold text-ink">{g.value}</span> {g.text}
@@ -103,7 +103,7 @@ export function RecordMemo({ recordId, note, rpe }: { recordId: string; note?: s
               {message.text}
             </p>
           ))}
-        {!online && <p className="text-xs text-sub-strong">{M.offline}</p>}
+        {!online && <p className="text-note text-sub-strong">{M.offline}</p>}
         <ThickButton type="submit" size="sm" className="w-full" disabled={!online || update.isPending}>
           {M.save}
         </ThickButton>

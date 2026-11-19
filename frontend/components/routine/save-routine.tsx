@@ -14,7 +14,7 @@ import { useOnline } from '@/lib/use-browser-state';
 // API の上限（routines_name_ck・ROUTINE_NAME_MAX）と同じ
 export const ROUTINE_NAME_MAX = 20;
 
-// 自分の筋トレの記録を「ルーティン」として保存する（F3）。記録の詳細（S-21）の下に置く。
+// 自分の筋トレの記録を「いつものメニュー」として保存する（F3）。記録の詳細（S-21）の下に置く。
 // 押すと名前の欄が開く。保存は電波があるときだけ（サーバーの DB に置くため。送信待ちには積まない）
 export function SaveRoutine({ recordId }: { recordId: string }) {
   const queryClient = useQueryClient();
@@ -64,8 +64,8 @@ export function SaveRoutine({ recordId }: { recordId: string }) {
           <Bookmark aria-hidden />
           {ROUTINE_MESSAGES.saveButton}
         </ThickButton>
-        <p className="mt-2 text-center text-xs text-sub-strong">{ROUTINE_MESSAGES.saveHint}</p>
-        {!online && <p className="mt-1 text-center text-xs text-sub-strong">{ROUTINE_MESSAGES.saveOffline}</p>}
+        <p className="mt-2 text-center text-note text-sub-strong">{ROUTINE_MESSAGES.saveHint}</p>
+        {!online && <p className="mt-1 text-center text-note text-sub-strong">{ROUTINE_MESSAGES.saveOffline}</p>}
         {saved && (
           <p role="status" className="mt-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-bold text-ink">
             {ROUTINE_MESSAGES.saved(saved)}
@@ -90,14 +90,14 @@ export function SaveRoutine({ recordId }: { recordId: string }) {
           onChange={(e) => setName(e.target.value)}
           className="h-12 rounded-fl border-2 text-base font-bold"
         />
-        <p className="text-xs text-sub">{ROUTINE_MESSAGES.nameHint(ROUTINE_NAME_MAX)}</p>
+        <p className="text-note text-sub">{ROUTINE_MESSAGES.nameHint(ROUTINE_NAME_MAX)}</p>
       </div>
       {error && (
         <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
           {error}
         </p>
       )}
-      {!online && <p className="text-xs text-sub-strong">{ROUTINE_MESSAGES.saveOffline}</p>}
+      {!online && <p className="text-note text-sub-strong">{ROUTINE_MESSAGES.saveOffline}</p>}
       <div className="flex gap-2">
         <ThickButton type="button" tone="white" size="sm" className="flex-1" onClick={() => setOpen(false)}>
           {ROUTINE_MESSAGES.cancel}

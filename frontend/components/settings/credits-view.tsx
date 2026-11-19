@@ -20,7 +20,7 @@ export function CreditsView() {
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
-        <h1 className="text-[28px] font-extrabold">クレジット</h1>
+        <h1 className="text-page-title font-extrabold">クレジット</h1>
       </header>
 
       <div className="space-y-5 px-4 pt-3 pb-10">
@@ -41,15 +41,15 @@ export function CreditsView() {
         </section>
 
         <section aria-labelledby="credits-parts">
-          <h2 id="credits-parts" className="pb-2 text-xs font-bold tracking-widest text-sub">
+          <h2 id="credits-parts" className="pb-2 text-note font-bold tracking-widest text-sub">
             部品ごとの作者とライセンス
           </h2>
           <ul className="space-y-2">
             {CREDIT_PARTS.map((p) => (
               <li key={p.part} className="fl-slab px-4 py-2.5">
                 <p className="text-sm font-extrabold break-all">{p.part}</p>
-                <p className="text-xs font-bold text-teal-dark">{p.license}</p>
-                <p className="text-xs leading-relaxed text-sub-strong">{p.authors}</p>
+                <p className="text-note font-bold text-teal-dark">{p.license}</p>
+                <p className="text-note leading-relaxed text-sub-strong">{p.authors}</p>
               </li>
             ))}
           </ul>

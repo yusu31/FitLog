@@ -39,7 +39,7 @@ export function DeleteAccount() {
 
   return (
     <section aria-labelledby="delete-account-heading" className="space-y-3 pt-10">
-      <h2 id="delete-account-heading" className="text-xs font-bold tracking-widest text-sub">
+      <h2 id="delete-account-heading" className="text-note font-bold tracking-widest text-sub">
         {M.heading}
       </h2>
       {open ? (

@@ -50,7 +50,7 @@ export function StampButton({
         </span>
         {count > 0 && <span className="fl-num text-base">{count}</span>}
       </span>
-      <span className="text-[11px] leading-none font-extrabold">{label}</span>
+      <span className="text-note leading-none font-extrabold">{label}</span>
     </button>
   );
 }
@@ -69,7 +69,7 @@ export function StampChip({ stampKey, count }: { stampKey: StampKey; count: numb
         <span className="text-[26px] leading-none">{STAMP_EMOJI[stampKey]}</span>
         <span className="fl-num text-base">{count}</span>
       </span>
-      <span aria-hidden className="text-[11px] leading-none font-extrabold">
+      <span aria-hidden className="text-note leading-none font-extrabold">
         {label}
       </span>
     </span>

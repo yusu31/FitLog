@@ -262,7 +262,7 @@ export function RecordView() {
         </div>
         <Sprite pose="train" size={64} />
       </header>
-      <p data-testid="set-progress" className="px-4 pt-1 text-xs font-bold text-sub-strong">
+      <p data-testid="set-progress" className="px-4 pt-1 text-note font-bold text-sub-strong">
         {formatSetProgress(done, previous?.previous?.sets.length ?? 0)}
       </p>
       {rest && <RestTimerBar key={rest.startedAt} startedAt={rest.startedAt} initialSeconds={rest.seconds} onClose={() => setRest(null)} />}
@@ -274,7 +274,7 @@ export function RecordView() {
       )}
       {plan && (
         <nav aria-label={planHeading(plan)} className="mx-4 mt-2 rounded-fl bg-teal-light px-4 py-2">
-          <p className="text-xs font-extrabold text-ink">{planHeading(plan)}</p>
+          <p className="text-note font-extrabold text-ink">{planHeading(plan)}</p>
           <ul className="mt-1 flex flex-wrap gap-1.5">
             {plan.items.map((i) => (
               <li key={i.exerciseId}>
@@ -292,7 +292,7 @@ export function RecordView() {
       )}
       <div className="flex flex-1 flex-col items-center gap-4 px-4 pt-4 pb-6">
         <p className="text-sm font-extrabold tracking-widest text-sub-strong">{RECORD_MESSAGES.setNow(setNo)}</p>
-        <h1 className="text-center text-[32px] leading-tight font-extrabold">{exercise.name}</h1>
+        <h1 className="text-center text-page-title leading-tight font-extrabold">{exercise.name}</h1>
 
         <div className="w-full space-y-3">
           <StepperField
@@ -324,7 +324,7 @@ export function RecordView() {
           />
         </div>
 
-        <p className="text-center text-xs font-bold text-sub-strong">{RECORD_MESSAGES.typeHint}</p>
+        <p className="text-center text-note font-bold text-sub-strong">{RECORD_MESSAGES.typeHint}</p>
         {initial.restReturn && (
           <p data-testid="rest-return-note" className="w-full rounded-fl bg-teal-light px-4 py-2 text-center text-sm font-bold text-ink">
             {RECORD_MESSAGES.restReturn}
@@ -349,7 +349,7 @@ export function RecordView() {
             できた
           </ThickButton>
           {previousPending && (
-            <p id="done-reason" className="text-center text-xs font-bold text-sub-strong">
+            <p id="done-reason" className="text-center text-note font-bold text-sub-strong">
               {RECORD_MESSAGES.waitPrevious}
             </p>
           )}
@@ -374,7 +374,7 @@ export function RecordView() {
                 <Moon aria-hidden className="size-5" />
                 {RECORD_MESSAGES.stop}
               </span>
-              <span className="text-xs font-bold text-sub-strong">{RECORD_MESSAGES.stopHint}</span>
+              <span className="text-note font-bold text-sub-strong">{RECORD_MESSAGES.stopHint}</span>
             </Link>
             <Link
               href={nextExerciseId ? withDay(`/record?exercise=${encodeURIComponent(nextExerciseId)}`, day) : withDay('/exercises', day)}
@@ -394,7 +394,7 @@ export function RecordView() {
                   <Video aria-hidden />
                   {RECORD_MESSAGES.video}
                 </ThickButton>
-                <p id="video-hint" className="text-center text-xs font-bold text-sub-strong">
+                <p id="video-hint" className="text-center text-note font-bold text-sub-strong">
                   {RECORD_MESSAGES.videoHint}
                 </p>
               </div>

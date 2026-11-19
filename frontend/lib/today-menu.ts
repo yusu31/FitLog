@@ -23,7 +23,7 @@ export type TodayMenu = {
   /** 前回の筋トレが無い（初回） */
   isFirstTime: boolean;
   items: MenuItem[];
-  /** 次の1枚＝まだできていない種目のうち、並びの先頭 */
+  /** つぎにやること＝まだできていない種目のうち、並びの先頭 */
   next: MenuItem | null;
   /** メニューがあり、全部できた。記録中（終わっていない）の間は false（「今日の分は できた」と言い切らない。N1） */
   allDone: boolean;

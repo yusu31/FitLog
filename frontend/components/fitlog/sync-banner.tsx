@@ -85,7 +85,7 @@ function Bar({
       {icon && <span className="shrink-0">{icon}</span>}
       <div className="min-w-0 flex-1">
         <p className="text-sm font-extrabold">{title}</p>
-        {note && <p className="text-xs font-bold text-sub-strong">{note}</p>}
+        {note && <p className="text-note font-bold text-sub-strong">{note}</p>}
       </div>
       {children}
     </div>

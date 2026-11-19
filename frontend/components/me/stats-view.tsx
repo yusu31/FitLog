@@ -18,7 +18,7 @@ const STATUS_CLASS = { rec: 'bg-gold', rest: 'bg-grape', none: 'bg-face' } as co
 const WEEKDAY_HEAD = ['月', '火', '水', '木', '金', '土', '日'] as const;
 const STATUS_TEXT = { rec: '記録あり', rest: 'おやすみ', none: '' } as const;
 
-// S-35 記録をくわしく（docs/screen-design.md 4章・F-22・F-26・F-27・F-29）。自分タブから入る。
+// S-35 記録のまとめ（docs/screen-design.md 4章・F-22・F-26・F-27・F-29）。自分タブから入る。
 // 週・月・年のマス／今月の数字／週ごとのグラフ／スタンプ帳。連続日数・目標線・「あと◯」は出さない。休みは全期間で同じ紫
 export function StatsPage() {
   useRequireSession();
@@ -35,7 +35,7 @@ export function StatsPage() {
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
-        <h1 className="text-[28px] font-extrabold">記録をくわしく</h1>
+        <h1 className="text-page-title font-extrabold">記録のまとめ</h1>
       </header>
       <div className="space-y-4 px-4 pt-3 pb-10">
         {data ? (
@@ -80,11 +80,11 @@ function Calendar({ data }: { data: StatsResponse }) {
         ))}
       </div>
       {view === 'year' ? (
-        <p data-testid="stats-weekdays" className="mt-3 text-xs font-bold text-sub-strong">
+        <p data-testid="stats-weekdays" className="mt-3 text-note font-bold text-sub-strong">
           たては上から月〜日、よこは左から右へ週が進みます
         </p>
       ) : (
-        <p aria-hidden data-testid="stats-weekdays" className="mt-3 grid grid-cols-7 gap-1 text-center text-xs font-bold text-sub-strong">
+        <p aria-hidden data-testid="stats-weekdays" className="mt-3 grid grid-cols-7 gap-1 text-center text-note font-bold text-sub-strong">
           {WEEKDAY_HEAD.map((w) => (
             <span key={w}>{w}</span>
           ))}
@@ -108,7 +108,7 @@ function Calendar({ data }: { data: StatsResponse }) {
           ),
         )}
       </ol>
-      <p className="mt-2 flex flex-wrap justify-center gap-3 text-xs text-sub-strong">
+      <p className="mt-2 flex flex-wrap justify-center gap-3 text-note text-sub-strong">
         {(['rec', 'rest', 'none'] as const).map((s) => (
           <span key={s} className="flex items-center gap-1">
             <i aria-hidden className={cn('size-3 rounded-full', STATUS_CLASS[s])} />
@@ -116,7 +116,7 @@ function Calendar({ data }: { data: StatsResponse }) {
           </span>
         ))}
       </p>
-      <p className="mt-2 text-center text-xs text-sub-strong">切り替わるのはこのマスだけです。下の数字は今月、グラフは週ごとです</p>
+      <p className="mt-2 text-center text-note text-sub-strong">切り替わるのはこのマスだけです。下の数字は今月、グラフは週ごとです</p>
     </section>
   );
 }
@@ -129,7 +129,7 @@ function MonthNumbers({ data }: { data: StatsResponse }) {
       <h2 id="stats-month" className="text-sm font-extrabold text-sub-strong">
         {Number(month.month.slice(5))}月の数字
       </h2>
-      <p className="text-xs text-sub-strong">
+      <p className="text-note text-sub-strong">
         {formatMonthDay(`${month.month}-01`)}〜{formatMonthDay(data.today)}
       </p>
       <dl className="mt-2 grid grid-cols-2 gap-3 text-center">
@@ -146,7 +146,7 @@ function MonthNumbers({ data }: { data: StatsResponse }) {
 function Stat({ label, value, unit }: { label: string; value: number; unit: string }) {
   return (
     <div className="rounded-lg bg-face py-2">
-      <dt className="text-xs text-sub-strong">{label}</dt>
+      <dt className="text-note text-sub-strong">{label}</dt>
       <dd className="m-0">
         <span className="fl-num text-3xl">{value}</span> <span className="text-sm font-bold">{unit}</span>
       </dd>
@@ -241,7 +241,7 @@ function WeeklyChart({
           />
         ))}
       </svg>
-      <p aria-hidden data-testid="chart-labels" className="flex justify-between text-xs font-bold text-sub-strong">
+      <p aria-hidden data-testid="chart-labels" className="flex justify-between text-note font-bold text-sub-strong">
         <span>{formatMonthDay(shown[0].weekStart)}の週</span>
         <span>今週</span>
       </p>
@@ -253,7 +253,7 @@ function WeeklyChart({
         ))}
       </ul>
       {/* 目盛りの代わりに、いちばん多い週・今週の数字を見える文字で出す（U8） */}
-      <p aria-hidden className="mt-1 flex justify-between text-xs font-bold text-sub-strong">
+      <p aria-hidden className="mt-1 flex justify-between text-note font-bold text-sub-strong">
         <span>最大 {format(Math.max(0, ...values))}</span>
         <span>右が今週 {format(values[values.length - 1] ?? 0)}</span>
       </p>
@@ -270,12 +270,12 @@ function JapanTrek({ totalMeters }: { totalMeters: number }) {
         日本縦断
       </h2>
       <p className="mt-1 text-center" data-testid="trek-total">
-        <span className="text-xs text-sub-strong">これまでの合計</span> <span className="fl-num text-3xl">{(totalMeters / 1000).toFixed(1)}</span> <span className="text-sm font-bold">km</span>
+        <span className="text-note text-sub-strong">これまでの合計</span> <span className="fl-num text-3xl">{(totalMeters / 1000).toFixed(1)}</span> <span className="text-sm font-bold">km</span>
       </p>
       <p className="mt-1 text-sm font-bold">{trekText(totalMeters, pos)}</p>
       <p className="text-sm font-bold text-teal-dark">{nextText(pos)}</p>
       <JapanMap pos={pos} />
-      <p className="text-center text-[11px] font-bold text-sub-strong">形と距離は目安です</p>
+      <p className="text-center text-note font-bold text-sub-strong">形と距離は目安です</p>
     </section>
   );
 }
@@ -297,13 +297,13 @@ function Stamps({ data }: { data: StatsResponse }) {
           <li
             key={s.key}
             data-earned={s.earned}
-            className={cn('rounded-lg px-1 py-3 text-center text-xs font-extrabold', s.earned ? 'bg-gold-light text-ink' : 'bg-face text-sub-strong')}
+            className={cn('rounded-lg px-1 py-3 text-center text-note font-extrabold', s.earned ? 'bg-gold-light text-ink' : 'bg-face text-sub-strong')}
           >
             <span aria-hidden className="block text-xl">
               {s.earned ? '★' : '○'}
             </span>
             {STAMP_LABEL[s.key]}
-            {s.earnedAt && <span className="mt-0.5 block text-[11px] font-bold text-sub-strong">{shortDate(s.earnedAt)}</span>}
+            {s.earnedAt && <span className="mt-0.5 block text-note font-bold text-sub-strong">{shortDate(s.earnedAt)}</span>}
             <span className="sr-only">{s.earned ? '（獲得済み）' : '（まだ）'}</span>
           </li>
         ))}

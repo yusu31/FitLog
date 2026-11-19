@@ -34,7 +34,7 @@ export function SocialSection({ recordId, kind, mine }: { recordId: string; kind
     <div className="space-y-4">
       <Stamps recordId={recordId} kind={kind} online={online} mine={mine} />
       <Comments recordId={recordId} online={online} mine={mine} />
-      {!online && !mine && <p className="text-center text-xs font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
+      {!online && !mine && <p className="text-center text-note font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
     </div>
   );
 }
@@ -179,7 +179,7 @@ function Comments({ recordId, online, mine }: { recordId: string; online: boolea
           {items.map((c) => (
             <li key={c.id} className="fl-slab flex items-start gap-2 px-3 py-2">
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-sub-strong">
+                <p className="text-note font-bold text-sub-strong">
                   <span className="font-extrabold text-ink">{c.author.name}</span> {formatMonthDay(c.createdAt.slice(0, 10))}{' '}
                   {formatJstTime(c.createdAt)}
                 </p>
@@ -202,7 +202,7 @@ function Comments({ recordId, online, mine }: { recordId: string; online: boolea
       )}
       {!mine && (
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-2">
-        <label htmlFor={inputId} className="text-xs font-bold text-sub-strong">
+        <label htmlFor={inputId} className="text-note font-bold text-sub-strong">
           {FEED_MESSAGES.commentInputLabel}
         </label>
         <div className="flex gap-2">

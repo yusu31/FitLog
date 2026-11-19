@@ -29,8 +29,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('RoutineStarter（今日の画面の「ルーティンから始める」。F3）', () => {
-  it('保存したルーティンが無ければ何も出さない', async () => {
+describe('RoutineStarter（今日の画面の「いつものメニューから始める」。F3）', () => {
+  it('保存したいつものメニューが無ければ何も出さない', async () => {
     installFakeApi({ [ROUTINES]: ok({ items: [], max: 5 }) });
     const { container } = renderWithQuery(<RoutineStarter day="today" />);
     await waitFor(() => expect(calls).toContain(`GET ${ROUTINES}`));

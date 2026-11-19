@@ -68,7 +68,7 @@ function InviteCard({ noGroup }: { noGroup: boolean }) {
   return (
     <section aria-label="仲間" className="fl-slab px-4 py-3">
       <p className="text-sm font-extrabold">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupTitle : TODAY_FRIENDS_MESSAGES.aloneTitle}</p>
-      <p className="mt-1 text-xs leading-relaxed font-bold text-sub-strong">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupSteps : TODAY_FRIENDS_MESSAGES.aloneSteps}</p>
+      <p className="mt-1 text-note leading-relaxed font-bold text-sub-strong">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupSteps : TODAY_FRIENDS_MESSAGES.aloneSteps}</p>
       <Link
         href="/friends"
         className={`fl-thick mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-fl bg-teal-dark px-4 text-base font-extrabold text-white [--thick:var(--color-teal-deep)] ${FOCUS}`}

@@ -28,10 +28,10 @@ export function GhostBar({ ghost, current, isTrial, friends = [], label = '前�
   }
   return (
     <div role="group" aria-label="前回との くらべ" className="w-full rounded-fl border-2 border-b-4 border-line bg-face px-4 py-3">
-      <div className="mb-2 flex items-baseline justify-between text-xs text-sub-strong">
+      <div className="mb-2 flex items-baseline justify-between text-note text-sub-strong">
         <span className="flex items-center gap-2">
           {label}
-          {isTrial && <span className="fl-tag bg-line-dark !py-0 !text-xs !leading-4 text-ink">{RECORD_MESSAGES.trial}</span>}
+          {isTrial && <span className="fl-tag bg-line-dark !py-0 !text-note !leading-4 text-ink">{RECORD_MESSAGES.trial}</span>}
         </span>
         <span className="fl-num text-[22px] text-ink">
           {formatSetWithReps(ghost)}
@@ -46,7 +46,7 @@ export function GhostBar({ ghost, current, isTrial, friends = [], label = '前�
 
 function Row({ label, value, pct, tone }: { label: string; value: string; pct: number; tone: string }) {
   return (
-    <div className="mt-1.5 flex items-center gap-2.5 text-xs text-sub-strong">
+    <div className="mt-1.5 flex items-center gap-2.5 text-note text-sub-strong">
       <span className="w-9 shrink-0 font-bold">{label}</span>
       <div className="h-3 flex-1 -skew-x-[14deg] overflow-hidden rounded bg-white">
         <i className={cn('block h-full transition-[width] duration-300 motion-reduce:transition-none', tone)} style={{ width: `${Math.min(100, pct)}%` }} />
@@ -59,7 +59,7 @@ function Row({ label, value, pct, tone }: { label: string; value: string; pct: n
 function FriendRow({ friends, both, max }: { friends: BarFriend[]; both: boolean; max: number }) {
   if (friends.length === 0) return null;
   return (
-    <div className="mt-1.5 flex items-end gap-2.5 text-[11px] text-sub-strong">
+    <div className="mt-1.5 flex items-end gap-2.5 text-note text-sub-strong">
       <span className="w-8 pb-0.5">{FRIEND_MESSAGES.rowLabel}</span>
       <div className="relative h-10 flex-1 overflow-visible">
         {friends.map((f) => (
@@ -69,10 +69,10 @@ function FriendRow({ friends, both, max }: { friends: BarFriend[]; both: boolean
             className="absolute bottom-0 flex -translate-x-1/2 flex-col items-center"
             style={{ left: `${Math.min(100, (amount(f.value, both) / max) * 100)}%` }}
           >
-            <span className="fl-num text-[10px] leading-none whitespace-nowrap text-ink">
+            <span className="fl-num text-note leading-none whitespace-nowrap text-ink">
               {f.value.weightKg}kg×{f.value.reps}
             </span>
-            <span aria-label={f.name} className="mt-0.5 flex size-5 items-center justify-center rounded-full text-[10px] font-extrabold text-white" style={{ background: AVATAR_BG[f.shirtColor] ?? AVATAR_BG.navy }}>
+            <span aria-label={f.name} className="mt-0.5 flex size-5 items-center justify-center rounded-full text-note font-extrabold text-white" style={{ background: AVATAR_BG[f.shirtColor] ?? AVATAR_BG.navy }}>
               {Array.from(f.name)[0]}
             </span>
           </span>

@@ -12,11 +12,11 @@ afterEach(() => {
 });
 
 const openForm = async () => {
-  await userEvent.click(screen.getByRole('button', { name: 'ルーティンに保存' }));
-  return screen.getByLabelText('ルーティンの名前');
+  await userEvent.click(screen.getByRole('button', { name: 'いつものメニューに保存' }));
+  return screen.getByLabelText('いつものメニューの名前');
 };
 
-describe('SaveRoutine（記録の詳細の「ルーティンに保存」。F3）', () => {
+describe('SaveRoutine（記録の詳細の「いつものメニューに保存」。F3）', () => {
   it('名前を入れて保存すると、記録の id と前後の空白を除いた名前を送り、保存できたと出す', async () => {
     installFakeApi({ 'POST /api/routines': { status: 201, body: SAVED }, '/api/routines': { status: 200, body: { items: [SAVED], max: 5 } } });
     renderWithQuery(<SaveRoutine recordId="r1" />);
@@ -39,18 +39,18 @@ describe('SaveRoutine（記録の詳細の「ルーティンに保存」。F3）
   });
 
   it('5つあるとき（409）は、API の文言をそのまま出す', async () => {
-    installFakeApi({ 'POST /api/routines': { status: 409, body: { code: 'ROUTINE_LIMIT', message: 'ルーティンは5つまでです。使わないものを消してください', details: null } } });
+    installFakeApi({ 'POST /api/routines': { status: 409, body: { code: 'ROUTINE_LIMIT', message: 'いつものメニューは5つまでです。使わないものを消してください', details: null } } });
     renderWithQuery(<SaveRoutine recordId="r1" />);
     await userEvent.type(await openForm(), '6つめ');
     await userEvent.click(screen.getByRole('button', { name: '保存する' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('ルーティンは5つまでです');
+    expect(await screen.findByRole('alert')).toHaveTextContent('いつものメニューは5つまでです');
     expect(calls).not.toContain('GET /api/routines');
   });
 
   it('電波が無いときは押せない', async () => {
     installFakeApi({});
     renderWithQuery(<SaveRoutine recordId="r1" />);
-    const button = screen.getByRole('button', { name: 'ルーティンに保存' });
+    const button = screen.getByRole('button', { name: 'いつものメニューに保存' });
     act(() => onlineManager.setOnline(false));
     await waitFor(() => expect(button).toBeDisabled());
     expect(screen.getByText('電波があるときに保存できます')).toBeInTheDocument();

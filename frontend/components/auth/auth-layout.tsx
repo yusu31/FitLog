@@ -34,9 +34,9 @@ export function AuthLayout({ title, children }: { title: string; children: React
     <div className="min-h-dvh bg-[#e9ecef]">
       <main className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-white">
         <header className="fl-stripes relative overflow-hidden bg-teal-dark [--stripe:rgb(0_0_0/0.14)] px-6 pt-12 pb-8 text-white">
-          <span className="fl-tag bg-gold text-ink">FITLOG</span>
+          <span className="fl-tag bg-gold text-ink">フィットログ</span>
           <p className="mt-3 text-sm font-bold">筋トレとランの記録アプリ</p>
-          <h1 className="mt-6 text-[26px] leading-tight font-extrabold">前回の自分と並べて記録。仲間と見せ合う</h1>
+          <h1 className="mt-6 text-page-title leading-tight font-extrabold">前回の自分と並べて記録。仲間と見せ合う</h1>
           {/* F8: ログイン前の人に、アプリが何かを3行で伝える */}
           <ul aria-label="FitLogでできること" className="mt-4 space-y-1.5 text-[13px] leading-snug font-medium">
             {INTRO_LINES.map((line) => (
