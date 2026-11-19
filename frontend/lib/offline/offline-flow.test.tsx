@@ -105,7 +105,7 @@ describe('送信待ちの保存と再送（F-30）', () => {
     expect(persistedMutations(store)).toHaveLength(0);
   });
 
-  it('T-OFF-08: 電波なしで記録 → 「送信待ち 1件」と端末への保存 → 何も送らない。電波が戻ると送って「1件 送ったよ」→ 3秒後に消える', async () => {
+  it('T-OFF-08: 電波なしで記録 → 「送信待ち 1件」と端末への保存 → 何も送らない。電波が戻ると送って「1件 送ったよ」→ 6秒後に消える', async () => {
     const { store, storage } = memoryStorage();
     mount(storage);
     await tick(10);
@@ -121,7 +121,7 @@ describe('送信待ちの保存と再送（F-30）', () => {
     await tick(500);
     expect(posts()).toHaveLength(1);
     expect(banner()).toHaveTextContent('1件 送ったよ');
-    await tick(3000);
+    await tick(6000);
     expect(banner()).toBeEmptyDOMElement();
     expect(persistedMutations(store)).toHaveLength(0);
   });

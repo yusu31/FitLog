@@ -612,6 +612,14 @@ describe('TodayView（B03 今日画面の直し）', () => {
     });
 
   describe('A01-8・A02-1 仲間', () => {
+    it('P5 N1: 招待カードは主ボタン（前回と同じで始める）より下に出る', async () => {
+      base({ [GROUP]: { status: 404, body: { message: 'なし' } }, [WORKOUTS]: list(PREV), [LATEST]: list(PREV) });
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '仲間' });
+      const main = await screen.findByRole('link', { name: '前回と同じで始める' });
+      expect(main.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
     it('グループが無いとき、「仲間を招待する」と最初の1行の手順が出る', async () => {
       base({ [GROUP]: { status: 404, body: { message: 'なし' } } });
       renderWithQuery(<TodayView />);

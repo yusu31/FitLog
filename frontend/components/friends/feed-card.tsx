@@ -145,7 +145,11 @@ export function FeedCard({ item }: { item: FeedItem }) {
         {item.kind !== 'rest' && (
           <li>
             <Link
-              href={`/record-detail?id=${encodeURIComponent(item.id)}&by=${encodeURIComponent(item.author.id)}`}
+              href={
+                isOwn
+                  ? `/record-detail?id=${encodeURIComponent(item.id)}&from=me`
+                  : `/record-detail?id=${encodeURIComponent(item.id)}&by=${encodeURIComponent(item.author.id)}`
+              }
               className="flex min-h-11 items-center rounded-full border-2 border-line bg-white px-3 text-sm font-extrabold text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
             >
               {FRIEND_MESSAGES.open}
