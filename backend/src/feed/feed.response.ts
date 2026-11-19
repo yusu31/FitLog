@@ -47,6 +47,9 @@ export class FeedItem {
   @ApiProperty({ example: 2, description: 'コメントの数' })
   commentCount!: number;
 
+  @ApiProperty({ required: false, description: '動画が付いている記録だけ true（カードに再生の印を出す。A06-4）。それ以外は省く。見られるかどうかは GET /videos/week の unlocked と GET /videos/{id}/url が決める' })
+  hasVideo?: boolean;
+
   @ApiProperty({ required: false, description: '新着の印（F4）。最後に仲間タブを見た時刻（POST /feed/seen）より後に来た仲間の記録と、仲間の新しいスタンプ・コメントが付いた自分の記録だけ true。それ以外は省く' })
   isNew?: boolean;
 }

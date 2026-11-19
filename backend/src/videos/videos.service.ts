@@ -1,14 +1,17 @@
 import { ConflictException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, lt, or } from 'drizzle-orm';
+import { toLocalDate } from '../common/local-date.js';
 import { isUuid } from '../common/uuid.js';
+import { weekStartOf } from '../common/week.js';
 import { DB, type Db } from '../db/db.module.js';
-import { records, videos } from '../db/schema.js';
+import { records, users, videos } from '../db/schema.js';
+import { encodeCursor } from '../records/list-input.js';
 import { visibleToMe } from '../records/record-access.js';
 import { visibleUntilOf } from './video-expiry.js';
 import { hasShotThisWeek } from './video-gate.js';
-import { parseVideoInput } from './video-input.js';
+import { parseMyVideosQuery, parseVideoInput, VIDEO_PAGE_SIZE, VIDEO_WEEK_MAX } from './video-input.js';
 import { VIDEO_URL_EXPIRES_SECONDS, VideoStorage } from './video-storage.js';
-import type { VideoUploadResponse, VideoUrlResponse } from './videos.response.js';
+import type { MyVideosResponse, VideoUploadResponse, VideoUrlResponse, VideoWeekItem, VideoWeekResponse } from './videos.response.js';
 
 const recordNotFound = () => new NotFoundException({ code: 'RECORD_NOT_FOUND', message: '記録が見つかりません', details: null });
 const videoNotFound = () => new NotFoundException({ code: 'VIDEO_NOT_FOUND', message: '動画が見つかりません', details: null });
@@ -74,6 +77,56 @@ export class VideosService {
       throw new ForbiddenException({ code: 'VIDEO_LOCKED', message: 'あなたも2秒撮ると見られます', details: null });
     }
     return { url: await this.storage.presignDownload(row.s3Key), expiresInSeconds: VIDEO_URL_EXPIRES_SECONDS };
+  }
+
+  // 今週の動画の一覧（仲間タブのサムネ列。A14-2）。同じグループの人（自分を含む）の、見える期限が今週の動画だけ。
+  // 見える範囲は URL の発行と同じ共通の関数（visibleToMe）。見られるかどうかの条件も同じ（shotThisWeek）で、unlocked に1回だけ載せる。
+  // この API は URL を返さない（URL の発行が条件を守る）。locked のとき、画面はぼかして「1本撮ると見られる」を出す
+  async weekList(userId: string): Promise<VideoWeekResponse> {
+    const now = new Date();
+    const rows = await this.db
+      .select({ id: videos.id, recordId: videos.recordId, recordedAt: records.recordedAt, visibleUntil: videos.visibleUntil, authorId: users.id, authorName: users.name, authorAvatar: users.avatar })
+      .from(videos)
+      .innerJoin(records, eq(records.id, videos.recordId))
+      .innerJoin(users, eq(users.id, records.userId))
+      .where(and(eq(videos.visibleUntil, visibleUntilOf(now)), visibleToMe(this.db, userId)))
+      .orderBy(desc(records.recordedAt), desc(videos.id))
+      .limit(VIDEO_WEEK_MAX);
+    return {
+      weekStart: weekStartOf(toLocalDate(now)),
+      unlocked: await this.shotThisWeek(userId),
+      items: rows.map((r) => ({
+        id: r.id,
+        recordId: r.recordId,
+        recordedAt: r.recordedAt.toISOString(),
+        visibleUntil: r.visibleUntil.toISOString(),
+        mine: r.authorId === userId,
+        author: { id: r.authorId, name: r.authorName, avatar: r.authorAvatar as VideoWeekItem['author']['avatar'] },
+      })),
+    };
+  }
+
+  // 自分の過去の動画（「自分」タブのグリッド）。自分の分だけ・条件なし。新しい順・20件ずつ（続きは記録の時刻と id の組。足跡と同じ cursor）
+  async myList(userId: string, rawQuery: { cursor?: unknown }): Promise<MyVideosResponse> {
+    const { cursor } = parseMyVideosQuery(rawQuery);
+    const rows = await this.db
+      .select({ id: videos.id, recordId: videos.recordId, recordedAt: records.recordedAt, localDate: records.localDate, visibleUntil: videos.visibleUntil })
+      .from(videos)
+      .innerJoin(records, eq(records.id, videos.recordId))
+      .where(
+        and(
+          eq(records.userId, userId),
+          cursor ? or(lt(records.recordedAt, cursor.recordedAt), and(eq(records.recordedAt, cursor.recordedAt), lt(records.id, cursor.id))) : undefined,
+        ),
+      )
+      .orderBy(desc(records.recordedAt), desc(records.id))
+      .limit(VIDEO_PAGE_SIZE + 1);
+    const page = rows.slice(0, VIDEO_PAGE_SIZE);
+    const last = page[page.length - 1];
+    return {
+      items: page.map((r) => ({ id: r.id, recordId: r.recordId, recordedAt: r.recordedAt.toISOString(), localDate: r.localDate, visibleUntil: r.visibleUntil.toISOString() })),
+      nextCursor: rows.length > VIDEO_PAGE_SIZE && last ? encodeCursor(last.recordedAt, last.recordId) : null,
+    };
   }
 
   // 今週、自分の動画が1本以上あるか。「撮った」は動画の行ができた時点で数える（置き終わりの確認まではしない）

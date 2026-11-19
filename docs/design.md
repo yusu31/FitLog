@@ -125,6 +125,8 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 |----------|------|------|------|
 | POST | `/records/{id}/video` | 動画を置く署名付き URL（POST 形式）を発行し、`videos` の行を作る | 自分の筋トレの記録だけ（筋トレでなければ 409 `RECORD_KIND_MISMATCH`・他人の記録は 404）。本文は `{ contentType, sizeBytes }`（画面の申告。形式は `video/mp4`・`video/webm`、大きさは 1〜10,485,760 バイト）。**署名の条件は、大きさが申告値ちょうど・形式とキーが完全一致**（S3 が申告と違うものを受け付けない）。キーは `videos/{記録の id}`。1記録に1本で、**置くのに失敗したやり直しは同じ記録にもう一度呼ぶ**（行は1つのまま申告を更新し、同じキーで署名し直す。初回 201・再発行 200）。応答は `{ id, upload: { url, fields }, expiresInSeconds, visibleUntil }` |
 | GET | `/videos/{id}/url` | 動画を見る署名付き URL を発行する | **本人はいつでも**。**仲間は `visible_until` の前だけ**（過ぎていれば 403 `FORBIDDEN`）で、**今週、自分の動画が1本以上あるときだけ**（なければ 403 `VIDEO_LOCKED`。自分の動画の `visible_until` が今週の期限と同じものがあるかで判定）。別のグループの人・グループに入っていない人・無い id は 404 `VIDEO_NOT_FOUND`（存在を教えない）。置き場（環境変数 `VIDEO_BUCKET`）が未設定の環境では、署名を頼む両方の API が 503 `VIDEO_STORAGE_UNAVAILABLE` |
+| GET | `/videos/week` | 今週の動画の一覧（仲間タブのサムネ列。台帳 A14-2） | 同じグループの人（自分を含む）の、`visible_until` が今週の動画だけ（新しい順・最大100件）。見える範囲は `/videos/{id}/url` と同じ共通関数。**`unlocked`**（自分が今週1本以上撮ったか）と各項目の **`mine`** を返す。`unlocked=false` のとき `mine=false` の動画は見られない（画面はぼかして「1本撮ると見られます」を出す。URL を取ると 403 `VIDEO_LOCKED`）。URL はこの API に入れない（条件は `/videos/{id}/url` だけが守る）。グループに入っていなければ自分の分だけ |
+| GET | `/videos/mine` | 自分の過去の動画の一覧（「自分」タブのグリッド。台帳 A14-2） | 自分の動画だけ・**条件なし**（今週撮っていなくても・期限が過ぎていても）。新しい順・20件ずつ（`cursor` は足跡と同じ）。壊れた `cursor` は 400 `VALIDATION_ERROR` |
 | GET | `/routines` | 自分のルーティンの一覧（F3） | 応答は `{ items, max }`。保存した順。各ルーティンは種目ごとのセット（種目名・部位つき） |
 | POST | `/routines` | ルーティンを保存する（F3） | 本文は `{ name, recordId }`。自分の筋トレの記録1件から写す。201。名前が1〜20字でない 400 `VALIDATION_ERROR`／他の人・無い記録 404 `RECORD_NOT_FOUND`／筋トレでない 409 `RECORD_KIND_MISMATCH`／セットが無い 409 `ROUTINE_EMPTY`／もう5つある 409 `ROUTINE_LIMIT`／同じ名前 409 `ROUTINE_NAME_TAKEN` |
 | DELETE | `/routines/{id}` | 自分のルーティンを消す（F3） | 204。他の人の・無い・もう消した 404 `ROUTINE_NOT_FOUND`（存在を教えない）。元の記録は消えない |
@@ -183,7 +185,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 
 ### GET /api/records（記録の一覧）と GET /api/records/{id}（詳細）
 
-詳細 `GET /api/records/{id}` だけ、動画があるとき `videoId`（uuid）が付く（見るときは `GET /videos/{videoId}/url`。一覧には付けない）。動画の行は署名付き POST を発行するときに作るので、S3 への送信が失敗した記録にも `videoId` は付く。画面は再生に失敗したら「再生できませんでした」とだけ出す。
+詳細 `GET /api/records/{id}` だけ、動画があるとき `videoId`（uuid）が付く（見るときは `GET /videos/{videoId}/url`。一覧には付けない）。足跡 `GET /api/feed` の項目には、動画があるときだけ `hasVideo: true`（カードの再生の印。A06-4）が付く（動画の id・URL は付けない）。動画の行は署名付き POST を発行するときに作るので、S3 への送信が失敗した記録にも `videoId` は付く。画面は再生に失敗したら「再生できませんでした」とだけ出す。
 
 `GET /api/records?kind=workout&limit=1` の応答（一覧。詳細は `items` の1件と同じ形）:
 
