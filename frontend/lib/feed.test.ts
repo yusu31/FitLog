@@ -1,4 +1,4 @@
-import { COMMENT_MAX, QUICK_COMMENTS, STAMP_KEYS, STAMP_LABELS, describeItem, describeTotals, formatVolumeKg, normalizeComment, stampState } from './feed';
+import { COMMENT_MAX, QUICK_COMMENTS, STAMP_KEYS, STAMP_LABELS, describeItem, describeTotals, formatVolumeKg, normalizeComment, stampState, stampWhoLines } from './feed';
 
 describe('スタンプと定型コメントの決まり（F-10）', () => {
   it('筋トレ・ランは4種、休みは2種。休みに筋トレ用のスタンプは付かない', () => {
@@ -82,8 +82,8 @@ describe('describeItem（足跡の1行目）', () => {
 
 describe('stampState', () => {
   const stamps = [
-    { stampKey: 'nice' as const, count: 2, mine: 'r1' },
-    { stampKey: 'fire' as const, count: 1, mine: null },
+    { stampKey: 'nice' as const, count: 2, mine: 'r1', by: [] },
+    { stampKey: 'fire' as const, count: 1, mine: null, by: [] },
   ];
   it('付いているスタンプの数と自分の id を返す', () => {
     expect(stampState(stamps, 'nice')).toEqual({ count: 2, mine: 'r1' });
@@ -92,5 +92,19 @@ describe('stampState', () => {
   it('付いていないスタンプは 0・mine なし', () => {
     expect(stampState(stamps, 'clap')).toEqual({ count: 0, mine: null });
     expect(stampState([], 'nice')).toEqual({ count: 0, mine: null });
+  });
+});
+
+describe('stampWhoLines（だれが押したか。A04-2）', () => {
+  const stamps = [
+    { stampKey: 'nice' as const, count: 2, mine: 'r2', by: [{ id: 'u-hanako', name: 'はなこ' }, { id: 'me', name: 'わたし' }] },
+    { stampKey: 'fire' as const, count: 1, mine: null, by: [{ id: 'u-taro', name: 'たろう' }] },
+  ];
+  it('スタンプごとに「名前・名前」の1行にする。自分は「あなた」、並びは押した順のまま', () => {
+    expect(stampWhoLines(stamps, 'me')).toEqual(['ナイス はなこ・あなた', 'すごい たろう']);
+  });
+  it('自分の足跡（もらった分）でも同じ。付いていなければ空', () => {
+    expect(stampWhoLines(stamps, 'u-owner')).toEqual(['ナイス はなこ・わたし', 'すごい たろう']);
+    expect(stampWhoLines([], 'me')).toEqual([]);
   });
 });

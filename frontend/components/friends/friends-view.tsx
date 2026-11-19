@@ -35,6 +35,7 @@ export function FriendsView() {
           <GroupSummary group={data.data} />
           {/* 自分1人の間は、次の一手「仲間を招待」を上に出す（N6）。2人以上になったら設定の奥に戻す */}
           {data.data.members.length <= 1 && <InvitePanel full={false} />}
+          {data.data.members.length <= 1 && <p className="px-1 text-note font-bold text-sub-strong">{FRIENDS_TEXT.aloneFeedNote}</p>}
           <WeekVideoStrip />
           <FeedSection />
           <Link

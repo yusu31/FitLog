@@ -3154,41 +3154,72 @@
           "status"
         ]
       },
-      "StatsMonth": {
+      "StatsPeriod": {
         "type": "object",
         "properties": {
-          "month": {
-            "type": "string",
-            "example": "2026-11",
-            "description": "今日を含む月（日本時間）"
-          },
           "activeDays": {
             "type": "number",
             "minimum": 0,
-            "description": "今月、筋トレかランを記録した日の数"
+            "description": "その期間に、筋トレかランを記録した日の数"
           },
           "restDays": {
             "type": "number",
             "minimum": 0,
-            "description": "今月、休みだけを記録した日の数（同じ日に記録があれば数えない）"
+            "description": "その期間に、休みだけを記録した日の数（同じ日に記録があれば数えない）"
           },
           "totalWeightKg": {
             "type": "number",
             "minimum": 0,
-            "description": "今月の総重量（重量×回数の合計。kg。小数1桁）"
+            "description": "その期間の総重量（重量×回数の合計。kg。小数1桁）"
           },
           "runDistanceM": {
             "type": "number",
             "minimum": 0,
-            "description": "今月のランの合計距離（m）"
+            "description": "その期間のランの合計距離（m）"
           }
         },
         "required": [
-          "month",
           "activeDays",
           "restDays",
           "totalWeightKg",
           "runDistanceM"
+        ]
+      },
+      "StatsMonth": {
+        "type": "object",
+        "properties": {
+          "activeDays": {
+            "type": "number",
+            "minimum": 0,
+            "description": "その期間に、筋トレかランを記録した日の数"
+          },
+          "restDays": {
+            "type": "number",
+            "minimum": 0,
+            "description": "その期間に、休みだけを記録した日の数（同じ日に記録があれば数えない）"
+          },
+          "totalWeightKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "その期間の総重量（重量×回数の合計。kg。小数1桁）"
+          },
+          "runDistanceM": {
+            "type": "number",
+            "minimum": 0,
+            "description": "その期間のランの合計距離（m）"
+          },
+          "month": {
+            "type": "string",
+            "example": "2026-11",
+            "description": "今日を含む月（日本時間）。数字は今月1日から今日まで"
+          }
+        },
+        "required": [
+          "activeDays",
+          "restDays",
+          "totalWeightKg",
+          "runDistanceM",
+          "month"
         ]
       },
       "StatsWeek": {
@@ -3274,8 +3305,29 @@
               "$ref": "#/components/schemas/StatsCalendarDay"
             }
           },
+          "week": {
+            "description": "今週（月曜から今日まで）の数字",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsPeriod"
+              }
+            ]
+          },
           "month": {
-            "$ref": "#/components/schemas/StatsMonth"
+            "description": "今月（1日から今日まで）の数字",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsMonth"
+              }
+            ]
+          },
+          "year": {
+            "description": "年（calendar と同じ365日）の数字",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsPeriod"
+              }
+            ]
           },
           "weekly": {
             "description": "今週を最後にした直近12週（月曜の昇順）",
@@ -3300,7 +3352,9 @@
         "required": [
           "today",
           "calendar",
+          "week",
           "month",
+          "year",
           "weekly",
           "stamps",
           "totalRunDistanceM"
@@ -3747,6 +3801,23 @@
           }
         }
       },
+      "StampUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "はなこ"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
       "FeedStamp": {
         "type": "object",
         "properties": {
@@ -3771,12 +3842,20 @@
             "format": "uuid",
             "nullable": true,
             "description": "自分が付けているときは、そのスタンプの id（外すときに DELETE /records/{id}/reactions/{reactionId} へ渡す）。付けていなければ null"
+          },
+          "by": {
+            "description": "このスタンプを付けた人（押した順。自分も入る。同じグループの人だけ。A04-2）",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StampUser"
+            }
           }
         },
         "required": [
           "stampKey",
           "count",
-          "mine"
+          "mine",
+          "by"
         ]
       },
       "FeedItem": {

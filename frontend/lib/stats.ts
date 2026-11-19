@@ -1,5 +1,5 @@
-import type { StampKey, StatsCalendarDay, StatsResponse } from '@/lib/api/generated';
-import { weekdayIndex } from '@/lib/format';
+import type { StampKey, StatsCalendarDay, StatsPeriod, StatsResponse } from '@/lib/api/generated';
+import { formatMonthDay, weekdayIndex } from '@/lib/format';
 import { weekDates, weekStartOf, type CellStatus } from '@/lib/shared/week';
 
 // 記録のまとめ（F-22 週・月・年／F-26 今月の数字／F-27 グラフ／F-29 スタンプ帳。docs/features.md 2.13）の画面側の純粋な関数。
@@ -31,6 +31,14 @@ export function buildGrid(view: StatsView, calendar: readonly StatsCalendarDay[]
     return [...lead(first), ...days];
   }
   return [...lead(calendar[0].date), ...calendar.map((c) => cell(c.date))];
+}
+
+// 週・月・年の切替に合わせて見せる数字（A08-5）。見出しと期間（いつからいつまで）も、切替と同じ範囲にそろえる
+export function periodOf(view: StatsView, data: Pick<StatsResponse, 'today' | 'calendar' | 'week' | 'month' | 'year'>): { heading: string; range: string; numbers: StatsPeriod } {
+  const to = formatMonthDay(data.today);
+  if (view === 'week') return { heading: '今週の数字', range: `${formatMonthDay(weekStartOf(data.today))}〜${to}`, numbers: data.week };
+  if (view === 'month') return { heading: `${Number(data.month.month.slice(5))}月の数字`, range: `${formatMonthDay(`${data.month.month}-01`)}〜${to}`, numbers: data.month };
+  return { heading: 'この1年の数字', range: `${formatMonthDay(data.calendar[0].date)}〜${to}`, numbers: data.year };
 }
 
 // 祝福に重ねる「今月◯日目」（F-20）。今月動いた日数に、今日がまだ数えられていなければ今日の分を足す。

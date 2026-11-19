@@ -22,6 +22,7 @@ import {
   normalizeComment,
   stampState,
   stampStateWithPending,
+  stampWhoLines,
   type PendingStamp,
   type StampKey,
 } from '@/lib/feed';
@@ -33,6 +34,9 @@ import { useAppSession } from '@/lib/use-app-session';
 import { FRIENDS_TEXT, LIGHT_QUICK_COMMENTS } from './friends-text';
 import { AVATAR_BG } from './member-list';
 import { StampButton, StampChip } from './stamp-button';
+
+// 「新着」の札を外すまでの時間。カードが画面に見えてから、この時間そのまま見えていたら「読んだ」とみなす（通り過ぎただけでは外さない。A04-8）
+const SEEN_AFTER_MS = 1500;
 
 // 足跡の1件。スタンプ（付け外し）とコメント（定型4つ／休みは2つ＋自由入力 50字まで）。
 // 付け外しは電波があるときだけ（F-30）。送ったあとは足跡を取り直すので、数と「自分が付けた」はサーバーの値になる。
@@ -47,8 +51,26 @@ export function FeedCard({ item }: { item: FeedItem }) {
   const [openComments, setOpenComments] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [stampNote, setStampNote] = useState<string | null>(null);
-  // 「新着」の札は、そのカードを触ったら外す（A04-8）。サーバー側は、見たあと次に開いたときに外れる
+  // 「新着」の札は、そのカードを触ったら外す。触らなくても、画面に見えて少し経てば外す（A04-8）。サーバー側は、見たあと次に開いたときに外れる
   const [seen, setSeen] = useState(false);
+  const cardRef = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!item.isNew || seen || !el || typeof IntersectionObserver === 'undefined') return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        clearTimeout(timer);
+        if (entry?.isIntersecting) timer = setTimeout(() => setSeen(true), SEEN_AFTER_MS);
+      },
+      { threshold: 0.6 },
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      clearTimeout(timer);
+    };
+  }, [item.isNew, seen]);
   const [pending, setPending] = useState<PendingStamp | null>(null);
   const { title, detail } = describeItem(item);
   const busy = addReaction.isPending || deleteReaction.isPending;
@@ -72,10 +94,11 @@ export function FeedCard({ item }: { item: FeedItem }) {
     }
   }
 
+  const who = stampWhoLines(item.stamps, session?.user.id);
   const hasMine = !isOwn && STAMP_KEYS[item.kind].some((key) => stampState(item.stamps, key).mine !== null);
   const KindIcon = item.kind === 'run' ? Footprints : item.kind === 'rest' ? Moon : Dumbbell;
   return (
-    <li className="fl-slab space-y-3 px-4 py-4" onClickCapture={() => setSeen(true)}>
+    <li ref={cardRef} className="fl-slab space-y-3 px-4 py-4" onClickCapture={() => setSeen(true)}>
       <div className="flex items-center gap-3">
         <span
           aria-hidden
@@ -142,6 +165,12 @@ export function FeedCard({ item }: { item: FeedItem }) {
         </li>
       </ul>
 
+      {/* だれが押したか（A04-2）。スタンプが付いているときだけ。自分は「あなた」 */}
+      {who.length > 0 && (
+        <p data-testid="stamp-who" className="text-note font-bold text-sub-strong">
+          {who.join(' ／ ')}
+        </p>
+      )}
       {stampNote && (
         <p role="status" className="text-sm font-bold text-teal-deep">
           {stampNote}

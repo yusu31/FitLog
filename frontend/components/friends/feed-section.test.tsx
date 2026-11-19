@@ -183,7 +183,7 @@ describe('スタンプ', () => {
 
   it('付いた数を出し、自分が付けたものは押された状態で表す', async () => {
     replies['GET /api/feed'] = [
-      { status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'nice', count: 2, mine: 'x1' }, { stampKey: 'fire', count: 1, mine: null }] })] }) },
+      { status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'nice', count: 2, mine: 'x1', by: [] }, { stampKey: 'fire', count: 1, mine: null, by: [] }] })] }) },
     ];
     renderFeed();
     const nice = await screen.findByRole('button', { name: 'ナイス 2' });
@@ -195,7 +195,7 @@ describe('スタンプ', () => {
   it('U11: 自分の足跡には押すボタンを出さず、もらった分だけ数つきで出す', async () => {
     const ME = { id: 'u1', name: 'わたし', avatar: HANAKO.avatar };
     replies['GET /api/feed'] = [
-      { status: 200, body: feed({ items: [item({ author: ME, stamps: [{ stampKey: 'nice', count: 2, mine: null }] })] }) },
+      { status: 200, body: feed({ items: [item({ author: ME, stamps: [{ stampKey: 'nice', count: 2, mine: null, by: [] }] })] }) },
     ];
     renderFeed();
     const list = await screen.findByRole('list', { name: /へのスタンプ$/ });
@@ -207,7 +207,7 @@ describe('スタンプ', () => {
     const user = userEvent.setup();
     replies['GET /api/feed'] = [
       { status: 200, body: feed() },
-      { status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'clap', count: 1, mine: 'rx' }] })] }) },
+      { status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'clap', count: 1, mine: 'rx', by: [] }] })] }) },
     ];
     replies['POST /api/records/r1/reactions'] = [{ status: 201, body: { id: 'rx', recordId: 'r1', stampKey: 'clap' } }];
     renderFeed();
@@ -240,7 +240,7 @@ describe('スタンプ', () => {
   it('自分が付けているスタンプを押すと、DELETE /records/{id}/reactions/{reactionId} で外す', async () => {
     const user = userEvent.setup();
     replies['GET /api/feed'] = [
-      { status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'nice', count: 1, mine: 'x1' }] })] }) },
+      { status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'nice', count: 1, mine: 'x1', by: [] }] })] }) },
       { status: 200, body: feed() },
     ];
     replies['DELETE /api/records/r1/reactions/x1'] = [{ status: 204 }];
@@ -403,7 +403,7 @@ describe('B05 仲間タブの改善', () => {
     const user = userEvent.setup();
     replies['GET /api/feed'] = [
       { status: 200, body: feed() },
-      { status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'clap', count: 1, mine: 'rx' }] })] }) },
+      { status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'clap', count: 1, mine: 'rx', by: [] }] })] }) },
       { status: 200, body: feed() },
     ];
     replies['POST /api/records/r1/reactions'] = [{ status: 201, body: { id: 'rx', recordId: 'r1', stampKey: 'clap' } }];
@@ -457,8 +457,58 @@ describe('B05 仲間タブの改善', () => {
     expect(screen.queryByText('新着')).not.toBeInTheDocument();
   });
 
+  it('A04-8: 新着の札は、画面に見えて少し経つと外れる（見えていない間は残る）', async () => {
+    // jsdom に IntersectionObserver は無いので、見えた・見えなくなったを自分で知らせる偽物に差し替える
+    const observers: Array<(entries: Array<{ isIntersecting: boolean }>) => void> = [];
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(cb: (entries: Array<{ isIntersecting: boolean }>) => void) {
+          observers.push(cb);
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 'r1', isNew: true })] }) }];
+    renderFeed();
+    await screen.findByText('新着');
+    await waitFor(() => expect(observers.length).toBeGreaterThan(0));
+    // 見えたあと、すぐに見えなくなれば残る（通り過ぎただけ）
+    observers.forEach((cb) => cb([{ isIntersecting: true }]));
+    observers.forEach((cb) => cb([{ isIntersecting: false }]));
+    await new Promise((r) => setTimeout(r, 1700));
+    expect(screen.getByText('新着')).toBeInTheDocument();
+    // 見えたまま少し経てば外れる
+    observers.forEach((cb) => cb([{ isIntersecting: true }]));
+    await waitFor(() => expect(screen.queryByText('新着')).not.toBeInTheDocument(), { timeout: 3000 });
+    vi.unstubAllGlobals();
+  });
+
+  it('A04-2: スタンプの下に、だれが押したかを出す（自分は「あなた」・自分の足跡ではもらった名前）', async () => {
+    const stamps = [
+      { stampKey: 'nice', count: 2, mine: 'x1', by: [{ id: 'u2', name: 'はなこ' }, { id: 'u1', name: 'わたし' }] },
+      { stampKey: 'fire', count: 1, mine: null, by: [{ id: 'u3', name: 'たろう' }] },
+    ];
+    const ME = { id: 'u1', name: 'わたし', avatar: HANAKO.avatar };
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 'r1', stamps }), item({ id: 'r2', author: ME, stamps: [stamps[1]] })] }) }];
+    renderFeed();
+    const who = await screen.findAllByTestId('stamp-who');
+    expect(who).toHaveLength(2);
+    expect(who[0]).toHaveTextContent('ナイス はなこ・あなた');
+    expect(who[0]).toHaveTextContent('すごい たろう');
+    expect(who[1]).toHaveTextContent('すごい たろう');
+  });
+
+  it('A04-2: スタンプが付いていない足跡には、押した人の行を出さない', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed() }];
+    renderFeed();
+    await screen.findByRole('button', { name: 'ナイス' });
+    expect(screen.queryByTestId('stamp-who')).not.toBeInTheDocument();
+  });
+
   it('V-03: 押した状態の文字は濃いティール（4.5:1 以上）', async () => {
-    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'clap', count: 1, mine: 'rx' }] })] }) }];
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'clap', count: 1, mine: 'rx', by: [] }] })] }) }];
     renderFeed();
     const button = await screen.findByRole('button', { name: 'おつかれ 1' });
     expect(button.className).toContain('text-teal-deep');

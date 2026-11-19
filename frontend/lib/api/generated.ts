@@ -522,29 +522,52 @@ export interface StatsCalendarDay {
   status: StatsCalendarDayStatus;
 }
 
-export interface StatsMonth {
-  /** 今日を含む月（日本時間） */
-  month: string;
+export interface StatsPeriod {
   /**
-     * 今月、筋トレかランを記録した日の数
+     * その期間に、筋トレかランを記録した日の数
      * @minimum 0
      */
   activeDays: number;
   /**
-     * 今月、休みだけを記録した日の数（同じ日に記録があれば数えない）
+     * その期間に、休みだけを記録した日の数（同じ日に記録があれば数えない）
      * @minimum 0
      */
   restDays: number;
   /**
-     * 今月の総重量（重量×回数の合計。kg。小数1桁）
+     * その期間の総重量（重量×回数の合計。kg。小数1桁）
      * @minimum 0
      */
   totalWeightKg: number;
   /**
-     * 今月のランの合計距離（m）
+     * その期間のランの合計距離（m）
      * @minimum 0
      */
   runDistanceM: number;
+}
+
+export interface StatsMonth {
+  /**
+     * その期間に、筋トレかランを記録した日の数
+     * @minimum 0
+     */
+  activeDays: number;
+  /**
+     * その期間に、休みだけを記録した日の数（同じ日に記録があれば数えない）
+     * @minimum 0
+     */
+  restDays: number;
+  /**
+     * その期間の総重量（重量×回数の合計。kg。小数1桁）
+     * @minimum 0
+     */
+  totalWeightKg: number;
+  /**
+     * その期間のランの合計距離（m）
+     * @minimum 0
+     */
+  runDistanceM: number;
+  /** 今日を含む月（日本時間）。数字は今月1日から今日まで */
+  month: string;
 }
 
 export interface StatsWeek {
@@ -591,7 +614,12 @@ export interface StatsResponse {
   today: string;
   /** 今日を最後にした365日分のマス（日付の昇順）。週・月・年の切替はこれを画面で切り出す */
   calendar: StatsCalendarDay[];
+  /** 今週（月曜から今日まで）の数字 */
+  week: StatsPeriod;
+  /** 今月（1日から今日まで）の数字 */
   month: StatsMonth;
+  /** 年（calendar と同じ365日）の数字 */
+  year: StatsPeriod;
   /** 今週を最後にした直近12週（月曜の昇順） */
   weekly: StatsWeek[];
   /** スタンプ帳。全期間の記録から毎回計算する */
@@ -858,6 +886,11 @@ export interface ProfileRequest {
   activeTime?: ProfileRequestActiveTime;
 }
 
+export interface StampUser {
+  id: string;
+  name: string;
+}
+
 export type FeedStampStampKey = typeof FeedStampStampKey[keyof typeof FeedStampStampKey];
 
 
@@ -879,6 +912,8 @@ export interface FeedStamp {
      * @nullable
      */
   mine: string | null;
+  /** このスタンプを付けた人（押した順。自分も入る。同じグループの人だけ。A04-2） */
+  by: StampUser[];
 }
 
 export type FeedItemKind = typeof FeedItemKind[keyof typeof FeedItemKind];
