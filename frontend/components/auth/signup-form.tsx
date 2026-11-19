@@ -27,6 +27,12 @@ export function SignupForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    // A13-7: ブラウザ標準の吹き出しは見落としやすいので、自前で検査して画面にエラー文を出す
+    const invalid = validate(String(form.get('name')), String(form.get('email')), String(form.get('password')));
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
     setPending(true);
     setError(null);
     try {
@@ -51,7 +57,7 @@ export function SignupForm() {
 
   return (
     <AuthLayout title="新規登録">
-      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      <form noValidate onSubmit={onSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <Label className="font-extrabold" htmlFor="name">表示名</Label>
           <Input className="h-12 text-base" id="name" name="name" autoComplete="nickname" required maxLength={30} aria-describedby="name-hint" />
@@ -98,4 +104,12 @@ function messageFor(code: string | undefined): string {
     default:
       return '登録できませんでした。入力を確かめて、もう一度お試しください';
   }
+}
+
+// 送る前の入力検査。問題があれば日本語の文を返す（API 側の検査と同じ基準）
+function validate(name: string, email: string, password: string): string | null {
+  if (name.trim() === '') return '表示名を入力してください';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'メールアドレスの形が正しくありません';
+  if (password.length < MIN_PASSWORD_LENGTH) return `パスワードは${MIN_PASSWORD_LENGTH}文字以上にしてください`;
+  return null;
 }

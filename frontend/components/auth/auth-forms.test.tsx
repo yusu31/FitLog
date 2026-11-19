@@ -147,6 +147,22 @@ describe('SignupForm（S-02）', () => {
     expect(alert).not.toHaveTextContent('raw english');
   });
 
+  // T-AUTH-FE-25: 入力が不正なら送らず、直す点を日本語で role=alert に出す（A13-7）
+  it.each([
+    ['表示名が空', { name: '', email: 'a@example.com', password: 'password123' }, '表示名を入力してください'],
+    ['メールの形が違う', { name: 'ゆうす', email: 'abc', password: 'password123' }, 'メールアドレスの形が正しくありません'],
+    ['パスワードが短い', { name: 'ゆうす', email: 'a@example.com', password: 'short' }, 'パスワードは8文字以上'],
+  ])('%s: 送らずにエラー文を出す', async (_label, v, text) => {
+    const user = userEvent.setup();
+    render(<SignupForm />);
+    if (v.name) await user.type(screen.getByLabelText('表示名'), v.name);
+    await user.type(screen.getByLabelText('メールアドレス'), v.email);
+    await user.type(screen.getByLabelText(/パスワード/), v.password);
+    await user.click(screen.getByRole('button', { name: '登録する' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(text);
+    expect(signUpEmail).not.toHaveBeenCalled();
+  });
+
   // T-AUTH-FE-23: パスワードの境界（8文字）。ブラウザの入力検査に最小の長さを渡している
   it('パスワード欄に8文字以上の制限を付ける', () => {
     render(<SignupForm />);
