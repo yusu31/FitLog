@@ -111,7 +111,7 @@ describe('StatsPage（S-35 記録をくわしく）', () => {
     expect(trek).toHaveTextContent('300km');
     expect(trek).toHaveTextContent('福岡');
     expect(within(trek).getByTestId('trek-total')).toHaveTextContent('300.0 km'); // 合計の走行距離
-    expect(trek).toHaveTextContent('次の広島まで 260.0km'); // 福岡(270km)の次は広島(560km)
+    expect(trek).toHaveTextContent('次の下関まで 30.0km'); // 福岡(270km)の次は下関(330km)
     expect(trek.textContent).not.toMatch(/あと|残り/);
     expect(within(trek).getByRole('img', { name: /福岡/ })).toBeInTheDocument();
   });

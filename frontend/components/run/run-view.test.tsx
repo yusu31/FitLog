@@ -11,6 +11,25 @@ vi.mock('@/components/record-detail/route-map', () => ({
   RouteMap: ({ route }: { route: { coordinates: unknown[] } }) => <div data-testid="route-preview">{route.coordinates.length}点</div>,
 }));
 
+// GPS の記録（GpsTracker）はここでは見せかけの部品。「終了」を押したときに、GPS が渡す形の結果を onFinish へ渡す
+vi.mock('@/components/run/gps-tracker', () => ({
+  GpsTracker: ({ onFinish }: { onFinish: (run: unknown) => void }) => (
+    <button
+      type="button"
+      onClick={() =>
+        onFinish({
+          distanceM: 5000,
+          durationS: 1800,
+          startedAt: '2026-11-04T02:30:00.000Z',
+          route: { type: 'LineString', coordinates: [[0, 0], [0, 0.044966]] },
+        })
+      }
+    >
+      GPS を終える（テスト用）
+    </button>
+  ),
+}));
+
 const replace = vi.fn();
 const push = vi.fn();
 let search = '';
@@ -144,12 +163,12 @@ describe('RunView（S-13 記録（ラン））', () => {
         installFakeApi({ [POST]: { status: 201, body: { id: 'x' } }, [STATS_URL]: { status: 200, body: { totalRunDistanceM: 160_000 } } });
         const user = userEvent.setup();
         renderWithQuery(<RunView />);
-        expect(screen.getByRole('link', { name: '日本縦断' })).toHaveAttribute('href', '/me/stats');
+        expect(screen.getByRole('link', { name: '日本縦断' })).toHaveAttribute('href', '/me/stats#japan-trek');
         await waitFor(() => expect(calls).toContain(STATS_URL));
         await fill(user, '5', '30');
         await user.click(save());
         await screen.findByTestId('trek-progress');
-        expect(screen.getByRole('link', { name: '日本地図で見る' })).toHaveAttribute('href', '/me/stats');
+        expect(screen.getByRole('link', { name: '日本地図で見る' })).toHaveAttribute('href', '/me/stats#japan-trek');
       });
       it('累計が読めていないときは、日本縦断の欄を出さない', async () => {
         installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
@@ -231,6 +250,30 @@ describe('RunView（S-13 記録（ラン））', () => {
     });
   });
 
+  // A07-5: GPS の「終了」のあとは入力画面に戻さず、そのまま保存して完了画面へ進む
+  describe('GPS の終了（A07-5）', () => {
+    it('終了すると、入力画面に戻らず保存して完了画面を出す（距離・時間・ルート・開始時刻を送る）', async () => {
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await user.click(screen.getByRole('button', { name: 'GPS を終える（テスト用）' }));
+      expect(await screen.findByText(RUN_MESSAGES.saved)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '保存する' })).not.toBeInTheDocument();
+      const body = postBody();
+      expect(body.run).toEqual({ distanceM: 5000, durationS: 1800, route: { type: 'LineString', coordinates: [[0, 0], [0, 0.044966]] } });
+      expect(body.recordedAt).toBe('2026-11-04T02:30:00.000Z');
+    });
+    it('保存できなかったときは、入力欄に結果を入れた状態で入力画面に残る（もう一度保存できる）', async () => {
+      installFakeApi({ [POST]: { status: 400, body: { code: 'VALIDATION', message: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      await user.click(screen.getByRole('button', { name: 'GPS を終える（テスト用）' }));
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+      expect(km()).toHaveValue('5');
+      expect(save()).toBeEnabled();
+    });
+  });
+
   // GPX の取り込み（F-14）。parseGpx の結果を入力欄に入れ、ルートと開始時刻を保存に使う
   describe('GPX の取り込み', () => {
     const gpxText = (t0?: string, t1?: string) =>
@@ -242,10 +285,10 @@ describe('RunView（S-13 記録（ラン））', () => {
     const pick = (user: ReturnType<typeof userEvent.setup>, f: File) => user.upload(picker(), f);
     const ROUTE = { type: 'LineString', coordinates: [[0, 0], [0, 0.044966]] };
 
-    it('「GPX ファイルを選ぶ」の入口がある（.gpx だけ選べる）', () => {
+    it('「ほかのアプリの記録を取り込む」の入口がある（.gpx だけ選べる）', () => {
       installFakeApi({});
       renderWithQuery(<RunView />);
-      expect(screen.getByText('GPX ファイルを選ぶ')).toBeInTheDocument();
+      expect(screen.getByText('ほかのアプリの記録を取り込む')).toBeInTheDocument();
       expect(picker()).toHaveAttribute('accept', expect.stringContaining('.gpx'));
       expect(picker()).toBeEnabled();
     });
@@ -270,14 +313,14 @@ describe('RunView（S-13 記録（ラン））', () => {
     });
 
     // T-RUNP-06（U19）: 読み取れたら、保存する前にルートの形を地図で確かめられる。はずすと消える
-    it('読み取れたらルートの地図を出し、「GPX をはずす」で消す', async () => {
+    it('読み取れたらルートの地図を出し、「取り込みをはずす」で消す', async () => {
       installFakeApi({});
       const user = userEvent.setup();
       renderWithQuery(<RunView />);
       expect(screen.queryByTestId('route-preview')).not.toBeInTheDocument();
       await pick(user, fileOf(gpxText('2026-11-03T06:00:00Z', '2026-11-03T06:30:00Z')));
       expect(await screen.findByTestId('route-preview')).toBeInTheDocument();
-      await user.click(screen.getByRole('button', { name: 'GPX をはずす' }));
+      await user.click(screen.getByRole('button', { name: '取り込みをはずす' }));
       expect(screen.queryByTestId('route-preview')).not.toBeInTheDocument();
     });
 
@@ -378,7 +421,7 @@ describe('RunView（S-13 記録（ラン））', () => {
       renderWithQuery(<RunView />);
       await pick(user, fileOf(gpxText('2026-11-03T06:00:00Z', '2026-11-03T06:30:00Z')));
       await waitFor(() => expect(km()).toHaveValue('5'));
-      await user.click(screen.getByRole('button', { name: 'GPX をはずす' }));
+      await user.click(screen.getByRole('button', { name: '取り込みをはずす' }));
       expect(km()).toHaveValue('5');
       await user.click(save());
       await screen.findByText(RUN_MESSAGES.saved);
