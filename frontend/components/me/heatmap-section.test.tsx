@@ -30,8 +30,19 @@ describe('HeatmapSection（F-12 今週きたえたところ）', () => {
     const list = await screen.findByRole('list', { name: '部位ごとのセット数' });
     expect(within(list).getByText('胸').closest('li')).toHaveTextContent('3セット');
     expect(within(list).getByText('脚').closest('li')).toHaveTextContent('5セット');
-    expect(within(list).getByText('背中').closest('li')).toHaveTextContent('0セット');
+    // A08-6: まだの部位に「0セット」と未達の数は出さない
+    expect(within(list).getByText('背中').closest('li')).not.toHaveTextContent('0');
     expect(screen.getByText('今週きたえたところ').closest('section')).toHaveTextContent('8 セット');
+  });
+
+  it('A08-7: 凡例に「セット」の単位と、色の読み方の一行を添える', async () => {
+    stubHeatmap(heatmapOf({ chest: 3 }));
+    renderWithQuery(<HeatmapSection />);
+    await screen.findByRole('list', { name: '部位ごとのセット数' });
+    const section = screen.getByText('今週きたえたところ').closest('section')!;
+    expect(section).toHaveTextContent('1〜2セット');
+    expect(section).toHaveTextContent('4セット以上');
+    expect(section).toHaveTextContent('色が濃いほど');
   });
 
   it('体の図（前・後ろ）の色が、セット数の段階になる（胸3=段階2・脚5=段階3・他は0）', async () => {

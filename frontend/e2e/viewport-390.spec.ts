@@ -28,7 +28,7 @@ test('A3 主な画面が 390px で横スクロールしない', async ({ page })
   }
 });
 
-test('A3 結果シートが 390px で画面内に収まり、中身が見切れない', async ({ page }) => {
+test('A3 結果シートが 390px で横にはみ出さず、流れの中で見切れない', async ({ page }) => {
   await signUp(page);
   await page.goto('/exercises/');
   await page.locator('a[href^="/record?exercise="]').first().click();
@@ -39,10 +39,14 @@ test('A3 結果シートが 390px で画面内に収まり、中身が見切れ�
   // 出現アニメーション（300ms）が終わるのを待ってから測る
   await page.waitForTimeout(500);
 
+  // B04: 結果の板は画面に固定せず、セット一覧の流れの中に出る。そのため画面の下にあることがあり、
+  // 「見える位置までスクロールすれば、板の全体が画面（390×844）に収まる」ことを守る
+  await sheet.scrollIntoViewIfNeeded();
   const box = await sheet.boundingBox();
   expect(box).not.toBeNull();
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  expect(box!.y).toBeGreaterThanOrEqual(0);
   expect(box!.y + box!.height).toBeLessThanOrEqual(844);
   // 中身の横はみ出し（文字・体の図が枠より広がっていないか）
   const inner = await sheet.evaluate((el) => el.scrollWidth - el.clientWidth);

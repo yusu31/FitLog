@@ -17,8 +17,34 @@ export const RECORD_MESSAGES = {
   // 前回が無い（比べる相手がいない）セットの結果
   recorded: '記録したよ',
   best: 'ベスト',
-  trial: 'お試し',
+  trial: '目安',
   noPrevious: '前回の記録は まだないよ',
+  // A02-5: 前回から3日以上あいたとき、目標を前回と同じ値にした理由（責めない）
+  restReturn: 'しばらく あいたので、前回と おなじ値から。ゆっくり いこう',
+  // A03-6: 数字の欄は打って入力できる
+  typeHint: '数字を タップすると、直接 入力できます',
+  // A03-4: 「できた」が押せないとき・進み具合
+  waitPrevious: '前回の記録を 読み込んでいます。少し待ってね',
+  // A03-2: 「できた」のあとの選択肢
+  stop: '今日はここまで',
+  stopHint: '今日の画面で 終われます',
+  restStart: '休憩する',
+  // A06-1・A06-2: 動画の入口（専門語を使わない）
+  video: '2秒動画を撮る',
+  videoHint: '最後の1回を 2秒だけ 動画に',
+  // A03-3: バーの読み方
+  barNow: '今回',
+  barPrev: '前回',
+  // A12-5: いまのセット番号
+  setNow: (n: number) => `いま ${n}セット目`,
+} as const;
+
+// 記録画面を左上の ✕ で閉じるときの確認（A03-5）
+export const RECORD_CLOSE_MESSAGES = {
+  title: 'ここで 閉じますか？',
+  body: 'いままでの記録は 残ります。あとで続きから できます',
+  keep: 'つづける',
+  close: 'とじる',
 } as const;
 
 // ホームの一言（おかえり・前日の記録の有無に応じた出し分け）。あいた日数は責めずに一言添える程度にとどめる
@@ -86,10 +112,24 @@ export const LATE_MESSAGES = {
   noVideo: '動画は、その日のうちの記録にだけ付けられます',
 } as const;
 
+// 今日画面の上の「仲間」（A01-8・A02-1）。順位や数を競う言い方はしない
+export const TODAY_FRIENDS_MESSAGES = {
+  label: '仲間の今日',
+  recorded: (names: string): string => `${names} が記録`,
+  rested: (names: string): string => `${names} はおやすみ`,
+  none: 'まだ 足跡は ないよ',
+  invite: '仲間を招待する',
+  noGroupTitle: '仲間といっしょに 続けよう',
+  noGroupSteps: 'グループを作って、招待リンクを送ると、仲間の足跡がここに出ます',
+  aloneTitle: 'まだ ひとりだけ。仲間を招待しよう',
+  aloneSteps: '招待リンクを送ると、仲間の足跡がここに出ます',
+} as const;
+
 export const REST_MESSAGES = {
   title: 'おやすみ',
   body: '休むのも 記録のひとつ。今週の「休み」に ちゃんと数えたよ。',
   back: 'もどる',
+  changeMind: 'やっぱり記録する',
   sendError: '休みを 送れませんでした。電波の良い所でもう一度ためしてください',
 } as const;
 
@@ -141,6 +181,7 @@ export const GPS_MESSAGES = {
   start: 'GPS で記録する',
   hint: '走り終えたら「終了」で、距離と時間が入力欄に入ります。',
   searching: 'GPS をさがしています。空の見える所で少し待ってね',
+  webNotice: '画面を消さないでね。画面が消えると、記録が止まります。ポケットに入れて走るなら Android アプリで',
   keepScreenOn: '画面を点けたままにします。画面が消えたり別のアプリを開いたりすると、記録は止まります',
   appBackground: '画面を消しても記録は続きます（通知が出ます）。止めるときは FitLog を開いて「一時停止」か「終了」を押してね',
   noWakeLock: 'この端末は 画面を点けたままにできません。画面を消さずに走ってね（消えると記録が止まります）',
@@ -176,12 +217,19 @@ export const DETAIL_MESSAGES = {
   loadFailed: '読み込めませんでした。電波の良い所で開き直してください',
   removing: '消しています',
   deleteButton: 'この記録を 消す',
+  deleteRegion: '記録の削除',
+  ownerMine: 'あなたの記録',
+  ownerFriend: (name: string | null): string => (name ? `${name}さんの記録` : '仲間の記録'),
+  copyExplain: 'この内容で今日を始めます。記録はまだ作られず、「できた」を押したときに残ります',
   backMe: '自分にもどる',
   backFriends: '仲間にもどる',
 } as const;
 
 // 送信待ちの帯（screen-design.md「送信待ちの表示（F-30）」）。電波や通信のせいで、本人の落ち度ではない。責めない
 export const SYNC_MESSAGES = {
+  // 電波がないあいだ、画面の上に出しっぱなしにする帯（A11-2）
+  offline: '電波なし',
+  offlineNote: '記録はこの端末に保存するよ。つながったら自動で送るね',
   pending: (n: number): string => `送信待ち ${n}件`,
   savedNote: 'この端末に保存ずみ。つながったら自動で送るよ',
   retryNote: 'この端末に保存ずみ。順番に送りなおしているよ',
@@ -242,6 +290,7 @@ export const FRIEND_MESSAGES = {
 // ルーティン（F3）。よくやるメニューを保存して、今日の画面から始める
 export const ROUTINE_MESSAGES = {
   saveButton: 'ルーティンに保存',
+  saveHint: 'この記録を保存すると、今日の画面から ワンタップで始められます。',
   nameLabel: 'ルーティンの名前',
   nameHint: (max: number) => `${max}字まで。同じ名前は重ねて保存できません。`,
   namePlaceholder: '例: 脚の日',
@@ -251,7 +300,7 @@ export const ROUTINE_MESSAGES = {
   saved: (name: string) => `「${name}」を保存しました。今日の画面から始められます`,
   saveFailed: '保存できませんでした。電波の良い所でもう一度ためしてください',
   saveOffline: '電波があるときに保存できます',
-  heading: 'ルーティンから始める',
+  heading: 'ほかの始めかた（ルーティン）',
   start: (name: string) => `${name}を始める`,
   deleteLabel: (name: string) => `${name}を消す`,
   deleteTitle: 'ルーティンを消しますか？',

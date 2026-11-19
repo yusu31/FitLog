@@ -231,8 +231,8 @@ describe('GroupSettingsView（S-32 グループの設定）', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent('リンクを長押しして選んでください');
     });
 
-    // T-PEER-04（N7）: Web Share API があるときだけ「共有」を出し、無い端末ではコピーだけ
-    it('共有できない端末（navigator.share なし）では「共有」を出さない', async () => {
+    // T-PEER-04（N7）・A09-1: Web Share API が無い端末では、LINE の共有 URL とコピーを出す
+    it('共有できない端末（navigator.share なし）では、LINE で送るリンクとコピーを出す', async () => {
       replies['POST /api/groups/current/invitations'] = [
         { status: 201, body: { id: 'inv-1', token: 'tok', expiresAt: '2026-11-06T03:00:00.000Z' } },
       ];
@@ -241,6 +241,29 @@ describe('GroupSettingsView（S-32 グループの設定）', () => {
       await user.click(await screen.findByRole('button', { name: '招待リンクを作る' }));
       await screen.findByRole('button', { name: 'コピー' });
       expect(screen.queryByRole('button', { name: '共有' })).not.toBeInTheDocument();
+      const line = screen.getByRole('link', { name: 'LINEで送る' });
+      const href = line.getAttribute('href') ?? '';
+      expect(href.startsWith('https://line.me/R/share?text=')).toBe(true);
+      expect(decodeURIComponent(href)).toContain(`${window.location.origin}/invite?token=tok`);
+      expect(line).toHaveAttribute('target', '_blank');
+      expect(line).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    });
+
+    it('招待リンクの案内は「閉じても、いつでも新しいリンクを作れます」で、不安にさせる言い方をしない', async () => {
+      replies['POST /api/groups/current/invitations'] = [
+        { status: 201, body: { id: 'inv-1', token: 'tok', expiresAt: '2026-11-06T03:00:00.000Z' } },
+      ];
+      const user = userEvent.setup();
+      renderView();
+      await user.click(await screen.findByRole('button', { name: '招待リンクを作る' }));
+      await screen.findByLabelText('招待リンク');
+      expect(screen.getByText(/閉じても、いつでも新しいリンクを作れます/)).toBeInTheDocument();
+      expect(screen.queryByText(/もう表示されません/)).not.toBeInTheDocument();
+    });
+
+    it('グループの画面に、1人1グループ・5人までの理由を1行で出す', async () => {
+      renderView();
+      expect(await screen.findByText(/1人が入れるグループは1つ・5人まで/)).toBeInTheDocument();
     });
 
     it('共有できる端末では「共有」を押すと、リンクを渡して共有の画面を開く', async () => {
@@ -300,6 +323,8 @@ describe('GroupSettingsView（S-32 グループの設定）', () => {
       it('ボタンを押すと確認のダイアログを出し、「やめる」なら DELETE を送らない', async () => {
         const user = userEvent.setup();
         renderView();
+        // 押す前に、出るとどうなるかが画面に書いてある（A09-7）
+        expect(await screen.findByText(/出ると、仲間の記録が見えなくなります/)).toBeInTheDocument();
         await user.click(await screen.findByRole('button', { name: 'グループを出る' }));
         const dialog = screen.getByRole('alertdialog', { name: 'グループを出ますか？' });
         expect(dialog).toHaveTextContent('もう一度入るには、新しい招待リンクが必要');

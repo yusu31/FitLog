@@ -125,6 +125,8 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 |----------|------|------|------|
 | POST | `/records/{id}/video` | 動画を置く署名付き URL（POST 形式）を発行し、`videos` の行を作る | 自分の筋トレの記録だけ（筋トレでなければ 409 `RECORD_KIND_MISMATCH`・他人の記録は 404）。本文は `{ contentType, sizeBytes }`（画面の申告。形式は `video/mp4`・`video/webm`、大きさは 1〜10,485,760 バイト）。**署名の条件は、大きさが申告値ちょうど・形式とキーが完全一致**（S3 が申告と違うものを受け付けない）。キーは `videos/{記録の id}`。1記録に1本で、**置くのに失敗したやり直しは同じ記録にもう一度呼ぶ**（行は1つのまま申告を更新し、同じキーで署名し直す。初回 201・再発行 200）。応答は `{ id, upload: { url, fields }, expiresInSeconds, visibleUntil }` |
 | GET | `/videos/{id}/url` | 動画を見る署名付き URL を発行する | **本人はいつでも**。**仲間は `visible_until` の前だけ**（過ぎていれば 403 `FORBIDDEN`）で、**今週、自分の動画が1本以上あるときだけ**（なければ 403 `VIDEO_LOCKED`。自分の動画の `visible_until` が今週の期限と同じものがあるかで判定）。別のグループの人・グループに入っていない人・無い id は 404 `VIDEO_NOT_FOUND`（存在を教えない）。置き場（環境変数 `VIDEO_BUCKET`）が未設定の環境では、署名を頼む両方の API が 503 `VIDEO_STORAGE_UNAVAILABLE` |
+| GET | `/videos/week` | 今週の動画の一覧（仲間タブのサムネ列。台帳 A14-2） | 同じグループの人（自分を含む）の、`visible_until` が今週の動画だけ（新しい順・最大100件）。見える範囲は `/videos/{id}/url` と同じ共通関数。**`unlocked`**（自分が今週1本以上撮ったか）と各項目の **`mine`** を返す。`unlocked=false` のとき `mine=false` の動画は見られない（画面はぼかして「1本撮ると見られます」を出す。URL を取ると 403 `VIDEO_LOCKED`）。URL はこの API に入れない（条件は `/videos/{id}/url` だけが守る）。グループに入っていなければ自分の分だけ |
+| GET | `/videos/mine` | 自分の過去の動画の一覧（「自分」タブのグリッド。台帳 A14-2） | 自分の動画だけ・**条件なし**（今週撮っていなくても・期限が過ぎていても）。新しい順・20件ずつ（`cursor` は足跡と同じ）。壊れた `cursor` は 400 `VALIDATION_ERROR` |
 | GET | `/routines` | 自分のルーティンの一覧（F3） | 応答は `{ items, max }`。保存した順。各ルーティンは種目ごとのセット（種目名・部位つき） |
 | POST | `/routines` | ルーティンを保存する（F3） | 本文は `{ name, recordId }`。自分の筋トレの記録1件から写す。201。名前が1〜20字でない 400 `VALIDATION_ERROR`／他の人・無い記録 404 `RECORD_NOT_FOUND`／筋トレでない 409 `RECORD_KIND_MISMATCH`／セットが無い 409 `ROUTINE_EMPTY`／もう5つある 409 `ROUTINE_LIMIT`／同じ名前 409 `ROUTINE_NAME_TAKEN` |
 | DELETE | `/routines/{id}` | 自分のルーティンを消す（F3） | 204。他の人の・無い・もう消した 404 `ROUTINE_NOT_FOUND`（存在を教えない）。元の記録は消えない |
@@ -183,7 +185,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 
 ### GET /api/records（記録の一覧）と GET /api/records/{id}（詳細）
 
-詳細 `GET /api/records/{id}` だけ、動画があるとき `videoId`（uuid）が付く（見るときは `GET /videos/{videoId}/url`。一覧には付けない）。動画の行は署名付き POST を発行するときに作るので、S3 への送信が失敗した記録にも `videoId` は付く。画面は再生に失敗したら「再生できませんでした」とだけ出す。
+詳細 `GET /api/records/{id}` だけ、動画があるとき `videoId`（uuid）が付く（見るときは `GET /videos/{videoId}/url`。一覧には付けない）。足跡 `GET /api/feed` の項目には、動画があるときだけ `hasVideo: true`（カードの再生の印。A06-4）が付く（動画の id・URL は付けない）。動画の行は署名付き POST を発行するときに作るので、S3 への送信が失敗した記録にも `videoId` は付く。画面は再生に失敗したら「再生できませんでした」とだけ出す。
 
 `GET /api/records?kind=workout&limit=1` の応答（一覧。詳細は `items` の1件と同じ形）:
 
@@ -304,3 +306,12 @@ testing-design.md が「書かれていない」と洗い出した振る舞い�
 | スタンプと記録の種類（T-STP-06） | 休みの記録には休み用（`rest_slow`・`rest_again`）だけ、筋トレ・ランには通常（`nice`・`fire`・`clap`・`smile`）だけ。合わない組み合わせは 409 `RECORD_KIND_MISMATCH`。一覧は `backend/src/feed/stamps.ts` の定数が正で、画面設計書の表と同じ | 409 |
 | 空白だけのコメント（T-CMT-07） | 受け付けない（`trim()` して空なら 400）。それ以外は前後の空白も含めてそのまま保存する | 400 |
 | 週の合計の「記録した人数」 | 筋トレかランを記録した人だけ数える（休みは数えない）。自分が休んでも仲間の数字は減らず、増えもしない | — |
+
+### 共通の部品とトークン（束 B00・画面の置き換えは B13）
+
+| 項目 | 決めたこと |
+|---|---|
+| ボタンの型（A13-3） | `ThickButton` の `variant` で3つ: `primary`（濃ティールの厚みボタン・その画面で大事な1つ）／`secondary`（白地に枠・ほかの選択肢）／`link`（文字リンク・戻る・やめる。下線つき・高さ 44px 以上）。`variant` を渡さなければ従来どおり `tone` で決まる |
+| タブの印（A04-9） | 仲間タブの赤い点をやめ、バッジにする。API が `newCount` を返せばその数字（10件以上は `9+`）、返さない間は「新」の字。読み上げは「新着N件」。**件数を返すには `GET /feed/unread` に `newCount` を足す API 側の変更が要る（別の束）** |
+| キャラの位置（A13-4） | `Sprite` の `placement="corner"` で右上の角（72px・`pointer-events-none`）に固定。見出し側は `PageTitle` の `reserveCorner` で右を空ける |
+| 文字のトークン（A13-5・V-08） | `globals.css` に `--text-page-title: 28px`（h1）・`--text-section-title: 18px`・`--text-note: 13px`・`--color-note: #4b5563`。使うときは `text-page-title` などのクラス。16・18・32px の h1 と 11・12px の注記は B13 でトークンへ置き換える |

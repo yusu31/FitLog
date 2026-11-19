@@ -1,8 +1,10 @@
 'use client';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
+import '@/lib/map/map-controls.css';
 import { useEffect, useRef, useState } from 'react';
 import { loadMapLibre } from '@/lib/map/load-maplibre';
+import { MAP_LOCALE_JA } from '@/lib/map/locale-ja';
 import { MAP_STYLE_URL } from '@/lib/map/map-config';
 import { mergeBounds, routeBounds, routeEnds, routeLine, type RouteLike } from '@/lib/map/route-geo';
 import { DETAIL_MESSAGES } from '@/lib/messages';
@@ -34,6 +36,7 @@ export function RouteMap({ route, ghost }: { route: RouteLike; ghost?: RouteLike
           style: MAP_STYLE_URL,
           // 縦に長いページの中の地図が、指のスクロールを奪わないよう、二本指で動かす
           cooperativeGestures: true,
+          locale: MAP_LOCALE_JA, // 操作案内を日本語に（A07-9）
           attributionControl: { compact: true },
         });
         map = m;

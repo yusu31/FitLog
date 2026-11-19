@@ -37,20 +37,21 @@ export function GhostBar({ ghost, current, isTrial, friends = [], label = '前�
           {formatSetWithReps(ghost)}
         </span>
       </div>
-      <Row label="前回" pct={(a / max) * 100} tone="bg-[repeating-linear-gradient(-45deg,var(--color-line)_0_6px,var(--color-line-dark)_6px_12px)]" />
-      <Row label="今回" pct={(b / max) * 100} tone="bg-[repeating-linear-gradient(-45deg,var(--color-teal)_0_6px,var(--color-teal-dark)_6px_12px)]" />
+      <Row label={RECORD_MESSAGES.barPrev} value={formatSetWithReps(ghost)} pct={(a / max) * 100} tone="bg-[repeating-linear-gradient(-45deg,var(--color-line)_0_6px,var(--color-line-dark)_6px_12px)]" />
+      <Row label={RECORD_MESSAGES.barNow} value={formatSetWithReps(current)} pct={(b / max) * 100} tone="bg-[repeating-linear-gradient(-45deg,var(--color-teal)_0_6px,var(--color-teal-dark)_6px_12px)]" />
       <FriendRow friends={friends} both={both} max={max} />
     </div>
   );
 }
 
-function Row({ label, pct, tone }: { label: string; pct: number; tone: string }) {
+function Row({ label, value, pct, tone }: { label: string; value: string; pct: number; tone: string }) {
   return (
-    <div className="mt-1.5 flex items-center gap-2.5 text-[11px] text-sub-strong">
-      <span className="w-8">{label}</span>
+    <div className="mt-1.5 flex items-center gap-2.5 text-xs text-sub-strong">
+      <span className="w-9 shrink-0 font-bold">{label}</span>
       <div className="h-3 flex-1 -skew-x-[14deg] overflow-hidden rounded bg-white">
         <i className={cn('block h-full transition-[width] duration-300 motion-reduce:transition-none', tone)} style={{ width: `${Math.min(100, pct)}%` }} />
       </div>
+      <span className="fl-num shrink-0 text-sm text-ink">{value}</span>
     </div>
   );
 }

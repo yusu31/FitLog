@@ -12,6 +12,9 @@ import { useRequireSession } from '@/lib/use-require-session';
 import { InvitePanel } from './invite-panel';
 import { LeaveGroup } from './leave-group';
 
+// 1人1グループ・5人までの理由（要件。変えない）。A09-4
+const LIMIT_REASON = '1人が入れるグループは1つ・5人までです。少人数で顔の見える見せ合いにするための決まりです。';
+
 // S-32 グループの設定（docs/screen-design.md 1章）。タブの無い全画面。
 // グループがなければ「グループを作る」、あれば メンバー・招待リンク・グループを出る
 export function GroupSettingsView() {
@@ -56,6 +59,7 @@ export function GroupSettingsView() {
             )}
             <GroupSummary group={group} />
             <MemberList group={group} />
+            <p className="text-xs text-sub-strong [word-break:auto-phrase]">{LIMIT_REASON}</p>
             <InvitePanel full={group.members.length >= GROUP_MEMBER_MAX} />
             <LeaveGroup onLeft={() => setJustCreated(false)} />
           </>
@@ -67,6 +71,8 @@ export function GroupSettingsView() {
               </h2>
               <p className="mt-1 text-sm text-sub-strong [word-break:auto-phrase]">
                 1つのグループには、あなたを入れて{GROUP_MEMBER_MAX}人まで入れます。作ったあとに、招待リンクで仲間を呼べます。
+              </p>
+              <p className="mt-1 text-xs text-sub-strong [word-break:auto-phrase]">{LIMIT_REASON}
               </p>
             </div>
             <CreateGroupForm onCreated={() => setJustCreated(true)} />

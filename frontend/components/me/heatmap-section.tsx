@@ -7,7 +7,8 @@ import { toLocalDate } from '@/lib/shared/local-date';
 import { BodyFigure } from './body-figure';
 
 // 今週きたえたところ（F-12。docs/screen-design.md S-30）。今週（月曜〜今日）のセット数を部位ごとに色の濃さで見せる。
-// 色だけに頼らないよう、部位ごとのセット数も文字で並べる
+// 色だけに頼らないよう、部位ごとのセット数も文字で並べる。まだの部位に「0セット」は出さない（A08-6: 責めない）
+const LEGEND_LABEL = { 0: 'これから', 1: '1〜2セット', 2: '3セット', 3: '4セット以上' } as const;
 export function HeatmapSection() {
   const heatmap = useGetHeatmap({ weekStart: toLocalDate(new Date()) });
   const parts = heatmap.data?.status === 200 ? heatmap.data.data.parts : null;
@@ -44,15 +45,16 @@ export function HeatmapSection() {
                   <i aria-hidden className="size-3 rounded-sm" style={{ background: HEAT_COLORS[heatLevel(p.sets)] }} />
                   {BODY_PART_LABEL[p.bodyPart]}
                 </span>
-                <span className="font-bold">{p.sets}セット</span>
+                {p.sets > 0 && <span className="font-bold">{p.sets}セット</span>}
               </li>
             ))}
           </ul>
-          <p className="mt-2 flex flex-wrap justify-center gap-3 text-xs text-sub-strong">
+          <p className="mt-2 text-center text-xs text-sub-strong">体の図は、色が濃いほど今週そこをよくきたえています</p>
+          <p className="mt-1 flex flex-wrap justify-center gap-3 text-xs text-sub-strong">
             {HEAT_LEGEND.map((l) => (
               <span key={l.level} className="flex items-center gap-1">
                 <i aria-hidden className="size-3 rounded-sm" style={{ background: HEAT_COLORS[l.level] }} />
-                {l.label}
+                {LEGEND_LABEL[l.level]}
               </span>
             ))}
           </p>

@@ -20,6 +20,18 @@ const renderBar = (seconds = 90, onClose = vi.fn()) => {
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
 
 describe('RestTimerBar（F-34 休憩タイマー）', () => {
+  // A12-4 / N-06: 195 幅（200% 拡大）で「−」「＋」が枠の外へ欠けない。折り返せて、縮まず、24px 以上
+  it('小さい画面でも「−」「＋」が欠けない（折り返せる・縮まない・24px 以上の大きさ）', () => {
+    renderBar(90);
+    const minus = screen.getByRole('button', { name: '休憩を15秒短くする' });
+    const plus = screen.getByRole('button', { name: '休憩を15秒長くする' });
+    expect(minus.parentElement?.className).toMatch(/flex-wrap/);
+    for (const b of [minus, plus]) {
+      expect(b.className).toMatch(/shrink-0/);
+      expect(b.className).toMatch(/size-11/);
+    }
+  });
+
   // T-REST-04: 残りが1秒ずつ減る
   it('はじめは長さどおり、時間がたつと残りが減る', () => {
     renderBar(90);

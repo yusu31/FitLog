@@ -1,12 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { DETAIL_MESSAGES } from '@/lib/messages';
 import { OPENFREEMAP_STYLE_URL } from '@/lib/map/map-config';
+import { MAP_LOCALE_JA } from '@/lib/map/locale-ja';
 import { RouteMap } from './route-map';
 
 // 本物の地図（MapLibre）は WebGL が要り、jsdom では動かない。部品を差し替えて、組み立て方（線・点・範囲合わせ・後片付け）を確かめる。
 // 本物の描画は、実ブラウザで確かめる（PR の確認手順）
 const h = vi.hoisted(() => {
-  type Opts = { container: HTMLElement; style: string; cooperativeGestures?: boolean; interactive?: boolean };
+  type Opts = { container: HTMLElement; style: string; cooperativeGestures?: boolean; interactive?: boolean; locale?: unknown };
   class FakeMap {
     static instances: FakeMap[] = [];
     static failWith: Error | null = null;
@@ -59,6 +60,13 @@ describe('RouteMap（ランのルートの地図）', () => {
     await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
     expect(lastMap().opts.style).toBe(OPENFREEMAP_STYLE_URL);
     expect(lastMap().opts.cooperativeGestures).toBe(true);
+  });
+
+  // A07-9: 操作案内（Use Ctrl + scroll to zoom the map など）を日本語にする
+  it('操作案内を日本語（locale）で渡す', async () => {
+    render(<RouteMap route={ROUTE} />);
+    await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
+    expect(lastMap().opts.locale).toEqual(MAP_LOCALE_JA);
   });
 
   it('読み込みが終わったら、ルートの線とスタート・ゴールの点を足し、全体が入るよう範囲を合わせる', async () => {

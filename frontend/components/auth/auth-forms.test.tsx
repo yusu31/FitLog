@@ -113,7 +113,7 @@ describe('SignupForm（S-02）', () => {
     const user = userEvent.setup();
     render(<SignupForm />);
     await fillSignup(user);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/invite?token=abc'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/invite?token=abc'), { timeout: 4000 });
     expect(signUpEmail).toHaveBeenCalledWith({ name: 'ゆうす', email: 'a@example.com', password: 'password123' });
   });
 
@@ -147,6 +147,22 @@ describe('SignupForm（S-02）', () => {
     expect(alert).not.toHaveTextContent('raw english');
   });
 
+  // T-AUTH-FE-25: 入力が不正なら送らず、直す点を日本語で role=alert に出す（A13-7）
+  it.each([
+    ['表示名が空', { name: '', email: 'a@example.com', password: 'password123' }, '表示名を入力してください'],
+    ['メールの形が違う', { name: 'ゆうす', email: 'abc', password: 'password123' }, 'メールアドレスの形が正しくありません'],
+    ['パスワードが短い', { name: 'ゆうす', email: 'a@example.com', password: 'short' }, 'パスワードは8文字以上'],
+  ])('%s: 送らずにエラー文を出す', async (_label, v, text) => {
+    const user = userEvent.setup();
+    render(<SignupForm />);
+    if (v.name) await user.type(screen.getByLabelText('表示名'), v.name);
+    await user.type(screen.getByLabelText('メールアドレス'), v.email);
+    await user.type(screen.getByLabelText(/パスワード/), v.password);
+    await user.click(screen.getByRole('button', { name: '登録する' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(text);
+    expect(signUpEmail).not.toHaveBeenCalled();
+  });
+
   // T-AUTH-FE-23: パスワードの境界（8文字）。ブラウザの入力検査に最小の長さを渡している
   it('パスワード欄に8文字以上の制限を付ける', () => {
     render(<SignupForm />);
@@ -178,5 +194,89 @@ describe('アプリの紹介（F8）', () => {
     expect(intro).toHaveTextContent('前回の自分');
     expect(intro).toHaveTextContent('仲間');
     expect(intro).toHaveTextContent('責めない');
+  });
+});
+
+// A01-1: 最初の画面で「何ができるか」が大見出しになり、実画面の見本（今日・仲間）が見える
+describe('入口の見出しと見本（A01-1）', () => {
+  it.each([
+    ['ログイン', <LoginForm key="l" />],
+    ['新規登録', <SignupForm key="s" />],
+  ])('%s: 大見出しは何ができるかの一文で、今日と仲間の見本画像がある', (_name, ui) => {
+    render(ui);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('前回の自分と並べて記録');
+    expect(screen.getByRole('img', { name: '今日の画面の見本' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: '仲間の画面の見本' })).toBeInTheDocument();
+  });
+
+  it('ログインか新規登録かは、フォームの見出し（h2）で分かる', () => {
+    render(<LoginForm />);
+    expect(screen.getByRole('heading', { level: 2, name: 'ログイン' })).toBeInTheDocument();
+  });
+});
+
+// A01-2: 新規登録は塗りの大きなボタン（リンク）としてログインと並ぶ。N-06: 登録画面の「ログイン」も24px以上
+describe('入口のボタン（A01-2・N-06）', () => {
+  it('ログイン画面の「新規登録」は厚みボタンの見た目のリンク', () => {
+    render(<LoginForm />);
+    const link = screen.getByRole('link', { name: '新規登録' });
+    expect(link.className).toContain('fl-thick');
+    expect(link.className).toContain('min-h-11');
+  });
+
+  it('登録画面の「ログイン」リンクも44px以上の高さを持つ', () => {
+    render(<SignupForm />);
+    const link = screen.getByRole('link', { name: 'ログイン' });
+    expect(link.className).toContain('min-h-11');
+  });
+});
+
+// A01-4: 入力欄の使い道の説明
+describe('入力欄の説明（A01-4）', () => {
+  it('表示名とメールアドレスの使い道が、欄に結び付けて書いてある', () => {
+    render(<SignupForm />);
+    expect(screen.getByLabelText('表示名')).toHaveAccessibleDescription(/仲間に見える名前/);
+    expect(screen.getByLabelText('メールアドレス')).toHaveAccessibleDescription(/ログインに使います/);
+  });
+});
+
+// A01-5: パスワードの表示切替
+describe('パスワードの表示切替（A01-5）', () => {
+  it.each([
+    ['ログイン', <LoginForm key="l" />, 'パスワード'],
+    ['新規登録', <SignupForm key="s" />, /パスワード（/],
+  ])('%s: ボタンで表示と非表示を切り替えられる', async (_name, ui, label) => {
+    const user = userEvent.setup();
+    render(ui);
+    const field = screen.getByLabelText(label);
+    expect(field).toHaveAttribute('type', 'password');
+    await user.click(screen.getByRole('button', { name: '文字を表示' }));
+    expect(field).toHaveAttribute('type', 'text');
+    await user.click(screen.getByRole('button', { name: '文字を隠す' }));
+    expect(field).toHaveAttribute('type', 'password');
+  });
+});
+
+// A01-6: 再設定機能は作らず、管理者への連絡を案内する
+describe('パスワードを忘れたとき（A01-6）', () => {
+  it('ログイン画面に管理者へ連絡する案内がある', () => {
+    render(<LoginForm />);
+    expect(screen.getByText('パスワードを忘れたら、グループの管理者に連絡してください')).toBeInTheDocument();
+  });
+});
+
+// A01-7: 登録直後に完了を伝えてから移る
+describe('登録完了の一言（A01-7）', () => {
+  it('成功したら「登録できたよ」を出し、少し待ってから移る', async () => {
+    signUpEmail.mockResolvedValue({ data: {}, error: null });
+    const user = userEvent.setup();
+    render(<SignupForm />);
+    await user.type(screen.getByLabelText('表示名'), 'ゆうす');
+    await user.type(screen.getByLabelText('メールアドレス'), 'a@example.com');
+    await user.type(screen.getByLabelText(/パスワード（/), 'password123');
+    await user.click(screen.getByRole('button', { name: '登録する' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('登録できたよ');
+    expect(replace).not.toHaveBeenCalled();
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/today'), { timeout: 4000 });
   });
 });

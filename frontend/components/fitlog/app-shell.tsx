@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import { cn } from 'cn';
 import { useAppSession } from '@/lib/use-app-session';
 import { SyncBanner } from './sync-banner';
 import { TabBar } from './tab-bar';
@@ -42,8 +43,9 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
 }
 
 // 画面の見出し（v8 の .title）
-export function PageTitle({ children }: { children: ReactNode }) {
-  return <h1 className="px-4 pt-[18px] text-[28px] font-extrabold">{children}</h1>;
+// reserveCorner: 右上にキャラ（Sprite placement="corner"）を置く画面は、見出しの右を空けて重ならないようにする
+export function PageTitle({ children, reserveCorner = false }: { children: ReactNode; reserveCorner?: boolean }) {
+  return <h1 className={cn('px-4 pt-[18px] text-page-title font-extrabold', reserveCorner && 'pr-24')}>{children}</h1>;
 }
 
 // S1: 少人数のアプリは利用の間隔が空き、API（Lambda）が眠っていて最初の確認に5秒前後かかる。
