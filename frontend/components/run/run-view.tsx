@@ -193,7 +193,7 @@ export function RunView() {
             role="status"
             className="fl-stripes relative overflow-hidden rounded-fl bg-teal-dark px-[18px] pt-3.5 pb-5 text-white shadow-[0_4px_0_var(--color-teal-deep)] [--stripe:rgb(0_0_0/0.14)]"
           >
-            <span className="fl-tag bg-gold text-ink">RUN</span>
+            <span className="fl-tag bg-gold text-ink">ラン</span>
             <p className="mt-3 flex items-center gap-2 text-2xl leading-snug font-extrabold">
               <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gold text-ink">
                 <Check className="size-5" strokeWidth={3.2} />
@@ -202,7 +202,7 @@ export function RunView() {
             </p>
             <p className="mt-2 text-sm leading-relaxed font-bold">{runSavedMessage(shown.distanceM, shown.durationS)}</p>
             <p className="mt-3 flex items-baseline gap-2">
-              <span className="text-xs font-extrabold">ペース</span>
+              <span className="text-note font-extrabold">ペース</span>
               <span data-testid="pace" className="fl-num text-3xl">
                 {savedPace === null ? '--' : formatPace(savedPace)}
               </span>
@@ -210,7 +210,7 @@ export function RunView() {
           </section>
           {trek && (
             <section data-testid="trek-progress" aria-label="日本縦断" className="fl-slab space-y-1 px-4 py-3">
-              <p className="text-xs font-extrabold tracking-widest text-sub">日本縦断</p>
+              <p className="text-note font-extrabold tracking-widest text-sub">日本縦断</p>
               {trek.arrived && <p className="text-lg font-extrabold">{trek.arrived}に着きました！</p>}
               <p className="text-sm font-bold text-sub-strong">{trek.next}</p>
               <Link href="/me/stats#japan-trek" className="inline-block py-2 text-sm font-extrabold text-teal-dark underline">
@@ -249,7 +249,7 @@ export function RunView() {
       </header>
 
       <div className="flex flex-1 flex-col gap-5 px-4 pt-2 pb-8">
-        <h1 className="text-[32px] leading-tight font-extrabold">ラン</h1>
+        <h1 className="text-page-title leading-tight font-extrabold">ラン</h1>
         {day === 'yesterday' && (
           <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">{LATE_MESSAGES.banner}</p>
         )}
@@ -288,7 +288,7 @@ export function RunView() {
             {pace === null ? '--' : formatPace(pace)}
           </span>
         </section>
-        {!touched && <p className="text-xs font-bold text-sub-strong">距離と時間を入れると、ペースが出ます</p>}
+        {!touched && <p className="text-note font-bold text-sub-strong">距離と時間を入れると、ペースが出ます</p>}
           </>
         )}
 
@@ -328,7 +328,7 @@ function GpxPicker({
         <span>ほかのアプリの記録を取り込む</span>
         <input type="file" accept=".gpx,application/gpx+xml" disabled={!online} onChange={onPick} className="sr-only" />
       </label>
-      <p className="text-xs text-sub-strong">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）で書き出した記録のファイル（GPX 形式）を選んでください。</p>
+      <p className="text-note text-sub-strong">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）で書き出した記録のファイル（GPX 形式）を選んでください。</p>
       {!online && <p className="text-sm font-bold text-sub-strong">{GPX_MESSAGES.offline}</p>}
       {gpx && (
         <p className="flex items-center justify-between gap-2 text-sm font-bold text-ink">

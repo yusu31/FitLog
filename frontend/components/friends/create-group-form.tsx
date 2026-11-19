@@ -57,7 +57,7 @@ export function CreateGroupForm({ onCancel, onCreated }: { onCancel?: () => void
           aria-invalid={error ? true : undefined}
           className="h-12 text-base"
         />
-        <p id="group-name-hint" className="text-xs text-sub">
+        <p id="group-name-hint" className="text-note text-sub">
           1〜{GROUP_NAME_MAX}字。あとから仲間に見えます
         </p>
       </div>

@@ -1,6 +1,6 @@
 import { BodyPart } from '@/lib/api/generated';
 
-// 筋肉ヒートマップ（F-12）の色の段階。0=まだ／1=1〜2セット／2=3セット／3=4セット以上（プロトタイプ v8 の凡例に合わせる。docs/features.md 2.10）
+// 筋肉の からだの図（F-12）の色の段階。0=まだ／1=1〜2セット／2=3セット／3=4セット以上（プロトタイプ v8 の凡例に合わせる。docs/features.md 2.10）
 export type HeatLevel = 0 | 1 | 2 | 3;
 
 export function heatLevel(sets: number): HeatLevel {

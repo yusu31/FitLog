@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 // 地図の中身（地名・線の色）は外部のタイル配信に依存するので、ここでは「地図が出る・出せなければ理由が出る」までを守る。見た目は撮った画像を目で見る
 test.use({ viewport: { width: 390, height: 844 } });
 
-test('記録をくわしくに、日本縦断の地図が出る（canvas があり、横にはみ出さない）', async ({ page }) => {
+test('記録のまとめに、日本縦断の地図が出る（canvas があり、横にはみ出さない）', async ({ page }) => {
   await page.goto('/signup/');
   await page.getByLabel('表示名').fill('E2E太郎');
   await page.getByLabel('メールアドレス').fill(`e2e-trek-${randomUUID().slice(0, 8)}@example.com`);
@@ -24,7 +24,7 @@ test('記録をくわしくに、日本縦断の地図が出る（canvas があ�
   await map.screenshot({ path: 'test-results/japan-trek-map-390.png' });
 });
 
-test('ラン画面の上に日本縦断への入口があり、押すと記録をくわしく（地図）へ行く', async ({ page }) => {
+test('ラン画面の上に日本縦断への入口があり、押すと記録のまとめ（地図）へ行く', async ({ page }) => {
   await page.goto('/signup/');
   await page.getByLabel('表示名').fill('E2E太郎');
   await page.getByLabel('メールアドレス').fill(`e2e-trek2-${randomUUID().slice(0, 8)}@example.com`);

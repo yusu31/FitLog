@@ -101,7 +101,7 @@ export function TodayView() {
             {LOAD_ERROR}
           </p>
         ) : day === 'yesterday' ? (
-          // きのうの分: 次の1枚と休みは出さず、種目を選んで記録する（きのうの休みは作れない）
+          // きのうの分: つぎにやることと休みは出さず、種目を選んで記録する（きのうの休みは作れない）
           menu.items.length > 0 ? (
             <>
               <Menu items={menu.items} day={day} />
@@ -115,7 +115,7 @@ export function TodayView() {
           )
         ) : (
           <>
-            {/* キャラは次の1枚の右上に立つ（足が少しカードに重なる）。飾りなので読み上げない */}
+            {/* キャラはつぎにやることの右上に立つ（足が少しカードに重なる）。飾りなので読み上げない */}
             <div className="relative z-10 -mb-7 flex justify-end pr-3">
               <Sprite
                 pose={todayPose({ restToday: todayStatus === 'rest', allDone: menu.allDone, welcomeBack, now: new Date() })}
@@ -127,7 +127,7 @@ export function TodayView() {
             ) : (
               <NextCard menu={menu} todayStatus={todayStatus} />
             )}
-            {/* 入口は上から「前回と同じで始める」→ ほかの始めかた（ルーティン）の順（A02-2） */}
+            {/* 入口は上から「前回と同じで始める」→ ほかの始めかた（いつものメニュー）の順（A02-2） */}
             {todayStatus !== 'rest' && <RoutineStarter day={day} />}
             {menu.items.length > 0 && <Menu items={menu.items} day={day} />}
           </>
@@ -147,7 +147,7 @@ function DayHeading({ date, day }: { date: string; day: DayMode }) {
   return (
     <h2 className="text-lg font-extrabold">
       {label}{' '}
-      <span className="rounded-full bg-teal-light px-2 py-0.5 align-middle text-xs font-extrabold text-teal-deep">
+      <span className="rounded-full bg-teal-light px-2 py-0.5 align-middle text-note font-extrabold text-teal-deep">
         {day === 'today' ? LATE_MESSAGES.today : LATE_MESSAGES.yesterday}
       </span>
     </h2>
@@ -218,7 +218,7 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
           {WORKOUT_END_MESSAGES.end}
         </ThickButton>
       </div>
-      {!online && <p className="mt-2 text-xs font-bold">{WORKOUT_END_MESSAGES.offlineNote}</p>}
+      {!online && <p className="mt-2 text-note font-bold">{WORKOUT_END_MESSAGES.offlineNote}</p>}
       {error && (
         <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
           {error}
@@ -254,11 +254,11 @@ function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: ()
   );
 }
 
-// 次の1枚（ティールの大きいカード）。状態で中身が変わる
+// つぎにやること（ティールの大きいカード）。状態で中身が変わる
 function NextCard({ menu, todayStatus }: { menu: TodayMenu; todayStatus: string }) {
   if (todayStatus === 'rest') {
     return (
-      <CardFrame label="次の1枚" tone="grape" tag="REST">
+      <CardFrame label="つぎにやること" tone="grape" tag="おやすみ">
         <h2 className="mt-3 text-2xl leading-snug font-extrabold">今日は おやすみ</h2>
         <p className="mt-1 text-sm leading-relaxed font-bold">休むのも、立派な記録です。また 気が向いたら 一緒に。</p>
         <Link
@@ -272,7 +272,7 @@ function NextCard({ menu, todayStatus }: { menu: TodayMenu; todayStatus: string 
   }
   if (menu.allDone) {
     return (
-      <CardFrame label="次の1枚" tone="teal" tag="DONE">
+      <CardFrame label="つぎにやること" tone="teal" tag="おわり">
         <h2 className="mt-3 text-2xl leading-snug font-extrabold">今日の分は できた</h2>
         <p className="mt-1 text-sm leading-relaxed font-bold">おつかれさま。もう1セット足したいときは、下のメニューから。</p>
       </CardFrame>
@@ -284,17 +284,17 @@ function NextCard({ menu, todayStatus }: { menu: TodayMenu; todayStatus: string 
 
 function NextExercise({ item }: { item: MenuItem }) {
   return (
-    <CardFrame label="次の1枚" tone="teal" tag="NEXT">
+    <CardFrame label="つぎにやること" tone="teal" tag="つぎ">
       <h2 className="mt-2.5 text-[30px] leading-[1.15] font-extrabold">{item.name}</h2>
       {item.previous && (
         <p className="mt-2 flex items-baseline gap-2">
-          <span className="text-xs font-extrabold">前回</span>
+          <span className="text-note font-extrabold">前回</span>
           <span className="fl-num text-5xl leading-none">{formatSet(item.previous)}</span>
         </p>
       )}
       {item.suggestion && (
         <p className="mt-2 flex items-baseline gap-2">
-          <span className="text-xs font-extrabold">今日の目標</span>
+          <span className="text-note font-extrabold">今日の目標</span>
           <span className="fl-num text-2xl leading-none">{formatSet(item.suggestion)}</span>
         </p>
       )}
@@ -308,7 +308,7 @@ function FirstCard() {
   const exercises = useListExercises();
   const trial = exercises.data?.data.find((e) => e.trialWeightKg !== null && e.trialReps !== null);
   return (
-    <CardFrame label="次の1枚" tone="teal" tag="NEXT">
+    <CardFrame label="つぎにやること" tone="teal" tag="つぎ">
       <h2 className="mt-3 text-2xl leading-snug font-extrabold">最初の種目を選ぼう</h2>
       {trial && trial.trialWeightKg !== null && trial.trialReps !== null && (
         <div className="mt-3 rounded-lg bg-black/15 px-3 py-2">
@@ -317,7 +317,7 @@ function FirstCard() {
             <span className="text-sm font-extrabold">{trial.name}</span>
           </p>
           <p className="fl-num mt-1 text-3xl">{formatSet({ weightKg: trial.trialWeightKg, reps: trial.trialReps })}</p>
-          <p className="mt-0.5 text-xs font-bold">お試しの値です。1回やると、次から前回の値が出ます。</p>
+          <p className="mt-0.5 text-note font-bold">お試しの値です。1回やると、次から前回の値が出ます。</p>
         </div>
       )}
       <LinkButton href="/exercises">種目を選ぶ</LinkButton>
@@ -388,9 +388,9 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
                 </span>
                 <span className="min-w-0 flex-1 text-[15px] leading-tight font-extrabold">
                   {item.name}
-                  {item.done && <small className="block text-xs font-bold text-sub-strong">できた</small>}
+                  {item.done && <small className="block text-note font-bold text-sub-strong">できた</small>}
                   {!item.done && item.suggestion && (
-                    <small className="block text-xs font-bold text-sub-strong">目標 {formatSet(item.suggestion)}</small>
+                    <small className="block text-note font-bold text-sub-strong">目標 {formatSet(item.suggestion)}</small>
                   )}
                 </span>
                 {value && <span className="fl-num shrink-0 text-xl text-ink">{formatSet(value)}</span>}

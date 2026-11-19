@@ -44,12 +44,12 @@ export function DoneSets({
               <Check className="size-5" strokeWidth={3} />
             </span>
             <span className="flex-1 leading-tight">
-              <span className="block text-xs text-sub-strong">セット{s.setNo}</span>
+              <span className="block text-note text-sub-strong">セット{s.setNo}</span>
               <span className="fl-num text-xl">
                 {formatSetWithReps(s)}
               </span>
             </span>
-            {bestIds.has(s.id) && <span className="fl-tag bg-gold !py-0 !text-xs !leading-4 text-ink">{RECORD_MESSAGES.best}</span>}
+            {bestIds.has(s.id) && <span className="fl-tag bg-gold !py-0 !text-note !leading-4 text-ink">{RECORD_MESSAGES.best}</span>}
             <button
               type="button"
               aria-label={`セット${s.setNo}の メニュー`}
@@ -75,7 +75,7 @@ export function DoneSets({
                   <Trash2 aria-hidden className="size-5" />
                   削除
                 </button>
-                {!online && <p className="px-3 pb-2 text-xs text-sub-strong">電波があるときだけ 消せます</p>}
+                {!online && <p className="px-3 pb-2 text-note text-sub-strong">電波があるときだけ 消せます</p>}
               </div>
             )}
           </li>

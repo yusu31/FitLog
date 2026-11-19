@@ -51,14 +51,14 @@ export function SettingsView() {
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
-        <h1 className="text-[28px] font-extrabold">設定</h1>
+        <h1 className="text-page-title font-extrabold">設定</h1>
       </header>
 
       <div className="space-y-5 px-4 pt-3 pb-28">
         {user && <InlineNameEdit key={user.name} initialName={user.name} email={user.email} />}
 
         <section aria-labelledby="settings-list-heading">
-          <h2 id="settings-list-heading" className="pb-2 text-xs font-bold tracking-widest text-sub">
+          <h2 id="settings-list-heading" className="pb-2 text-note font-bold tracking-widest text-sub">
             設定
           </h2>
           <ul className="space-y-2">
@@ -86,7 +86,7 @@ export function SettingsView() {
                     <Users aria-hidden className="size-5" />
                   </RowIcon>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-bold text-sub-strong">グループ</span>
+                    <span className="block text-note font-bold text-sub-strong">グループ</span>
                     <span className="block truncate font-extrabold">{groupLabel}</span>
                   </span>
                   <ChevronRight aria-hidden className="size-5 shrink-0 text-sub" />

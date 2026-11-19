@@ -31,7 +31,7 @@ export function WeekStrip({ days, today, selected = today }: { days: readonly We
               data-selected={isSelected ? 'true' : undefined}
               className={cn('relative flex-1 text-center', isSelected ? 'bg-white/15 text-white' : 'text-white/80')}
             >
-              <span aria-hidden className="mt-0.5 block text-[11px] font-bold">
+              <span aria-hidden className="mt-0.5 block text-note font-bold">
                 {label}
               </span>
               <span aria-hidden data-testid="week-num" className="fl-num block text-[22px] leading-8 min-[360px]:text-[30px]">
@@ -59,7 +59,7 @@ export function WeekStrip({ days, today, selected = today }: { days: readonly We
           );
         })}
       </ol>
-      <p className="px-4 py-1.5 text-xs font-bold text-white">黄 記録　紫 おやすみ</p>
+      <p className="px-4 py-1.5 text-note font-bold text-white">黄 記録　紫 おやすみ</p>
     </section>
   );
 }

@@ -51,8 +51,8 @@ test('GPS で記録して終了すると、入力画面に戻らずそのまま�
 
   // A07-5: 終了すると入力画面には戻らず、そのまま保存して完了画面へ進む
   await page.getByRole('button', { name: '終了' }).click();
-  // B10: 画面の上に「電波なし・送ったよ」の帯（role=status・ふだんは空）が入ったので、先頭の status ではなく、保存した結果の板（RUN）を指す
-  await expect(page.getByRole('status').filter({ hasText: 'RUN' })).toBeVisible();
+  // B10: 画面の上に「電波なし・送ったよ」の帯（role=status・ふだんは空）が入ったので、先頭の status ではなく、保存した結果の板（ラン）を指す
+  await expect(page.getByRole('status').filter({ hasText: 'ラン' })).toBeVisible();
   // 距離と時間が取れて保存できたので、ペースが出ている（取れていなければ「--」）
   await expect(page.getByTestId('pace')).not.toHaveText('--');
   await expect(page.getByRole('button', { name: '今日へ' })).toBeVisible();

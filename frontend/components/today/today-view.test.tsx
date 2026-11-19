@@ -50,9 +50,9 @@ describe('TodayView（S-10 今日）', () => {
       });
     });
 
-    it('次の1枚に、前回の最初の種目と前回の値を出し、「はじめる」は記録画面へのリンク', async () => {
+    it('つぎにやることに、前回の最初の種目と前回の値を出し、「はじめる」は記録画面へのリンク', async () => {
       renderWithQuery(<TodayView />);
-      const next = await screen.findByRole('region', { name: '次の1枚' });
+      const next = await screen.findByRole('region', { name: 'つぎにやること' });
       expect(within(next).getByText('スクワット')).toBeInTheDocument();
       expect(within(next).getByText('前回')).toBeInTheDocument();
       expect(within(next).getByText('60kg × 10')).toBeInTheDocument();
@@ -70,9 +70,9 @@ describe('TodayView（S-10 今日）', () => {
       expect(within(menu).queryByText('できた')).not.toBeInTheDocument();
     });
 
-    it('提案（F-23）: 次の1枚に「今日の目標」、メニューの未完了の種目に「目標」を出す（前回の最後のセット＋1回）', async () => {
+    it('提案（F-23）: つぎにやることに「今日の目標」、メニューの未完了の種目に「目標」を出す（前回の最後のセット＋1回）', async () => {
       renderWithQuery(<TodayView />);
-      const next = await screen.findByRole('region', { name: '次の1枚' });
+      const next = await screen.findByRole('region', { name: 'つぎにやること' });
       expect(within(next).getByText('今日の目標')).toBeInTheDocument();
       expect(within(next).getByText('60kg × 11')).toBeInTheDocument();
       const rows = within(screen.getByRole('list', { name: '今日のメニュー' })).getAllByRole('listitem');
@@ -113,7 +113,7 @@ describe('TodayView（S-10 今日）', () => {
       expect(screen.getByRole('link', { name: '種目を足す' })).toHaveAttribute('href', '/exercises');
     });
 
-    // N4: 見出しは「ほかの種目」だったが、中身は全部の種目（上の「次の1枚」と同じ種目や、できた種目も並ぶ）
+    // N4: 見出しは「ほかの種目」だったが、中身は全部の種目（上の「つぎにやること」と同じ種目や、できた種目も並ぶ）
     it('メニューの見出しは「今日のメニュー」（中身と合わせる）', async () => {
       renderWithQuery(<TodayView />);
       await screen.findByRole('list', { name: '今日のメニュー' });
@@ -130,20 +130,20 @@ describe('TodayView（S-10 今日）', () => {
 
     it('連続日数は出さない', async () => {
       renderWithQuery(<TodayView />);
-      await screen.findByRole('region', { name: '次の1枚' });
+      await screen.findByRole('region', { name: 'つぎにやること' });
       expect(document.body).not.toHaveTextContent(/連続|日連続|ストリーク/);
     });
   });
 
   describe('一部だけできた', () => {
-    it('できた種目にチェックが付き、次の1枚は、まだの種目になる', async () => {
+    it('できた種目にチェックが付き、つぎにやることは、まだの種目になる', async () => {
       installFakeApi({
         [WEEK]: ok(weekOf(TODAY, { [TODAY]: 'rec' })),
         [WORKOUTS]: list(workout('r2', TODAY, [squat([[62.5, 10]])]), PREV),
         [LATEST]: list(workout('r2', TODAY, [squat([[62.5, 10]])])),
       });
       renderWithQuery(<TodayView />);
-      const next = await screen.findByRole('region', { name: '次の1枚' });
+      const next = await screen.findByRole('region', { name: 'つぎにやること' });
       expect(within(next).getByText('レッグカール')).toBeInTheDocument();
       expect(within(next).getByRole('link', { name: '前回と同じで始める' })).toHaveAttribute('href', '/record?exercise=lc');
       const rows = within(screen.getByRole('list', { name: '今日のメニュー' })).getAllByRole('listitem');
@@ -299,7 +299,7 @@ describe('TodayView（S-10 今日）', () => {
 
     it('「種目を選ぶ」（一覧へのリンク）と、お試しの前回値（「お試し」の札つき）を出す', async () => {
       renderWithQuery(<TodayView />);
-      const next = await screen.findByRole('region', { name: '次の1枚' });
+      const next = await screen.findByRole('region', { name: 'つぎにやること' });
       expect(within(next).getByRole('link', { name: '種目を選ぶ' })).toHaveAttribute('href', '/exercises');
       expect(await within(next).findByText('お試し')).toBeInTheDocument();
       expect(within(next).getByText('スクワット')).toBeInTheDocument();
@@ -308,9 +308,9 @@ describe('TodayView（S-10 今日）', () => {
 
     it('今日のメニューの一覧は出さない', async () => {
       renderWithQuery(<TodayView />);
-      await screen.findByRole('region', { name: '次の1枚' });
+      await screen.findByRole('region', { name: 'つぎにやること' });
       expect(screen.queryByRole('list', { name: '今日のメニュー' })).not.toBeInTheDocument();
-      // 入口は次の1枚の「種目を選ぶ」1つだけ（同じ行き先のリンクを2つ並べない）
+      // 入口はつぎにやることの「種目を選ぶ」1つだけ（同じ行き先のリンクを2つ並べない）
       expect(screen.queryByRole('link', { name: '種目を足す' })).not.toBeInTheDocument();
     });
 
@@ -339,7 +339,7 @@ describe('TodayView（S-10 今日）', () => {
     it('2日前なら出さない（境目）', async () => {
       setup('2026-11-02');
       renderWithQuery(<TodayView />);
-      await screen.findByRole('region', { name: '次の1枚' });
+      await screen.findByRole('region', { name: 'つぎにやること' });
       expect(screen.queryByText(HOME_MESSAGES.welcomeBack)).not.toBeInTheDocument();
     });
 
@@ -350,7 +350,7 @@ describe('TodayView（S-10 今日）', () => {
         [LATEST]: list(restRecord('r9', '2026-11-02')),
       });
       renderWithQuery(<TodayView />);
-      await screen.findByRole('region', { name: '次の1枚' });
+      await screen.findByRole('region', { name: 'つぎにやること' });
       expect(screen.queryByText(HOME_MESSAGES.welcomeBack)).not.toBeInTheDocument();
     });
 
@@ -510,11 +510,11 @@ describe('TodayView（S-10 今日）', () => {
       expect(screen.getByRole('link', { name: /ランを記録/ })).toHaveAttribute('href', '/run?day=yesterday');
     });
 
-    it('きのうでは、「次の1枚」と「今日は休む」を出さない（きのうの休みは作れない）', async () => {
+    it('きのうでは、「つぎにやること」と「今日は休む」を出さない（きのうの休みは作れない）', async () => {
       renderWithQuery(<TodayView />);
-      expect(await screen.findByRole('region', { name: '次の1枚' })).toBeInTheDocument();
+      expect(await screen.findByRole('region', { name: 'つぎにやること' })).toBeInTheDocument();
       await userEvent.click(within(await dayGroup()).getByRole('button', { name: 'きのう' }));
-      expect(screen.queryByRole('region', { name: '次の1枚' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'つぎにやること' })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /今日は休む/ })).not.toBeInTheDocument();
       expect(screen.getByText(LATE_MESSAGES.banner)).toBeInTheDocument();
     });
@@ -524,7 +524,7 @@ describe('TodayView（S-10 今日）', () => {
       const group = await dayGroup();
       await userEvent.click(within(group).getByRole('button', { name: 'きのう' }));
       await userEvent.click(within(group).getByRole('button', { name: '今日' }));
-      expect(await screen.findByRole('region', { name: '次の1枚' })).toBeInTheDocument();
+      expect(await screen.findByRole('region', { name: 'つぎにやること' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /今日は休む/ })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: /ランを記録/ })).toHaveAttribute('href', '/run');
     });
@@ -553,14 +553,14 @@ describe('TodayView（S-10 今日）', () => {
       expect(alert).not.toHaveTextContent('DB connection');
     });
 
-    it('週の取得に失敗しても、次の1枚は出る', async () => {
+    it('週の取得に失敗しても、つぎにやることは出る', async () => {
       installFakeApi({
         [WEEK]: { status: 500, body: {} },
         [WORKOUTS]: list(PREV),
         [LATEST]: list(PREV),
       });
       renderWithQuery(<TodayView />);
-      expect(await screen.findByRole('region', { name: '次の1枚' })).toBeInTheDocument();
+      expect(await screen.findByRole('region', { name: 'つぎにやること' })).toBeInTheDocument();
       expect(screen.getByRole('alert')).toHaveTextContent('読み込めませんでした');
     });
   });
@@ -646,19 +646,19 @@ describe('TodayView（B03 今日画面の直し）', () => {
   });
 
   describe('A02-2 入口は「前回と同じで始める」が最上段', () => {
-    it('前回があれば、次の1枚のボタンは「前回と同じで始める」。「はじめる」「ルーティンから始める」は並べない', async () => {
+    it('前回があれば、つぎにやることのボタンは「前回と同じで始める」。「はじめる」「いつものメニューから始める」は並べない', async () => {
       base({ [ROUTINES]: ok({ items: [LEG], max: 5 }) });
       renderWithQuery(<TodayView />);
-      const next = await screen.findByRole('region', { name: '次の1枚' });
+      const next = await screen.findByRole('region', { name: 'つぎにやること' });
       expect(within(next).getByRole('link', { name: '前回と同じで始める' })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: 'はじめる' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('heading', { name: 'ルーティンから始める' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'いつものメニューから始める' })).not.toBeInTheDocument();
     });
 
-    it('ルーティンは「ほかの始めかた」として出て、メニューより上にある', async () => {
+    it('いつものメニューは「ほかの始めかた」として出て、メニューより上にある', async () => {
       base({ [ROUTINES]: ok({ items: [LEG], max: 5 }) });
       renderWithQuery(<TodayView />);
-      const heading = await screen.findByRole('heading', { name: 'ほかの始めかた（ルーティン）' });
+      const heading = await screen.findByRole('heading', { name: 'ほかの始めかた（いつものメニュー）' });
       const menu = screen.getByRole('list', { name: '今日のメニュー' });
       expect(heading.compareDocumentPosition(menu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
@@ -688,7 +688,7 @@ describe('TodayView（B03 今日画面の直し）', () => {
     it('休みの日は「やっぱり記録する」を出す（種目の一覧へ）', async () => {
       base({}, { [TODAY]: 'rest' });
       renderWithQuery(<TodayView />);
-      const card = await screen.findByRole('region', { name: '次の1枚' });
+      const card = await screen.findByRole('region', { name: 'つぎにやること' });
       expect(within(card).getByRole('link', { name: 'やっぱり記録する' })).toHaveAttribute('href', '/exercises');
     });
   });
@@ -751,7 +751,7 @@ describe('TodayView（B03 今日画面の直し）', () => {
       expect(within(menu).getAllByTestId('row-arrow')).toHaveLength(2);
     });
 
-    it('ルーティンの × に「消す」の文字を添える', async () => {
+    it('いつものメニューの × に「消す」の文字を添える', async () => {
       base({ [ROUTINES]: ok({ items: [LEG], max: 5 }) });
       renderWithQuery(<TodayView />);
       const remove = await screen.findByRole('button', { name: '脚の日を消す' });
@@ -760,11 +760,11 @@ describe('TodayView（B03 今日画面の直し）', () => {
   });
 
   describe('A07-1 ランの入口は上部', () => {
-    it('「ランを記録」は、次の1枚より上にある', async () => {
+    it('「ランを記録」は、つぎにやることより上にある', async () => {
       base();
       renderWithQuery(<TodayView />);
       const run = await screen.findByRole('link', { name: /ランを記録/ });
-      const next = await screen.findByRole('region', { name: '次の1枚' });
+      const next = await screen.findByRole('region', { name: 'つぎにやること' });
       expect(run.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });

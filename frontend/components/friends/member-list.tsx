@@ -19,7 +19,7 @@ export const AVATAR_BG: Record<string, string> = {
 export function GroupSummary({ group }: { group: GroupDetailResponse }) {
   return (
     <section className="fl-stripes relative overflow-hidden rounded-fl bg-coral px-[18px] pt-3.5 pb-4 text-ink shadow-[0_4px_0_var(--color-coral-dark)]">
-      <span className="fl-tag bg-gold text-ink">TEAM</span>
+      <span className="fl-tag bg-gold text-ink">なかま</span>
       <p className="mt-3 flex items-baseline gap-1.5 leading-none">
         <span aria-label="いまの人数" className="fl-num text-7xl">
           {group.members.length}
@@ -39,7 +39,7 @@ export function MemberList({ group }: { group: GroupDetailResponse }) {
 
   return (
     <section>
-      <h2 id="members-heading" className="flex items-center gap-1.5 pb-2 text-xs font-bold tracking-widest text-sub">
+      <h2 id="members-heading" className="flex items-center gap-1.5 pb-2 text-note font-bold tracking-widest text-sub">
         <Users aria-hidden className="size-4" />
         メンバー
       </h2>

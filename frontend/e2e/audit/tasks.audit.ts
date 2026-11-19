@@ -126,7 +126,7 @@ test('T2 前回と同じメニューで今日の筋トレを始める', async ({
   await page.goto('/today/');
   const t = new Tracker(page, 'T2');
   await t.start();
-  await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
+  await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'いつものメニューを始める');
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
   t.finish();
 });
@@ -170,7 +170,7 @@ test('T7 今週・今月どれだけ動いたかを振り返る', async ({ page 
   const t = new Tracker(page, 'T7');
   await t.start();
   await t.click(tab(page, '自分'), 'タブ「自分」');
-  await t.click(page.getByRole('link', { name: /記録をくわしく/ }).first(), '記録をくわしく');
+  await t.click(page.getByRole('link', { name: /記録のまとめ/ }).first(), '記録のまとめ');
   await t.click(page.getByRole('group', { name: '期間' }).getByRole('button', { name: '月' }), '月に切替');
   t.finish();
 });
@@ -265,7 +265,7 @@ test('T5 2秒動画を撮って、仲間の動画を見る（入口まで）', a
   await page.goto('/today/');
   const t = new Tracker(page, 'T5');
   await t.start();
-  await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
+  await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'いつものメニューを始める');
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
   await t.click(page.getByRole('button', { name: /2秒動画を撮る/ }), '2秒動画を撮る');
   t.finish();
@@ -314,7 +314,7 @@ test('T11 電波の無いジムで1セット記録し、電波が戻ったら送
   await page.waitForLoadState('networkidle');
   const t = new Tracker(page, 'T11');
   await t.start();
-  await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
+  await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'いつものメニューを始める');
   await context.setOffline(true);
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた（オフライン）');
   await page.waitForTimeout(800);
@@ -336,7 +336,7 @@ for (const [name, w, h] of [['200%', 195, 422], ['横向き', 844, 390], ['320�
     await t.start();
     const over = async () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     console.log(`T12 ${name} 最初の画面の横はみ出し=${await over()}px`);
-    await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'ルーティンを始める');
+    await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'いつものメニューを始める');
     await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
     console.log(`T12 ${name} 記録中の横はみ出し=${await over()}px`);
     t.finish();

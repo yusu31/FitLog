@@ -12,7 +12,7 @@ import { withDay, type DayMode } from '@/lib/day-mode';
 import { ROUTINE_MESSAGES } from '@/lib/messages';
 import { useOnline } from '@/lib/use-browser-state';
 
-// 今日の画面の「ルーティンから始める」（F3）。保存したルーティンが1つも無ければ何も出さない。
+// 今日の画面の「いつものメニューから始める」（F3）。保存したいつものメニューが1つも無ければ何も出さない。
 // 押すと、メニューのコピー（F-24）と同じ「やる予定」を記録画面へ渡す（記録は「できた」を押したときに初めて作る）。
 // コピー元は自分なので、記録に copiedFromUserId は付けない（fromUserId: null）。予定は端末の中だけなので、電波が無くても始められる
 export function RoutineStarter({ day }: { day: DayMode }) {
@@ -70,7 +70,7 @@ export function RoutineStarter({ day }: { day: DayMode }) {
               </span>
               <span className="min-w-0 flex-1 text-[15px] leading-tight font-extrabold">
                 {r.name}
-                <small className="block truncate text-xs font-bold text-sub-strong">{r.exercises.map((e) => e.name).join('・')}</small>
+                <small className="block truncate text-note font-bold text-sub-strong">{r.exercises.map((e) => e.name).join('・')}</small>
               </span>
             </button>
             <button
@@ -78,7 +78,7 @@ export function RoutineStarter({ day }: { day: DayMode }) {
               aria-label={ROUTINE_MESSAGES.deleteLabel(r.name)}
               disabled={!online || deleteRoutine.isPending}
               onClick={() => setConfirming(r)}
-              className="flex min-h-11 shrink-0 items-center justify-center gap-0.5 rounded-fl px-2 text-xs font-extrabold text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
+              className="flex min-h-11 shrink-0 items-center justify-center gap-0.5 rounded-fl px-2 text-note font-extrabold text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
             >
               <X aria-hidden className="size-4" />
               消す

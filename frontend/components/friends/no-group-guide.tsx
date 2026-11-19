@@ -30,7 +30,7 @@ export function NoGroupGuide() {
   return (
     <div className="space-y-4 px-4 pt-3">
       <section className="fl-stripes relative overflow-hidden rounded-fl bg-teal-dark [--stripe:rgb(0_0_0/0.14)] px-[18px] pt-3.5 pb-4 text-white shadow-[0_4px_0_var(--color-teal-deep)]">
-        <span className="fl-tag bg-gold text-ink">TEAM</span>
+        <span className="fl-tag bg-gold text-ink">なかま</span>
         <h2 className="mt-3 text-2xl leading-snug font-extrabold">仲間と、見せ合おう</h2>
         <p className="mt-1 text-sm leading-relaxed font-bold [word-break:auto-phrase]">
           グループは1つ・<span className="fl-num text-base">{GROUP_MEMBER_MAX}</span>人まで。記録した日やスタンプを、仲間どうしで見せ合えます。
@@ -70,7 +70,7 @@ export function NoGroupGuide() {
             }}
             placeholder="https://…/invite?token=…"
             autoComplete="off"
-            className="mt-1 h-12 w-full rounded-lg border-2 border-input bg-white px-3 font-mono text-xs text-ink"
+            className="mt-1 h-12 w-full rounded-lg border-2 border-input bg-white px-3 font-mono text-note text-ink"
           />
         </div>
         <ThickButton tone="white" size="sm" onClick={onOpenInvite}>

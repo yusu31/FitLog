@@ -10,7 +10,7 @@ vi.mock('@/lib/use-require-session', () => ({ useRequireSession: () => ({ signed
 vi.mock('@/components/me/japan-map', () => ({ JapanMap: ({ pos }: { pos: { name: string } }) => <div role="img" aria-label={`いまは${pos.name}のあたり`} /> }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }), usePathname: () => '/me/stats/' }));
 
-// 記録をくわしく（S-35・F-22・F-26・F-27・F-29。docs/testing-design.md 3-14）。今日は API が決めた today を使う（画面の時計に依存しない）
+// 記録のまとめ（S-35・F-22・F-26・F-27・F-29。docs/testing-design.md 3-14）。今日は API が決めた today を使う（画面の時計に依存しない）
 const STAMP_KEYS = Object.keys(STAMP_LABEL) as StatsResponse['stamps'][number]['key'][];
 
 function statsOf(over: Partial<StatsResponse> = {}): StatsResponse {
@@ -53,7 +53,7 @@ function stubStats(body: unknown, status = 200) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('StatsPage（S-35 記録をくわしく）', () => {
+describe('StatsPage（S-35 記録のまとめ）', () => {
   it('今月の数字（動いた日・おやすみ・総重量・ラン）と、総重量の換算を出す', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
