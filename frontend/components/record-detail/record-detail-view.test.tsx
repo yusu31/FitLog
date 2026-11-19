@@ -60,6 +60,35 @@ afterEach(() => {
 });
 
 describe('RecordDetailView（S-21 記録の詳細）', () => {
+  // B14b: 自分の記録だけに「約○kcal」。体重が無い・時間が測れない（kcal が null）なら出さない。仲間の記録では問い合わせない
+  describe('約○kcal（B14b）', () => {
+    const CAL = '/api/body/calories/r1';
+    const cal = (kcal: number | null) => ok({ recordId: 'r1', kcal, mets: kcal ? 5 : null, durationSec: kcal ? 3600 : null, weightKg: kcal ? 60 : null, reason: kcal ? null : 'NO_WEIGHT' });
+
+    it('自分の筋トレに「約 312 kcal」を出す', async () => {
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)), [CAL]: cal(312) });
+      renderWithQuery(<RecordDetailView />);
+      expect(await screen.findByTestId('record-kcal')).toHaveTextContent('約 312 kcal');
+    });
+
+    it('kcal が null（体重なし・時間が測れない）のときは出さない', async () => {
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)), [CAL]: cal(null) });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('button', { name: 'いつものメニューに保存' });
+      await waitFor(() => expect(calls).toContain(`GET ${CAL}`));
+      expect(screen.queryByTestId('record-kcal')).not.toBeInTheDocument();
+    });
+
+    it('仲間の記録では問い合わせず、出さない', async () => {
+      search = 'id=r1&by=u2';
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), '/api/exercises': ok([]) });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('button', { name: 'コピーして始める' });
+      expect(screen.queryByTestId('record-kcal')).not.toBeInTheDocument();
+      expect(calls).not.toContain(`GET ${CAL}`);
+    });
+  });
+
   describe('いつものメニューに保存（F3）', () => {
     it('自分の筋トレ（セットあり）には「いつものメニューに保存」が出る', async () => {
       install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });

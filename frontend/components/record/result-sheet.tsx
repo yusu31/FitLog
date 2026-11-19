@@ -7,6 +7,7 @@ import { Sprite } from '@/components/fitlog/sprite';
 import type { BodyPart } from '@/lib/api/generated';
 import { BODY_PART_LABEL, BODY_PART_ORDER } from '@/lib/body-parts';
 import { levelsOf } from '@/lib/heatmap';
+import { formatKcal } from '@/lib/body/body';
 import { GHOST_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from '@/lib/messages';
 import { usePrefersReducedMotion } from '@/lib/use-browser-state';
 import type { GhostResult } from '@/lib/shared/ghost';
@@ -29,6 +30,8 @@ export type SheetData = {
   monthDay?: number;
   // 記録する日（きのうの分のとき、見出しを「きのう」にする。A02-8）。無ければ今日
   day?: 'today' | 'yesterday';
+  // 推定消費カロリー（B14b）。体重が無い・時間が測れないときは無い（null も無いのと同じ）。本人だけの数字
+  kcal?: number | null;
 };
 
 // 結果シート（features.md 2.6）。「できた」の直後に 3秒出し、タップで飛ばせる。
@@ -62,7 +65,8 @@ export function ResultSheet({ sheet, onDismiss }: { sheet: SheetData | null; onD
 }
 
 function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolean; onDismiss: () => void }) {
-  const { result, diff, isPersonalBest, summary, note, parts, monthDay, day } = sheet;
+  const { result, diff, isPersonalBest, summary, note, parts, monthDay, day, kcal } = sheet;
+  const kcalText = formatKcal(kcal);
   const gold = result === 'up' || isPersonalBest;
   const [upLabel, upAmount] = ghostUpMessage(diff).split(' ');
   return (
@@ -97,6 +101,11 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
         {monthDay !== undefined && (
           <span data-testid="month-day" className="mt-1 block text-sm font-bold">
             今月 <span className="fl-num text-xl">{monthDay}</span> 日目（今月の合計）
+          </span>
+        )}
+        {kcalText && (
+          <span data-testid="sheet-kcal" className="mt-1 block text-sm font-bold">
+            {kcalText}
           </span>
         )}
         {note && <span className="mt-1 block text-base font-bold">{note}</span>}

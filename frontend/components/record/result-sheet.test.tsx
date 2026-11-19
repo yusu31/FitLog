@@ -67,3 +67,20 @@ describe('ResultSheet（画像の読み込み失敗 A11-4）', () => {
     expect(screen.getByTestId('result-sheet')).toHaveTextContent('前回超え');
   });
 });
+
+// B14b: 記録直後に「約○kcal」。体重が無い・時間が測れないとき（kcal が無い・null）は出さない
+describe('ResultSheet（約○kcal B14b）', () => {
+  it('kcal があれば「約 586 kcal」を出す', () => {
+    render(<ResultSheet sheet={{ ...base, kcal: 586 }} onDismiss={() => {}} />);
+    expect(screen.getByTestId('sheet-kcal')).toHaveTextContent('約 586 kcal');
+  });
+
+  it('kcal が無い・null・0 のときは出さない', () => {
+    const { rerender } = render(<ResultSheet sheet={base} onDismiss={() => {}} />);
+    expect(screen.queryByTestId('sheet-kcal')).not.toBeInTheDocument();
+    rerender(<ResultSheet sheet={{ ...base, kcal: null }} onDismiss={() => {}} />);
+    expect(screen.queryByTestId('sheet-kcal')).not.toBeInTheDocument();
+    rerender(<ResultSheet sheet={{ ...base, kcal: 0 }} onDismiss={() => {}} />);
+    expect(screen.queryByTestId('sheet-kcal')).not.toBeInTheDocument();
+  });
+});

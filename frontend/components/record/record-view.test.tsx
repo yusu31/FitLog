@@ -103,7 +103,7 @@ beforeEach(() => {
       const call: Call = { method, url, body: init?.body ? JSON.parse(String(init.body)) : undefined };
       calls.push(call);
       const path = url.split('?')[0];
-      const key = path.replace(/^\/api\/records\/[^/]+\/sets\/[^/]+$/, '/api/records/:id/sets/:setId').replace(/^\/api\/records\/[^/]+\/sets$/, '/api/records/:id/sets').replace(/^\/api\/records\/[^/]+$/, '/api/records/:id');
+      const key = path.replace(/^\/api\/records\/[^/]+\/sets\/[^/]+$/, '/api/records/:id/sets/:setId').replace(/^\/api\/records\/[^/]+\/sets$/, '/api/records/:id/sets').replace(/^\/api\/records\/[^/]+$/, '/api/records/:id').replace(/^\/api\/body\/calories\/[^/]+$/, '/api/body/calories/:id');
       const handler = handlers[`${method} ${key}`];
       if (!handler) throw new Error(`想定外の呼び出し: ${method} ${url}`);
       const { status, body } = await handler(call);
@@ -284,6 +284,25 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
   });
 
   describe('「できた」', () => {
+    it('B14b: 応答のあと推定消費カロリーを取り、出せるときだけ板に「約○kcal」を出す', async () => {
+      handlers['GET /api/body/calories/:id'] = () => ({ status: 200, body: { recordId: 'r', kcal: 123, mets: 5, durationSec: 600, weightKg: 60, reason: null } });
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      expect(await screen.findByTestId('sheet-kcal')).toHaveTextContent('約 123 kcal');
+    });
+
+    it('B14b: 出せないとき（kcal が null）は板に出さない', async () => {
+      handlers['GET /api/body/calories/:id'] = () => ({ status: 200, body: { recordId: 'r', kcal: null, mets: null, durationSec: null, weightKg: null, reason: 'NO_WEIGHT' } });
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      await user.click(doneButton());
+      await waitFor(() => expect(calls.some((c) => c.url.startsWith('/api/body/calories/'))).toBe(true));
+      expect(screen.queryByTestId('sheet-kcal')).not.toBeInTheDocument();
+    });
+
     it('最初の「できた」で記録（kind=workout）を作り、そのあとセットを足す。2回目からは同じ記録にセットだけ足す', async () => {
       const user = userEvent.setup();
       renderView();

@@ -8,7 +8,7 @@ import { FullScreen } from '@/components/fitlog/full-screen';
 import { Sprite } from '@/components/fitlog/sprite';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
-import { ListRecordsKind, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
+import { ListRecordsKind, getCalories, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import { formatSetProgress, formatSetWithReps } from '@/lib/format';
 import { activeRecordId, noteBest, recordForNextSet } from '@/lib/current-workout';
@@ -209,6 +209,13 @@ export function RecordView() {
         if (outcome.isPersonalBest) noteBest(rid); // 終了のまとめの「自己ベスト◯回」用
         setOutcomes((o) => ({ ...o, [setId]: outcome }));
         setSheet((s) => (s && s.setId === setId ? { ...s, ...outcome, diff: ghost && outcome.result ? ghostDiff(ghost, value) : 0 } : s));
+        // 推定消費カロリー（B14b）。体重が無い・時間が測れない（1セットだけ）ときは null で、板には出さない。届かなくても板は変えない
+        getCalories(rid)
+          .then((c) => {
+            const kcal = c.status === 200 ? c.data.kcal : null;
+            if (kcal) setSheet((s) => (s && s.setId === setId ? { ...s, kcal } : s));
+          })
+          .catch(() => {});
       })
       .catch((e: unknown) => {
         setNotice(errorText(e));

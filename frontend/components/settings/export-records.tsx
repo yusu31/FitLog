@@ -46,7 +46,7 @@ export function ExportRecords() {
         <Download aria-hidden />
         {pending ? M.busy : M.button}
       </ThickButton>
-      <p className="px-1 text-xs font-bold text-sub-strong [word-break:auto-phrase]">{M.hint}</p>
+      <p className="px-1 text-note font-bold text-sub-strong [word-break:auto-phrase]">{M.hint}</p>
       {error && (
         <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
           {error}

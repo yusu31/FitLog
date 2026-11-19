@@ -125,3 +125,23 @@ export function chartShape(points: ChartPoint[], width = 320, height = 160, pad 
     dots: points.map((p) => ({ x: Number(x(p.date).toFixed(1)), y: Number(y(p.kg).toFixed(1)), date: p.date, kg: p.kg })),
   };
 }
+
+// B14b: 自分・設定・記録につなぐ入口の文言。判定の言葉（肥満・標準など）は出さない
+export const BODY_CONNECT_MESSAGES = {
+  summaryTitle: 'からだ',
+  summaryAvg7: '体重 7日の平均',
+  summaryBmi: 'BMI',
+  summaryOpen: 'からだを見る',
+  invite: '体重を入れてみる',
+  inviteNote: '入れると、7日の平均と BMI が出ます。自分だけに見えます',
+  settingsTitle: 'からだ',
+  settingsNote: '身長は自分だけに見えます。プロフィールは同じグループの仲間に見えます',
+  heightSave: '身長を保存する',
+  kcalNote: '推定（自分だけに見えます）',
+} as const;
+
+// 推定消費カロリーの表示。出せないとき（null・0 以下）は null → 何も出さない
+export function formatKcal(kcal: number | null | undefined): string | null {
+  if (kcal === null || kcal === undefined || !(kcal > 0)) return null;
+  return `約 ${kcal} kcal`;
+}

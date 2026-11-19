@@ -7,6 +7,7 @@ import { useListRecords } from '@/lib/api/generated';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useAppSession } from '@/lib/use-app-session';
 import { isRunHeavyWeek } from '@/lib/week-focus';
+import { BodySummary } from './body-summary';
 import { HeatmapSection } from './heatmap-section';
 import { PAGE_SIZE, RecordsList } from './records-list';
 import { WeekRunSection } from './week-run-section';
@@ -52,6 +53,8 @@ export function MeView() {
           <ListChecks aria-hidden />
           記録のまとめ
         </Link>
+
+        <BodySummary />
 
         {runHeavy && <WeekRunSection />}
 
