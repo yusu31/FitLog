@@ -63,7 +63,7 @@ export function ProfileForm({ initial }: { initial: ProfileResponse }) {
           {BODY_MESSAGES.bioLabel}
         </Label>
         <Input id="profile-bio" value={bio} maxLength={BIO_MAX} onChange={(e) => setBio(e.target.value)} className="h-11 bg-white" />
-        <p className="text-xs text-sub-strong">{BODY_MESSAGES.bioHint}</p>
+        <p className="text-note text-sub-strong">{BODY_MESSAGES.bioHint}</p>
       </div>
       <RadioRow legend={BODY_MESSAGES.favoriteLegend} name="favorite" options={FAVORITE_OPTIONS} value={favorite} onChange={setFavorite} />
       <RadioRow legend={BODY_MESSAGES.activeLegend} name="active" options={ACTIVE_OPTIONS} value={active} onChange={setActive} />

@@ -141,7 +141,7 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
       >
       <div className="w-[68px] shrink-0 leading-tight">
         <p className="fl-num text-xl text-ink">{formatMonthDay(record.localDate)}</p>
-        <p className="text-[11px] font-bold text-sub">{WEEKDAYS[weekdayIndex(record.localDate)]}曜</p>
+        <p className="text-note font-bold text-sub">{WEEKDAYS[weekdayIndex(record.localDate)]}曜</p>
       </div>
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 truncate text-[15px] leading-tight font-extrabold">
@@ -157,7 +157,7 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
           {record.late && <LateTag />}
           {record.copiedFrom && <CopiedTag name={record.copiedFrom.name} />}
         </p>
-        {detail && <p className="mt-0.5 text-xs font-bold text-sub">{detail}</p>}
+        {detail && <p className="mt-0.5 text-note font-bold text-sub">{detail}</p>}
       </div>
       </Link>
       <button
@@ -187,7 +187,7 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
             <Trash2 aria-hidden className="size-5" />
             削除
           </button>
-          {!actions.online && <p className="px-3 pb-2 text-xs text-sub-strong">{ME_MESSAGES.offlineNote}</p>}
+          {!actions.online && <p className="px-3 pb-2 text-note text-sub-strong">{ME_MESSAGES.offlineNote}</p>}
         </div>
       )}
     </li>

@@ -19,7 +19,7 @@ export function BodySummary() {
       </h2>
       {data.latest === null ? (
         <>
-          <p className="text-xs text-sub-strong">{M.inviteNote}</p>
+          <p className="text-note text-sub-strong">{M.inviteNote}</p>
           <Link href="/me/body" className={`inline-flex min-h-11 items-center ${link}`}>
             {M.invite}
           </Link>
@@ -28,11 +28,11 @@ export function BodySummary() {
         <>
           <dl className="grid grid-cols-2 gap-2 text-center">
             <div>
-              <dt className="text-xs font-bold text-sub-strong">{M.summaryAvg7}</dt>
+              <dt className="text-note font-bold text-sub-strong">{M.summaryAvg7}</dt>
               <dd className="text-xl font-extrabold">{data.avg7 === null ? '—' : `${data.avg7}kg`}</dd>
             </div>
             <div>
-              <dt className="text-xs font-bold text-sub-strong">{M.summaryBmi}</dt>
+              <dt className="text-note font-bold text-sub-strong">{M.summaryBmi}</dt>
               <dd className="text-xl font-extrabold">{data.bmi ?? '—'}</dd>
             </div>
           </dl>

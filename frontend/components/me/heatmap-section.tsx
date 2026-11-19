@@ -28,7 +28,7 @@ export function HeatmapSection() {
           <p className="mt-1 text-sm font-bold">
             <span className="fl-num text-3xl">{total}</span> セット
           </p>
-          <div className="mt-2 flex justify-center gap-6 rounded-lg bg-white py-3 text-center text-xs text-sub-strong">
+          <div className="mt-2 flex justify-center gap-6 rounded-lg bg-white py-3 text-center text-note text-sub-strong">
             <figure className="m-0">
               <BodyFigure view="front" levels={levelsOf(parts)} />
               前
@@ -49,8 +49,8 @@ export function HeatmapSection() {
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-center text-xs text-sub-strong">体の図は、色が濃いほど今週そこをよくきたえています</p>
-          <p className="mt-1 flex flex-wrap justify-center gap-3 text-xs text-sub-strong">
+          <p className="mt-2 text-center text-note text-sub-strong">体の図は、色が濃いほど今週そこをよくきたえています</p>
+          <p className="mt-1 flex flex-wrap justify-center gap-3 text-note text-sub-strong">
             {HEAT_LEGEND.map((l) => (
               <span key={l.level} className="flex items-center gap-1">
                 <i aria-hidden className="size-3 rounded-sm" style={{ background: HEAT_COLORS[l.level] }} />

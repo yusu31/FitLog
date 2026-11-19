@@ -93,10 +93,10 @@ export function FeedCard({ item }: { item: FeedItem }) {
             </span>
             {detail && <span className="ml-1.5 text-sm text-sub-strong">{detail}</span>}
           </p>
-          <p className="mt-0.5 text-xs font-bold text-sub">
+          <p className="mt-0.5 text-note font-bold text-sub">
             {formatMonthDay(item.localDate)} {item.late ? <LateTag /> : formatJstTime(item.recordedAt)}
             {item.isNew && !seen && (
-              <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-[11px] font-extrabold text-ink">{FEED_MESSAGES.newTag}</span>
+              <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-note font-extrabold text-ink">{FEED_MESSAGES.newTag}</span>
             )}
           </p>
         </div>
@@ -147,9 +147,9 @@ export function FeedCard({ item }: { item: FeedItem }) {
           {stampNote}
         </p>
       )}
-      {hasMine && !stampNote && <p className="text-xs font-bold text-sub-strong">{FRIENDS_TEXT.stampUndoHint}</p>}
-      {stampNote === FRIENDS_TEXT.stampSent && <p className="text-xs font-bold text-sub-strong">{FRIENDS_TEXT.stampUndoHint}</p>}
-      {!online && <p className="text-xs font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
+      {hasMine && !stampNote && <p className="text-note font-bold text-sub-strong">{FRIENDS_TEXT.stampUndoHint}</p>}
+      {stampNote === FRIENDS_TEXT.stampSent && <p className="text-note font-bold text-sub-strong">{FRIENDS_TEXT.stampUndoHint}</p>}
+      {!online && <p className="text-note font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
       {notice && (
         <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
           {notice}
@@ -217,7 +217,7 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
         ))}
       </ul>
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-2">
-        <label htmlFor={inputId} className="text-xs font-bold text-sub-strong">
+        <label htmlFor={inputId} className="text-note font-bold text-sub-strong">
           {FEED_MESSAGES.commentInputLabel}
         </label>
         <div className="flex gap-2">

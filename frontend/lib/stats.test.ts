@@ -1,7 +1,7 @@
 import type { StatsCalendarDay } from '@/lib/api/generated';
 import { barRatios, buildGrid, monthDayCount, weightEquivalent } from './stats';
 
-// 記録をくわしく（F-22・F-26・F-27）の画面側の関数（docs/testing-design.md 3-14）。今日は 2026-11-12（木曜）。
+// 記録のまとめ（F-22・F-26・F-27）の画面側の関数（docs/testing-design.md 3-14）。今日は 2026-11-12（木曜）。
 
 function calendarEnding(today: string, status: Record<string, StatsCalendarDay['status']> = {}): StatsCalendarDay[] {
   const out: StatsCalendarDay[] = [];

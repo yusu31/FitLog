@@ -37,7 +37,7 @@ export function GroupSettingsView() {
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
-        <h1 className="text-[28px] font-extrabold">グループの設定</h1>
+        <h1 className="text-page-title font-extrabold">グループの設定</h1>
       </header>
 
       <div className="space-y-4 px-4 pt-3 pb-10">
@@ -59,7 +59,7 @@ export function GroupSettingsView() {
             )}
             <GroupSummary group={group} />
             <MemberList group={group} />
-            <p className="text-xs text-sub-strong [word-break:auto-phrase]">{LIMIT_REASON}</p>
+            <p className="text-note text-sub-strong [word-break:auto-phrase]">{LIMIT_REASON}</p>
             <InvitePanel full={group.members.length >= GROUP_MEMBER_MAX} />
             <LeaveGroup onLeft={() => setJustCreated(false)} />
           </>
@@ -72,7 +72,7 @@ export function GroupSettingsView() {
               <p className="mt-1 text-sm text-sub-strong [word-break:auto-phrase]">
                 1つのグループには、あなたを入れて{GROUP_MEMBER_MAX}人まで入れます。作ったあとに、招待リンクで仲間を呼べます。
               </p>
-              <p className="mt-1 text-xs text-sub-strong [word-break:auto-phrase]">{LIMIT_REASON}
+              <p className="mt-1 text-note text-sub-strong [word-break:auto-phrase]">{LIMIT_REASON}
               </p>
             </div>
             <CreateGroupForm onCreated={() => setJustCreated(true)} />

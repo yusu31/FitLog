@@ -53,7 +53,7 @@ function LockedTile({ item }: { item: VideoGridItem }) {
   return (
     <div role="img" aria-label={`${item.label}: ${VIDEO_GRID_MESSAGES.locked}`} className={TILE}>
       <div aria-hidden="true" className="absolute inset-0 bg-line blur-md" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-center text-xs font-bold text-sub-strong">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-center text-note font-bold text-sub-strong">
         <Lock aria-hidden="true" className="size-5" />
         <span>{VIDEO_GRID_MESSAGES.locked}</span>
       </div>
@@ -84,7 +84,7 @@ function OpenTile({ item, onSelect }: { item: VideoGridItem; onSelect?: (id: str
         />
       ) : null}
       {!isPending && !playable ? (
-        <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-xs font-bold text-sub-strong">{VIDEO_GRID_MESSAGES.unavailable}</span>
+        <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-note font-bold text-sub-strong">{VIDEO_GRID_MESSAGES.unavailable}</span>
       ) : null}
       {playable ? <Play aria-hidden="true" className="absolute right-1 top-1 size-4 fill-white text-white drop-shadow" /> : null}
       <Caption label={item.label} />
@@ -93,5 +93,5 @@ function OpenTile({ item, onSelect }: { item: VideoGridItem; onSelect?: (id: str
 }
 
 function Caption({ label }: { label: string }) {
-  return <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-xs font-bold text-white">{label}</span>;
+  return <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-note font-bold text-white">{label}</span>;
 }

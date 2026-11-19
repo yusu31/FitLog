@@ -82,6 +82,15 @@ export const ACCOUNT_MESSAGES = {
   network: '通信できませんでした。電波の良い所でもう一度お試しください',
 } as const;
 
+// 記録の書き出し（C-01。設定 S-31）。本人の落ち度にしない
+export const EXPORT_MESSAGES = {
+  button: '記録を書き出す（CSV）',
+  busy: '書き出しています…',
+  hint: 'CSV は、表計算ソフトで開けるファイルです。自分の記録だけが入ります',
+  failed: '書き出せませんでした。少し待って、もう一度お試しください',
+  network: '通信できませんでした。電波の良い所でもう一度お試しください',
+} as const;
+
 // API の応答の code（design.md 5章）→ 画面の文言
 export const GROUP_ERROR_BY_CODE: Record<string, string> = {
   GROUP_FULL: 'このグループは満員です（5人まで）。だれかが出ると、また入れます',
@@ -137,7 +146,7 @@ export const REST_MESSAGES = {
 // 終わらせないことを責めない。終了は電波があるときだけ（サーバーに時刻を残すため）
 export const WORKOUT_END_MESSAGES = {
   active: '記録中',
-  tag: 'NOW',
+  tag: 'いま',
   count: (exercises: number, sets: number) => `${exercises}種目 ${sets}セット`,
   keepGoing: '続ける',
   end: '今日はここまで',
@@ -287,11 +296,11 @@ export const FRIEND_MESSAGES = {
   copiedTag: (name: string | null) => (name ? `${name}さんから` : '仲間から'),
 } as const;
 
-// ルーティン（F3）。よくやるメニューを保存して、今日の画面から始める
+// いつものメニュー（F3）。よくやるメニューを保存して、今日の画面から始める
 export const ROUTINE_MESSAGES = {
-  saveButton: 'ルーティンに保存',
+  saveButton: 'いつものメニューに保存',
   saveHint: 'この記録を保存すると、今日の画面から ワンタップで始められます。',
-  nameLabel: 'ルーティンの名前',
+  nameLabel: 'いつものメニューの名前',
   nameHint: (max: number) => `${max}字まで。同じ名前は重ねて保存できません。`,
   namePlaceholder: '例: 脚の日',
   submit: '保存する',
@@ -300,14 +309,14 @@ export const ROUTINE_MESSAGES = {
   saved: (name: string) => `「${name}」を保存しました。今日の画面から始められます`,
   saveFailed: '保存できませんでした。電波の良い所でもう一度ためしてください',
   saveOffline: '電波があるときに保存できます',
-  heading: 'ほかの始めかた（ルーティン）',
+  heading: 'ほかの始めかた（いつものメニュー）',
   start: (name: string) => `${name}を始める`,
   deleteLabel: (name: string) => `${name}を消す`,
-  deleteTitle: 'ルーティンを消しますか？',
+  deleteTitle: 'いつものメニューを消しますか？',
   deleteBody: (name: string) => `「${name}」を消します。これまでの記録は消えません。`,
   deleteFailed: '消せませんでした。電波の良い所でもう一度ためしてください',
-  planFrom: (name: string) => `ルーティン「${name}」から`,
-  ghostLabel: 'ルーティンの 予定',
+  planFrom: (name: string) => `いつものメニュー「${name}」から`,
+  ghostLabel: 'いつものメニューの 予定',
 } as const;
 
 // 退会（F2-b）。元に戻せないので、消えるものを先に見せる。落ち度を責めない

@@ -49,7 +49,7 @@ export function BodyPage() {
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
-        <h1 className="text-[28px] font-extrabold">{BODY_MESSAGES.title}</h1>
+        <h1 className="text-page-title font-extrabold">{BODY_MESSAGES.title}</h1>
       </header>
       <div className="space-y-4 px-4 pt-3 pb-10">
         {data ? (
@@ -68,7 +68,7 @@ export function BodyPage() {
                 <h2 id="body-profile" className="text-sm font-extrabold text-sub-strong">
                   {BODY_MESSAGES.profileSection}
                 </h2>
-                <p className="text-xs text-sub-strong">{BODY_MESSAGES.profileHint}</p>
+                <p className="text-note text-sub-strong">{BODY_MESSAGES.profileHint}</p>
                 <ProfileForm initial={mine} />
               </section>
             )}
@@ -128,14 +128,14 @@ function Inputs({ data }: { data: BodyResponse }) {
           {BODY_MESSAGES.weightLabel}
         </Label>
         <Input id="body-weight" inputMode="decimal" value={weightText} onChange={(e) => setWeightText(e.target.value)} className="h-11 bg-white" />
-        <p className="text-xs text-sub-strong">{BODY_MESSAGES.weightHint}</p>
+        <p className="text-note text-sub-strong">{BODY_MESSAGES.weightHint}</p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="body-height" className="font-extrabold">
           {BODY_MESSAGES.heightLabel}
         </Label>
         <Input id="body-height" inputMode="decimal" value={heightText} onChange={(e) => setHeightText(e.target.value)} className="h-11 bg-white" />
-        <p className="text-xs text-sub-strong">{BODY_MESSAGES.heightHint}</p>
+        <p className="text-note text-sub-strong">{BODY_MESSAGES.heightHint}</p>
       </div>
       <ThickButton type="submit" size="sm" className="w-full" disabled={pending}>
         {pending ? BODY_MESSAGES.saving : BODY_MESSAGES.save}
@@ -145,7 +145,7 @@ function Inputs({ data }: { data: BodyResponse }) {
           {notice.text}
         </p>
       )}
-      <p className="text-xs text-sub-strong">{BODY_MESSAGES.onlyYou}</p>
+      <p className="text-note text-sub-strong">{BODY_MESSAGES.onlyYou}</p>
     </form>
   );
 }
@@ -159,19 +159,19 @@ function Numbers({ data }: { data: BodyResponse }) {
       </h2>
       <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
         <div>
-          <dt className="text-xs font-bold text-sub-strong">{BODY_MESSAGES.bmi}</dt>
+          <dt className="text-note font-bold text-sub-strong">{BODY_MESSAGES.bmi}</dt>
           <dd className="text-xl font-extrabold">{data.bmi ?? '—'}</dd>
         </div>
         <div>
-          <dt className="text-xs font-bold text-sub-strong">{BODY_MESSAGES.avg7}</dt>
+          <dt className="text-note font-bold text-sub-strong">{BODY_MESSAGES.avg7}</dt>
           <dd className="text-xl font-extrabold">{data.avg7 === null ? '—' : `${data.avg7}kg`}</dd>
         </div>
         <div>
-          <dt className="text-xs font-bold text-sub-strong">{BODY_MESSAGES.delta}</dt>
+          <dt className="text-note font-bold text-sub-strong">{BODY_MESSAGES.delta}</dt>
           <dd className="text-xl font-extrabold">{formatDelta(data.deltaFromPrevious)}</dd>
         </div>
       </dl>
-      {data.bmi === null && <p className="mt-2 text-xs text-sub-strong">{BODY_MESSAGES.bmiNeed}</p>}
+      {data.bmi === null && <p className="mt-2 text-note text-sub-strong">{BODY_MESSAGES.bmiNeed}</p>}
     </section>
   );
 }
@@ -182,7 +182,7 @@ function OneRepMaxSection({ items }: { items: OneRepMaxItem[] | null }) {
       <h2 id="body-onerm" className="text-sm font-extrabold text-sub-strong">
         {BODY_MESSAGES.oneRmSection}
       </h2>
-      <p className="mt-1 text-xs text-sub-strong">{BODY_MESSAGES.oneRmHint}</p>
+      <p className="mt-1 text-note text-sub-strong">{BODY_MESSAGES.oneRmHint}</p>
       {items && items.length > 0 ? (
         <ul className="mt-2 divide-y divide-line">
           {items.map((i) => (
@@ -191,11 +191,11 @@ function OneRepMaxSection({ items }: { items: OneRepMaxItem[] | null }) {
               <span className="text-right">
                 <span className="text-lg font-extrabold">{i.kg}kg</span>
                 {i.approximate && (
-                  <span title={BODY_MESSAGES.oneRmApproxHint} className="ml-1 rounded-full bg-gold px-2 py-0.5 text-xs font-extrabold">
+                  <span title={BODY_MESSAGES.oneRmApproxHint} className="ml-1 rounded-full bg-gold px-2 py-0.5 text-note font-extrabold">
                     {BODY_MESSAGES.oneRmApprox}
                   </span>
                 )}
-                <span className="block text-xs text-sub-strong">
+                <span className="block text-note text-sub-strong">
                   {i.weightKg}kg × {i.reps}回（{formatMonthDay(i.date)}）
                 </span>
               </span>

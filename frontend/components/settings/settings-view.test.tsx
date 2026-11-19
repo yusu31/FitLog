@@ -56,6 +56,11 @@ describe('SettingsView（S-31 設定）', () => {
     expect(screen.getByRole('link', { name: '自分へ戻る' })).toHaveAttribute('href', '/me');
   });
 
+  it('「記録を書き出す（CSV）」ボタンを出す（C-01）', () => {
+    renderView();
+    expect(screen.getByRole('button', { name: /記録を書き出す（CSV）/ })).toBeInTheDocument();
+  });
+
   it('ユーザー情報（表示名・メール）を出す', () => {
     renderView();
     const section = screen.getByRole('region', { name: 'ユーザー情報' });

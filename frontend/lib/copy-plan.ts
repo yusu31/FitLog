@@ -5,10 +5,10 @@ import type { SetValue } from '@/lib/shared/ghost';
 
 export type CopyPlanItem = { exerciseId: string; name: string; sets: SetValue[] };
 export type CopyPlan = {
-  // 仲間のメニューのコピー（F-24）なら書いた人の id。自分のルーティンから始めた（F3）なら null（記録にコピー元を付けない）
+  // 仲間のメニューのコピー（F-24）なら書いた人の id。自分のいつものメニューから始めた（F3）なら null（記録にコピー元を付けない）
   fromUserId: string | null;
   fromName: string | null;
-  // ルーティンから始めたときの名前（F3）。見出し・ゴーストの札に使う
+  // いつものメニューから始めたときの名前（F3）。見出し・ゴーストの札に使う
   routineName?: string;
   items: CopyPlanItem[];
   // 記録に copiedFromUserId を付けて送ったあとは true（以降の記録には付けない）
@@ -28,7 +28,7 @@ export const resetCopyPlan = (): void => {
   plan = null;
 };
 
-// 記録画面の上に出す見出し（「はなこさんの メニューから」「ルーティン「脚の日」から」）と、ゴーストの札
+// 記録画面の上に出す見出し（「はなこさんの メニューから」「いつものメニュー「脚の日」から」）と、ゴーストの札
 export const planHeading = (p: CopyPlan): string =>
   p.routineName !== undefined ? ROUTINE_MESSAGES.planFrom(p.routineName) : FRIEND_MESSAGES.planFrom(p.fromName);
 export const planGhostLabel = (p: CopyPlan): string =>

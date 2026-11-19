@@ -19,14 +19,14 @@ export function WeightChart({ points }: { points: ChartPoint[] }) {
           <circle key={d.date} data-testid="weight-dot" cx={d.x} cy={d.y} r={3} className="fill-teal-dark opacity-30" />
         ))}
         {shape.avgPath && <path data-testid="weight-avg-line" d={shape.avgPath} fill="none" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal-dark" />}
-        <text x={2} y={12} className="fill-sub-strong text-[10px]">
+        <text x={2} y={12} className="fill-sub-strong text-note">
           {shape.max}kg
         </text>
-        <text x={2} y={shape.height - 4} className="fill-sub-strong text-[10px]">
+        <text x={2} y={shape.height - 4} className="fill-sub-strong text-note">
           {shape.min}kg
         </text>
       </svg>
-      <figcaption className="mt-1 text-xs text-sub-strong">{BODY_MESSAGES.chartHint}</figcaption>
+      <figcaption className="mt-1 text-note text-sub-strong">{BODY_MESSAGES.chartHint}</figcaption>
     </figure>
   );
 }
