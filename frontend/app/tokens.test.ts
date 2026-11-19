@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 // A13-5・V-08: 文字サイズ・注記の色は globals.css の CSS 変数（トークン）で決める。各画面の置き換えは後の束
 const css = readFileSync(join(__dirname, 'globals.css'), 'utf8');
-const value = (name: string) => new RegExp(`${name}:\s*([^;]+);`).exec(css)?.[1].trim();
+const value = (name: string) => new RegExp(`${name}:\\s*([^;]+);`).exec(css)?.[1].trim();
 
 describe('文字のトークン', () => {
   it('画面見出しは 28px', () => expect(value('--text-page-title')).toBe('28px'));
