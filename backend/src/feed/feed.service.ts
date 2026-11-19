@@ -166,9 +166,11 @@ export class FeedService {
     const result = new Map<string, FeedStamp[]>();
     if (ids.length === 0) return result;
     const rows = await this.db
-      .select({ id: reactions.id, recordId: reactions.recordId, userId: reactions.userId, stampKey: reactions.stampKey })
+      .select({ id: reactions.id, recordId: reactions.recordId, userId: reactions.userId, userName: users.name, stampKey: reactions.stampKey })
       .from(reactions)
-      .where(inArray(reactions.recordId, ids));
+      .innerJoin(users, eq(users.id, reactions.userId))
+      .where(inArray(reactions.recordId, ids))
+      .orderBy(asc(reactions.createdAt), asc(reactions.id));
     for (const recordId of new Set(rows.map((r) => r.recordId))) {
       const of = rows.filter((r) => r.recordId === recordId);
       const list: FeedStamp[] = summarizeStamps(of, userId);

@@ -88,7 +88,7 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       author: { id: string; name: string };
       exerciseNames: string[];
       run?: { distanceM: number; durationS: number };
-      stamps: Array<{ stampKey: string; count: number; mine: string | null }>;
+      stamps: Array<{ stampKey: string; count: number; mine: string | null; by: Array<{ id: string; name: string }> }>;
       commentCount: number;
     }>;
     nextCursor: string | null;
@@ -288,6 +288,8 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
         ['clap', 1, false],
       ]);
       expect(asA2.stamps[0].mine).toBe(mineId);
+      // 押した人（A04-2）。押した順に、名前が付く（自分も入る）
+      expect(asA2.stamps.map((s) => s.by.map((u) => u.name))).toEqual([['A2', 'A3'], ['A3']]);
       expect(asA2.commentCount).toBe(2);
     });
 
@@ -692,10 +694,12 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       await stamp(a2, rec, 'fire');
       await stamp(a2, rec, 'nice');
       const res = await get(a1, `/records/${rec}/reactions`).expect(200);
-      expect(res.body.items).toEqual([
+      expect(res.body.items).toMatchObject([
         { stampKey: 'nice', count: 1, mine: null },
         { stampKey: 'fire', count: 2, mine: mineFire },
       ]);
+      // 押した人は押した順（fire は A1 → A2）
+      expect(res.body.items.map((s: { by: Array<{ name: string }> }) => s.by.map((u) => u.name))).toEqual([['A2'], ['A1', 'A2']]);
       // 仲間から見ると、mine は逆になる
       const other = await get(a2, `/records/${rec}/reactions`).expect(200);
       expect(other.body.items.find((s: { stampKey: string }) => s.stampKey === 'nice').mine).not.toBeNull();
@@ -718,7 +722,7 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       const rec = await createRecord(a1, 'rest');
       await stamp(a2, rec, 'rest_slow');
       const res = await get(a1, `/records/${rec}/reactions`).expect(200);
-      expect(res.body.items).toEqual([{ stampKey: 'rest_slow', count: 1, mine: null }]);
+      expect(res.body.items).toMatchObject([{ stampKey: 'rest_slow', count: 1, mine: null, by: [{ name: 'A2' }] }]);
     });
 
     // 見られない記録は、無い記録と同じ 404（存在を教えない）。testing-design.md 6章の表

@@ -102,18 +102,18 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | メソッド | パス | 説明 | 備考 |
 |----------|------|------|------|
 | GET | `/week?date=YYYY-MM-DD` | その日を含む週の、自分の7マス。応答は `{ weekStart, days: [{ date, status }] × 7 }`（月曜から日曜の順。`status` は `rec`・`rest`・`none`） | 週は月曜〜日曜（日本時間）。同じ日に記録と休みがあれば `rec`。`date` が実在する日付でない・無いときは 400 |
-| GET | `/feed?weekStart=YYYY-MM-DD&cursor=` | 同じグループの足跡（新しい順・20件ずつ）と、その週の合計 | `weekStart` は必須で、その日を含む週（月曜〜日曜）を返す（水曜を渡しても月曜に直す）。応答は `{ weekStart, items, nextCursor, totals }`。`items` の1件は `id`・`kind`・`recordedAt`・`localDate`・`author`（`id`・`name`・`avatar`）・`exerciseNames`（筋トレの種目名。重複なし）・`run`（ランだけ）・`stamps`（付いたものだけ。`stampKey`・`count`・`mine`＝自分のスタンプの id か `null`）・`commentCount`・`isNew`（新着のときだけ `true`。下の `/feed/unread` と同じ基準で、仲間の新しい記録と、仲間の新しいスタンプ・コメントが付いた自分の記録）。`totals` は `recordedUserCount`（筋トレかランを記録した人。休みだけの人は数えない）・`totalVolumeKg`・`totalDistanceM`（ページに関係なく週全体）。**自分の記録も含む**。グループに入っていなければ 200 で `items` は空・`totals` は 0。`weekStart` が日付でない・`cursor` が壊れていれば 400 |
+| GET | `/feed?weekStart=YYYY-MM-DD&cursor=` | 同じグループの足跡（新しい順・20件ずつ）と、その週の合計 | `weekStart` は必須で、その日を含む週（月曜〜日曜）を返す（水曜を渡しても月曜に直す）。応答は `{ weekStart, items, nextCursor, totals }`。`items` の1件は `id`・`kind`・`recordedAt`・`localDate`・`author`（`id`・`name`・`avatar`）・`exerciseNames`（筋トレの種目名。重複なし）・`run`（ランだけ）・`stamps`（付いたものだけ。`stampKey`・`count`・`mine`＝自分のスタンプの id か `null`・`by`＝押した人の `{ id, name }`。押した順・自分も入る。A04-2）・`commentCount`・`isNew`（新着のときだけ `true`。下の `/feed/unread` と同じ基準で、仲間の新しい記録と、仲間の新しいスタンプ・コメントが付いた自分の記録）。`totals` は `recordedUserCount`（筋トレかランを記録した人。休みだけの人は数えない）・`totalVolumeKg`・`totalDistanceM`（ページに関係なく週全体）。**自分の記録も含む**。グループに入っていなければ 200 で `items` は空・`totals` は 0。`weekStart` が日付でない・`cursor` が壊れていれば 400 |
 | GET | `/feed/unread` | 仲間タブに新着があるか（F4。下のタブの点） | 応答は `{ hasNew }`。基準は `users.feed_seen_at`（一度も見ていなければ登録した時刻）。新着＝①同じグループの**自分以外の人**の記録で基準より後に作られたもの（`created_at` で見る。前の週の日付であとから記録したものも入る）②**自分の記録**に自分以外の人が基準より後に付けたスタンプ・コメント。週は区切らない。グループに入っていなければ（②が無い限り）`false` |
 | POST | `/feed/seen` | 仲間タブを見た（F4） | `users.feed_seen_at` を今（DB の `now()`）にする。204。何度呼んでもよい。`GET /feed` を読んだだけでは進まない（画面が最初のページを読めたときに1回送る） |
 | GET | `/me/heatmap?weekStart=YYYY-MM-DD` | その週の部位ごとのセット数 | F-12 |
-| GET | `/me/stats?date=YYYY-MM-DD` | 記録をくわしく。応答は `{ today, calendar: [{ date, status }] × 365, month: { month, activeDays, restDays, totalWeightKg, runDistanceM }, weekly: [{ weekStart, totalWeightKg, runDistanceM }] × 12, stamps: [{ key, earned }] × 13 }`。`date` は今日（日本時間）。自分の記録だけを全期間から日ごとにまとめる（共通の関数 `common/stats.ts`）。不正な `date` は 400 | F-20・F-22・F-26・F-27・F-29 |
+| GET | `/me/stats?date=YYYY-MM-DD` | 記録をくわしく。応答は `{ today, calendar: [{ date, status }] × 365, week・month・year: { activeDays, restDays, totalWeightKg, runDistanceM }（month は `month` も持つ。週＝今週の月曜〜今日・月＝1日〜今日・年＝calendar と同じ365日。画面の週・月・年の切替に合わせて見せる。A08-5）, weekly: [{ weekStart, totalWeightKg, runDistanceM }] × 12, stamps: [{ key, earned }] × 13 }`。`date` は今日（日本時間）。自分の記録だけを全期間から日ごとにまとめる（共通の関数 `common/stats.ts`）。不正な `date` は 400 | F-20・F-22・F-26・F-27・F-29 |
 
 ### スタンプ・コメント（F-10）
 
 | メソッド | パス | 説明 | 備考 |
 |----------|------|------|------|
 | GET | `/records/{id}/comments` | その記録のコメント一覧。応答は `{ items: [{ id, recordId, body, createdAt, author }] }` | 古い順（`createdAt` の昇順・同時刻は `id` の昇順）・全件（仲間は最大5人なのでページ分けしない）。自分のコメントも入る。コメントが無ければ `items: []`。見られない記録（無い・別グループ・UUID でない）は 404 `RECORD_NOT_FOUND`（無い記録と同じ応答） |
-| GET | `/records/{id}/reactions` | その記録のスタンプの集計。応答は `{ items: [{ stampKey, count, mine }] }`（足跡 `/feed` の `stamps` と同じ形） | 付いたものだけ、スタンプの一覧の順。`mine` は自分が付けたスタンプの `id`（外すとき `DELETE` へ渡す。付けていなければ `null`）。スタンプが無ければ `items: []`。見られない記録は 404 `RECORD_NOT_FOUND` |
+| GET | `/records/{id}/reactions` | その記録のスタンプの集計。応答は `{ items: [{ stampKey, count, mine, by }] }`（足跡 `/feed` の `stamps` と同じ形。`by` は押した人 `{ id, name }` の配列・押した順） | 付いたものだけ、スタンプの一覧の順。`mine` は自分が付けたスタンプの `id`（外すとき `DELETE` へ渡す。付けていなければ `null`）。スタンプが無ければ `items: []`。見られない記録は 404 `RECORD_NOT_FOUND` |
 | POST | `/records/{id}/reactions` | スタンプを付ける（`id`・`stampKey`）。応答は `{ id, recordId, stampKey }` | **冪等**。同じ `id` の再送も、同じスタンプの別 `id` での二重付与も 200 で、付いているスタンプ（1回目の `id`）を返し1件のまま。`stampKey` は `nice`・`fire`・`clap`・`smile`（筋トレ・ラン用）と `rest_slow`・`rest_again`（休み用）だけで、ほかは 400。種類に合わないもの（休みに通常のスタンプ・筋トレ／ランに休み用）は 409 `RECORD_KIND_MISMATCH`。**自分の記録には付けられず 403 `FORBIDDEN`**（U11。スタンプは仲間からもらうもの）。見られない記録は 404 `RECORD_NOT_FOUND`、他の人のスタンプと同じ `id` は 404 `REACTION_NOT_FOUND` |
 | DELETE | `/records/{id}/reactions/{reactionId}` | 自分のスタンプを外す | 成功は 204。見られない記録は 404 `RECORD_NOT_FOUND`、その記録に無い・もう外した（二重削除）は 404 `REACTION_NOT_FOUND`、他の人のは 403 `FORBIDDEN` |
 | POST | `/records/{id}/comments` | コメントを付ける（`id`・`body` 1〜50字）。応答は `{ id, recordId, body, createdAt, author }` | **冪等**（同じ `id` の再送は 200 で1回目の内容）。空白だけは 400。見られない記録は 404 `RECORD_NOT_FOUND`、他の人のコメントと同じ `id` は 404 `COMMENT_NOT_FOUND`。本文はそのまま保存する |
@@ -340,4 +340,4 @@ testing-design.md が「書かれていない」と洗い出した振る舞い�
 | 記録をくわしく（自分タブの入口） | 記録のまとめ | 動詞の途中で切れた言い方をやめ、名前にした |
 | ヒートマップ | からだの図 | 体の図で、どこをきたえたかを見るものだと分かる言葉にした |
 
-ラストレップ（A06-2）・GPX（A07-7）は各束で対応済みのため、この束の対象外。バックエンドが返すエラー文（例: 「ルーティンは5つまでです」）は API 側の変更になるので、この束では触っていない（別の束で言葉をそろえる）。
+ラストレップ（A06-2）・GPX（A07-7）は各束で対応済みのため、この束の対象外。バックエンドが返すエラー文（例: 「ルーティンは5つまでです」）は API 側の変更になるので、この束では触っていない。→ 束 B17（#325）で「いつものメニューは5つまでです」などにそろえた。

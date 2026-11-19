@@ -75,6 +75,11 @@ export function describeItem(item: Pick<FeedItem, 'kind' | 'exerciseNames' | 'ru
 }
 
 // そのスタンプの現在の状態（付いた人の数・自分が付けているか）。誰も付けていなければ count 0
+// 足跡カードの「だれが押したか」（A04-2）。スタンプごとに「ナイス はなこ・あなた」の1行にする。自分は「あなた」。並びは押した順のまま
+export function stampWhoLines(stamps: readonly FeedStamp[], myId: string | undefined): string[] {
+  return stamps.filter((s) => s.by.length > 0).map((s) => `${STAMP_LABELS[s.stampKey]} ${s.by.map((u) => (u.id === myId ? 'あなた' : u.name)).join('・')}`);
+}
+
 export function stampState(stamps: readonly FeedStamp[], key: StampKey): { count: number; mine: string | null } {
   const found = stamps.find((s) => s.stampKey === key);
   return { count: found?.count ?? 0, mine: found?.mine ?? null };

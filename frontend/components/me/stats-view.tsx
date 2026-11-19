@@ -9,7 +9,7 @@ import { JapanMap } from '@/components/me/japan-map';
 import { useGetStats, type StatsResponse, type StatsWeek } from '@/lib/api/generated';
 import { formatDistance, formatMonthDay } from '@/lib/format';
 import { locateOnRoute, nextText, trekText } from '@/lib/japan-route';
-import { STAMP_LABEL, STATS_VIEWS, barRatios, buildGrid, weightEquivalent, type StatsView } from '@/lib/stats';
+import { STAMP_LABEL, STATS_VIEWS, barRatios, buildGrid, periodOf, weightEquivalent, type StatsView } from '@/lib/stats';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useRequireSession } from '@/lib/use-require-session';
 
@@ -22,6 +22,8 @@ const STATUS_TEXT = { rec: '記録あり', rest: 'おやすみ', none: '' } as c
 // 週・月・年のマス／今月の数字／週ごとのグラフ／スタンプ帳。連続日数・目標線・「あと◯」は出さない。休みは全期間で同じ紫
 export function StatsPage() {
   useRequireSession();
+  // 週・月・年の切替は、マスと下の数字で同じものを使う（A08-5）
+  const [view, setView] = useState<StatsView>('week');
   const stats = useGetStats({ date: toLocalDate(new Date()) });
   const data = stats.data?.status === 200 ? stats.data.data : null;
 
@@ -40,8 +42,8 @@ export function StatsPage() {
       <div className="space-y-4 px-4 pt-3 pb-10">
         {data ? (
           <>
-            <Calendar data={data} />
-            <MonthNumbers data={data} />
+            <Calendar data={data} view={view} onView={setView} />
+            <PeriodNumbers data={data} view={view} />
             <TrainingTabs data={data} />
             <Stamps data={data} />
           </>
@@ -55,8 +57,7 @@ export function StatsPage() {
   );
 }
 
-function Calendar({ data }: { data: StatsResponse }) {
-  const [view, setView] = useState<StatsView>('week');
+function Calendar({ data, view, onView }: { data: StatsResponse; view: StatsView; onView: (view: StatsView) => void }) {
   const cells = buildGrid(view, data.calendar, data.today);
   return (
     <section aria-labelledby="stats-cal" className="fl-slab px-4 py-3">
@@ -69,7 +70,7 @@ function Calendar({ data }: { data: StatsResponse }) {
             key={v.view}
             type="button"
             aria-pressed={view === v.view}
-            onClick={() => setView(v.view)}
+            onClick={() => onView(v.view)}
             className={cn(
               'min-h-11 flex-1 rounded-fl border-2 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
               view === v.view ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-white text-teal-dark',
@@ -116,27 +117,26 @@ function Calendar({ data }: { data: StatsResponse }) {
           </span>
         ))}
       </p>
-      <p className="mt-2 text-center text-note text-sub-strong">切り替わるのはこのマスだけです。下の数字は今月、グラフは週ごとです</p>
+      <p className="mt-2 text-center text-note text-sub-strong">下の数字も、選んだ期間に合わせて変わります。グラフは週ごとです</p>
     </section>
   );
 }
 
-function MonthNumbers({ data }: { data: StatsResponse }) {
-  const { month } = data;
-  const equivalent = weightEquivalent(month.totalWeightKg);
+// 週・月・年の切替に合わせた数字（A08-5）。見出しの下に、いつからいつまでかを出す
+function PeriodNumbers({ data, view }: { data: StatsResponse; view: StatsView }) {
+  const { heading, range, numbers } = periodOf(view, data);
+  const equivalent = weightEquivalent(numbers.totalWeightKg);
   return (
-    <section aria-labelledby="stats-month" className="fl-slab px-4 py-3">
-      <h2 id="stats-month" className="text-sm font-extrabold text-sub-strong">
-        {Number(month.month.slice(5))}月の数字
+    <section aria-labelledby="stats-period" className="fl-slab px-4 py-3">
+      <h2 id="stats-period" className="text-sm font-extrabold text-sub-strong">
+        {heading}
       </h2>
-      <p className="text-note text-sub-strong">
-        {formatMonthDay(`${month.month}-01`)}〜{formatMonthDay(data.today)}
-      </p>
+      <p className="text-note text-sub-strong">{range}</p>
       <dl className="mt-2 grid grid-cols-2 gap-3 text-center">
-        <Stat label="動いた日" value={month.activeDays} unit="日" />
-        <Stat label="おやすみ" value={month.restDays} unit="日" />
-        <Stat label="総重量" value={month.totalWeightKg} unit="kg" />
-        <Stat label="ラン" value={Math.round(month.runDistanceM / 100) / 10} unit="km" />
+        <Stat label="動いた日" value={numbers.activeDays} unit="日" />
+        <Stat label="おやすみ" value={numbers.restDays} unit="日" />
+        <Stat label="総重量" value={numbers.totalWeightKg} unit="kg" />
+        <Stat label="ラン" value={Math.round(numbers.runDistanceM / 100) / 10} unit="km" />
       </dl>
       {equivalent && <p className="mt-2 text-center text-sm font-bold">{equivalent}</p>}
     </section>

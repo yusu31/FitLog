@@ -5,6 +5,14 @@ import { RunDetail } from '../records/records.response.js';
 import { STAMP_KEYS, type StampKey } from './stamps.js';
 import { COMMENT_BODY_MAX, FEED_PAGE_SIZE } from './feed-input.js';
 
+export class StampUser {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ example: 'はなこ' })
+  name!: string;
+}
+
 export class FeedStamp {
   @ApiProperty({ enum: STAMP_KEYS })
   stampKey!: StampKey;
@@ -14,6 +22,9 @@ export class FeedStamp {
 
   @ApiProperty({ type: String, format: 'uuid', nullable: true, description: '自分が付けているときは、そのスタンプの id（外すときに DELETE /records/{id}/reactions/{reactionId} へ渡す）。付けていなければ null' })
   mine!: string | null;
+
+  @ApiProperty({ type: [StampUser], description: 'このスタンプを付けた人（押した順。自分も入る。同じグループの人だけ。A04-2）' })
+  by!: StampUser[];
 }
 
 export class FeedItem {

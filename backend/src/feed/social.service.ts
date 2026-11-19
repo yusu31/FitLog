@@ -157,9 +157,11 @@ export class SocialService {
     const record = await findVisibleRecord(this.db, userId, recordId);
     if (!record) throw recordNotFound();
     const rows = await this.db
-      .select({ id: reactions.id, userId: reactions.userId, stampKey: reactions.stampKey })
+      .select({ id: reactions.id, userId: reactions.userId, userName: users.name, stampKey: reactions.stampKey })
       .from(reactions)
-      .where(eq(reactions.recordId, record.id));
+      .innerJoin(users, eq(users.id, reactions.userId))
+      .where(eq(reactions.recordId, record.id))
+      .orderBy(asc(reactions.createdAt), asc(reactions.id));
     return { items: summarizeStamps(rows, userId) };
   }
 

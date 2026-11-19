@@ -24,7 +24,9 @@ function statsOf(over: Partial<StatsResponse> = {}): StatsResponse {
   return {
     today,
     calendar,
+    week: { activeDays: 2, restDays: 1, totalWeightKg: 800, runDistanceM: 5000 },
     month: { month: '2026-11', activeDays: 4, restDays: 1, totalWeightKg: 3500, runDistanceM: 12300 },
+    year: { activeDays: 40, restDays: 6, totalWeightKg: 42000, runDistanceM: 120000 },
     weekly: Array.from({ length: 12 }, (_, i) => ({ weekStart: `2026-08-${String(24 + i * 7).padStart(2, '0')}`, totalWeightKg: i * 100, runDistanceM: 0 })),
     stamps: STAMP_KEYS.map((key) => ({ key, earned: key === 'first-record' || key === 'weight-1t', earnedAt: key === 'first-record' ? '2026-11-03' : key === 'weight-1t' ? '2026-11-16' : null })),
     totalRunDistanceM: 12300,
@@ -54,10 +56,11 @@ function stubStats(body: unknown, status = 200) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('StatsPage（S-35 記録のまとめ）', () => {
-  it('今月の数字（動いた日・おやすみ・総重量・ラン）と、総重量の換算を出す', async () => {
+  it('月に切り替えると、今月の数字（動いた日・おやすみ・総重量・ラン）と、総重量の換算を出す', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
-    const section = (await screen.findByText('11月の数字')).closest('section')!;
+    await userEvent.setup().click(await screen.findByRole('button', { name: '月' }));
+    const section = screen.getByText('11月の数字').closest('section')!;
     expect(section).toHaveTextContent('4 日');
     expect(section).toHaveTextContent('1 日');
     expect(section).toHaveTextContent('3500 kg');
@@ -95,12 +98,30 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     expect(screen.getByTestId('stats-weekdays')).toHaveTextContent('上から月〜日'); // 年はマスが細かいので、読み方の一文
   });
 
-  it('A08-5: 上のマスだけが週・月・年で切り替わることを文で伝える。数字の見出しに期間（月初〜今日）を出す', async () => {
+  it('A08-5: 週・月・年を切り替えると、下の数字も同じ期間に変わる。見出しに期間（いつからいつまで）を出す', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
-    expect(await screen.findByText(/切り替わるのはこのマスだけ/)).toBeInTheDocument();
-    const section = screen.getByText('11月の数字').closest('section')!;
-    expect(section).toHaveTextContent('11/1〜11/12');
+    const user = userEvent.setup();
+    // 初期は週（今週＝月曜 11/9〜今日 11/12）
+    const week = (await screen.findByText('今週の数字')).closest('section')!;
+    expect(week).toHaveTextContent('11/9〜11/12');
+    expect(week).toHaveTextContent('2 日');
+    expect(week).toHaveTextContent('800 kg');
+    expect(week).toHaveTextContent('5 km');
+
+    await user.click(screen.getByRole('button', { name: '月' }));
+    const month = screen.getByText('11月の数字').closest('section')!;
+    expect(month).toHaveTextContent('11/1〜11/12');
+    expect(month).toHaveTextContent('3500 kg');
+    expect(screen.queryByText('今週の数字')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '年' }));
+    const year = screen.getByText('この1年の数字').closest('section')!;
+    expect(year).toHaveTextContent('11/13〜11/12'); // 365日ぶん（1年前の翌日から今日まで）
+    expect(year).toHaveTextContent('40 日');
+    expect(year).toHaveTextContent('42000 kg');
+    expect(year).toHaveTextContent('120 km');
+    expect(screen.queryByText(/切り替わるのはこのマスだけ/)).not.toBeInTheDocument();
   });
 
   it('A08-8: 筋トレ・ランの切替タブ。初期は筋トレ（総重量のグラフ）で、ランのグラフ・日本縦断は隠れている', async () => {
@@ -218,12 +239,14 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
   it('記録がまったく無くても、責めずに表示できる（換算は出ない・スタンプはすべてまだ）', async () => {
     stubStats(
       statsOf({
+        week: { activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 },
         month: { month: '2026-11', activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 },
+        year: { activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 },
         stamps: STAMP_KEYS.map((key) => ({ key, earned: false, earnedAt: null })),
       }),
     );
     renderWithQuery(<StatsPage />);
-    const section = (await screen.findByText('11月の数字')).closest('section')!;
+    const section = (await screen.findByText('今週の数字')).closest('section')!;
     expect(section.textContent).not.toMatch(/ぶん/);
   });
 

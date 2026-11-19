@@ -197,6 +197,19 @@ describe('FriendsView（S-20 仲間）', () => {
       expect(screen.queryByRole('button', { name: '招待リンクを作る' })).not.toBeInTheDocument();
     });
 
+    // A09-5: 作ったばかりのグループに自分の今週の記録（グループを作る前のものも）が並ぶのは仕様。1人の間は、そう一言で伝える
+    it('A09-5: 自分1人の間だけ、「いま見えているのは自分の記録」という一言を出す', async () => {
+      replies['GET /api/groups/current'] = [{ status: 200, body: { ...GROUP, members: [GROUP.members[0]] } }];
+      const { unmount } = renderView();
+      expect(await screen.findByText(/今はあなただけ。今週の記録は、グループを作る前のものもここに出ます/)).toBeInTheDocument();
+      unmount();
+
+      replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }];
+      renderView();
+      await screen.findByRole('heading', { name: '朝トレ部' });
+      expect(screen.queryByText(/今はあなただけ/)).not.toBeInTheDocument();
+    });
+
     it('招待・グループを出るは S-32 に移したので、ここには置かず、設定へのリンクだけ置く', async () => {
       renderView();
       await screen.findByRole('heading', { name: '朝トレ部' });

@@ -72,6 +72,8 @@ describe('記録をくわしく（結合: 本物の PostgreSQL・better-auth）'
     expect(res.body.calendar).toHaveLength(365);
     expect(res.body.calendar.every((c: { status: string }) => c.status === 'none')).toBe(true);
     expect(res.body.month).toEqual({ month: '2026-11', activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 });
+    expect(res.body.week).toEqual({ activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 });
+    expect(res.body.year).toEqual({ activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 });
     expect(res.body.weekly).toHaveLength(12);
     expect(res.body.stamps.every((s: { earned: boolean }) => !s.earned)).toBe(true);
     expect(res.body.totalRunDistanceM).toBe(0);
@@ -88,6 +90,9 @@ describe('記録をくわしく（結合: 本物の PostgreSQL・better-auth）'
     const at = (d: string) => res.body.calendar.find((c: { date: string }) => c.date === d).status;
     expect([at('2026-11-12'), at('2026-11-11'), at('2026-11-10'), at('2026-11-09')]).toEqual(['rec', 'rec', 'rest', 'none']);
     expect(res.body.month).toEqual({ month: '2026-11', activeDays: 2, restDays: 1, totalWeightKg: 1200, runDistanceM: 5000 });
+    // 週・年の切替に合わせた数字（A08-5）。この例は全部が今週・今月の中なので同じ数字になる
+    expect(res.body.week).toEqual({ activeDays: 2, restDays: 1, totalWeightKg: 1200, runDistanceM: 5000 });
+    expect(res.body.year).toEqual({ activeDays: 2, restDays: 1, totalWeightKg: 1200, runDistanceM: 5000 });
     expect(res.body.weekly[11]).toEqual({ weekStart: '2026-11-09', totalWeightKg: 1200, runDistanceM: 5000 });
     expect(res.body.totalRunDistanceM).toBe(5000); // 日本縦断（F-28）の累計
     const earned = res.body.stamps.filter((s: { earned: boolean }) => s.earned).map((s: { key: string }) => s.key);

@@ -278,21 +278,24 @@ export class StatsCalendarDay {
   status!: CellStatus;
 }
 
-export class StatsMonth {
-  @ApiProperty({ example: '2026-11', description: '今日を含む月（日本時間）' })
-  month!: string;
-
-  @ApiProperty({ minimum: 0, description: '今月、筋トレかランを記録した日の数' })
+// 週・月・年の切替に合わせて見せる数字（A08-5）。数える範囲は今日まで（今日より後の日は入らない）
+export class StatsPeriod {
+  @ApiProperty({ minimum: 0, description: 'その期間に、筋トレかランを記録した日の数' })
   activeDays!: number;
 
-  @ApiProperty({ minimum: 0, description: '今月、休みだけを記録した日の数（同じ日に記録があれば数えない）' })
+  @ApiProperty({ minimum: 0, description: 'その期間に、休みだけを記録した日の数（同じ日に記録があれば数えない）' })
   restDays!: number;
 
-  @ApiProperty({ minimum: 0, description: '今月の総重量（重量×回数の合計。kg。小数1桁）' })
+  @ApiProperty({ minimum: 0, description: 'その期間の総重量（重量×回数の合計。kg。小数1桁）' })
   totalWeightKg!: number;
 
-  @ApiProperty({ minimum: 0, description: '今月のランの合計距離（m）' })
+  @ApiProperty({ minimum: 0, description: 'その期間のランの合計距離（m）' })
   runDistanceM!: number;
+}
+
+export class StatsMonth extends StatsPeriod {
+  @ApiProperty({ example: '2026-11', description: '今日を含む月（日本時間）。数字は今月1日から今日まで' })
+  month!: string;
 }
 
 export class StatsWeek {
@@ -324,8 +327,14 @@ export class StatsResponse {
   @ApiProperty({ type: [StatsCalendarDay], description: '今日を最後にした365日分のマス（日付の昇順）。週・月・年の切替はこれを画面で切り出す' })
   calendar!: StatsCalendarDay[];
 
-  @ApiProperty({ type: StatsMonth })
+  @ApiProperty({ type: StatsPeriod, description: '今週（月曜から今日まで）の数字' })
+  week!: StatsPeriod;
+
+  @ApiProperty({ type: StatsMonth, description: '今月（1日から今日まで）の数字' })
   month!: StatsMonth;
+
+  @ApiProperty({ type: StatsPeriod, description: '年（calendar と同じ365日）の数字' })
+  year!: StatsPeriod;
 
   @ApiProperty({ type: [StatsWeek], description: '今週を最後にした直近12週（月曜の昇順）' })
   weekly!: StatsWeek[];
