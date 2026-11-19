@@ -15,15 +15,17 @@ export const stampFitsKind = (stampKey: StampKey, kind: 'workout' | 'run' | 'res
   (REST_STAMPS as readonly string[]).includes(stampKey) === (kind === 'rest');
 
 // 1つの記録に付いたスタンプの行を「スタンプごとの数」にまとめる。付いたものだけ、スタンプの一覧の順に並べる。
-// mine は自分が付けているスタンプの id（外すときに使う。付けていなければ null）。足跡（GET /feed）と一覧（GET /records/{id}/reactions）で同じ形にするため、ここに1つだけ置く
+// mine は自分が付けているスタンプの id（外すときに使う。付けていなければ null）。by は押した人（id と名前。rows の並び＝押した順のまま。A04-2）。足跡（GET /feed）と一覧（GET /records/{id}/reactions）で同じ形にするため、ここに1つだけ置く
 export const summarizeStamps = (
-  rows: ReadonlyArray<{ id: string; userId: string; stampKey: string }>,
+  rows: ReadonlyArray<{ id: string; userId: string; userName: string; stampKey: string }>,
   userId: string,
-): Array<{ stampKey: StampKey; count: number; mine: string | null }> => {
-  const list: Array<{ stampKey: StampKey; count: number; mine: string | null }> = [];
+): Array<{ stampKey: StampKey; count: number; mine: string | null; by: Array<{ id: string; name: string }> }> => {
+  const list: Array<{ stampKey: StampKey; count: number; mine: string | null; by: Array<{ id: string; name: string }> }> = [];
   for (const stampKey of STAMP_KEYS) {
     const same = rows.filter((r) => r.stampKey === stampKey);
-    if (same.length > 0) list.push({ stampKey, count: same.length, mine: same.find((r) => r.userId === userId)?.id ?? null });
+    if (same.length > 0) {
+      list.push({ stampKey, count: same.length, mine: same.find((r) => r.userId === userId)?.id ?? null, by: same.map((r) => ({ id: r.userId, name: r.userName })) });
+    }
   }
   return list;
 };

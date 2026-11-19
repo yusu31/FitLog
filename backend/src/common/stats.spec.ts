@@ -50,6 +50,30 @@ describe('month（今月の数字。F-26）', () => {
   });
 });
 
+describe('week・year（週・年の切替に合わせた数字。A08-5）', () => {
+  // 2026-11-12 は木曜。今週は 11-09（月）〜今日。年は calendar と同じ365日（2025-11-13〜2026-11-12）
+  const days = [
+    day('2026-11-08', { weightKg: 700 }), // 先週の日曜
+    day('2026-11-09', { weightKg: 300.04 }),
+    day('2026-11-10', { runM: 4000, maxRunM: 4000 }),
+    day('2026-11-11', { status: 'rest' }),
+    day('2026-11-13', { weightKg: 999 }), // 今日より後
+    day('2025-11-12', { weightKg: 50 }), // 365日の外
+    day('2025-11-13', { weightKg: 20 }), // 365日の最初の日
+  ];
+  it('week は今週の月曜から今日まで（先週の日曜・今日より後は入らない）', () => {
+    expect(buildStats(days, '2026-11-12').week).toEqual({ activeDays: 2, restDays: 1, totalWeightKg: 300, runDistanceM: 4000 });
+  });
+  it('year は calendar と同じ365日（範囲の外・今日より後は入らない）', () => {
+    expect(buildStats(days, '2026-11-12').year).toEqual({ activeDays: 4, restDays: 1, totalWeightKg: 1020, runDistanceM: 4000 });
+  });
+  it('何もなければすべて0', () => {
+    const zero = { activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 };
+    const r = buildStats([], '2026-11-12');
+    expect([r.week, r.year]).toEqual([zero, zero]);
+  });
+});
+
 describe('weekly（週ごとのグラフ。F-27）', () => {
   it('今週を最後に直近12週が、週の月曜の昇順で並ぶ', () => {
     const { weekly } = buildStats([], '2026-11-12');

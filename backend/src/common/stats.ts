@@ -17,10 +17,15 @@ export const STAMP_KEYS = [
 ] as const;
 export type StampKey = (typeof STAMP_KEYS)[number];
 
+// 期間（週・月・年）の数字。週・月・年の切替に合わせて画面が見せる（A08-5）
+export type PeriodNumbers = { activeDays: number; restDays: number; totalWeightKg: number; runDistanceM: number };
+
 export type StatsResult = {
   today: string;
   calendar: { date: string; status: CellStatus }[];
-  month: { month: string; activeDays: number; restDays: number; totalWeightKg: number; runDistanceM: number };
+  week: PeriodNumbers; // 今週（月曜〜今日）
+  month: { month: string } & PeriodNumbers; // 今月（1日〜今日）
+  year: PeriodNumbers; // calendar と同じ365日
   weekly: { weekStart: string; totalWeightKg: number; runDistanceM: number }[];
   stamps: { key: StampKey; earned: boolean; earnedAt: string | null }[]; // earnedAt＝初めて条件を満たした記録の日（未獲得は null）
   totalRunDistanceM: number; // 全期間の累計ラン距離（F-28 日本縦断）
@@ -36,15 +41,20 @@ export function buildStats(days: readonly DayAgg[], today: string): StatsResult 
     return { date, status: byDate.get(date)?.status ?? ('none' as CellStatus) };
   });
 
-  const monthKey = today.slice(0, 7);
-  const inMonth = days.filter((d) => d.date.startsWith(monthKey) && d.date <= today);
-  const month = {
-    month: monthKey,
-    activeDays: inMonth.filter((d) => d.status === 'rec').length,
-    restDays: inMonth.filter((d) => d.status === 'rest').length,
-    totalWeightKg: round1(inMonth.reduce((sum, d) => sum + d.weightKg, 0)),
-    runDistanceM: inMonth.reduce((sum, d) => sum + d.runM, 0),
+  // from〜today の日だけを足し合わせる（今日より後は数えない）
+  const numbersOf = (from: string): PeriodNumbers => {
+    const inRange = days.filter((d) => d.date >= from && d.date <= today);
+    return {
+      activeDays: inRange.filter((d) => d.status === 'rec').length,
+      restDays: inRange.filter((d) => d.status === 'rest').length,
+      totalWeightKg: round1(inRange.reduce((sum, d) => sum + d.weightKg, 0)),
+      runDistanceM: inRange.reduce((sum, d) => sum + d.runM, 0),
+    };
   };
+  const monthKey = today.slice(0, 7);
+  const month = { month: monthKey, ...numbersOf(`${monthKey}-01`) };
+  const week = numbersOf(weekStartOf(today));
+  const year = numbersOf(calendar[0].date);
 
   const thisWeek = weekStartOf(today);
   const weekly = Array.from({ length: WEEKLY_WEEKS }, (_, i) => {
@@ -89,5 +99,5 @@ export function buildStats(days: readonly DayAgg[], today: string): StatsResult 
     for (const key of STAMP_KEYS) if (rules[key] && !earnedAt.has(key)) earnedAt.set(key, d.date);
   }
 
-  return { today, calendar, month, weekly, stamps: STAMP_KEYS.map((key) => ({ key, earned: earnedAt.has(key), earnedAt: earnedAt.get(key) ?? null })), totalRunDistanceM: totalRun };
+  return { today, calendar, week, month, year, weekly, stamps: STAMP_KEYS.map((key) => ({ key, earned: earnedAt.has(key), earnedAt: earnedAt.get(key) ?? null })), totalRunDistanceM: totalRun };
 }

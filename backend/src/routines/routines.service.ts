@@ -11,7 +11,7 @@ import type { RoutineExercise, RoutineListResponse, RoutineResponse } from './ro
 const PG_UNIQUE_VIOLATION = '23505';
 
 const recordNotFound = () => new NotFoundException({ code: 'RECORD_NOT_FOUND', message: '記録が見つかりません', details: null });
-const routineNotFound = () => new NotFoundException({ code: 'ROUTINE_NOT_FOUND', message: 'ルーティンが見つかりません', details: null });
+const routineNotFound = () => new NotFoundException({ code: 'ROUTINE_NOT_FOUND', message: 'いつものメニューが見つかりません', details: null });
 
 // ルーティン（F3。docs/design.md 4章）。自分の筋トレの記録1件から、種目と回数・重さを写して保存する。見えるのは自分のものだけ
 @Injectable()
@@ -43,7 +43,7 @@ export class RoutinesService {
         const [record] = await tx.select({ userId: records.userId, kind: records.kind }).from(records).where(eq(records.id, input.recordId));
         if (!record || record.userId !== userId) throw recordNotFound();
         if (record.kind !== 'workout') {
-          throw new ConflictException({ code: 'RECORD_KIND_MISMATCH', message: '筋トレの記録だけをルーティンにできます', details: null });
+          throw new ConflictException({ code: 'RECORD_KIND_MISMATCH', message: '筋トレの記録だけをいつものメニューにできます', details: null });
         }
 
         const sets = await tx
@@ -52,12 +52,12 @@ export class RoutinesService {
           .where(eq(workoutSets.recordId, input.recordId))
           .orderBy(asc(workoutSets.createdAt), asc(workoutSets.setNo), asc(workoutSets.id));
         if (sets.length === 0) {
-          throw new ConflictException({ code: 'ROUTINE_EMPTY', message: 'セットの無い記録はルーティンにできません', details: null });
+          throw new ConflictException({ code: 'ROUTINE_EMPTY', message: 'セットの無い記録はいつものメニューにできません', details: null });
         }
 
         const [{ n }] = await tx.select({ n: count() }).from(routines).where(eq(routines.userId, userId));
         if (n >= ROUTINE_MAX) {
-          throw new ConflictException({ code: 'ROUTINE_LIMIT', message: `ルーティンは${ROUTINE_MAX}つまでです。使わないものを消してください`, details: null });
+          throw new ConflictException({ code: 'ROUTINE_LIMIT', message: `いつものメニューは${ROUTINE_MAX}つまでです。使わないものを消してください`, details: null });
         }
 
         const [routine] = await tx
@@ -69,7 +69,7 @@ export class RoutinesService {
       });
     } catch (err) {
       if (errorCode(err) === PG_UNIQUE_VIOLATION) {
-        throw new ConflictException({ code: 'ROUTINE_NAME_TAKEN', message: '同じ名前のルーティンがあります', details: null });
+        throw new ConflictException({ code: 'ROUTINE_NAME_TAKEN', message: '同じ名前のいつものメニューがあります', details: null });
       }
       throw err;
     }
