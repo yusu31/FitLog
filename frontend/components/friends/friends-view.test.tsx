@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { FriendsView } from './friends-view';
@@ -165,15 +165,13 @@ describe('FriendsView（S-20 仲間）', () => {
       replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }];
     });
 
-    it('人数・グループ名・メンバーを出し、自分には「あなた」を付ける', async () => {
+    // A09-6: メンバー一覧は設定のグループ画面に任せ、仲間タブには人数・名前と設定への入口1つだけ
+    it('人数とグループ名を出し、メンバー一覧は置かず、設定への入口は1つだけ', async () => {
       renderView();
       expect(await screen.findByRole('heading', { name: '朝トレ部' })).toBeInTheDocument();
-      const items = within(screen.getByRole('list', { name: 'メンバー' })).getAllByRole('listitem');
-      expect(items).toHaveLength(2);
-      expect(items[0]).toHaveTextContent('たろう');
-      expect(items[0]).toHaveTextContent('あなた');
-      expect(items[1]).toHaveTextContent('はなこ');
-      expect(items[1]).not.toHaveTextContent('あなた');
+      expect(screen.getByLabelText('いまの人数')).toHaveTextContent('2');
+      expect(screen.queryByRole('list', { name: 'メンバー' })).not.toBeInTheDocument();
+      expect(screen.getAllByRole('link', { name: /グループの設定/ })).toHaveLength(1);
     });
 
     // T-PEER-06（N6）: 仲間が自分1人の間だけ、仲間タブの上に招待のカードを出す（境界: 1人／2人）
