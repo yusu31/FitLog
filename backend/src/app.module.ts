@@ -3,6 +3,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { createAuth } from './auth/auth.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
+import { BodyModule } from './body/body.module.js';
 import { DB, Db, DbModule } from './db/db.module.js';
 import { ExportModule } from './export/export.module.js';
 import { ExercisesModule } from './exercises/exercises.module.js';
@@ -21,6 +22,7 @@ import { VideosModule } from './videos/videos.module.js';
     ExportModule,
     RecordsModule,
     RoutinesModule,
+    BodyModule,
     FeedModule,
     VideosModule,
     // 連携部品（@thallesp/nestjs-better-auth を 2.8.0 に固定。判断ログ 02-1-3）。
