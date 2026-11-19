@@ -3,6 +3,7 @@
 import { ListChecks, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { PageTitle } from '@/components/fitlog/app-shell';
+import { MyVideoGrid } from '@/components/video-grid/my-video-grid';
 import { useListRecords } from '@/lib/api/generated';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useAppSession } from '@/lib/use-app-session';
@@ -56,6 +57,8 @@ export function MeView() {
         {runHeavy && <WeekRunSection />}
 
         <HeatmapSection />
+
+        <MyVideoGrid />
 
         <RecordsList />
       </div>
