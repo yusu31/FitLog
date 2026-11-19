@@ -296,7 +296,9 @@ test('E1 アプリの中を見て回る（自分と仲間の足跡の詳細を�
   await t.click(tab(page, '仲間'), 'タブ「仲間」', settle);
   const self = page.locator('li').filter({ hasText: s.users.active.name }).filter({ has: page.getByRole('link', { name: 'くわしく見る' }) }).first();
   await t.click(self.getByRole('link', { name: 'くわしく見る' }), '自分の足跡の「くわしく見る」', settle);
-  await t.click(page.getByRole('link', { name: /にもどる$/ }).first(), '画面上の「仲間にもどる」', settle);
+  // 自分の足跡は自分用の詳細（from=me）で開くので、戻る先は「自分」タブ（#329）。仲間の足跡へ行くには仲間タブへ入り直す
+  await t.click(page.getByRole('link', { name: /にもどる$/ }).first(), '画面上の「にもどる」（自分タブへ）', settle);
+  await t.click(tab(page, '仲間'), 'タブ「仲間」', settle);
   await t.click(page.locator('li').filter({ hasText: 'ユウスケ' }).first().getByRole('link', { name: 'くわしく見る' }), '仲間（ユウスケ）の足跡の「くわしく見る」', settle);
   // 詳細画面には下タブが無いので、いったん戻ってから「自分」へ
   await t.click(page.getByRole('link', { name: /にもどる$/ }).first(), '画面上の「仲間にもどる」', settle);
