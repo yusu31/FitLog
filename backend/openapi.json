@@ -1901,6 +1901,43 @@
         ]
       }
     },
+    "/api/notifications": {
+      "get": {
+        "operationId": "listNotifications",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "お知らせの一覧（新しい順・直近30日・最大30件）と未読の数。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/notifications/seen": {
+      "post": {
+        "operationId": "markNotificationsSeen",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "基準を今にした"
+          }
+        },
+        "summary": "お知らせを見た。未読の基準を今にする。何度呼んでもよい",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
     "/api/records/{id}/video": {
       "post": {
         "operationId": "issueVideoUpload",
@@ -4160,6 +4197,103 @@
         "required": [
           "id",
           "body"
+        ]
+      },
+      "NotificationItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "stamp:6f1c0000-0000-4000-8000-000000000000",
+            "description": "種類:元の行の id。画面の一覧の key に使う"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "stamp",
+              "comment",
+              "friend_record",
+              "friend_joined"
+            ],
+            "description": "stamp=スタンプをもらった／comment=コメントをもらった／friend_record=仲間が記録した／friend_joined=仲間が加わった"
+          },
+          "at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "そのできごとの時刻（UTC）"
+          },
+          "unread": {
+            "type": "boolean",
+            "description": "最後にお知らせを開いた時刻より後なら true"
+          },
+          "actor": {
+            "description": "した人（自分以外・同じグループの人）",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberResponse"
+              }
+            ]
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "関係する記録（friend_joined は null）"
+          },
+          "recordKind": {
+            "type": "string",
+            "enum": [
+              "workout",
+              "run",
+              "rest"
+            ],
+            "nullable": true,
+            "description": "関係する記録の種類（friend_joined は null）"
+          },
+          "stampKey": {
+            "type": "string",
+            "enum": [
+              "nice",
+              "fire",
+              "clap",
+              "smile",
+              "rest_slow",
+              "rest_again"
+            ],
+            "nullable": true,
+            "description": "stamp のときだけ、押されたスタンプ"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "at",
+          "unread",
+          "actor",
+          "recordId",
+          "recordKind",
+          "stampKey"
+        ]
+      },
+      "NotificationListResponse": {
+        "type": "object",
+        "properties": {
+          "unreadCount": {
+            "type": "number",
+            "example": 3,
+            "description": "未読の数（一覧に載る範囲の中で数える。ベルの数字に使う）"
+          },
+          "items": {
+            "description": "新しい順。直近30日・最大30件。グループに入っていなければ空",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationItem"
+            }
+          }
+        },
+        "required": [
+          "unreadCount",
+          "items"
         ]
       },
       "CreateVideoUploadRequest": {

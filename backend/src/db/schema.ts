@@ -27,6 +27,8 @@ export const users = pgTable('users', {
   // 仲間タブの新着の印（F4）。最後に仲間タブを見た時刻。これより後に来た仲間の記録・自分の記録への反応が「新着」。
   // 一度も見ていなければ null（基準は登録した時刻）。端末ではなくサーバーに持つので、スマホと PC で同じ印になる
   feedSeenAt: timestamp('feed_seen_at', { withTimezone: true }),
+  // お知らせ（D7-3）の「見た」基準。最後にお知らせの一覧を開いた時刻。これより後のお知らせが未読。一度も開いていなければ null（基準は登録した時刻）
+  notificationsSeenAt: timestamp('notifications_seen_at', { withTimezone: true }),
   // からだ（B14a）。身長は本人だけが見える。ひとこと・よくやる運動・動きやすい時間帯は同じグループの仲間にも見える（すべて任意＝null）
   heightCm: numeric('height_cm', { precision: 4, scale: 1 }),
   bio: text('bio'),

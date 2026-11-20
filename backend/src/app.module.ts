@@ -10,6 +10,7 @@ import { ExercisesModule } from './exercises/exercises.module.js';
 import { FeedModule } from './feed/feed.module.js';
 import { GroupsModule } from './groups/groups.module.js';
 import { HealthController } from './health/health.controller.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 import { RecordsModule } from './records/records.module.js';
 import { RoutinesModule } from './routines/routines.module.js';
 import { VideosModule } from './videos/videos.module.js';
@@ -24,6 +25,7 @@ import { VideosModule } from './videos/videos.module.js';
     RoutinesModule,
     BodyModule,
     FeedModule,
+    NotificationsModule,
     VideosModule,
     // 連携部品（@thallesp/nestjs-better-auth を 2.8.0 に固定。判断ログ 02-1-3）。
     // 全 API を「ログイン必須」にする共通のガードを入れる。例外は @AllowAnonymous() を付けた道だけ。

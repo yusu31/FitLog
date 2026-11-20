@@ -1050,6 +1050,83 @@ export interface CreateCommentRequest {
 }
 
 /**
+ * stamp=スタンプをもらった／comment=コメントをもらった／friend_record=仲間が記録した／friend_joined=仲間が加わった
+ */
+export type NotificationItemKind = typeof NotificationItemKind[keyof typeof NotificationItemKind];
+
+
+export const NotificationItemKind = {
+  stamp: 'stamp',
+  comment: 'comment',
+  friend_record: 'friend_record',
+  friend_joined: 'friend_joined',
+} as const;
+
+/**
+ * 関係する記録の種類（friend_joined は null）
+ * @nullable
+ */
+export type NotificationItemRecordKind = typeof NotificationItemRecordKind[keyof typeof NotificationItemRecordKind] | null;
+
+
+export const NotificationItemRecordKind = {
+  workout: 'workout',
+  run: 'run',
+  rest: 'rest',
+} as const;
+
+/**
+ * stamp のときだけ、押されたスタンプ
+ * @nullable
+ */
+export type NotificationItemStampKey = typeof NotificationItemStampKey[keyof typeof NotificationItemStampKey] | null;
+
+
+export const NotificationItemStampKey = {
+  nice: 'nice',
+  fire: 'fire',
+  clap: 'clap',
+  smile: 'smile',
+  rest_slow: 'rest_slow',
+  rest_again: 'rest_again',
+} as const;
+
+export interface NotificationItem {
+  /** 種類:元の行の id。画面の一覧の key に使う */
+  id: string;
+  /** stamp=スタンプをもらった／comment=コメントをもらった／friend_record=仲間が記録した／friend_joined=仲間が加わった */
+  kind: NotificationItemKind;
+  /** そのできごとの時刻（UTC） */
+  at: string;
+  /** 最後にお知らせを開いた時刻より後なら true */
+  unread: boolean;
+  /** した人（自分以外・同じグループの人） */
+  actor: MemberResponse;
+  /**
+     * 関係する記録（friend_joined は null）
+     * @nullable
+     */
+  recordId: string | null;
+  /**
+     * 関係する記録の種類（friend_joined は null）
+     * @nullable
+     */
+  recordKind: NotificationItemRecordKind;
+  /**
+     * stamp のときだけ、押されたスタンプ
+     * @nullable
+     */
+  stampKey: NotificationItemStampKey;
+}
+
+export interface NotificationListResponse {
+  /** 未読の数（一覧に載る範囲の中で数える。ベルの数字に使う） */
+  unreadCount: number;
+  /** 新しい順。直近30日・最大30件。グループに入っていなければ空 */
+  items: NotificationItem[];
+}
+
+/**
  * 撮影できた形式。";codecs=..." は付けない基本の形式だけ
  */
 export type CreateVideoUploadRequestContentType = typeof CreateVideoUploadRequestContentType[keyof typeof CreateVideoUploadRequestContentType];
@@ -6385,6 +6462,217 @@ export const useDeleteComment = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getDeleteCommentMutationOptions(options), queryClient);
+    }
+
+export type listNotificationsResponse200 = {
+  data: NotificationListResponse
+  status: 200
+}
+
+export type listNotificationsResponseSuccess = (listNotificationsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type listNotificationsResponse = (listNotificationsResponseSuccess)
+
+export const getListNotificationsUrl = () => {
+
+
+
+
+  return `/api/notifications`
+}
+
+/**
+ * @summary お知らせの一覧（新しい順・直近30日・最大30件）と未読の数。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった
+ */
+export const listNotifications = async ( options?: RequestInit): Promise<listNotificationsResponse> => {
+
+  const res = await fetch(getListNotificationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listNotificationsResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as listNotificationsResponse
+}
+
+
+
+
+
+export const getListNotificationsQueryKey = () => {
+    return [
+    `/api/notifications`
+    ] as const;
+    }
+
+
+export const getListNotificationsQueryOptions = <TData = Awaited<ReturnType<typeof listNotifications>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotifications>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListNotificationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listNotifications>>> = ({ signal }) => listNotifications({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listNotifications>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListNotificationsQueryResult = NonNullable<Awaited<ReturnType<typeof listNotifications>>>
+export type ListNotificationsQueryError = unknown
+
+
+/** @summary お知らせの一覧（新しい順・直近30日・最大30件）と未読の数。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった */
+export function useListNotifications<TData = Awaited<ReturnType<typeof listNotifications>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotifications>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listNotifications>>,
+          TError,
+          Awaited<ReturnType<typeof listNotifications>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary お知らせの一覧（新しい順・直近30日・最大30件）と未読の数。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった */
+export function useListNotifications<TData = Awaited<ReturnType<typeof listNotifications>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotifications>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listNotifications>>,
+          TError,
+          Awaited<ReturnType<typeof listNotifications>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary お知らせの一覧（新しい順・直近30日・最大30件）と未読の数。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった */
+export function useListNotifications<TData = Awaited<ReturnType<typeof listNotifications>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotifications>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary お知らせの一覧（新しい順・直近30日・最大30件）と未読の数。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった */
+export function useListNotifications<TData = Awaited<ReturnType<typeof listNotifications>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotifications>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListNotificationsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type markNotificationsSeenResponse204 = {
+  data: void
+  status: 204
+}
+
+export type markNotificationsSeenResponseSuccess = (markNotificationsSeenResponse204) & {
+  headers: Headers;
+};
+;
+
+export type markNotificationsSeenResponse = (markNotificationsSeenResponseSuccess)
+
+export const getMarkNotificationsSeenUrl = () => {
+
+
+
+
+  return `/api/notifications/seen`
+}
+
+/**
+ * @summary お知らせを見た。未読の基準を今にする。何度呼んでもよい
+ */
+export const markNotificationsSeen = async ( options?: RequestInit): Promise<markNotificationsSeenResponse> => {
+
+  const res = await fetch(getMarkNotificationsSeenUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: markNotificationsSeenResponse['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as markNotificationsSeenResponse
+}
+
+
+
+
+
+export const getMarkNotificationsSeenMutationKey = () => ['markNotificationsSeen'] as const;
+
+export const getMarkNotificationsSeenMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markNotificationsSeen>>, TError,void, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof markNotificationsSeen>>, TError,void, TContext> => {
+
+const mutationKey = getMarkNotificationsSeenMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markNotificationsSeen>>, void> = () => {
+
+
+          return  markNotificationsSeen(fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkNotificationsSeenMutationResult = NonNullable<Awaited<ReturnType<typeof markNotificationsSeen>>>
+
+    export type MarkNotificationsSeenMutationError = unknown
+
+
+    /** @summary お知らせを見た。未読の基準を今にする。何度呼んでもよい */
+export const useMarkNotificationsSeen = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markNotificationsSeen>>, TError,void, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof markNotificationsSeen>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getMarkNotificationsSeenMutationOptions(options), queryClient);
     }
 
 export type issueVideoUploadResponse200 = {

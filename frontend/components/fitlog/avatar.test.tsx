@@ -9,8 +9,8 @@ describe('Avatar（顔の丸・D7-1）', () => {
     expect(circle).toHaveStyle({ width: '48px', height: '48px', backgroundColor: AVATAR_BG.coral });
     const img = circle.querySelector('img')!;
     expect(img).toHaveAttribute('src', '/characters/idle_0.png');
-    // 24px を 48px に拡大（2倍）→ 64px の画像は 128px・左上は（-20, -13）の2倍
-    expect(img).toHaveStyle({ width: '128px', left: '-40px', top: '-26px' });
+    // 32px を 48px に拡大（1.5倍）→ 64px の画像は 96px・左上は（-16, -10）の1.5倍
+    expect(img).toHaveStyle({ width: '96px', left: '-24px', top: '-15px' });
   });
 
   it('飾りなので読み上げから外す。知らない色は navy にする', () => {
