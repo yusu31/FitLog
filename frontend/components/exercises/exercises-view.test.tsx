@@ -104,6 +104,29 @@ describe('ExercisesView（S-11 種目を選ぶ）', () => {
     expect(mine).not.toHaveTextContent('押し上げる');
   });
 
+  // D3-2（案2）: 一覧の種目は「写真」で開始・終了の2枚が開く。じぶんの種目には写真ボタンが無い
+  it('写真ボタンで開始・終了の2枚が開閉し、じぶんの種目には無い', async () => {
+    replies['GET /api/exercises'] = [
+      {
+        status: 200,
+        body: [
+          { id: '00000000-0000-4000-8000-000000000001', name: 'ベンチプレス', bodyPart: 'chest', isCustom: false, trialWeightKg: 20, trialReps: 10 },
+          { id: 'e-mine', name: 'ケトルベルスイング', bodyPart: 'glutes', isCustom: true, trialWeightKg: null, trialReps: null },
+        ],
+      },
+    ];
+    renderView();
+    const btn = await screen.findByRole('button', { name: 'ベンチプレスのやり方の写真を見る' });
+    expect(screen.queryByRole('button', { name: /ケトルベルスイングのやり方/ })).not.toBeInTheDocument();
+    expect(screen.queryByAltText(/開始の姿勢/)).not.toBeInTheDocument();
+    await userEvent.click(btn);
+    expect(screen.getByAltText('ベンチプレス 開始の姿勢')).toHaveAttribute('src', '/exercises/01-0.jpg');
+    expect(screen.getByAltText('ベンチプレス 終了の姿勢')).toHaveAttribute('src', '/exercises/01-1.jpg');
+    expect(btn).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(btn);
+    expect(screen.queryByAltText(/開始の姿勢/)).not.toBeInTheDocument();
+  });
+
   // D3-1: 体の図の部位を押すと、部位のチップと同じ絞り込みになる。もう一度押すと「すべて」に戻る
   it('体の図の部位を押すと絞り込まれ、もう一度押すと戻る', async () => {
     renderView();
