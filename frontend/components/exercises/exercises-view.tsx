@@ -20,7 +20,10 @@ import {
   type BodyPart,
   type ExerciseResponse,
 } from '@/lib/api/generated';
+import { BodyFigure } from '@/components/me/body-figure';
 import { BODY_PART_LABEL, BODY_PART_ORDER } from '@/lib/body-parts';
+import { exerciseHint } from '@/lib/exercise-info';
+import { levelsOf } from '@/lib/heatmap';
 import { parseDayMode, withDay, type DayMode } from '@/lib/day-mode';
 import { useRequireSession } from '@/lib/use-require-session';
 
@@ -108,6 +111,19 @@ export function ExercisesView() {
             className="h-12 rounded-fl border-2 border-line bg-canvas pl-11 text-base font-bold text-fg placeholder:text-fg-muted"
           />
         </div>
+      </div>
+
+      {/* 体の図で部位を選ぶ（D3-1）。押すと、下の部位のチップと同じ絞り込みになる。もう一度押すと「すべて」 */}
+      <div className="mx-4 mt-3 flex justify-center gap-6 rounded-fl bg-surface py-2 shadow-soft">
+        {(['front', 'back'] as const).map((view) => (
+          <BodyFigure
+            key={view}
+            view={view}
+            size={84}
+            levels={levelsOf(part ? [{ bodyPart: part, sets: 99 }] : [])}
+            onPick={(p) => setPart((cur) => (cur === p ? null : p))}
+          />
+        ))}
       </div>
 
       <div role="group" aria-label="部位で絞る" className="flex flex-wrap gap-2 px-4 pt-3 pb-1">
@@ -229,6 +245,7 @@ export function ExercisesView() {
 
 function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse; day: DayMode; showTrial: boolean }) {
   const { id, name, bodyPart, isCustom, trialWeightKg, trialReps } = exercise;
+  const hint = exerciseHint(exercise);
   return (
     <Link
       href={withDay(`/record?exercise=${encodeURIComponent(id)}`, day)}
@@ -242,6 +259,7 @@ function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse;
       </span>
       <span className="min-w-0 flex-1 leading-tight">
         <span className="block truncate font-extrabold">{name}</span>
+        {hint && <span className="mt-0.5 line-clamp-2 block text-note font-bold text-fg-muted">{hint}</span>}
         {isCustom && <span className="fl-tag mt-0.5 bg-gold !py-0 !text-note !leading-4 text-fg">じぶんの</span>}
       </span>
       {showTrial && trialWeightKg !== null && trialReps !== null && (
