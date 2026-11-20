@@ -29,7 +29,7 @@ const todayCell = () => screen.getByRole('button', { name: /^11\/4 水曜 今日
 const yesterdayCell = () => screen.getByRole('button', { name: /^11\/3 火曜/ });
 
 // 7マスの読み上げ名。押せるマス（今日・きのう）は中のボタンが名前を持つ
-const cellName = (c: HTMLElement): string | null => c.getAttribute('aria-label') ?? c.querySelector('button')?.getAttribute('aria-label') ?? null;
+const cellName = (c: HTMLElement): string | null => c.getAttribute('aria-label') ?? c.querySelector('[data-testid="week-name"]')?.textContent ?? null;
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -763,7 +763,7 @@ describe('TodayView（B03 今日画面の直し）', () => {
       base({}, { '2026-11-02': 'rec', '2026-11-03': 'rest' });
       renderWithQuery(<TodayView />);
       const strip = await screen.findByRole('list', { name: '今週の7日' });
-      expect(within(strip).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['11/3 火曜 きのう おやすみ', '11/4 水曜 今日']);
+      expect(within(strip).getAllByRole('button').map((b) => b.querySelector('[data-testid="week-name"]')?.textContent)).toEqual(['11/3 火曜 きのう おやすみ', '11/4 水曜 今日']);
       expect(within(strip).queryAllByRole('link')).toHaveLength(0);
       for (const dot of within(strip).getAllByTestId('week-dot')) expect(dot.className).not.toContain('shadow');
     });

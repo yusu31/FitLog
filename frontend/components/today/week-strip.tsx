@@ -56,11 +56,14 @@ export function WeekStrip({
               {canSelect ? (
                 <button
                   type="button"
-                  aria-label={name}
                   aria-pressed={isSelected}
                   onClick={() => onSelect?.(day.date)}
                   className={cn(cellClass, 'outline-none focus-visible:ring-4 focus-visible:ring-gold')}
                 >
+                  {/* 名前は隠し文字で持つ（aria-label にすると、見えている「金 20」と食い違う規則 label-content-name-mismatch に当たる） */}
+                  <span data-testid="week-name" className="sr-only">
+                    {name}
+                  </span>
                   {body}
                 </button>
               ) : (
