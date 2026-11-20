@@ -1,4 +1,5 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { calls, installFakeApi, renderWithQuery } from '@/lib/test/fake-api';
 import { TabBar } from './tab-bar';
 
@@ -19,12 +20,33 @@ describe('TabBar（下のタブ）', () => {
     expect(screen.getByRole('link', { name: '自分' })).not.toHaveAttribute('aria-current');
   });
 
-  it('3つのタブが今日・仲間・自分の順で、それぞれの画面を指す', () => {
+  it('4つのタブが今日・仲間・まとめ・自分の順で、それぞれの画面を指す（＋はタブではなくボタン）', () => {
     pathname = '/today/';
     render(<TabBar />);
     const links = screen.getAllByRole('link');
-    expect(links.map((l) => l.textContent)).toEqual(['今日', '仲間', '自分']);
-    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/today', '/friends', '/me']);
+    expect(links.map((l) => l.textContent)).toEqual(['今日', '仲間', 'まとめ', '自分']);
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/today', '/friends', '/me/stats', '/me']);
+    expect(screen.getByRole('button', { name: '記録を始める' })).toBeInTheDocument();
+  });
+
+  it('/me/stats では「まとめ」だけが選択中で、「自分」は選択中にしない', () => {
+    pathname = '/me/stats/';
+    render(<TabBar />);
+    expect(screen.getByRole('link', { name: 'まとめ' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: '自分' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('＋を押すとシートが開き、行き先は筋トレ・ラン・おやすみ。CLOSE で閉じる', async () => {
+    pathname = '/today/';
+    const user = userEvent.setup();
+    render(<TabBar />);
+    await user.click(screen.getByRole('button', { name: '記録を始める' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('link', { name: '筋トレを記録' })).toHaveAttribute('href', '/exercises');
+    expect(within(dialog).getByRole('link', { name: 'ランを記録' })).toHaveAttribute('href', '/run');
+    expect(within(dialog).getByRole('link', { name: 'おやすみにする' })).toHaveAttribute('href', '/rest');
+    await user.click(within(dialog).getByRole('button', { name: '閉じる' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
 
