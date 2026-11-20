@@ -237,8 +237,8 @@ function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse;
         'transition-transform active:translate-y-0.5 focus-visible:ring-4 focus-visible:ring-teal/40 motion-reduce:transition-none',
       )}
     >
-      <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-teal-light text-sm font-extrabold text-teal-deep">
-        {BODY_PART_LABEL[bodyPart].slice(0, 1)}
+      <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-teal-light text-note leading-none font-extrabold tracking-tighter text-teal-deep">
+        {BODY_PART_LABEL[bodyPart]}
       </span>
       <span className="min-w-0 flex-1 leading-tight">
         <span className="block truncate font-extrabold">{name}</span>

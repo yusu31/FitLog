@@ -165,6 +165,13 @@ body {
   html {
     @apply font-sans;
   }
+  /* 見出しの途中で切れて「仲/間」のように分かれないよう、行の長さをそろえ、文節で改行する（対応していない環境では今のまま） */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    word-break: auto-phrase;
+  }
 }
 
 /* FitLog の部品（docs/screen-design.md 6章「文字と部品」） */

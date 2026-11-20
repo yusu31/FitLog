@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
+import { Segmented } from '@/components/ui/segmented';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getGetMyProfileQueryKey, useSetMyProfile, type ProfileResponse } from '@/lib/api/generated';
@@ -11,22 +12,13 @@ import { ACTIVE_OPTIONS, BIO_MAX, BODY_MESSAGES, FAVORITE_OPTIONS } from '@/lib/
 
 type Choice<T extends string> = { value: T; label: string };
 
-function RadioRow<T extends string>({ legend, name, options, value, onChange }: { legend: string; name: string; options: readonly Choice<T>[]; value: T | null; onChange: (v: T | null) => void }) {
+function RadioRow<T extends string>({ legend, options, value, onChange }: { legend: string; options: readonly Choice<T>[]; value: T | null; onChange: (v: T | null) => void }) {
+  // 「答えない」は、選んでいる値をもう一度押すと外れる形ではなく、専用の選択肢として並べる
+  const all = [...options, { value: '', label: BODY_MESSAGES.none }] as const;
   return (
     <fieldset className="space-y-2">
       <legend className="text-sm font-extrabold">{legend}</legend>
-      <div className="flex flex-wrap gap-2">
-        {options.map((o) => (
-          <label key={o.value} className="flex min-h-11 items-center gap-2 rounded-fl border-2 border-teal-light px-3 text-sm font-bold has-[:checked]:border-teal-dark has-[:checked]:bg-teal-light">
-            <input type="radio" name={name} value={o.value} checked={value === o.value} onChange={() => onChange(o.value)} className="size-4" />
-            {o.label}
-          </label>
-        ))}
-        <label className="flex min-h-11 items-center gap-2 rounded-fl border-2 border-line px-3 text-sm font-bold text-sub-strong has-[:checked]:border-teal-dark">
-          <input type="radio" name={name} value="" checked={value === null} onChange={() => onChange(null)} className="size-4" />
-          {BODY_MESSAGES.none}
-        </label>
-      </div>
+      <Segmented legend={legend} options={all as unknown as readonly Choice<string>[]} value={value ?? ''} onChange={(v) => onChange(v === '' ? null : (v as T))} />
     </fieldset>
   );
 }
@@ -65,8 +57,8 @@ export function ProfileForm({ initial }: { initial: ProfileResponse }) {
         <Input id="profile-bio" value={bio} maxLength={BIO_MAX} onChange={(e) => setBio(e.target.value)} className="h-11 bg-white" />
         <p className="text-note text-sub-strong">{BODY_MESSAGES.bioHint}</p>
       </div>
-      <RadioRow legend={BODY_MESSAGES.favoriteLegend} name="favorite" options={FAVORITE_OPTIONS} value={favorite} onChange={setFavorite} />
-      <RadioRow legend={BODY_MESSAGES.activeLegend} name="active" options={ACTIVE_OPTIONS} value={active} onChange={setActive} />
+      <RadioRow legend={BODY_MESSAGES.favoriteLegend} options={FAVORITE_OPTIONS} value={favorite} onChange={setFavorite} />
+      <RadioRow legend={BODY_MESSAGES.activeLegend} options={ACTIVE_OPTIONS} value={active} onChange={setActive} />
       <ThickButton type="submit" size="sm" className="w-full" disabled={save.isPending}>
         {save.isPending ? BODY_MESSAGES.saving : BODY_MESSAGES.save}
       </ThickButton>
