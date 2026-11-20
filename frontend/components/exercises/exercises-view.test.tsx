@@ -87,6 +87,36 @@ describe('ExercisesView（S-11 種目を選ぶ）', () => {
     expect(screen.getByLabelText('読み込み中')).toBeInTheDocument();
   });
 
+  // D3-2: 初心者が名前だけで分からない問題。一覧の種目（固定の ID）には一言説明が付き、じぶんの種目には付かない
+  it('一覧の種目には一言説明が付き、じぶんの種目には付かない', async () => {
+    replies['GET /api/exercises'] = [
+      {
+        status: 200,
+        body: [
+          { id: '00000000-0000-4000-8000-000000000001', name: 'ベンチプレス', bodyPart: 'chest', isCustom: false, trialWeightKg: 20, trialReps: 10 },
+          { id: 'e-mine', name: 'ケトルベルスイング', bodyPart: 'glutes', isCustom: true, trialWeightKg: null, trialReps: null },
+        ],
+      },
+    ];
+    renderView();
+    expect(await screen.findByText(/バーを胸から押し上げる/)).toBeInTheDocument();
+    const mine = screen.getByRole('link', { name: /ケトルベルスイング/ });
+    expect(mine).not.toHaveTextContent('押し上げる');
+  });
+
+  // D3-1: 体の図の部位を押すと、部位のチップと同じ絞り込みになる。もう一度押すと「すべて」に戻る
+  it('体の図の部位を押すと絞り込まれ、もう一度押すと戻る', async () => {
+    renderView();
+    await screen.findByRole('link', { name: /ベンチプレス/ });
+    const chest = document.querySelector('[data-testid="body-front"] [data-part="chest"]') as SVGElement;
+    await userEvent.click(chest);
+    expect(screen.getByRole('button', { name: '胸で絞る' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('link', { name: /スクワット/ })).not.toBeInTheDocument();
+    await userEvent.click(chest);
+    expect(screen.getByRole('button', { name: 'すべて' })).toHaveAttribute('aria-pressed', 'true');
+    expect((await screen.findAllByRole('link', { name: /スクワット/ })).length).toBeGreaterThan(0);
+  });
+
   it('読み込めなかったときは、責めない文言で知らせる', async () => {
     replies['GET /api/exercises'] = [{ status: 500, body: {} }];
     renderView();
