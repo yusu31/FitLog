@@ -51,7 +51,7 @@ export function RecordMemo({ recordId, note, rpe }: { recordId: string; note?: s
         <h2 id="memo-heading" className="font-extrabold">
           {M.heading}
         </h2>
-        <p className="text-note text-sub">{M.onlyMe}</p>
+        <p className="text-note text-fg-subtle">{M.onlyMe}</p>
       </div>
       <form onSubmit={onSubmit} className="space-y-3">
         <div className="space-y-2">
@@ -64,17 +64,17 @@ export function RecordMemo({ recordId, note, rpe }: { recordId: string; note?: s
                 aria-pressed={level === v}
                 onClick={() => setLevel(level === v ? null : v)}
                 className={`flex size-11 items-center justify-center rounded-fl border-2 text-base font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40 ${
-                  level === v ? 'border-teal-dark bg-teal-dark text-white' : 'border-line bg-face text-ink'
+                  level === v ? 'border-teal-dark bg-teal-dark text-white' : 'border-line bg-canvas text-fg'
                 }`}
               >
                 {v}
               </button>
             ))}
           </div>
-          <ul aria-label="きつさの目安" className="space-y-0.5 text-note text-sub-strong">
+          <ul aria-label="きつさの目安" className="space-y-0.5 text-note text-fg-muted">
             {RPE_GUIDE.map((g) => (
               <li key={g.value}>
-                <span className="fl-num font-extrabold text-ink">{g.value}</span> {g.text}
+                <span className="fl-num font-extrabold text-fg">{g.value}</span> {g.text}
               </li>
             ))}
           </ul>
@@ -90,20 +90,20 @@ export function RecordMemo({ recordId, note, rpe }: { recordId: string; note?: s
             rows={3}
             placeholder={M.notePlaceholder}
             onChange={(e) => setText(e.target.value)}
-            className="w-full rounded-fl border-2 border-line bg-white px-3 py-2 text-base outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            className="w-full rounded-fl border-2 border-line bg-surface px-3 py-2 text-base outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           />
         </div>
         {message &&
           (message.kind === 'ok' ? (
-            <p role="status" className="rounded-fl bg-teal-light px-4 py-3 text-sm font-bold text-ink">
+            <p role="status" className="rounded-fl bg-teal-light px-4 py-3 text-sm font-bold text-fg">
               {message.text}
             </p>
           ) : (
-            <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+            <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
               {message.text}
             </p>
           ))}
-        {!online && <p className="text-note text-sub-strong">{M.offline}</p>}
+        {!online && <p className="text-note text-fg-muted">{M.offline}</p>}
         <ThickButton type="submit" size="sm" className="w-full" disabled={!online || update.isPending}>
           {M.save}
         </ThickButton>

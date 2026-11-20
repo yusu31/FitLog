@@ -30,7 +30,7 @@ export type VideoGridProps = {
 
 export function VideoGrid({ items, layout, locked = false, onSelect }: VideoGridProps) {
   if (items.length === 0) {
-    return <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{VIDEO_GRID_MESSAGES[layout === 'strip' ? 'emptyStrip' : 'emptyGrid']}</p>;
+    return <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{VIDEO_GRID_MESSAGES[layout === 'strip' ? 'emptyStrip' : 'emptyGrid']}</p>;
   }
   return (
     <ul
@@ -46,14 +46,14 @@ export function VideoGrid({ items, layout, locked = false, onSelect }: VideoGrid
   );
 }
 
-const TILE = 'relative block aspect-[3/4] w-full overflow-hidden rounded-fl bg-face';
+const TILE = 'relative block aspect-[3/4] w-full overflow-hidden rounded-fl bg-canvas';
 
 // 見られない動画。中身は取りに行かない（ぼかした枠だけ）。責めずに「1本撮ると見られる」とだけ伝える
 function LockedTile({ item }: { item: VideoGridItem }) {
   return (
     <div role="img" aria-label={`${item.label}: ${VIDEO_GRID_MESSAGES.locked}`} className={TILE}>
       <div aria-hidden="true" className="absolute inset-0 bg-line blur-md" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-center text-note font-bold text-sub-strong">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-center text-note font-bold text-fg-muted">
         <Lock aria-hidden="true" className="size-5" />
         <span>{VIDEO_GRID_MESSAGES.locked}</span>
       </div>
@@ -70,7 +70,7 @@ function OpenTile({ item, onSelect }: { item: VideoGridItem; onSelect?: (id: str
   const playable = Boolean(src) && !failed;
   return (
     <button type="button" onClick={() => onSelect?.(item.id)} aria-label={VIDEO_GRID_MESSAGES.open(item.label)} className={cn(TILE, 'text-left')}>
-      {isPending ? <div aria-busy="true" className="absolute inset-0 animate-pulse bg-face" /> : null}
+      {isPending ? <div aria-busy="true" className="absolute inset-0 animate-pulse bg-canvas" /> : null}
       {playable ? (
         <video
           src={`${src}#t=0.1`}
@@ -84,9 +84,9 @@ function OpenTile({ item, onSelect }: { item: VideoGridItem; onSelect?: (id: str
         />
       ) : null}
       {!isPending && !playable ? (
-        <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-note font-bold text-sub-strong">{VIDEO_GRID_MESSAGES.unavailable}</span>
+        <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-note font-bold text-fg-muted">{VIDEO_GRID_MESSAGES.unavailable}</span>
       ) : null}
-      {playable ? <Play aria-hidden="true" className="absolute right-1 top-1 size-4 fill-white text-white drop-shadow" /> : null}
+      {playable ? <Play aria-hidden="true" className="absolute right-1 top-1 size-4 fill-surface text-white drop-shadow" /> : null}
       <Caption label={item.label} />
     </button>
   );

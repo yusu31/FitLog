@@ -47,7 +47,7 @@ export function InviteView() {
   if (preview.isPending) {
     return (
       <Frame>
-        <div aria-busy="true" aria-label="読み込み中" className="h-40 animate-pulse rounded-fl bg-face" />
+        <div aria-busy="true" aria-label="読み込み中" className="h-40 animate-pulse rounded-fl bg-canvas" />
       </Frame>
     );
   }
@@ -67,8 +67,8 @@ export function InviteView() {
   const full = memberCount >= memberMax;
   return (
     <Frame>
-      <section className="fl-stripes relative overflow-hidden rounded-fl bg-coral px-[18px] pt-3.5 pb-4 text-ink shadow-[0_4px_0_var(--color-coral-dark)]">
-        <span className="fl-tag bg-gold text-ink">招待</span>
+      <section className="fl-stripes relative overflow-hidden rounded-fl bg-coral px-[18px] pt-3.5 pb-4 text-fg shadow-[0_4px_0_var(--color-coral-dark)]">
+        <span className="fl-tag bg-gold text-fg">招待</span>
         <p className="mt-3 text-sm font-bold">グループに招待されています</p>
         <h1 className="mt-1 text-page-title font-extrabold break-all">{groupName}</h1>
         <p className="mt-2 flex items-baseline gap-1.5 leading-none">
@@ -129,12 +129,12 @@ function JoinActions({ token, encoded }: { token: string; encoded: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn, token]);
 
-  if (isPending) return <div aria-busy="true" aria-label="読み込み中" className="h-14 animate-pulse rounded-fl bg-face" />;
+  if (isPending) return <div aria-busy="true" aria-label="読み込み中" className="h-14 animate-pulse rounded-fl bg-canvas" />;
 
   if (!session) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-sub">参加するには、登録かログインが必要です。終わると、この画面に戻ります。</p>
+        <p className="text-sm text-fg-subtle">参加するには、登録かログインが必要です。終わると、この画面に戻ります。</p>
         <Link
           href={withNext('/signup', next)}
           onClick={() => rememberJoinIntent(token)}
@@ -146,7 +146,7 @@ function JoinActions({ token, encoded }: { token: string; encoded: string }) {
         <Link
           href={withNext('/login', next)}
           onClick={() => rememberJoinIntent(token)}
-          className="fl-thick flex min-h-14 items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-white text-lg font-extrabold tracking-wider text-teal-dark [--thick:#b8e3e4] [&_svg]:size-5"
+          className="fl-thick flex min-h-14 items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-surface text-lg font-extrabold tracking-wider text-brand [--thick:#b8e3e4] [&_svg]:size-5"
         >
           <LogIn aria-hidden />
           ログインして参加
@@ -157,15 +157,15 @@ function JoinActions({ token, encoded }: { token: string; encoded: string }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-sub">
-        <span className="font-extrabold text-ink">{session.user.name}</span> さんとして参加します。1人が入れるグループは1つです。
+      <p className="text-sm text-fg-subtle">
+        <span className="font-extrabold text-fg">{session.user.name}</span> さんとして参加します。1人が入れるグループは1つです。
       </p>
       <ThickButton onClick={onJoin} disabled={accept.isPending}>
         <Users aria-hidden />
         {accept.isPending ? '参加しています…' : '参加する'}
       </ThickButton>
       {error && (
-        <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+        <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {error}
         </p>
       )}
@@ -176,8 +176,8 @@ function JoinActions({ token, encoded }: { token: string; encoded: string }) {
 // タブの無い全画面（docs/screen-design.md 1章「タブの無い画面は全画面で表示する」）
 function Frame({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh bg-[#e9ecef]">
-      <main className="mx-auto flex min-h-dvh max-w-[430px] flex-col gap-4 bg-white px-4 pt-8 pb-10">{children}</main>
+    <div className="min-h-dvh bg-line">
+      <main className="mx-auto flex min-h-dvh max-w-[430px] flex-col gap-4 bg-canvas px-4 pt-8 pb-10">{children}</main>
     </div>
   );
 }
@@ -191,13 +191,13 @@ function Problem({ title, children, paste = true }: { title: string; children: R
         </span>
         <div>
           <h1 className="text-page-title font-extrabold">{title}</h1>
-          <p className="mt-1 text-sm text-sub">{children}</p>
+          <p className="mt-1 text-sm text-fg-subtle">{children}</p>
         </div>
       </section>
       {paste && <PasteInvite />}
       <Link
         href="/friends"
-        className="flex min-h-11 items-center justify-center text-sm font-extrabold text-teal-dark underline underline-offset-4"
+        className="flex min-h-11 items-center justify-center text-sm font-extrabold text-brand underline underline-offset-4"
       >
         仲間タブへ
       </Link>

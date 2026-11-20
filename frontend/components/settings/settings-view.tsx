@@ -3,13 +3,15 @@
 import { ChevronLeft, ChevronRight, Info, LogOut, UserRound, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useState, useSyncExternalStore, type ReactNode } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { ThickButton } from '@/components/fitlog/thick-button';
+import { Segmented } from '@/components/ui/segmented';
 import { AddToHome } from './add-to-home';
 import { DeleteAccount } from './delete-account';
 import { ExportRecords } from './export-records';
 import { InlineNameEdit } from './inline-name-edit';
+import { readTheme, saveTheme, subscribeTheme, THEME_OPTIONS, type ThemeMode } from '@/lib/theme';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { authClient } from '@/lib/auth-client';
 import { clearCachedUser } from '@/lib/session-cache';
@@ -26,6 +28,7 @@ export function SettingsView() {
   const { data: session } = useAppSession();
   const group = useGetCurrentGroup({ query: { enabled: signedIn } });
   const [error, setError] = useState<string | null>(null);
+  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => 'light' as ThemeMode);
 
   async function onSignOut() {
     setError(null);
@@ -48,7 +51,7 @@ export function SettingsView() {
         <Link
           href="/me"
           aria-label="自分へ戻る"
-          className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
@@ -59,7 +62,7 @@ export function SettingsView() {
         {user && <InlineNameEdit key={user.name} initialName={user.name} email={user.email} />}
 
         <section aria-labelledby="settings-list-heading">
-          <h2 id="settings-list-heading" className="pb-2 text-note font-bold tracking-widest text-sub">
+          <h2 id="settings-list-heading" className="pb-2 text-note font-bold tracking-widest text-fg-subtle">
             設定
           </h2>
           <ul className="space-y-2">
@@ -72,12 +75,12 @@ export function SettingsView() {
                   <UserRound aria-hidden className="size-5" />
                 </RowIcon>
                 <span className="min-w-0 flex-1 truncate font-extrabold">アカウントの設定</span>
-                <ChevronRight aria-hidden className="size-5 shrink-0 text-sub" />
+                <ChevronRight aria-hidden className="size-5 shrink-0 text-fg-subtle" />
               </Link>
             </li>
             <li>
               {groupLabel === null ? (
-                <div aria-busy="true" aria-label="グループを読み込み中" className="h-16 animate-pulse rounded-fl bg-face" />
+                <div aria-busy="true" aria-label="グループを読み込み中" className="h-16 animate-pulse rounded-fl bg-canvas" />
               ) : (
                 <Link
                   href="/settings/group"
@@ -87,10 +90,10 @@ export function SettingsView() {
                     <Users aria-hidden className="size-5" />
                   </RowIcon>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-note font-bold text-sub-strong">グループ</span>
+                    <span className="block text-note font-bold text-fg-muted">グループ</span>
                     <span className="block truncate font-extrabold">{groupLabel}</span>
                   </span>
-                  <ChevronRight aria-hidden className="size-5 shrink-0 text-sub" />
+                  <ChevronRight aria-hidden className="size-5 shrink-0 text-fg-subtle" />
                 </Link>
               )}
             </li>
@@ -103,10 +106,24 @@ export function SettingsView() {
                   <Info aria-hidden className="size-5" />
                 </RowIcon>
                 <span className="min-w-0 flex-1 truncate font-extrabold">クレジット</span>
-                <ChevronRight aria-hidden className="size-5 shrink-0 text-sub" />
+                <ChevronRight aria-hidden className="size-5 shrink-0 text-fg-subtle" />
               </Link>
             </li>
           </ul>
+        </section>
+
+        <section aria-labelledby="appearance-heading" className="space-y-2">
+          <h2 id="appearance-heading" className="text-note font-bold tracking-widest text-fg-subtle">
+            APPEARANCE
+          </h2>
+          <Segmented
+            legend="見た目"
+            options={THEME_OPTIONS}
+            value={theme}
+            onChange={(mode) => {
+              saveTheme(mode);
+            }}
+          />
         </section>
 
         <AddToHome />
@@ -119,7 +136,7 @@ export function SettingsView() {
             ログアウト
           </ThickButton>
           {error && (
-            <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+            <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
               {error}
             </p>
           )}
@@ -134,7 +151,7 @@ export function SettingsView() {
 function RowIcon({ children, muted }: { children: ReactNode; muted?: boolean }) {
   return (
     <span
-      className={`flex size-10 shrink-0 items-center justify-center rounded-full ${muted ? 'bg-face text-sub' : 'bg-teal-light text-teal-dark'}`}
+      className={`flex size-10 shrink-0 items-center justify-center rounded-full ${muted ? 'bg-canvas text-fg-subtle' : 'bg-teal-light text-brand'}`}
     >
       {children}
     </span>

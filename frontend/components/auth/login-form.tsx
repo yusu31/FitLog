@@ -50,9 +50,9 @@ export function LoginForm() {
         </div>
         <PasswordField label="パスワード" autoComplete="current-password" />
         {/* A01-6: 再設定の機能は作らない（要件）。管理者への連絡を案内する */}
-        <p className="text-sm text-sub">パスワードを忘れたら、グループの管理者に連絡してください</p>
+        <p className="text-sm text-fg-subtle">パスワードを忘れたら、グループの管理者に連絡してください</p>
         {error && (
-          <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+          <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
             {error}
           </p>
         )}
@@ -62,7 +62,7 @@ export function LoginForm() {
       </form>
       {/* A01-2: 新規登録は塗りのボタンとして、ログインの下に並べる */}
       <div className="flex flex-col gap-2">
-        <p className="text-center text-sm text-sub">はじめての方は</p>
+        <p className="text-center text-sm text-fg-subtle">はじめての方は</p>
         <AuthLinkButton href={withNext('/signup', next)}>新規登録</AuthLinkButton>
       </div>
     </AuthLayout>

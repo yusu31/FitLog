@@ -25,11 +25,11 @@ function FeedPage({ weekStart, cursor, isFirst = false }: { weekStart: string; c
   useMarkSeen(isFirst && !isPending && !isError && data?.status === 200);
 
   if (isPending) {
-    return <div aria-busy="true" aria-label="足跡を読み込み中" className="h-40 animate-pulse rounded-fl bg-face" />;
+    return <div aria-busy="true" aria-label="足跡を読み込み中" className="h-40 animate-pulse rounded-fl bg-canvas" />;
   }
   if (isError || !data || data.status !== 200) {
     return (
-      <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+      <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
         {FEED_MESSAGES.loadFailed}
       </p>
     );
@@ -45,10 +45,10 @@ function FeedPage({ weekStart, cursor, isFirst = false }: { weekStart: string; c
     <>
       {isFirst && <WeekTotals totals={totals} />}
       {isFirst && items.length === 0 && (
-        <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{FEED_MESSAGES.empty}</p>
+        <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{FEED_MESSAGES.empty}</p>
       )}
       {isFirst && allItems.length > 0 && items.length === 0 && (
-        <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{FRIENDS_TEXT.todayEmpty}</p>
+        <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{FRIENDS_TEXT.todayEmpty}</p>
       )}
       {items.length > 0 && (
         <ul aria-label="仲間の足跡" className="space-y-2">
@@ -95,7 +95,7 @@ function WeekTotals({ totals }: { totals: FeedTotals }) {
   const view = describeTotals(totals);
   return (
     <section aria-labelledby="week-totals-heading" className="fl-slab px-4 py-3">
-      <h2 id="week-totals-heading" className="text-sm font-extrabold text-sub-strong">
+      <h2 id="week-totals-heading" className="text-sm font-extrabold text-fg-muted">
         {FEED_MESSAGES.weekHeading}
       </h2>
       {view.empty ? (
@@ -105,11 +105,11 @@ function WeekTotals({ totals }: { totals: FeedTotals }) {
           <p className="mt-0.5 text-lg font-extrabold">{view.recorded}</p>
           <dl className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-sm font-bold">
             <div className="flex items-baseline gap-1.5">
-              <dt className="text-sub-strong">{FEED_MESSAGES.volumeLabel}</dt>
+              <dt className="text-fg-muted">{FEED_MESSAGES.volumeLabel}</dt>
               <dd className="fl-num text-lg">{view.volume}</dd>
             </div>
             <div className="flex items-baseline gap-1.5">
-              <dt className="text-sub-strong">{FEED_MESSAGES.distanceLabel}</dt>
+              <dt className="text-fg-muted">{FEED_MESSAGES.distanceLabel}</dt>
               <dd className="fl-num text-lg">{view.distance}</dd>
             </div>
           </dl>

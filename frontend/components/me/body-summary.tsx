@@ -11,15 +11,15 @@ export function BodySummary() {
   const data = body.data?.status === 200 ? body.data.data : null;
   if (!data) return null;
 
-  const link = 'text-sm font-extrabold text-teal-dark underline-offset-4 outline-none hover:underline focus-visible:ring-4 focus-visible:ring-teal/40';
+  const link = 'text-sm font-extrabold text-brand underline-offset-4 outline-none hover:underline focus-visible:ring-4 focus-visible:ring-teal/40';
   return (
     <section aria-labelledby="me-body" className="fl-slab space-y-2 px-4 py-3">
-      <h2 id="me-body" className="text-sm font-extrabold text-sub-strong">
+      <h2 id="me-body" className="text-sm font-extrabold text-fg-muted">
         {M.summaryTitle}
       </h2>
       {data.latest === null ? (
         <>
-          <p className="text-note text-sub-strong">{M.inviteNote}</p>
+          <p className="text-note text-fg-muted">{M.inviteNote}</p>
           <Link href="/me/body" className={`inline-flex min-h-11 items-center ${link}`}>
             {M.invite}
           </Link>
@@ -28,11 +28,11 @@ export function BodySummary() {
         <>
           <dl className="grid grid-cols-2 gap-2 text-center">
             <div>
-              <dt className="text-note font-bold text-sub-strong">{M.summaryAvg7}</dt>
+              <dt className="text-note font-bold text-fg-muted">{M.summaryAvg7}</dt>
               <dd className="text-xl font-extrabold">{data.avg7 === null ? '—' : `${data.avg7}kg`}</dd>
             </div>
             <div>
-              <dt className="text-note font-bold text-sub-strong">{M.summaryBmi}</dt>
+              <dt className="text-note font-bold text-fg-muted">{M.summaryBmi}</dt>
               <dd className="text-xl font-extrabold">{data.bmi ?? '—'}</dd>
             </div>
           </dl>

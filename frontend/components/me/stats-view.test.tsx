@@ -170,7 +170,7 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     const stamps = (await screen.findByText('スタンプ帳')).closest('section')!;
     const notYet = within(stamps).getByText('初めての5km').closest('li')!;
     expect(notYet.textContent).not.toContain('☆');
-    expect(notYet.className).toContain('text-sub-strong');
+    expect(notYet.className).toContain('text-fg-muted');
     expect(within(stamps).getByText('初めての記録').closest('li')!.textContent).toContain('★');
   });
 

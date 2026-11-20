@@ -89,7 +89,7 @@ export function ExercisesView() {
         <Link
           href="/today"
           aria-label="とじる"
-          className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <X aria-hidden className="size-6" />
         </Link>
@@ -98,14 +98,14 @@ export function ExercisesView() {
 
       <div className="px-4 pt-2">
         <div className="relative">
-          <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-sub" />
+          <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-fg-subtle" />
           <Input
             type="search"
             aria-label="種目を さがす"
             placeholder="種目を さがす"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-12 rounded-fl border-2 border-line bg-face pl-11 text-base font-bold text-ink placeholder:text-sub-strong"
+            className="h-12 rounded-fl border-2 border-line bg-canvas pl-11 text-base font-bold text-fg placeholder:text-fg-muted"
           />
         </div>
       </div>
@@ -120,7 +120,7 @@ export function ExercisesView() {
             onClick={() => setPart(o.value)}
             className={cn(
               'min-h-11 shrink-0 rounded-full border-2 px-4 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-              part === o.value ? 'border-teal-dark bg-teal-dark text-white' : 'border-line bg-white text-sub-strong',
+              part === o.value ? 'border-teal-dark bg-teal-dark text-white' : 'border-line bg-surface text-fg-muted',
             )}
           >
             {o.label}
@@ -129,7 +129,7 @@ export function ExercisesView() {
       </div>
 
       <div role="status" aria-live="polite" className="px-4">
-        {added && <p className="mt-3 rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-ink">「{added}」を 追加したよ</p>}
+        {added && <p className="mt-3 rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-fg">「{added}」を 追加したよ</p>}
       </div>
 
       {adding && (
@@ -148,19 +148,19 @@ export function ExercisesView() {
       {loading ? (
         <div aria-busy="true" aria-label="読み込み中" className="space-y-2 px-4 pt-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-14 animate-pulse rounded-fl bg-face" />
+            <div key={i} className="h-14 animate-pulse rounded-fl bg-canvas" />
           ))}
         </div>
       ) : isError || !exercises ? (
-        <p role="alert" className="mx-4 mt-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="mx-4 mt-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           読み込めませんでした。電波の良い所で開き直してください
         </p>
       ) : groups.length === 0 ? (
         <div className="px-4 pt-6 text-center">
-          <p className="font-bold text-sub-strong">
+          <p className="font-bold text-fg-muted">
             {q ? `「${query.trim()}」は 見つかりませんでした` : '種目が まだありません'}
           </p>
-          <p className="mt-1 text-sm text-sub">ないときは、自分用に追加できます。</p>
+          <p className="mt-1 text-sm text-fg-subtle">ないときは、自分用に追加できます。</p>
           {q && !adding && (
             <ThickButton
               tone="teal"
@@ -179,7 +179,7 @@ export function ExercisesView() {
         <div className="space-y-1">
           {starters.length > 0 && (
             <section aria-labelledby="starter-exercises">
-              <h2 id="starter-exercises" className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-sub">
+              <h2 id="starter-exercises" className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-fg-subtle">
                 はじめての人向け
               </h2>
               <ul className="flex flex-col gap-2 px-4">
@@ -193,7 +193,7 @@ export function ExercisesView() {
           )}
           {recent.length > 0 && (
             <section aria-labelledby="recent-exercises">
-              <h2 id="recent-exercises" className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-sub">
+              <h2 id="recent-exercises" className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-fg-subtle">
                 最近やった種目
               </h2>
               <ul className="flex flex-col gap-2 px-4">
@@ -207,7 +207,7 @@ export function ExercisesView() {
           )}
           {groups.map(({ part, items }) => (
             <section key={part} aria-labelledby={`part-${part}`}>
-              <h2 id={`part-${part}`} className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-sub">
+              <h2 id={`part-${part}`} className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-fg-subtle">
                 {BODY_PART_LABEL[part]}
               </h2>
               <ul className="flex flex-col gap-2 px-4">
@@ -237,24 +237,24 @@ function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse;
         'transition-transform active:translate-y-0.5 focus-visible:ring-4 focus-visible:ring-teal/40 motion-reduce:transition-none',
       )}
     >
-      <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-teal-light text-note leading-none font-extrabold tracking-tighter text-teal-deep">
+      <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-teal-light text-note leading-none font-extrabold tracking-tighter text-brand">
         {BODY_PART_LABEL[bodyPart]}
       </span>
       <span className="min-w-0 flex-1 leading-tight">
         <span className="block truncate font-extrabold">{name}</span>
-        {isCustom && <span className="fl-tag mt-0.5 bg-gold !py-0 !text-note !leading-4 text-ink">じぶんの</span>}
+        {isCustom && <span className="fl-tag mt-0.5 bg-gold !py-0 !text-note !leading-4 text-fg">じぶんの</span>}
       </span>
       {showTrial && trialWeightKg !== null && trialReps !== null && (
         <span className="flex shrink-0 flex-col items-end leading-tight">
-          <span className="text-note font-bold text-sub-strong">目安</span>
-          <span className="fl-num text-lg text-ink">
+          <span className="text-note font-bold text-fg-muted">目安</span>
+          <span className="fl-num text-lg text-fg">
             {trialWeightKg}
-            <small className="mx-0.5 font-sans text-note font-bold not-italic text-sub">kg ×</small>
+            <small className="mx-0.5 font-sans text-note font-bold not-italic text-fg-subtle">kg ×</small>
             {trialReps}
           </span>
         </span>
       )}
-      <ChevronRight aria-hidden className="size-5 shrink-0 text-sub" />
+      <ChevronRight aria-hidden className="size-5 shrink-0 text-fg-subtle" />
     </Link>
   );
 }
@@ -308,7 +308,7 @@ function AddExerciseForm({
           onChange={(e) => setName(e.target.value)}
           className="h-12 rounded-fl border-2 text-base font-bold"
         />
-        <p className="text-note text-sub">{NAME_MAX}字まで。同じ名前は重ねて作れません。</p>
+        <p className="text-note text-fg-subtle">{NAME_MAX}字まで。同じ名前は重ねて作れません。</p>
       </div>
 
       <fieldset className="space-y-2">
@@ -323,7 +323,7 @@ function AddExerciseForm({
               className={cn(
                 'min-h-11 min-w-14 rounded-fl border-2 px-3 text-sm font-extrabold outline-none',
                 'focus-visible:ring-4 focus-visible:ring-teal/40',
-                bodyPart === part ? 'border-teal-dark bg-teal-dark text-white' : 'border-line bg-white text-ink',
+                bodyPart === part ? 'border-teal-dark bg-teal-dark text-white' : 'border-line bg-surface text-fg',
               )}
             >
               {BODY_PART_LABEL[part]}
@@ -333,7 +333,7 @@ function AddExerciseForm({
       </fieldset>
 
       {error && (
-        <p role="alert" className="rounded-fl bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+        <p role="alert" className="rounded-fl bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {error}
         </p>
       )}

@@ -140,7 +140,7 @@ export function RecordView() {
     return (
       <FullScreen>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-          <p className="font-bold text-sub-strong">種目が見つかりませんでした</p>
+          <p className="font-bold text-fg-muted">種目が見つかりませんでした</p>
           <Link href="/exercises" className="inline-flex min-h-11 items-center rounded-fl bg-teal-dark px-5 font-extrabold text-white">
             種目を選ぶ
           </Link>
@@ -240,7 +240,7 @@ export function RecordView() {
             type="button"
             aria-label="とじる"
             onClick={() => setClosing(true)}
-            className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             <X aria-hidden className="size-6" />
           </button>
@@ -248,7 +248,7 @@ export function RecordView() {
           <Link
             href={closeHref}
             aria-label="とじる"
-            className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             <X aria-hidden className="size-6" />
           </Link>
@@ -269,26 +269,26 @@ export function RecordView() {
         </div>
         <Sprite pose="train" size={64} />
       </header>
-      <p data-testid="set-progress" className="px-4 pt-1 text-note font-bold text-sub-strong">
+      <p data-testid="set-progress" className="px-4 pt-1 text-note font-bold text-fg-muted">
         {formatSetProgress(done, previous?.previous?.sets.length ?? 0)}
       </p>
       {rest && <RestTimerBar key={rest.startedAt} startedAt={rest.startedAt} initialSeconds={rest.seconds} onClose={() => setRest(null)} />}
 
       {day === 'yesterday' && (
-        <p role="status" className="mx-4 mt-2 rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">
+        <p role="status" className="mx-4 mt-2 rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-fg">
           {LATE_MESSAGES.banner}
         </p>
       )}
       {plan && (
         <nav aria-label={planHeading(plan)} className="mx-4 mt-2 rounded-fl bg-teal-light px-4 py-2">
-          <p className="text-note font-extrabold text-ink">{planHeading(plan)}</p>
+          <p className="text-note font-extrabold text-fg">{planHeading(plan)}</p>
           <ul className="mt-1 flex flex-wrap gap-1.5">
             {plan.items.map((i) => (
               <li key={i.exerciseId}>
                 <Link
                   href={withDay(`/record?exercise=${encodeURIComponent(i.exerciseId)}&plan=1`, day)}
                   aria-current={i.exerciseId === exerciseId ? 'page' : undefined}
-                  className={`inline-flex min-h-11 items-center rounded-full border-2 px-3 text-sm font-extrabold ${i.exerciseId === exerciseId ? 'border-teal-dark bg-white' : 'border-transparent bg-white/60'}`}
+                  className={`inline-flex min-h-11 items-center rounded-full border-2 px-3 text-sm font-extrabold ${i.exerciseId === exerciseId ? 'border-teal-dark bg-surface' : 'border-transparent bg-surface/60'}`}
                 >
                   {i.name}
                 </Link>
@@ -298,7 +298,7 @@ export function RecordView() {
         </nav>
       )}
       <div className="flex flex-1 flex-col items-center gap-4 px-4 pt-4 pb-6">
-        <p className="text-sm font-extrabold tracking-widest text-sub-strong">{RECORD_MESSAGES.setNow(setNo)}</p>
+        <p className="text-sm font-extrabold tracking-widest text-fg-muted">{RECORD_MESSAGES.setNow(setNo)}</p>
         <h1 className="text-center text-page-title leading-tight font-extrabold">{exercise.name}</h1>
 
         <div className="w-full space-y-3">
@@ -325,21 +325,21 @@ export function RecordView() {
             max={999}
             stepLabel="1回"
             clamp={clampReps}
-            color="text-teal-dark"
+            color="text-brand"
             onChange={(n) => setEdited({ ...draft, reps: n })}
             onStep={(dir) => setEdited({ ...draft, reps: stepReps(draft.reps, dir) })}
           />
         </div>
 
-        <p className="text-center text-note font-bold text-sub-strong">{RECORD_MESSAGES.typeHint}</p>
+        <p className="text-center text-note font-bold text-fg-muted">{RECORD_MESSAGES.typeHint}</p>
         {initial.restReturn && (
-          <p data-testid="rest-return-note" className="w-full rounded-fl bg-teal-light px-4 py-2 text-center text-sm font-bold text-ink">
+          <p data-testid="rest-return-note" className="w-full rounded-fl bg-teal-light px-4 py-2 text-center text-sm font-bold text-fg">
             {RECORD_MESSAGES.restReturn}
           </p>
         )}
 
         {previousPending ? (
-          <div aria-busy="true" aria-label="前回を読み込み中" className="h-24 w-full animate-pulse rounded-fl bg-face" />
+          <div aria-busy="true" aria-label="前回を読み込み中" className="h-24 w-full animate-pulse rounded-fl bg-canvas" />
         ) : (
           <GhostBar
             ghost={initial.ghost}
@@ -356,14 +356,14 @@ export function RecordView() {
             できた
           </ThickButton>
           {previousPending && (
-            <p id="done-reason" className="text-center text-note font-bold text-sub-strong">
+            <p id="done-reason" className="text-center text-note font-bold text-fg-muted">
               {RECORD_MESSAGES.waitPrevious}
             </p>
           )}
         </div>
 
         {notice && (
-          <p role="alert" className="w-full rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+          <p role="alert" className="w-full rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
             {notice}
           </p>
         )}
@@ -375,17 +375,17 @@ export function RecordView() {
             {/* 1セットで終えたいときの出口を最上段に（A03-2）。終えるのは今日の画面の「今日はここまで」 */}
             <Link
               href={closeHref}
-              className="fl-slab flex min-h-12 w-full flex-col items-center justify-center py-1 font-extrabold text-ink outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+              className="fl-slab flex min-h-12 w-full flex-col items-center justify-center py-1 font-extrabold text-fg outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
             >
               <span className="flex items-center gap-2 text-base">
                 <Moon aria-hidden className="size-5" />
                 {RECORD_MESSAGES.stop}
               </span>
-              <span className="text-note font-bold text-sub-strong">{RECORD_MESSAGES.stopHint}</span>
+              <span className="text-note font-bold text-fg-muted">{RECORD_MESSAGES.stopHint}</span>
             </Link>
             <Link
               href={nextExerciseId ? withDay(`/record?exercise=${encodeURIComponent(nextExerciseId)}`, day) : withDay('/exercises', day)}
-              className="fl-slab flex min-h-12 w-full items-center justify-center text-[15px] font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+              className="fl-slab flex min-h-12 w-full items-center justify-center text-[15px] font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
             >
               次の種目へ
             </Link>
@@ -401,7 +401,7 @@ export function RecordView() {
                   <Video aria-hidden />
                   {RECORD_MESSAGES.video}
                 </ThickButton>
-                <p id="video-hint" className="text-center text-note font-bold text-sub-strong">
+                <p id="video-hint" className="text-center text-note font-bold text-fg-muted">
                   {RECORD_MESSAGES.videoHint}
                 </p>
               </div>
@@ -417,12 +417,12 @@ export function RecordView() {
 
       <ResultSheet sheet={sheet} onDismiss={dismissSheet} />
       {closing && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-ink/50 p-4 sm:items-center">
-          <div role="alertdialog" aria-modal="true" aria-labelledby="close-title" aria-describedby="close-desc" className="w-full max-w-sm rounded-2xl bg-white p-5">
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-night/50 p-4 sm:items-center">
+          <div role="alertdialog" aria-modal="true" aria-labelledby="close-title" aria-describedby="close-desc" className="w-full max-w-sm rounded-2xl bg-surface p-5">
             <h2 id="close-title" className="text-xl font-extrabold">
               {RECORD_CLOSE_MESSAGES.title}
             </h2>
-            <p id="close-desc" className="mt-2 text-sm text-sub-strong">
+            <p id="close-desc" className="mt-2 text-sm text-fg-muted">
               {RECORD_CLOSE_MESSAGES.body}
             </p>
             <div className="mt-5 flex gap-2">
@@ -445,9 +445,9 @@ function Skeleton() {
   return (
     <FullScreen>
       <div aria-busy="true" aria-label="読み込み中" className="space-y-4 px-4 pt-8">
-        <div className="h-8 w-40 animate-pulse rounded-lg bg-face" />
-        <div className="h-40 animate-pulse rounded-fl bg-face" />
-        <div className="h-24 animate-pulse rounded-fl bg-face" />
+        <div className="h-8 w-40 animate-pulse rounded-lg bg-canvas" />
+        <div className="h-40 animate-pulse rounded-fl bg-canvas" />
+        <div className="h-24 animate-pulse rounded-fl bg-canvas" />
       </div>
     </FullScreen>
   );

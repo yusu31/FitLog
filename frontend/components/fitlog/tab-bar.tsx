@@ -29,7 +29,7 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
   const body = (unread.data?.status === 200 ? unread.data.data : undefined) as { newCount?: unknown } | undefined;
   const newCount = typeof body?.newCount === 'number' && body.newCount > 0 ? body.newCount : undefined;
   return (
-    <nav aria-label="メイン" className="fixed bottom-0 left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 border-t-2 border-line bg-white">
+    <nav aria-label="メイン" className="fixed bottom-0 left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 border-t-2 border-line bg-surface">
       <ul className="flex justify-around px-3 pt-1.5 pb-[max(10px,env(safe-area-inset-bottom))]">
         {TABS.map(({ href, label, Icon }) => {
           const active = isActive(pathname, href);
@@ -43,7 +43,7 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
                   'flex h-13 w-21 flex-col items-center justify-center gap-0.5 rounded-fl text-note font-bold outline-none',
                   'focus-visible:ring-4 focus-visible:ring-teal/40',
                   // 選択中の文字は濃いティール（ティール10%の背景の上で 4.5 以上）
-                  active ? 'bg-teal/10 text-teal-deep' : 'text-sub',
+                  active ? 'bg-teal/10 text-brand' : 'text-fg-subtle',
                 )}
               >
                 <span className="relative">
@@ -52,7 +52,7 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
                     <span
                       data-testid="friends-new-badge"
                       aria-hidden
-                      className="absolute -top-1.5 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral-strong px-1 text-note leading-none font-extrabold text-white ring-2 ring-white"
+                      className="absolute -top-1.5 -right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral-strong px-1 text-note leading-none font-extrabold text-white ring-2 ring-surface"
                     >
                       {newCount === undefined ? '新' : newCount > 9 ? '9+' : newCount}
                     </span>

@@ -86,7 +86,7 @@ export function InvitePanel({ full }: { full: boolean }) {
 
   return (
     <section aria-labelledby="invite-heading" className="pb-4">
-      <h2 id="invite-heading" className="flex items-center gap-1.5 pb-2 text-note font-bold tracking-widest text-sub">
+      <h2 id="invite-heading" className="flex items-center gap-1.5 pb-2 text-note font-bold tracking-widest text-fg-subtle">
         <Send aria-hidden className="size-4" />
         なかまを まねく
       </h2>
@@ -99,7 +99,7 @@ export function InvitePanel({ full }: { full: boolean }) {
             <label htmlFor="invite-url" className="text-sm font-extrabold">
               招待リンク
             </label>
-            <p className="text-note text-sub-strong [word-break:auto-phrase]">
+            <p className="text-note text-fg-muted [word-break:auto-phrase]">
               {formatJst(invitation.expiresAt)} まで使えます（7日間）。
               <br />
               閉じても、いつでも新しいリンクを作れます
@@ -110,7 +110,7 @@ export function InvitePanel({ full }: { full: boolean }) {
             readOnly
             value={invitation.url}
             onFocus={(e) => e.currentTarget.select()}
-            className="h-12 w-full rounded-lg border-2 border-input bg-white px-3 font-mono text-note text-ink"
+            className="h-12 w-full rounded-lg border-2 border-input bg-surface px-3 font-mono text-note text-fg"
           />
           {/* 送る（共有）を主にする。共有できない端末は LINE の共有 URL（A09-1） */}
           {typeof navigator.share === 'function' ? (
@@ -147,11 +147,11 @@ export function InvitePanel({ full }: { full: boolean }) {
         </ThickButton>
       )}
 
-      <p aria-live="polite" className="mt-2 text-sm font-bold text-teal-dark">
+      <p aria-live="polite" className="mt-2 text-sm font-bold text-brand">
         {notice}
       </p>
       {error && (
-        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {error}
         </p>
       )}

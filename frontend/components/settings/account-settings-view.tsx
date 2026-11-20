@@ -32,7 +32,7 @@ export function AccountSettingsView() {
         <Link
           href="/settings"
           aria-label="設定へ戻る"
-          className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
@@ -53,11 +53,11 @@ export function AccountSettingsView() {
 function NoticeText({ notice }: { notice: Notice }) {
   if (!notice) return null;
   return notice.kind === 'ok' ? (
-    <p role="status" className="rounded-lg bg-teal-light px-3 py-2 text-sm font-extrabold text-ink">
+    <p role="status" className="rounded-lg bg-teal-light px-3 py-2 text-sm font-extrabold text-fg">
       {notice.text}
     </p>
   ) : (
-    <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+    <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
       {notice.text}
     </p>
   );

@@ -13,7 +13,7 @@ import { STAMP_LABEL, STATS_VIEWS, barRatios, buildGrid, periodOf, weightEquival
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useRequireSession } from '@/lib/use-require-session';
 
-const STATUS_CLASS = { rec: 'bg-gold', rest: 'bg-grape', none: 'bg-face' } as const;
+const STATUS_CLASS = { rec: 'bg-gold', rest: 'bg-grape', none: 'bg-canvas' } as const;
 // 月曜始まり（マスの並びと同じ。A08-4）
 const WEEKDAY_HEAD = ['月', '火', '水', '木', '金', '土', '日'] as const;
 const STATUS_TEXT = { rec: '記録あり', rest: 'おやすみ', none: '' } as const;
@@ -33,7 +33,7 @@ export function StatsPage() {
         <Link
           href="/me"
           aria-label="自分へ戻る"
-          className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
@@ -48,7 +48,7 @@ export function StatsPage() {
             <Stamps data={data} />
           </>
         ) : (
-          <p className="rounded-lg bg-face px-3 py-6 text-center text-sm font-bold text-sub-strong">
+          <p className="rounded-lg bg-canvas px-3 py-6 text-center text-sm font-bold text-fg-muted">
             {stats.isError || stats.data ? '読み込めませんでした。電波の良い所で開き直してください' : '読み込み中…'}
           </p>
         )}
@@ -61,7 +61,7 @@ function Calendar({ data, view, onView }: { data: StatsResponse; view: StatsView
   const cells = buildGrid(view, data.calendar, data.today);
   return (
     <section aria-labelledby="stats-cal" className="fl-slab px-4 py-3">
-      <h2 id="stats-cal" className="text-sm font-extrabold text-sub-strong">
+      <h2 id="stats-cal" className="text-sm font-extrabold text-fg-muted">
         記録のあしあと
       </h2>
       <div role="group" aria-label="期間" className="mt-2 flex gap-2">
@@ -73,7 +73,7 @@ function Calendar({ data, view, onView }: { data: StatsResponse; view: StatsView
             onClick={() => onView(v.view)}
             className={cn(
               'min-h-11 flex-1 rounded-fl border-2 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-              view === v.view ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-white text-teal-dark',
+              view === v.view ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-surface text-brand',
             )}
           >
             {v.label}
@@ -81,11 +81,11 @@ function Calendar({ data, view, onView }: { data: StatsResponse; view: StatsView
         ))}
       </div>
       {view === 'year' ? (
-        <p data-testid="stats-weekdays" className="mt-3 text-note font-bold text-sub-strong">
+        <p data-testid="stats-weekdays" className="mt-3 text-note font-bold text-fg-muted">
           たては上から月〜日、よこは左から右へ週が進みます
         </p>
       ) : (
-        <p aria-hidden data-testid="stats-weekdays" className="mt-3 grid grid-cols-7 gap-1 text-center text-note font-bold text-sub-strong">
+        <p aria-hidden data-testid="stats-weekdays" className="mt-3 grid grid-cols-7 gap-1 text-center text-note font-bold text-fg-muted">
           {WEEKDAY_HEAD.map((w) => (
             <span key={w}>{w}</span>
           ))}
@@ -104,12 +104,12 @@ function Calendar({ data, view, onView }: { data: StatsResponse; view: StatsView
               key={c.date}
               data-status={c.status}
               aria-label={[formatMonthDay(c.date), c.date === data.today ? '今日' : '', STATUS_TEXT[c.status]].filter(Boolean).join(' ')}
-              className={cn('aspect-square', view === 'year' ? 'min-w-0 rounded-sm' : 'min-h-7 rounded-full', STATUS_CLASS[c.status], c.date === data.today && 'ring-2 ring-ink')}
+              className={cn('aspect-square', view === 'year' ? 'min-w-0 rounded-sm' : 'min-h-7 rounded-full', STATUS_CLASS[c.status], c.date === data.today && 'ring-2 ring-fg')}
             />
           ),
         )}
       </ol>
-      <p className="mt-2 flex flex-wrap justify-center gap-3 text-note text-sub-strong">
+      <p className="mt-2 flex flex-wrap justify-center gap-3 text-note text-fg-muted">
         {(['rec', 'rest', 'none'] as const).map((s) => (
           <span key={s} className="flex items-center gap-1">
             <i aria-hidden className={cn('size-3 rounded-full', STATUS_CLASS[s])} />
@@ -117,7 +117,7 @@ function Calendar({ data, view, onView }: { data: StatsResponse; view: StatsView
           </span>
         ))}
       </p>
-      <p className="mt-2 text-center text-note text-sub-strong">下の数字も、選んだ期間に合わせて変わります。グラフは週ごとです</p>
+      <p className="mt-2 text-center text-note text-fg-muted">下の数字も、選んだ期間に合わせて変わります。グラフは週ごとです</p>
     </section>
   );
 }
@@ -128,10 +128,10 @@ function PeriodNumbers({ data, view }: { data: StatsResponse; view: StatsView })
   const equivalent = weightEquivalent(numbers.totalWeightKg);
   return (
     <section aria-labelledby="stats-period" className="fl-slab px-4 py-3">
-      <h2 id="stats-period" className="text-sm font-extrabold text-sub-strong">
+      <h2 id="stats-period" className="text-sm font-extrabold text-fg-muted">
         {heading}
       </h2>
-      <p className="text-note text-sub-strong">{range}</p>
+      <p className="text-note text-fg-muted">{range}</p>
       <dl className="mt-2 grid grid-cols-2 gap-3 text-center">
         <Stat label="動いた日" value={numbers.activeDays} unit="日" />
         <Stat label="おやすみ" value={numbers.restDays} unit="日" />
@@ -145,8 +145,8 @@ function PeriodNumbers({ data, view }: { data: StatsResponse; view: StatsView })
 
 function Stat({ label, value, unit }: { label: string; value: number; unit: string }) {
   return (
-    <div className="rounded-lg bg-face py-2">
-      <dt className="text-note text-sub-strong">{label}</dt>
+    <div className="rounded-lg bg-canvas py-2">
+      <dt className="text-note text-fg-muted">{label}</dt>
       <dd className="m-0">
         <span className="fl-num text-3xl">{value}</span> <span className="text-sm font-bold">{unit}</span>
       </dd>
@@ -176,7 +176,7 @@ function TrainingTabs({ data }: { data: StatsResponse }) {
             onClick={() => setTab(key)}
             className={cn(
               'min-h-11 flex-1 rounded-fl border-2 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-              tab === key ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-white text-teal-dark',
+              tab === key ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-surface text-brand',
             )}
           >
             {label}
@@ -211,8 +211,8 @@ function WeeklyChart({
   if (start === -1) {
     return (
       <section aria-label={title} className="fl-slab px-4 py-3">
-        <h2 className="text-sm font-extrabold text-sub-strong">{title}</h2>
-        <p className="mt-2 rounded-lg bg-face px-3 py-6 text-center text-sm font-bold text-sub-strong">記録するとここに、週ごとのグラフが出ます</p>
+        <h2 className="text-sm font-extrabold text-fg-muted">{title}</h2>
+        <p className="mt-2 rounded-lg bg-canvas px-3 py-6 text-center text-sm font-bold text-fg-muted">記録するとここに、週ごとのグラフが出ます</p>
       </section>
     );
   }
@@ -222,7 +222,7 @@ function WeeklyChart({
   const slot = Math.min(40, 240 / shown.length);
   return (
     <section aria-label={title} className="fl-slab px-4 py-3">
-      <h2 className="text-sm font-extrabold text-sub-strong">{title}</h2>
+      <h2 className="text-sm font-extrabold text-fg-muted">{title}</h2>
       <svg viewBox={`0 0 ${shown.length * slot} 80`} role="img" aria-label={`${title}の棒グラフ`} className="mt-2 w-full">
         {/* 記録がない週も「空の箱」にならないよう、全部の週に薄い土台の線を引く（U8） */}
         {shown.map((w, i) => (
@@ -241,7 +241,7 @@ function WeeklyChart({
           />
         ))}
       </svg>
-      <p aria-hidden data-testid="chart-labels" className="flex justify-between text-note font-bold text-sub-strong">
+      <p aria-hidden data-testid="chart-labels" className="flex justify-between text-note font-bold text-fg-muted">
         <span>{formatMonthDay(shown[0].weekStart)}の週</span>
         <span>今週</span>
       </p>
@@ -253,7 +253,7 @@ function WeeklyChart({
         ))}
       </ul>
       {/* 目盛りの代わりに、いちばん多い週・今週の数字を見える文字で出す（U8） */}
-      <p aria-hidden className="mt-1 flex justify-between text-note font-bold text-sub-strong">
+      <p aria-hidden className="mt-1 flex justify-between text-note font-bold text-fg-muted">
         <span>最大 {format(Math.max(0, ...values))}</span>
         <span>右が今週 {format(values[values.length - 1] ?? 0)}</span>
       </p>
@@ -266,16 +266,16 @@ function JapanTrek({ totalMeters }: { totalMeters: number }) {
   const pos = locateOnRoute(totalMeters);
   return (
     <section aria-labelledby="stats-trek" className="fl-slab px-4 py-3">
-      <h2 id="stats-trek" className="text-sm font-extrabold text-sub-strong">
+      <h2 id="stats-trek" className="text-sm font-extrabold text-fg-muted">
         日本縦断
       </h2>
       <p className="mt-1 text-center" data-testid="trek-total">
-        <span className="text-note text-sub-strong">これまでの合計</span> <span className="fl-num text-3xl">{(totalMeters / 1000).toFixed(1)}</span> <span className="text-sm font-bold">km</span>
+        <span className="text-note text-fg-muted">これまでの合計</span> <span className="fl-num text-3xl">{(totalMeters / 1000).toFixed(1)}</span> <span className="text-sm font-bold">km</span>
       </p>
       <p className="mt-1 text-sm font-bold">{trekText(totalMeters, pos)}</p>
-      <p className="text-sm font-bold text-teal-dark">{nextText(pos)}</p>
+      <p className="text-sm font-bold text-brand">{nextText(pos)}</p>
       <JapanMap pos={pos} />
-      <p className="text-center text-note font-bold text-sub-strong">形と距離は目安です</p>
+      <p className="text-center text-note font-bold text-fg-muted">形と距離は目安です</p>
     </section>
   );
 }
@@ -289,7 +289,7 @@ function shortDate(date: string): string {
 function Stamps({ data }: { data: StatsResponse }) {
   return (
     <section aria-labelledby="stats-stamps" className="fl-slab px-4 py-3">
-      <h2 id="stats-stamps" className="text-sm font-extrabold text-sub-strong">
+      <h2 id="stats-stamps" className="text-sm font-extrabold text-fg-muted">
         スタンプ帳
       </h2>
       <ul className="mt-2 grid grid-cols-3 gap-2">
@@ -297,13 +297,13 @@ function Stamps({ data }: { data: StatsResponse }) {
           <li
             key={s.key}
             data-earned={s.earned}
-            className={cn('rounded-lg px-1 py-3 text-center text-note font-extrabold', s.earned ? 'bg-gold-light text-ink' : 'bg-face text-sub-strong')}
+            className={cn('rounded-lg px-1 py-3 text-center text-note font-extrabold', s.earned ? 'bg-gold-light text-fg' : 'bg-canvas text-fg-muted')}
           >
             <span aria-hidden className="block text-xl">
               {s.earned ? '★' : '○'}
             </span>
             {STAMP_LABEL[s.key]}
-            {s.earnedAt && <span className="mt-0.5 block text-note font-bold text-sub-strong">{shortDate(s.earnedAt)}</span>}
+            {s.earnedAt && <span className="mt-0.5 block text-note font-bold text-fg-muted">{shortDate(s.earnedAt)}</span>}
             <span className="sr-only">{s.earned ? '（獲得済み）' : '（まだ）'}</span>
           </li>
         ))}

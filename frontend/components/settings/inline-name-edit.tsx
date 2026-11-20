@@ -36,7 +36,7 @@ export function InlineNameEdit({ initialName, email }: { initialName: string; em
     <section aria-label="ユーザー情報" className="fl-slab space-y-2 px-4 py-3">
       <form onSubmit={onSubmit} className="flex items-end gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <label htmlFor="inline-name" className="text-note font-bold text-sub-strong">
+          <label htmlFor="inline-name" className="text-note font-bold text-fg-muted">
             表示名
           </label>
           <input
@@ -46,21 +46,21 @@ export function InlineNameEdit({ initialName, email }: { initialName: string; em
             required
             maxLength={MAX_NAME_LENGTH}
             defaultValue={initialName}
-            className="h-12 w-full rounded-lg border-2 border-input bg-white px-3 text-base font-extrabold text-ink"
+            className="h-12 w-full rounded-lg border-2 border-input bg-surface px-3 text-base font-extrabold text-fg"
           />
         </div>
         <ThickButton type="submit" size="sm" className="h-12" disabled={pending}>
           {pending ? '保存中…' : '名前を保存'}
         </ThickButton>
       </form>
-      {email && <p className="truncate text-sm text-sub-strong">{email}</p>}
+      {email && <p className="truncate text-sm text-fg-muted">{email}</p>}
       {notice &&
         (notice.kind === 'ok' ? (
-          <p role="status" className="rounded-lg bg-teal-light px-3 py-2 text-sm font-extrabold text-ink">
+          <p role="status" className="rounded-lg bg-teal-light px-3 py-2 text-sm font-extrabold text-fg">
             {notice.text}
           </p>
         ) : (
-          <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+          <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
             {notice.text}
           </p>
         ))}

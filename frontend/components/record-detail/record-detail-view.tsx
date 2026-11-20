@@ -73,7 +73,7 @@ export function RecordDetailView() {
       <Link
         href={back.href}
         aria-label={back.label}
-        className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
       >
         <ChevronLeft aria-hidden className="size-6" />
       </Link>
@@ -85,9 +85,9 @@ export function RecordDetailView() {
       <FullScreen>
         {header}
         <div aria-busy="true" aria-label="読み込み中" className="space-y-3 px-4 pt-4">
-          <div className="h-9 w-40 animate-pulse rounded-lg bg-face" />
-          <div className="h-24 animate-pulse rounded-fl bg-face" />
-          <div className="h-24 animate-pulse rounded-fl bg-face" />
+          <div className="h-9 w-40 animate-pulse rounded-lg bg-canvas" />
+          <div className="h-24 animate-pulse rounded-fl bg-canvas" />
+          <div className="h-24 animate-pulse rounded-fl bg-canvas" />
         </div>
       </FullScreen>
     );
@@ -96,7 +96,7 @@ export function RecordDetailView() {
     return (
       <FullScreen>
         {header}
-        <p role="status" className="px-4 pt-8 text-center font-bold text-sub-strong">
+        <p role="status" className="px-4 pt-8 text-center font-bold text-fg-muted">
           {DETAIL_MESSAGES.removing}
         </p>
       </FullScreen>
@@ -109,7 +109,7 @@ export function RecordDetailView() {
         {header}
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 pb-16 text-center">
           <h1 className="text-page-title font-extrabold">{DETAIL_MESSAGES.notFoundTitle}</h1>
-          <p className="text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.notFoundBody}</p>
+          <p className="text-sm font-bold text-fg-muted">{DETAIL_MESSAGES.notFoundBody}</p>
           <Link href={back.href} className="mt-3 inline-flex min-h-11 items-center rounded-fl bg-teal-dark px-5 font-extrabold text-white">
             {back.label}
           </Link>
@@ -121,7 +121,7 @@ export function RecordDetailView() {
     return (
       <FullScreen>
         {header}
-        <p role="alert" className="mx-4 mt-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="mx-4 mt-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {DETAIL_MESSAGES.loadFailed}
         </p>
       </FullScreen>
@@ -135,7 +135,7 @@ export function RecordDetailView() {
       <div className="flex-1 space-y-4 px-4 pt-2 pb-8">
         <Heading record={record} mine={mine} by={by} />
         {notice && (
-          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
             {notice}
           </p>
         )}
@@ -146,10 +146,10 @@ export function RecordDetailView() {
         {record.kind === 'run' && record.run && <Run distanceM={record.run.distanceM} durationS={record.run.durationS} />}
         {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} ghost={record.previousRun?.route} />}
         {record.kind === 'run' && record.run?.route && record.previousRun && (
-          <p className="text-center text-note font-bold text-sub-strong">{ghostLegend(record.previousRun)}</p>
+          <p className="text-center text-note font-bold text-fg-muted">{ghostLegend(record.previousRun)}</p>
         )}
         {record.kind === 'rest' && (
-          <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.restBody}</p>
+          <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{DETAIL_MESSAGES.restBody}</p>
         )}
         {mine && record.kind !== 'rest' && <RecordKcal recordId={record.id} />}
         {mine && <RecordMemo recordId={record.id} note={record.note} rpe={record.rpe} />}
@@ -160,7 +160,7 @@ export function RecordDetailView() {
               <Trash2 aria-hidden />
               {DETAIL_MESSAGES.deleteButton}
             </ThickButton>
-            {!online && <p className="mt-2 text-center text-note text-sub-strong">{ME_MESSAGES.offlineNote}</p>}
+            {!online && <p className="mt-2 text-center text-note text-fg-muted">{ME_MESSAGES.offlineNote}</p>}
           </section>
         )}
       </div>
@@ -186,7 +186,7 @@ const KIND_LABEL = {
 function Heading({ record, mine, by }: { record: RecordDetailResponse; mine: boolean; by: string }) {
   return (
     <div>
-      {mine ? <p className="text-sm font-extrabold text-sub-strong">{DETAIL_MESSAGES.ownerMine}</p> : <FriendOwner by={by} />}
+      {mine ? <p className="text-sm font-extrabold text-fg-muted">{DETAIL_MESSAGES.ownerMine}</p> : <FriendOwner by={by} />}
       <h1 className="flex items-center gap-2 text-page-title leading-tight font-extrabold">
         {record.kind === 'rest' && (
           <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-grape-dark text-white">
@@ -195,8 +195,8 @@ function Heading({ record, mine, by }: { record: RecordDetailResponse; mine: boo
         )}
         {KIND_LABEL[record.kind]}
       </h1>
-      <p className="mt-1 text-sm font-bold text-sub-strong">
-        <span className="fl-num text-base text-ink">{formatMonthDay(record.localDate)}</span>（{WEEKDAYS[weekdayIndex(record.localDate)]}）
+      <p className="mt-1 text-sm font-bold text-fg-muted">
+        <span className="fl-num text-base text-fg">{formatMonthDay(record.localDate)}</span>（{WEEKDAYS[weekdayIndex(record.localDate)]}）
         {' '}
         {record.late ? <LateTag /> : formatJstTime(record.recordedAt)}
         {record.copiedFrom && <>{' '}<CopiedTag name={record.copiedFrom.name} /></>}
@@ -209,7 +209,7 @@ function Heading({ record, mine, by }: { record: RecordDetailResponse; mine: boo
 function FriendOwner({ by }: { by: string }) {
   const { data } = useGetCurrentGroup({ query: { enabled: by !== '' } });
   const name = data?.status === 200 ? (data.data.members.find((m) => m.id === by)?.name ?? null) : null;
-  return <p className="text-sm font-extrabold text-sub-strong">{DETAIL_MESSAGES.ownerFriend(name)}</p>;
+  return <p className="text-sm font-extrabold text-fg-muted">{DETAIL_MESSAGES.ownerFriend(name)}</p>;
 }
 
 // 仲間のメニューをコピーして始める（F-24）。種目と回数・重さを、今日の記録画面に「やる予定」として渡す。
@@ -252,10 +252,10 @@ function CopyButton({ record, fromUserId }: { record: RecordDetailResponse; from
       <ThickButton size="sm" className="w-full" disabled={!online || busy} onClick={() => void onCopy()}>
         {busy ? FRIEND_MESSAGES.copying : FRIEND_MESSAGES.copyButton}
       </ThickButton>
-      <p className="mt-2 text-center text-note font-bold text-sub-strong">{DETAIL_MESSAGES.copyExplain}</p>
-      {!online && <p className="mt-2 text-center text-note text-sub-strong">{FRIEND_MESSAGES.copyOffline}</p>}
+      <p className="mt-2 text-center text-note font-bold text-fg-muted">{DETAIL_MESSAGES.copyExplain}</p>
+      {!online && <p className="mt-2 text-center text-note text-fg-muted">{FRIEND_MESSAGES.copyOffline}</p>}
       {error && (
-        <p role="alert" className="mt-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="mt-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {error}
         </p>
       )}
@@ -266,7 +266,7 @@ function CopyButton({ record, fromUserId }: { record: RecordDetailResponse; from
 function Workout({ record, mine }: { record: RecordDetailResponse; mine: boolean }) {
   const exercises = record.exercises ?? [];
   if (exercises.length === 0) {
-    return <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">{DETAIL_MESSAGES.noSets}</p>;
+    return <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{DETAIL_MESSAGES.noSets}</p>;
   }
   return (
     <div className="space-y-4">
@@ -294,11 +294,11 @@ function ExerciseBlock({ exercise, recordedAt, mine }: { exercise: RecordedExerc
           const o = outcomes?.[i];
           return (
             <li key={s.id} className="fl-slab flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
-              <span className="w-12 shrink-0 text-note font-bold text-sub-strong">セット{s.setNo}</span>
+              <span className="w-12 shrink-0 text-note font-bold text-fg-muted">セット{s.setNo}</span>
               <span className="fl-num min-w-0 flex-1 text-xl">{formatSet(s)}</span>
-              {o?.isBest && <span className="fl-tag bg-gold !py-0 !text-note !leading-4 text-ink">{RECORD_MESSAGES.best}</span>}
+              {o?.isBest && <span className="fl-tag bg-gold !py-0 !text-note !leading-4 text-fg">{RECORD_MESSAGES.best}</span>}
               {o && (o.result === 'up' || o.result === 'down') && (
-                <span className="w-full pl-[60px] text-note font-bold text-sub-strong">{resultText(o.result, o.diff)}</span>
+                <span className="w-full pl-[60px] text-note font-bold text-fg-muted">{resultText(o.result, o.diff)}</span>
               )}
             </li>
           );
@@ -325,7 +325,7 @@ function Run({ distanceM, durationS }: { distanceM: number; durationS: number })
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-note font-bold text-sub-strong">{label}</dt>
+      <dt className="text-note font-bold text-fg-muted">{label}</dt>
       <dd className="fl-num mt-1 text-xl break-keep">{value}</dd>
     </div>
   );
@@ -339,7 +339,7 @@ function RecordKcal({ recordId }: { recordId: string }) {
   return (
     <p data-testid="record-kcal" className="fl-slab px-4 py-3 text-center text-sm font-extrabold">
       {text}
-      <span className="ml-2 text-note font-bold text-sub-strong">{BODY_CONNECT_MESSAGES.kcalNote}</span>
+      <span className="ml-2 text-note font-bold text-fg-muted">{BODY_CONNECT_MESSAGES.kcalNote}</span>
     </p>
   );
 }

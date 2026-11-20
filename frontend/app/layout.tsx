@@ -4,6 +4,7 @@ import "./globals.css";
 import "@fontsource/barlow-condensed/800-italic.css";
 import { Providers } from "./providers";
 import { SwRegister } from "@/components/fitlog/sw-register";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: { default: "FitLog", template: "%s | FitLog" },
@@ -19,7 +20,10 @@ export const viewport: Viewport = { themeColor: THEME_COLOR };
 // 文字はシステムの標準フォント（日本語を含む）で表示する。数字・札だけ、同梱した Barlow Condensed（OFL）を使う。
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ja" className="h-full antialiased">
+    <html lang="ja" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <SwRegister>
           <Providers>{children}</Providers>

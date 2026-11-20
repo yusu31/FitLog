@@ -50,9 +50,9 @@ export function RoutineStarter({ day }: { day: DayMode }) {
 
   return (
     <section>
-      <h2 className="mb-2 text-sm font-extrabold text-sub-strong">{ROUTINE_MESSAGES.heading}</h2>
+      <h2 className="mb-2 text-sm font-extrabold text-fg-muted">{ROUTINE_MESSAGES.heading}</h2>
       {error && (
-        <p role="alert" className="mb-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="mb-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {error}
         </p>
       )}
@@ -65,12 +65,12 @@ export function RoutineStarter({ day }: { day: DayMode }) {
               onClick={() => onStart(r)}
               className="flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-fl px-3 text-left outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
             >
-              <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal-dark">
+              <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-full bg-teal-light text-brand">
                 <ListChecks className="size-6" />
               </span>
               <span className="min-w-0 flex-1 text-[15px] leading-tight font-extrabold">
                 {r.name}
-                <small className="block truncate text-note font-bold text-sub-strong">{r.exercises.map((e) => e.name).join('・')}</small>
+                <small className="block truncate text-note font-bold text-fg-muted">{r.exercises.map((e) => e.name).join('・')}</small>
               </span>
             </button>
             <button
@@ -78,7 +78,7 @@ export function RoutineStarter({ day }: { day: DayMode }) {
               aria-label={ROUTINE_MESSAGES.deleteLabel(r.name)}
               disabled={!online || deleteRoutine.isPending}
               onClick={() => setConfirming(r)}
-              className="flex min-h-11 shrink-0 items-center justify-center gap-0.5 rounded-fl px-2 text-note font-extrabold text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
+              className="flex min-h-11 shrink-0 items-center justify-center gap-0.5 rounded-fl px-2 text-note font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
             >
               <X aria-hidden className="size-4" />
               消す

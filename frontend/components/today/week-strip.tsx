@@ -29,7 +29,7 @@ export function WeekStrip({ days, today, selected = today }: { days: readonly We
               aria-label={name}
               aria-current={isToday ? 'date' : undefined}
               data-selected={isSelected ? 'true' : undefined}
-              className={cn('relative flex-1 text-center', isSelected ? 'bg-white/15 text-white' : 'text-white/80')}
+              className={cn('relative flex-1 text-center', isSelected ? 'bg-surface/15 text-white' : 'text-white/80')}
             >
               <span aria-hidden className="mt-0.5 block text-note font-bold">
                 {label}
@@ -44,8 +44,8 @@ export function WeekStrip({ days, today, selected = today }: { days: readonly We
                     'size-[22px] rounded-full',
                     status === 'rec' && 'bg-gold',
                     status === 'rest' && 'bg-grape',
-                    status === 'none' && 'bg-white/15',
-                    isToday && 'border-[3px] border-white',
+                    status === 'none' && 'bg-surface/15',
+                    isToday && 'border-[3px] border-surface',
                   )}
                 />
               </span>

@@ -35,7 +35,7 @@ export function RestView() {
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pb-8 text-center">
         <RelaxFigure />
         <h1 className="text-page-title leading-tight font-extrabold text-grape-dark">{REST_MESSAGES.title}</h1>
-        <p className="max-w-[18em] text-sm leading-relaxed text-balance [word-break:auto-phrase] font-bold text-sub-strong">{REST_MESSAGES.body}</p>
+        <p className="max-w-[18em] text-sm leading-relaxed text-balance [word-break:auto-phrase] font-bold text-fg-muted">{REST_MESSAGES.body}</p>
       </div>
     </FullScreen>
   );

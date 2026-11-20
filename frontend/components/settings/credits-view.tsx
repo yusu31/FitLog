@@ -16,7 +16,7 @@ export function CreditsView() {
         <Link
           href="/settings"
           aria-label="設定へ戻る"
-          className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
@@ -30,7 +30,7 @@ export function CreditsView() {
           </h2>
           <p className="text-sm leading-relaxed">
             アプリの中のドット絵のキャラは、Liberated Pixel Cup（LPC）の素材で作っています。配布元:{' '}
-            <a href={CREDIT_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="font-bold break-all text-teal-dark underline">
+            <a href={CREDIT_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="font-bold break-all text-brand underline">
               Universal LPC Spritesheet Character Generator
             </a>
           </p>
@@ -41,15 +41,15 @@ export function CreditsView() {
         </section>
 
         <section aria-labelledby="credits-parts">
-          <h2 id="credits-parts" className="pb-2 text-note font-bold tracking-widest text-sub">
+          <h2 id="credits-parts" className="pb-2 text-note font-bold tracking-widest text-fg-subtle">
             部品ごとの作者とライセンス
           </h2>
           <ul className="space-y-2">
             {CREDIT_PARTS.map((p) => (
               <li key={p.part} className="fl-slab px-4 py-2.5">
                 <p className="text-sm font-extrabold break-all">{p.part}</p>
-                <p className="text-note font-bold text-teal-dark">{p.license}</p>
-                <p className="text-note leading-relaxed text-sub-strong">{p.authors}</p>
+                <p className="text-note font-bold text-brand">{p.license}</p>
+                <p className="text-note leading-relaxed text-fg-muted">{p.authors}</p>
               </li>
             ))}
           </ul>

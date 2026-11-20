@@ -33,7 +33,7 @@ function subscribe(notify: () => void) {
 
 function RowIcon() {
   return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal-dark">
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-light text-brand">
       <SquarePlus aria-hidden className="size-5" />
     </span>
   );
@@ -64,12 +64,12 @@ export function AddToHome() {
           type="button"
           aria-label="ホーム画面に追加の説明を閉じる"
           onClick={onDismiss}
-          className="flex size-11 shrink-0 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex size-11 shrink-0 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <X aria-hidden className="size-5" />
         </button>
       </div>
-      <p className="text-sm text-sub-strong">アプリのように、ホーム画面のアイコンからすぐ開けます。仲間の反応の通知を受け取るにも、この追加が前提です。</p>
+      <p className="text-sm text-fg-muted">アプリのように、ホーム画面のアイコンからすぐ開けます。仲間の反応の通知を受け取るにも、この追加が前提です。</p>
       {/* 追加の案内を受け取れた端末（Android の Chrome など）だけ。受け取れない端末は下の文章の案内のまま */}
       {canInstall && (
         <ThickButton tone="white" onClick={() => void install()}>
@@ -80,11 +80,11 @@ export function AddToHome() {
       <dl className="space-y-1 text-sm">
         <div>
           <dt className="font-bold">Android（Chrome）</dt>
-          <dd className="text-sub-strong">右上のメニュー（︙）から「ホーム画面に追加」または「アプリをインストール」を選びます。</dd>
+          <dd className="text-fg-muted">右上のメニュー（︙）から「ホーム画面に追加」または「アプリをインストール」を選びます。</dd>
         </div>
         <div>
           <dt className="font-bold">iPhone（Safari）</dt>
-          <dd className="text-sub-strong">画面下の共有ボタン（□に↑）を押し、「ホーム画面に追加」を選びます。</dd>
+          <dd className="text-fg-muted">画面下の共有ボタン（□に↑）を押し、「ホーム画面に追加」を選びます。</dd>
         </div>
       </dl>
     </section>

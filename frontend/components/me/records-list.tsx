@@ -72,11 +72,11 @@ export function RecordsList() {
 
   return (
     <section aria-labelledby="records-heading">
-      <h2 id="records-heading" className="mb-2 text-sm font-extrabold text-sub-strong">
+      <h2 id="records-heading" className="mb-2 text-sm font-extrabold text-fg-muted">
         記録
       </h2>
       {notice && (
-        <p role="alert" className="mb-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="mb-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {notice}
         </p>
       )}
@@ -95,12 +95,12 @@ function RecordsPage({ cursor, isFirst = false, actions }: { cursor: string | un
 
   if (isPending) {
     return (
-      <li aria-busy="true" aria-label="記録を読み込み中" className="h-16 animate-pulse rounded-fl bg-face" />
+      <li aria-busy="true" aria-label="記録を読み込み中" className="h-16 animate-pulse rounded-fl bg-canvas" />
     );
   }
   if (isError || !data || data.status !== 200) {
     return (
-      <li role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+      <li role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
         {LOAD_ERROR}
       </li>
     );
@@ -110,7 +110,7 @@ function RecordsPage({ cursor, isFirst = false, actions }: { cursor: string | un
   return (
     <>
       {isFirst && shown.length === 0 && (
-        <li className="fl-slab px-4 py-5 text-center text-sm font-bold text-sub-strong">まだ記録がありません</li>
+        <li className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">まだ記録がありません</li>
       )}
       {shown.map((record) => (
         <RecordRow key={record.id} record={record} actions={actions} />
@@ -140,8 +140,8 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
         className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-fl outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
       >
       <div className="w-[68px] shrink-0 leading-tight">
-        <p className="fl-num text-xl text-ink">{formatMonthDay(record.localDate)}</p>
-        <p className="text-note font-bold text-sub">{WEEKDAYS[weekdayIndex(record.localDate)]}曜</p>
+        <p className="fl-num text-xl text-fg">{formatMonthDay(record.localDate)}</p>
+        <p className="text-note font-bold text-fg-subtle">{WEEKDAYS[weekdayIndex(record.localDate)]}曜</p>
       </div>
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 truncate text-[15px] leading-tight font-extrabold">
@@ -157,7 +157,7 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
           {record.late && <LateTag />}
           {record.copiedFrom && <CopiedTag name={record.copiedFrom.name} />}
         </p>
-        {detail && <p className="mt-0.5 text-note font-bold text-sub">{detail}</p>}
+        {detail && <p className="mt-0.5 text-note font-bold text-fg-subtle">{detail}</p>}
       </div>
       </Link>
       <button
@@ -166,7 +166,7 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => actions.setMenuFor(open ? null : record.id)}
-        className="flex size-11 shrink-0 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        className="flex size-11 shrink-0 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
       >
         <Ellipsis aria-hidden className="size-6" />
       </button>
@@ -175,19 +175,19 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
           role="menu"
           // 下のタブに隠れないよう、開いたときに見える所までスクロールする（タブの高さ分の余白を取る）
           ref={(el) => el?.scrollIntoView?.({ block: 'nearest' })}
-          className="absolute top-full right-1 z-10 mt-1 w-56 scroll-mb-28 rounded-fl border-2 border-line bg-white p-1 shadow-lg"
+          className="absolute top-full right-1 z-10 mt-1 w-56 scroll-mb-28 rounded-fl border-2 border-line bg-surface p-1 shadow-lg"
         >
           <button
             type="button"
             role="menuitem"
             disabled={!actions.online}
             onClick={() => actions.askDelete(record)}
-            className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left font-extrabold text-coral-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:text-sub disabled:opacity-100"
+            className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left font-extrabold text-coral-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:text-fg-subtle disabled:opacity-100"
           >
             <Trash2 aria-hidden className="size-5" />
             削除
           </button>
-          {!actions.online && <p className="px-3 pb-2 text-note text-sub-strong">{ME_MESSAGES.offlineNote}</p>}
+          {!actions.online && <p className="px-3 pb-2 text-note text-fg-muted">{ME_MESSAGES.offlineNote}</p>}
         </div>
       )}
     </li>
@@ -197,13 +197,13 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
 function ConfirmDelete({ record, onCancel, onConfirm }: { record: RecordDetailResponse; onCancel: () => void; onConfirm: () => void }) {
   const { title, detail } = summarize(record);
   return (
-    <div className="fixed inset-0 z-30 flex items-end justify-center bg-ink/50 p-4 sm:items-center">
-      <div role="alertdialog" aria-modal="true" aria-labelledby="del-record-title" aria-describedby="del-record-desc" className="w-full max-w-sm rounded-2xl bg-white p-5">
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-night/50 p-4 sm:items-center">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="del-record-title" aria-describedby="del-record-desc" className="w-full max-w-sm rounded-2xl bg-surface p-5">
         <h2 id="del-record-title" className="text-xl font-extrabold">
           {ME_MESSAGES.deleteTitle}
         </h2>
-        <p id="del-record-desc" className="mt-2 text-sm text-sub-strong">
-          <span className="fl-num text-base text-ink">{formatMonthDay(record.localDate)}</span> ・ {title}
+        <p id="del-record-desc" className="mt-2 text-sm text-fg-muted">
+          <span className="fl-num text-base text-fg">{formatMonthDay(record.localDate)}</span> ・ {title}
           {detail && <> ・ {detail}</>} を取り消します。
           {record.kind === 'workout' && <> {ME_MESSAGES.deleteNote}</>}
         </p>

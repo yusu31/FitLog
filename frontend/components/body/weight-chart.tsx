@@ -4,7 +4,7 @@ import { BODY_MESSAGES, chartShape, type ChartPoint } from '@/lib/body/body';
 export function WeightChart({ points }: { points: ChartPoint[] }) {
   const shape = chartShape(points);
   if (!shape) {
-    return <p className="rounded-lg bg-face px-3 py-6 text-center text-sm font-bold text-sub-strong">{BODY_MESSAGES.chartEmpty}</p>;
+    return <p className="rounded-lg bg-canvas px-3 py-6 text-center text-sm font-bold text-fg-muted">{BODY_MESSAGES.chartEmpty}</p>;
   }
   const last = points[points.length - 1];
   return (
@@ -16,17 +16,17 @@ export function WeightChart({ points }: { points: ChartPoint[] }) {
         className="w-full"
       >
         {shape.dots.map((d) => (
-          <circle key={d.date} data-testid="weight-dot" cx={d.x} cy={d.y} r={3} className="fill-teal-dark opacity-30" />
+          <circle key={d.date} data-testid="weight-dot" cx={d.x} cy={d.y} r={3} className="fill-brand opacity-30" />
         ))}
-        {shape.avgPath && <path data-testid="weight-avg-line" d={shape.avgPath} fill="none" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal-dark" />}
-        <text x={2} y={12} className="fill-sub-strong text-note">
+        {shape.avgPath && <path data-testid="weight-avg-line" d={shape.avgPath} fill="none" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" className="stroke-brand" />}
+        <text x={2} y={12} className="fill-fg-muted text-note">
           {shape.max}kg
         </text>
-        <text x={2} y={shape.height - 4} className="fill-sub-strong text-note">
+        <text x={2} y={shape.height - 4} className="fill-fg-muted text-note">
           {shape.min}kg
         </text>
       </svg>
-      <figcaption className="mt-1 text-note text-sub-strong">{BODY_MESSAGES.chartHint}</figcaption>
+      <figcaption className="mt-1 text-note text-fg-muted">{BODY_MESSAGES.chartHint}</figcaption>
     </figure>
   );
 }

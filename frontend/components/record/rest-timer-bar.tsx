@@ -35,7 +35,7 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
         {done ? '休憩おわり' : '休憩をはじめました'}
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <Timer aria-hidden className="hidden size-5 shrink-0 text-teal-dark min-[260px]:block" />
+        <Timer aria-hidden className="hidden size-5 shrink-0 text-brand min-[260px]:block" />
         <p aria-hidden className="min-w-0 flex-1 basis-28 font-extrabold">
           {done ? (
             '休憩おわり。次のセットへ'
@@ -52,7 +52,7 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
               aria-label="休憩を15秒短くする"
               disabled={total <= REST_MIN_S}
               onClick={() => change(-1)}
-              className="flex size-11 shrink-0 items-center justify-center rounded-fl bg-white text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
+              className="flex size-11 shrink-0 items-center justify-center rounded-fl bg-surface text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
             >
               <Minus aria-hidden className="size-5" />
             </button>
@@ -61,7 +61,7 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
               aria-label="休憩を15秒長くする"
               disabled={total >= REST_MAX_S}
               onClick={() => change(1)}
-              className="flex size-11 shrink-0 items-center justify-center rounded-fl bg-white text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
+              className="flex size-11 shrink-0 items-center justify-center rounded-fl bg-surface text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-40"
             >
               <Plus aria-hidden className="size-5" />
             </button>
@@ -69,7 +69,7 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
         )}
       </div>
       {!done && (
-        <div aria-hidden className="h-2 overflow-hidden rounded-full bg-white">
+        <div aria-hidden className="h-2 overflow-hidden rounded-full bg-surface">
           <div className="h-full bg-teal-dark" style={{ width: `${Math.round((remaining / total) * 100)}%` }} />
         </div>
       )}
@@ -77,7 +77,7 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
         type="button"
         aria-label={done ? '休憩をとじる' : '休憩をスキップ'}
         onClick={onClose}
-        className="min-h-11 w-full rounded-fl bg-white text-sm font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        className="min-h-11 w-full rounded-fl bg-surface text-sm font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
       >
         {done ? 'とじる' : 'スキップ'}
       </button>

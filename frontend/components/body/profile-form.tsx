@@ -54,8 +54,8 @@ export function ProfileForm({ initial }: { initial: ProfileResponse }) {
         <Label htmlFor="profile-bio" className="font-extrabold">
           {BODY_MESSAGES.bioLabel}
         </Label>
-        <Input id="profile-bio" value={bio} maxLength={BIO_MAX} onChange={(e) => setBio(e.target.value)} className="h-11 bg-white" />
-        <p className="text-note text-sub-strong">{BODY_MESSAGES.bioHint}</p>
+        <Input id="profile-bio" value={bio} maxLength={BIO_MAX} onChange={(e) => setBio(e.target.value)} className="h-11 bg-surface" />
+        <p className="text-note text-fg-muted">{BODY_MESSAGES.bioHint}</p>
       </div>
       <RadioRow legend={BODY_MESSAGES.favoriteLegend} options={FAVORITE_OPTIONS} value={favorite} onChange={setFavorite} />
       <RadioRow legend={BODY_MESSAGES.activeLegend} options={ACTIVE_OPTIONS} value={active} onChange={setActive} />
@@ -63,7 +63,7 @@ export function ProfileForm({ initial }: { initial: ProfileResponse }) {
         {save.isPending ? BODY_MESSAGES.saving : BODY_MESSAGES.save}
       </ThickButton>
       {notice && (
-        <p role={notice.ok ? 'status' : 'alert'} className="text-sm font-bold text-ink">
+        <p role={notice.ok ? 'status' : 'alert'} className="text-sm font-bold text-fg">
           {notice.text}
         </p>
       )}

@@ -193,9 +193,9 @@ export function RunView() {
             role="status"
             className="fl-stripes relative overflow-hidden rounded-fl bg-teal-dark px-[18px] pt-3.5 pb-5 text-white shadow-[0_4px_0_var(--color-teal-deep)] [--stripe:rgb(0_0_0/0.14)]"
           >
-            <span className="fl-tag bg-gold text-ink">ラン</span>
+            <span className="fl-tag bg-gold text-fg">ラン</span>
             <p className="mt-3 flex items-center gap-2 text-2xl leading-snug font-extrabold">
-              <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gold text-ink">
+              <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gold text-fg">
                 <Check className="size-5" strokeWidth={3.2} />
               </span>
               {RUN_MESSAGES.saved}
@@ -210,10 +210,10 @@ export function RunView() {
           </section>
           {trek && (
             <section data-testid="trek-progress" aria-label="日本縦断" className="fl-slab space-y-1 px-4 py-3">
-              <p className="text-note font-extrabold tracking-widest text-sub">日本縦断</p>
+              <p className="text-note font-extrabold tracking-widest text-fg-subtle">日本縦断</p>
               {trek.arrived && <p className="text-lg font-extrabold">{trek.arrived}に着きました！</p>}
-              <p className="text-sm font-bold text-sub-strong">{trek.next}</p>
-              <Link href="/me/stats#japan-trek" className="inline-block py-2 text-sm font-extrabold text-teal-dark underline">
+              <p className="text-sm font-bold text-fg-muted">{trek.next}</p>
+              <Link href="/me/stats#japan-trek" className="inline-block py-2 text-sm font-extrabold text-brand underline">
                 日本地図で見る
               </Link>
             </section>
@@ -235,13 +235,13 @@ export function RunView() {
         <Link
           href="/today"
           aria-label="とじる"
-          className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <X aria-hidden className="size-6" />
         </Link>
         <Link
           href="/me/stats#japan-trek"
-          className="ml-auto flex min-h-11 items-center gap-1 rounded-fl px-3 text-sm font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="ml-auto flex min-h-11 items-center gap-1 rounded-fl px-3 text-sm font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <Map aria-hidden className="size-5" />
           日本縦断
@@ -251,7 +251,7 @@ export function RunView() {
       <div className="flex flex-1 flex-col gap-5 px-4 pt-2 pb-8">
         <h1 className="text-page-title leading-tight font-extrabold">ラン</h1>
         {day === 'yesterday' && (
-          <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">{LATE_MESSAGES.banner}</p>
+          <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-fg">{LATE_MESSAGES.banner}</p>
         )}
 
         <GpsTracker onFinish={onGpsFinish} onActiveChange={setTracking} />
@@ -274,7 +274,7 @@ export function RunView() {
         {distanceProblem && <Hint>{RUN_MESSAGES.distanceRange}</Hint>}
 
         <div>
-          <p className="mb-2 text-sm font-extrabold text-sub-strong">時間</p>
+          <p className="mb-2 text-sm font-extrabold text-fg-muted">時間</p>
           <div className="flex items-end gap-3">
             <NumberField label="時間（分）" unit="分" inputMode="numeric" value={minText} onChange={setMinText} placeholder="例 32" invalid={durationProblem} />
             <NumberField label="時間（秒）" unit="秒" inputMode="numeric" value={secText} onChange={setSecText} placeholder="例 10" invalid={durationProblem} />
@@ -283,17 +283,17 @@ export function RunView() {
         </div>
 
         <section aria-label="ペース" className="fl-slab flex items-baseline justify-between px-4 py-3">
-          <span className="text-sm font-extrabold text-sub-strong">ペース（1kmあたり）</span>
-          <span data-testid="pace" className={cn('fl-num text-3xl', pace === null ? 'text-sub' : 'text-teal-dark')}>
+          <span className="text-sm font-extrabold text-fg-muted">ペース（1kmあたり）</span>
+          <span data-testid="pace" className={cn('fl-num text-3xl', pace === null ? 'text-fg-subtle' : 'text-brand')}>
             {pace === null ? '--' : formatPace(pace)}
           </span>
         </section>
-        {!touched && <p className="text-note font-bold text-sub-strong">距離と時間を入れると、ペースが出ます</p>}
+        {!touched && <p className="text-note font-bold text-fg-muted">距離と時間を入れると、ペースが出ます</p>}
           </>
         )}
 
         {error && (
-          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
             {error}
           </p>
         )}
@@ -320,7 +320,7 @@ function GpxPicker({
     <div className="flex flex-col gap-2">
       <label
         className={cn(
-          'fl-slab flex min-h-12 items-center gap-2 px-4 py-3 text-base font-extrabold text-sub-strong focus-within:border-teal',
+          'fl-slab flex min-h-12 items-center gap-2 px-4 py-3 text-base font-extrabold text-fg-muted focus-within:border-teal',
           online ? 'cursor-pointer' : 'opacity-60',
         )}
       >
@@ -328,18 +328,18 @@ function GpxPicker({
         <span>ほかのアプリの記録を取り込む</span>
         <input type="file" accept=".gpx,application/gpx+xml" disabled={!online} onChange={onPick} className="sr-only" />
       </label>
-      <p className="text-note text-sub-strong">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）で書き出した記録のファイル（GPX 形式）を選んでください。</p>
-      {!online && <p className="text-sm font-bold text-sub-strong">{GPX_MESSAGES.offline}</p>}
+      <p className="text-note text-fg-muted">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）で書き出した記録のファイル（GPX 形式）を選んでください。</p>
+      {!online && <p className="text-sm font-bold text-fg-muted">{GPX_MESSAGES.offline}</p>}
       {gpx && (
-        <p className="flex items-center justify-between gap-2 text-sm font-bold text-ink">
+        <p className="flex items-center justify-between gap-2 text-sm font-bold text-fg">
           <span>{gpx.name} を読み取りました</span>
-          <button type="button" onClick={onClear} className="min-h-11 shrink-0 rounded-fl px-3 text-sm font-extrabold text-sub-strong underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+          <button type="button" onClick={onClear} className="min-h-11 shrink-0 rounded-fl px-3 text-sm font-extrabold text-fg-muted underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
             取り込みをはずす
           </button>
         </p>
       )}
       {message && (
-        <p role={message.kind === 'error' ? 'alert' : 'status'} className={cn('rounded-fl px-4 py-3 text-sm font-bold text-ink', message.kind === 'error' ? 'bg-coral-light' : 'bg-face')}>
+        <p role={message.kind === 'error' ? 'alert' : 'status'} className={cn('rounded-fl px-4 py-3 text-sm font-bold text-fg', message.kind === 'error' ? 'bg-coral-light' : 'bg-canvas')}>
           {message.text}
         </p>
       )}
@@ -348,7 +348,7 @@ function GpxPicker({
 }
 
 function Hint({ children }: { children: string }) {
-  return <p className="-mt-3 text-sm font-bold text-ink">{children}</p>;
+  return <p className="-mt-3 text-sm font-bold text-fg">{children}</p>;
 }
 
 // 大きな数字の入力欄。文字として受け、読み取りと範囲の検査は lib/run.ts に任せる（打っている途中の「5.」なども壊さない）
@@ -392,11 +392,11 @@ function NumberField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          'fl-num min-w-0 flex-1 bg-transparent leading-none text-ink outline-none placeholder:text-line-dark',
+          'fl-num min-w-0 flex-1 bg-transparent leading-none text-fg outline-none placeholder:text-line-dark',
           big ? 'text-[56px]' : 'text-[44px]',
         )}
       />
-      <span className="shrink-0 text-xl font-extrabold text-sub-strong">{unit}</span>
+      <span className="shrink-0 text-xl font-extrabold text-fg-muted">{unit}</span>
     </label>
   );
 }
@@ -405,9 +405,9 @@ function Skeleton() {
   return (
     <FullScreen>
       <div aria-busy="true" aria-label="読み込み中" className="space-y-4 px-4 pt-8">
-        <div className="h-8 w-24 animate-pulse rounded-lg bg-face" />
-        <div className="h-24 animate-pulse rounded-fl bg-face" />
-        <div className="h-24 animate-pulse rounded-fl bg-face" />
+        <div className="h-8 w-24 animate-pulse rounded-lg bg-canvas" />
+        <div className="h-24 animate-pulse rounded-fl bg-canvas" />
+        <div className="h-24 animate-pulse rounded-fl bg-canvas" />
       </div>
     </FullScreen>
   );

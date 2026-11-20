@@ -20,13 +20,17 @@
   --color-coral-light: #ffe4e0;
   --color-grape: #8e7cf0;
   --color-grape-dark: #6a57cf; /* 白文字 5.42 */
-  --color-ink: #1e2a3a;
-  --color-sub: #6b7280; /* 白の上 4.83 */
-  --color-sub-strong: #4b5563; /* 面（#F4F6F8）の上 6.98 */
-  --color-face: #f4f6f8;
+  /* 中立色は「役割の名前」で持つ（02-9 D0-1）。ダークは .dark で値だけ差し替えるので、クラス名は変わらない */
+  --color-canvas: #f3fafa; /* 画面の地 */
+  --color-surface: #ffffff; /* カード・シート・入力欄の面 */
+  --color-fg: #1e2a3a; /* ふつうの文字 */
+  --color-fg-muted: #4b5563; /* 補足の文字。面の上 7.5 */
+  --color-fg-subtle: #6b7280; /* いちばん薄い文字。白の上 4.83 */
+  --color-brand: #0b6f73; /* 面の上に置く青緑の文字・線 */
   --color-line: #e5e7eb;
   --color-line-dark: #c9cdd3;
-  --color-note: #4b5563; /* 注記の色。白の上 7.5・面（#F4F6F8）の上 6.98 */
+  --color-night: #1e2a3a; /* 常に濃い色（暗幕・濃い札）。ダークでも変えない。白文字を載せる */
+  --color-note: var(--color-fg-muted); /* 注記の色 */
   /* 文字サイズの段階（V-08・A13-5）。text-page-title などで使う。各画面の置き換えは B13 でまとめて行う */
   --text-page-title: 28px; /* 画面の見出し h1 */
   --text-section-title: 18px; /* 節の見出し */
@@ -86,7 +90,7 @@ body {
 }
 
 :root {
-  --background: #ffffff;
+  --background: #f3fafa;
   --foreground: #1e2a3a;
   --card: #ffffff;
   --card-foreground: #1e2a3a;
@@ -122,37 +126,45 @@ body {
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* 役割の色（比較ページ D の段）。 */
+  --color-canvas: #0f161d;
+  --color-surface: #18222d;
+  --color-fg: #f1f5f8;
+  --color-fg-muted: #9aa7b4;
+  --color-fg-subtle: #8693a1;
+  --color-brand: #3fd6d9;
+  --color-line: #1f2b37;
+  --color-line-dark: #2c3a48;
+  --color-teal-light: #123a40;
+  --color-teal-dark: #0e7f83;
+  --color-gold-light: #3a3012;
+  --color-coral-light: #3d1f1c;
+  --background: #0f161d;
+  --foreground: #f1f5f8;
+  --card: #18222d;
+  --card-foreground: #f1f5f8;
+  --popover: #18222d;
+  --popover-foreground: #f1f5f8;
+  --primary: #3fd6d9;
+  --primary-foreground: #0f161d;
+  --secondary: #18222d;
+  --secondary-foreground: #f1f5f8;
+  --muted: #18222d;
+  --muted-foreground: #9aa7b4;
+  --accent: #18222d;
+  --accent-foreground: #f1f5f8;
+  --destructive: #ff6b5b;
+  --border: #1f2b37;
+  --input: #5d6b79;
+  --ring: #3fd6d9;
+  --sidebar: #18222d;
+  --sidebar-foreground: #f1f5f8;
+  --sidebar-primary: #3fd6d9;
+  --sidebar-primary-foreground: #0f161d;
+  --sidebar-accent: #18222d;
+  --sidebar-accent-foreground: #f1f5f8;
+  --sidebar-border: #1f2b37;
+  --sidebar-ring: #3fd6d9;
 }
 
 @layer base {
@@ -185,12 +197,14 @@ body {
     transform: translateY(4px);
     box-shadow: 0 0 0 var(--thick, var(--color-teal-deep));
   }
-  /* 枠つきの面（リストの行・カード）。下の枠を太くして厚みを出す */
+  /* 面（リストの行・カード）。太い枠はやめ、面の色と薄い影で浮かせる（ダークは影なしで面の色の差） */
   .fl-slab {
-    border: 2px solid var(--color-line);
-    border-bottom-width: 4px;
     border-radius: var(--radius);
-    background: #ffffff;
+    background: var(--color-surface);
+    box-shadow: 0 1px 2px rgb(30 42 58 / 0.08), 0 2px 8px rgb(30 42 58 / 0.06);
+  }
+  .dark .fl-slab {
+    box-shadow: inset 0 0 0 1px var(--color-line);
   }
   /* 斜めに切った札 */
   .fl-tag {

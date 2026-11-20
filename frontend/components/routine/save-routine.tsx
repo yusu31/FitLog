@@ -64,10 +64,10 @@ export function SaveRoutine({ recordId }: { recordId: string }) {
           <Bookmark aria-hidden />
           {ROUTINE_MESSAGES.saveButton}
         </ThickButton>
-        <p className="mt-2 text-center text-note text-sub-strong">{ROUTINE_MESSAGES.saveHint}</p>
-        {!online && <p className="mt-1 text-center text-note text-sub-strong">{ROUTINE_MESSAGES.saveOffline}</p>}
+        <p className="mt-2 text-center text-note text-fg-muted">{ROUTINE_MESSAGES.saveHint}</p>
+        {!online && <p className="mt-1 text-center text-note text-fg-muted">{ROUTINE_MESSAGES.saveOffline}</p>}
         {saved && (
-          <p role="status" className="mt-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-bold text-ink">
+          <p role="status" className="mt-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-bold text-fg">
             {ROUTINE_MESSAGES.saved(saved)}
           </p>
         )}
@@ -90,14 +90,14 @@ export function SaveRoutine({ recordId }: { recordId: string }) {
           onChange={(e) => setName(e.target.value)}
           className="h-12 rounded-fl border-2 text-base font-bold"
         />
-        <p className="text-note text-sub">{ROUTINE_MESSAGES.nameHint(ROUTINE_NAME_MAX)}</p>
+        <p className="text-note text-fg-subtle">{ROUTINE_MESSAGES.nameHint(ROUTINE_NAME_MAX)}</p>
       </div>
       {error && (
-        <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {error}
         </p>
       )}
-      {!online && <p className="text-note text-sub-strong">{ROUTINE_MESSAGES.saveOffline}</p>}
+      {!online && <p className="text-note text-fg-muted">{ROUTINE_MESSAGES.saveOffline}</p>}
       <div className="flex gap-2">
         <ThickButton type="button" tone="white" size="sm" className="flex-1" onClick={() => setOpen(false)}>
           {ROUTINE_MESSAGES.cancel}

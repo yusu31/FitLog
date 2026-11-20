@@ -23,9 +23,9 @@ export function FriendsView() {
       <PageTitle>なかま</PageTitle>
       <Sprite pose="idle" size={72} className="absolute top-0 right-4" />
       {isPending ? (
-        <div aria-busy="true" aria-label="読み込み中" className="mx-4 mt-3 h-40 animate-pulse rounded-fl bg-face" />
+        <div aria-busy="true" aria-label="読み込み中" className="mx-4 mt-3 h-40 animate-pulse rounded-fl bg-canvas" />
       ) : isError || !data || (data.status !== 200 && data.status !== 404) ? (
-        <p role="alert" className="mx-4 mt-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="mx-4 mt-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {GROUP_MESSAGES.loadFailed}
         </p>
       ) : data.status === 404 ? (
@@ -35,14 +35,14 @@ export function FriendsView() {
           <GroupSummary group={data.data} />
           {/* 自分1人の間は、次の一手「仲間を招待」を上に出す（N6）。2人以上になったら設定の奥に戻す */}
           {data.data.members.length <= 1 && <InvitePanel full={false} />}
-          {data.data.members.length <= 1 && <p className="px-1 text-note font-bold text-sub-strong">{FRIENDS_TEXT.aloneFeedNote}</p>}
+          {data.data.members.length <= 1 && <p className="px-1 text-note font-bold text-fg-muted">{FRIENDS_TEXT.aloneFeedNote}</p>}
           <WeekVideoStrip />
           <FeedSection />
           <Link
             href="/settings/group"
             className="fl-slab flex min-h-14 items-center gap-3 px-4 py-3 font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
-            <Settings aria-hidden className="size-5 text-teal-dark" />
+            <Settings aria-hidden className="size-5 text-brand" />
             {FRIENDS_TEXT.groupSettings}
           </Link>
         </div>

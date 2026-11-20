@@ -30,7 +30,7 @@ export function NoGroupGuide() {
   return (
     <div className="space-y-4 px-4 pt-3">
       <section className="fl-stripes relative overflow-hidden rounded-fl bg-teal-dark [--stripe:rgb(0_0_0/0.14)] px-[18px] pt-3.5 pb-4 text-white shadow-[0_4px_0_var(--color-teal-deep)]">
-        <span className="fl-tag bg-gold text-ink">なかま</span>
+        <span className="fl-tag bg-gold text-fg">なかま</span>
         <h2 className="mt-3 text-2xl leading-snug font-extrabold">仲間と、見せ合おう</h2>
         <p className="mt-1 text-sm leading-relaxed font-bold [word-break:auto-phrase]">
           グループは1つ・<span className="fl-num text-base">{GROUP_MEMBER_MAX}</span>人まで。記録した日やスタンプを、仲間どうしで見せ合えます。
@@ -47,12 +47,12 @@ export function NoGroupGuide() {
 
       <section className="fl-slab space-y-3 px-4 py-3">
         <div className="flex gap-3">
-          <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal-dark">
+          <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-light text-brand">
             <Link2 aria-hidden className="size-5" />
           </span>
           <div>
             <h2 className="font-extrabold">招待リンクで参加する</h2>
-            <p className="mt-0.5 text-sm text-sub">
+            <p className="mt-0.5 text-sm text-fg-subtle">
               仲間から届いたリンクを開くか、下の欄に貼ってください。参加の画面が開きます。
             </p>
           </div>
@@ -70,7 +70,7 @@ export function NoGroupGuide() {
             }}
             placeholder="https://…/invite?token=…"
             autoComplete="off"
-            className="mt-1 h-12 w-full rounded-lg border-2 border-input bg-white px-3 font-mono text-note text-ink"
+            className="mt-1 h-12 w-full rounded-lg border-2 border-input bg-surface px-3 font-mono text-note text-fg"
           />
         </div>
         <ThickButton tone="white" size="sm" onClick={onOpenInvite}>
@@ -78,7 +78,7 @@ export function NoGroupGuide() {
           開く
         </ThickButton>
         {pasteError && (
-          <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+          <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
             {pasteError}
           </p>
         )}

@@ -41,7 +41,7 @@ export function StampButton({
       className={cn(
         'flex items-center justify-center rounded-2xl border-2 outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60',
         compact ? 'min-h-14 min-w-14 flex-col gap-0.5 px-2 py-1' : 'min-h-14 min-w-16 flex-col gap-0.5 px-2.5 py-1.5',
-        pressed ? 'border-teal-dark bg-teal-light text-teal-deep' : 'border-line bg-white text-sub-strong',
+        pressed ? 'border-teal-dark bg-teal-light text-brand' : 'border-line bg-surface text-fg-muted',
       )}
     >
       <span className="flex items-center gap-1">
@@ -63,7 +63,7 @@ export function StampChip({ stampKey, count }: { stampKey: StampKey; count: numb
     <span
       role="img"
       aria-label={`${label} ${count}`}
-      className="flex min-h-14 min-w-16 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 border-line bg-white px-2.5 py-1.5 text-sub-strong"
+      className="flex min-h-14 min-w-16 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 border-line bg-surface px-2.5 py-1.5 text-fg-muted"
     >
       <span aria-hidden className="flex items-center gap-1">
         <span className="text-[26px] leading-none">{STAMP_EMOJI[stampKey]}</span>
