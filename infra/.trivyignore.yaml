@@ -8,8 +8,8 @@ misconfigurations:
     expired_at: 2026-12-31
   - id: AWS-0011
     paths: ["cloudfront.tf"]
-    statement: "WAF は P2 で「Free プランで使えれば基本のルール（5つまで）」を判断する（dev-harness.md）。スパイクでは付けない。02-3（本番）の前に必ず見直す"
-    expired_at: 2026-11-20
+    statement: "WAF は課金が発生する（月額＋リクエスト課金）ので付けない（2026-11-20 本人決定「課金できない」）。Free プランで基本ルールが無料で使えると確認できたら付ける。見直しは課金してよい状況になったとき"
+    expired_at: 2026-12-31
   - id: AWS-0017
     paths: ["lambda.tf"]
     statement: "ログ置き場の暗号化は AWS 管理の既定で行われる。自分の鍵（KMS CMK）は月額がかかるので使わない（infrastructure.md 4.3章の方針）"
