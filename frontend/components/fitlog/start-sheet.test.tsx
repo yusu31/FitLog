@@ -25,9 +25,9 @@ describe('StartSheet（＋のシート）', () => {
     const user = userEvent.setup();
     render(<StartSheet open onClose={() => {}} />);
     await user.click(screen.getByRole('checkbox', { name: /2秒動画を撮る/ }));
-    await user.click(screen.getByRole('link', { name: '筋トレを記録' }));
+    await user.click(screen.getByRole('link', { name: /筋トレを記録/ }));
     expect(hasFilmFirst()).toBe(true);
-    await user.click(screen.getByRole('link', { name: 'ランを記録' }));
+    await user.click(screen.getByRole('link', { name: /ランを記録/ }));
     expect(hasFilmFirst()).toBe(false);
   });
 });

@@ -77,7 +77,7 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
               <li className="flex items-center lg:order-first lg:mb-2 lg:block">
                 <button
                   type="button"
-                  aria-label="記録を始める"
+                  aria-label="START 記録を始める"
                   aria-haspopup="dialog"
                   onClick={() => setStarting(true)}
                   className="fl-thick flex size-14 items-center justify-center gap-2 rounded-full bg-teal-dark text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40 lg:h-12 lg:w-full lg:rounded-fl lg:text-lg lg:font-extrabold lg:tracking-wider"

@@ -16,7 +16,8 @@ import { Sprite } from "./sprite";
 
 const noSubscribe = () => () => {};
 
-// 英語の操作語は見た目だけ。aria-label に今の日本語を入れて、読み上げと E2E の getByRole(name) を変えない
+// 英語の操作語を出すボタンは、aria-label を「操作語 日本語」にする（画面の文字を名前に含める＝WCAG 2.5.3。含めないと axe の label-content-name-mismatch で落ちる）。
+// Playwright の getByRole(name) は部分一致なので、日本語の名前での E2E はそのまま通る
 const ACTIONS = [
   {
     href: "/exercises",
@@ -112,7 +113,7 @@ export function StartSheet({
             <li key={href}>
               <Link
                 href={href}
-                aria-label={label}
+                aria-label={`${word} ${label}`}
                 onClick={() => {
                   setFilmFirst(usesFilm && videoCapable && film);
                   onClose();
@@ -129,7 +130,7 @@ export function StartSheet({
           ref={closeRef}
           variant="link"
           className="w-full"
-          aria-label="閉じる"
+          aria-label="CLOSE 閉じる"
           onClick={onClose}
         >
           CLOSE
