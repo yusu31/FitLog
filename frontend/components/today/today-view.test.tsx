@@ -23,6 +23,14 @@ const squat = (sets: [number, number][]) => ({ id: 'sq', name: 'スクワット'
 const curl = (sets: [number, number][]) => ({ id: 'lc', name: 'レッグカール', sets });
 const PREV = workout('r1', '2026-11-02', [squat([[60, 10]]), curl([[25, 12]])]);
 
+// 7マスの今日・きのうのマス（D2-2。押せるのはこの2つだけ）
+const findTodayCell = () => screen.findByRole('button', { name: /^11\/4 水曜 今日/ });
+const todayCell = () => screen.getByRole('button', { name: /^11\/4 水曜 今日/ });
+const yesterdayCell = () => screen.getByRole('button', { name: /^11\/3 火曜/ });
+
+// 7マスの読み上げ名。押せるマス（今日・きのう）は中のボタンが名前を持つ
+const cellName = (c: HTMLElement): string | null => c.getAttribute('aria-label') ?? c.querySelector('button')?.getAttribute('aria-label') ?? null;
+
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/lib/auth-client', () => ({
@@ -100,9 +108,9 @@ describe('TodayView（S-10 今日）', () => {
       });
       renderWithQuery(<TodayView />);
       const cells = within(await screen.findByRole('list', { name: '今週の7日' })).getAllByRole('listitem');
-      const names = cells.map((c) => c.getAttribute('aria-label'));
+      const names = cells.map(cellName);
       expect(names[0]).toBe('11/2 月曜 記録あり');
-      expect(names[1]).toBe('11/3 火曜 おやすみ');
+      expect(names[1]).toBe('11/3 火曜 きのう おやすみ');
       expect(names[2]).toBe('11/4 水曜 今日');
       expect(names[4]).toBe('11/6 金曜');
     });
@@ -174,11 +182,11 @@ describe('TodayView（S-10 今日）', () => {
       expect(screen.queryByRole('heading', { name: '今日の分は できた' })).not.toBeInTheDocument();
     });
 
-    it('「続ける」は、まだの種目がなければ種目の一覧へ。「今日はここまで」のボタンもある', async () => {
+    it('D2-4: 「続ける」は、まだの種目がなければ最後に記録した種目のセット入力へ（種目の一覧へ戻さない）。「今日はここまで」のボタンもある', async () => {
       installActive();
       renderWithQuery(<TodayView />);
       const card = await screen.findByRole('region', { name: '記録中' });
-      expect(within(card).getByRole('link', { name: '続ける' })).toHaveAttribute('href', '/exercises');
+      expect(within(card).getByRole('link', { name: '続ける' })).toHaveAttribute('href', '/record?exercise=lc');
       expect(within(card).getByRole('button', { name: '今日はここまで' })).toBeEnabled();
     });
 
@@ -506,24 +514,25 @@ describe('TodayView（S-10 今日）', () => {
     });
   });
 
-  describe('「今日 / きのう」の切り替え（F-21 あとから記録）', () => {
+  describe('「今日 / きのう」の切り替え（F-21 あとから記録・D2-2 7マスを押して選ぶ）', () => {
     beforeEach(() => {
       installFakeApi({ [WEEK]: ok(weekOf(TODAY, { '2026-11-02': 'rec' })), [WORKOUTS]: list(PREV), [LATEST]: list(PREV) });
     });
-    const dayGroup = () => screen.findByRole('group', { name: '記録する日' });
 
-    it('最初は「今日」が選ばれている。「きのう」を押すと切り替わる', async () => {
+    it('最初は今日のマスが選ばれている。きのうのマスを押すと切り替わる。切り替えボタンの組は無い', async () => {
       renderWithQuery(<TodayView />);
-      const group = await dayGroup();
-      expect(within(group).getByRole('button', { name: '今日' })).toHaveAttribute('aria-pressed', 'true');
-      expect(within(group).getByRole('button', { name: 'きのう' })).toHaveAttribute('aria-pressed', 'false');
-      await userEvent.click(within(group).getByRole('button', { name: 'きのう' }));
-      expect(within(group).getByRole('button', { name: 'きのう' })).toHaveAttribute('aria-pressed', 'true');
+      const todayCell = await findTodayCell();
+      expect(todayCell).toHaveAttribute('aria-pressed', 'true');
+      expect(yesterdayCell()).toHaveAttribute('aria-pressed', 'false');
+      await userEvent.click(yesterdayCell());
+      expect(yesterdayCell()).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.queryByRole('group', { name: '記録する日' })).not.toBeInTheDocument();
     });
 
     it('きのうでは、種目・種目を足す・ランのリンクに day=yesterday が付く', async () => {
       renderWithQuery(<TodayView />);
-      await userEvent.click(within(await dayGroup()).getByRole('button', { name: 'きのう' }));
+      await findTodayCell();
+      await userEvent.click(yesterdayCell());
       const menu = await screen.findByRole('list', { name: '今日のメニュー' });
       expect(within(menu).getByRole('link', { name: /スクワット/ })).toHaveAttribute('href', '/record?exercise=sq&day=yesterday');
       expect(screen.getByRole('link', { name: /種目を足す/ })).toHaveAttribute('href', '/exercises?day=yesterday');
@@ -533,17 +542,17 @@ describe('TodayView（S-10 今日）', () => {
     it('きのうでは、「つぎにやること」と「今日は休む」を出さない（きのうの休みは作れない）', async () => {
       renderWithQuery(<TodayView />);
       expect(await screen.findByRole('region', { name: 'つぎにやること' })).toBeInTheDocument();
-      await userEvent.click(within(await dayGroup()).getByRole('button', { name: 'きのう' }));
+      await findTodayCell();
+      await userEvent.click(yesterdayCell());
       expect(screen.queryByRole('region', { name: 'つぎにやること' })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /今日は休む/ })).not.toBeInTheDocument();
-      expect(screen.getByText(LATE_MESSAGES.banner)).toBeInTheDocument();
+      expect(screen.getByText(LATE_MESSAGES.tag)).toBeInTheDocument();
     });
 
     it('「今日」へ戻すと、元の画面とリンクに戻る', async () => {
       renderWithQuery(<TodayView />);
-      const group = await dayGroup();
-      await userEvent.click(within(group).getByRole('button', { name: 'きのう' }));
-      await userEvent.click(within(group).getByRole('button', { name: '今日' }));
+      await userEvent.click(await findTodayCell().then(() => yesterdayCell()));
+      await userEvent.click(todayCell());
       expect(await screen.findByRole('region', { name: 'つぎにやること' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /今日は休む/ })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: /ランを記録/ })).toHaveAttribute('href', '/run');
@@ -604,11 +613,11 @@ describe('TodayView（S-10 今日）', () => {
       const cells = within(strip).getAllByRole('listitem');
       expect(cells).toHaveLength(7);
       // 月曜始まり: 先頭の日付が切り替わる（日曜の間は 10/26、月曜になったら 11/2）
-      expect(cells[0].getAttribute('aria-label')).toMatch(new RegExp(`^${first}`));
+      expect(cellName(cells[0])).toMatch(new RegExp(`^${first}`));
       expect(calls).toContain(`GET /api/week?date=${date}`);
       const todayCells = cells.filter((c) => c.getAttribute('aria-current') === 'date');
       expect(todayCells).toHaveLength(1);
-      expect(todayCells[0].getAttribute('aria-label')).toMatch(new RegExp(`${todayLabel}.*今日.*記録あり`));
+      expect(cellName(todayCells[0])).toMatch(new RegExp(`${todayLabel}.*今日.*記録あり`));
     });
   });
 });
@@ -648,7 +657,22 @@ describe('TodayView（B03 今日画面の直し）', () => {
       expect(within(card).getByText(/グループを作って、招待リンクを送る/)).toBeInTheDocument();
     });
 
-    it('仲間の今日の足跡の1行が、今日／きのうの切替より上に出る', async () => {
+    it('D2-8: 招待カードは × で閉じられ、閉じたことを端末に覚える（開き直しても出ない）', async () => {
+      localStorage.removeItem('fitlog.inviteDismissed');
+      base({ [GROUP]: { status: 404, body: { message: 'なし' } } });
+      const { unmount } = renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '仲間' });
+      await userEvent.setup().click(within(card).getByRole('button', { name: '招待の案内を閉じる' }));
+      expect(screen.queryByRole('region', { name: '仲間' })).not.toBeInTheDocument();
+      expect(localStorage.getItem('fitlog.inviteDismissed')).toBe('1');
+      unmount();
+      renderWithQuery(<TodayView />);
+      await screen.findByRole('heading', { name: '今日 11月4日（水）' });
+      expect(screen.queryByRole('region', { name: '仲間' })).not.toBeInTheDocument();
+      localStorage.removeItem('fitlog.inviteDismissed');
+    });
+
+    it('仲間の今日の足跡の1行が、日付の見出しより上に出る', async () => {
       const m = (id: string, name: string) => ({ id, name, avatar: { color: 'teal', character: 'a' } });
       base({
         [GROUP]: ok({ id: 'g1', name: 'g', members: [m('u1', 'わたし'), m('u2', '田中')] }),
@@ -660,15 +684,15 @@ describe('TodayView（B03 今日画面の直し）', () => {
       });
       renderWithQuery(<TodayView />);
       const line = await screen.findByRole('link', { name: /仲間の今日 田中 が記録/ });
-      const group = screen.getByRole('group', { name: '記録する日' });
-      expect(line.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      const heading = screen.getByRole('heading', { name: '今日 11月4日（水）' });
+      expect(line.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it('きのうを選ぶと、仲間の1行は出さない（今日の足跡なので）', async () => {
       base({ [GROUP]: { status: 404, body: { message: 'なし' } } });
       renderWithQuery(<TodayView />);
       await screen.findByRole('region', { name: '仲間' });
-      await userEvent.setup().click(screen.getByRole('button', { name: 'きのう' }));
+      await userEvent.setup().click(yesterdayCell());
       expect(screen.queryByRole('region', { name: '仲間' })).not.toBeInTheDocument();
     });
   });
@@ -722,17 +746,24 @@ describe('TodayView（B03 今日画面の直し）', () => {
   });
 
   describe('A02-6・N-09・A12-2 週の帯', () => {
-    it('凡例を1行（黄=記録・紫=おやすみ）で出す', async () => {
-      base();
-      renderWithQuery(<TodayView />);
-      expect(await screen.findByText(/黄 記録\s紫 おやすみ/)).toBeInTheDocument();
-    });
-
-    it('丸は押せるボタンに見えない: 影（厚み）を付けず、中に操作できる要素も無い', async () => {
+    it('D2-1: 文字の凡例は出さず、記録は✓・休みは月の形でも見分けられる', async () => {
       base({}, { '2026-11-02': 'rec', '2026-11-03': 'rest' });
       renderWithQuery(<TodayView />);
       const strip = await screen.findByRole('list', { name: '今週の7日' });
-      expect(within(strip).queryAllByRole('button')).toHaveLength(0);
+      expect(screen.queryByText(/黄 記録/)).not.toBeInTheDocument();
+      const dots = within(strip).getAllByTestId('week-dot');
+      expect(dots[0]).toHaveAttribute('data-status', 'rec');
+      expect(dots[0].querySelector('svg')).not.toBeNull();
+      expect(dots[1]).toHaveAttribute('data-status', 'rest');
+      expect(dots[1].querySelector('svg')).not.toBeNull();
+      expect(dots[2].querySelector('svg')).toBeNull();
+    });
+
+    it('押せるのは今日ときのうのマスだけ（ほかの日はボタンにしない）。丸には影（厚み）を付けない', async () => {
+      base({}, { '2026-11-02': 'rec', '2026-11-03': 'rest' });
+      renderWithQuery(<TodayView />);
+      const strip = await screen.findByRole('list', { name: '今週の7日' });
+      expect(within(strip).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['11/3 火曜 きのう おやすみ', '11/4 水曜 今日']);
       expect(within(strip).queryAllByRole('link')).toHaveLength(0);
       for (const dot of within(strip).getAllByTestId('week-dot')) expect(dot.className).not.toContain('shadow');
     });
@@ -748,26 +779,47 @@ describe('TodayView（B03 今日画面の直し）', () => {
   });
 
   describe('A02-7・A02-9 今日／きのうの切替', () => {
-    it('選んだ日を見出しで明示する（今日は「11月4日（水）の記録 今日」）', async () => {
+    it('D2-2: 選んだ日を見出し1つで明示する（今日は「今日 11月4日（水）」。「今日」を何度も出さない）', async () => {
       base();
       renderWithQuery(<TodayView />);
-      expect(await screen.findByRole('heading', { name: '11月4日（水）の記録 今日' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { name: '今日 11月4日（水）' })).toBeInTheDocument();
+      expect(screen.queryByText(/の記録 今日/)).not.toBeInTheDocument();
     });
 
-    it('きのうを選ぶと、見出しが「11月3日（火）の記録 きのう」になり、週の帯のその日に印が付く', async () => {
+    it('きのうのマスを押すと、見出しが「きのう 11月3日（火）」になり、週の帯のその日に印が付く', async () => {
       base();
       renderWithQuery(<TodayView />);
-      await userEvent.setup().click(await screen.findByRole('button', { name: 'きのう' }));
-      expect(screen.getByRole('heading', { name: '11月3日（火）の記録 きのう' })).toBeInTheDocument();
+      await findTodayCell();
+      await userEvent.setup().click(yesterdayCell());
+      expect(screen.getByRole('heading', { name: 'きのう 11月3日（火）' })).toBeInTheDocument();
       const cells = within(screen.getByRole('list', { name: '今週の7日' })).getAllByRole('listitem');
       expect(cells[1]).toHaveAttribute('data-selected', 'true');
       expect(cells[2]).not.toHaveAttribute('data-selected', 'true');
     });
 
-    it('切替のボタンは大きい（高さ 48px 以上）', async () => {
+    it('押せるマスは帯の高さいっぱい（88px）で押しやすい', async () => {
       base();
       renderWithQuery(<TodayView />);
-      expect((await screen.findByRole('button', { name: 'きのう' })).className).toContain('min-h-12');
+      expect((await findTodayCell()).className).toContain('h-full');
+      expect(screen.getByRole('list', { name: '今週の7日' }).className).toContain('h-[88px]');
+    });
+
+    it('月曜は、きのう（前の週の日曜）が7マスに無いので、帯の下の「きのうの分を記録する」で切り替える', async () => {
+      vi.setSystemTime(new Date('2026-11-02T03:00:00.000Z'));
+      installFakeApi({ ['/api/week?date=2026-11-02']: ok(weekOf('2026-11-02')), [WORKOUTS]: list(), [LATEST]: list() });
+      const user = userEvent.setup();
+      renderWithQuery(<TodayView />);
+      await user.click(await screen.findByRole('button', { name: LATE_MESSAGES.toYesterday }));
+      expect(screen.getByRole('heading', { name: 'きのう 11月1日（日）' })).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: LATE_MESSAGES.toToday }));
+      expect(screen.getByRole('heading', { name: '今日 11月2日（月）' })).toBeInTheDocument();
+    });
+
+    it('火〜日曜は、帯の下の入口を出さない（7マスで選べるので）', async () => {
+      base();
+      renderWithQuery(<TodayView />);
+      await findTodayCell();
+      expect(screen.queryByRole('button', { name: LATE_MESSAGES.toYesterday })).not.toBeInTheDocument();
     });
   });
 

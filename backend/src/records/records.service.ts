@@ -67,6 +67,11 @@ export class RecordsService {
     const inserted = await this.db.transaction(async (tx) => {
       const [row] = await tx.insert(records).values({ id, userId, kind, recordedAt, localDate, late: late ?? false, copiedFromUserId: copiedFromUserId ?? null }).onConflictDoNothing().returning();
       if (row && run) await tx.insert(runDetails).values({ recordId: row.id, distanceM: run.distanceM, durationS: run.durationS, route: run.route ?? null });
+      // 筋トレ・ランを記録した日は「動いた日」なので、同じ日の休みを消す（D2-6。休みと記録が並ばないように）。
+      // 休みに付いた反応・コメントは外部キーの連鎖で一緒に消える。再送（何もしなかった）のときは消さない
+      if (row && kind !== 'rest') {
+        await tx.delete(records).where(and(eq(records.userId, userId), eq(records.localDate, localDate), eq(records.kind, 'rest')));
+      }
       return row;
     });
     if (inserted) {

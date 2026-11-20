@@ -1,7 +1,10 @@
 'use client';
 
-import { UserPlus, Users } from 'lucide-react';
+import { UserPlus, Users, X } from 'lucide-react';
 import Link from 'next/link';
+import { useState, useSyncExternalStore } from 'react';
+
+const noSubscribe = () => () => {};
 import { useGetCurrentGroup, useGetFeed, type FeedItem } from '@/lib/api/generated';
 import { TODAY_FRIENDS_MESSAGES } from '@/lib/messages';
 import { useAppSession } from '@/lib/use-app-session';
@@ -66,10 +69,40 @@ export function FriendsToday({ today, part = 'all' }: { today: string; part?: 'a
   );
 }
 
+// 閉じたことは端末に覚える（D2-8）。仲間タブからはいつでも招待できるので、ここは消せてよい
+const INVITE_DISMISSED_KEY = 'fitlog.inviteDismissed';
+const readDismissed = (): boolean => {
+  try {
+    return localStorage.getItem(INVITE_DISMISSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
 function InviteCard({ noGroup }: { noGroup: boolean }) {
+  // 端末に覚えた値は useSyncExternalStore で読む（書き出し時は false＝出す）。押した直後は手元の状態で消す
+  const stored = useSyncExternalStore(noSubscribe, readDismissed, () => false);
+  const [closed, setClosed] = useState(false);
+  if (stored || closed) return null;
+  const onClose = () => {
+    setClosed(true);
+    try {
+      localStorage.setItem(INVITE_DISMISSED_KEY, '1');
+    } catch {
+      // 保存できない端末では、この画面を開いている間だけ閉じる
+    }
+  };
   return (
-    <section aria-label="仲間" className="fl-slab px-4 py-3">
-      <p className="text-sm font-extrabold">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupTitle : TODAY_FRIENDS_MESSAGES.aloneTitle}</p>
+    <section aria-label="仲間" className="fl-slab relative px-4 py-3">
+      <button
+        type="button"
+        aria-label={TODAY_FRIENDS_MESSAGES.close}
+        onClick={onClose}
+        className={`absolute top-1 right-1 flex size-11 items-center justify-center rounded-full text-fg-muted ${FOCUS}`}
+      >
+        <X aria-hidden className="size-5" />
+      </button>
+      <p className="pr-10 text-sm font-extrabold">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupTitle : TODAY_FRIENDS_MESSAGES.aloneTitle}</p>
       <p className="mt-1 text-note leading-relaxed font-bold text-fg-muted">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupSteps : TODAY_FRIENDS_MESSAGES.aloneSteps}</p>
       <Link
         href="/friends"

@@ -28,7 +28,7 @@ export type TodayMenu = {
   /** メニューがあり、全部できた。記録中（終わっていない）の間は false（「今日の分は できた」と言い切らない。N1） */
   allDone: boolean;
   /** いま記録中の筋トレ（サーバーの active。今日の日付のもの）。無ければ null。種目数・セット数は終了のまとめにも使う */
-  session: { recordId: string; exerciseCount: number; setCount: number } | null;
+  session: { recordId: string; exerciseCount: number; setCount: number; lastExerciseId: string | null } | null;
 };
 
 const valueOf = (s: { weightKg: number; reps: number }): SetValue => ({ weightKg: s.weightKg, reps: s.reps });
@@ -78,6 +78,8 @@ export function buildMenu(workouts: readonly RecordDetailResponse[], today: stri
         recordId: running.id,
         exerciseCount: (running.exercises ?? []).length,
         setCount: (running.exercises ?? []).reduce((n, e) => n + e.sets.length, 0),
+        // 「続ける」の行き先（D2-4）。記録中の筋トレで最後に入れた種目
+        lastExerciseId: (running.exercises ?? []).at(-1)?.exerciseId ?? null,
       }
     : null;
 
