@@ -38,8 +38,8 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
   const newCount = typeof body?.newCount === 'number' && body.newCount > 0 ? body.newCount : undefined;
   return (
     <>
-    <nav aria-label="メイン" className="fixed bottom-0 left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 border-t-2 border-line bg-surface">
-      <ul className="flex justify-around px-3 pt-1.5 pb-[max(10px,env(safe-area-inset-bottom))]">
+    <nav aria-label="メイン" className="fixed bottom-0 left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 border-t-2 border-line bg-surface lg:sticky lg:top-0 lg:bottom-auto lg:left-auto lg:order-first lg:h-dvh lg:w-56 lg:shrink-0 lg:translate-x-0 lg:self-start lg:border-t-0 lg:bg-transparent">
+      <ul className="flex justify-around px-3 pt-1.5 pb-[max(10px,env(safe-area-inset-bottom))] lg:flex-col lg:justify-start lg:gap-2 lg:px-2 lg:pt-6">
         {TABS.map(({ href, label, Icon }, index) => {
           const active = isActive(pathname, href);
           const dot = href === '/friends' && hasNew && !active;
@@ -51,6 +51,7 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex h-13 w-16 flex-col items-center justify-center gap-0.5 rounded-fl text-note font-bold outline-none',
+                  'lg:h-12 lg:w-full lg:flex-row lg:justify-start lg:gap-3 lg:px-4 lg:text-sm',
                   'focus-visible:ring-4 focus-visible:ring-teal/40',
                   // 選択中の文字は濃いティール（ティール10%の背景の上で 4.5 以上）
                   active ? 'bg-teal/10 text-brand' : 'text-fg-subtle',
@@ -73,15 +74,16 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
               </Link>
             </li>
             {index === 1 && (
-              <li className="flex items-center">
+              <li className="flex items-center lg:order-first lg:mb-2 lg:block">
                 <button
                   type="button"
                   aria-label="記録を始める"
                   aria-haspopup="dialog"
                   onClick={() => setStarting(true)}
-                  className="fl-thick flex size-14 items-center justify-center rounded-full bg-teal-dark text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40"
+                  className="fl-thick flex size-14 items-center justify-center gap-2 rounded-full bg-teal-dark text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40 lg:h-12 lg:w-full lg:rounded-fl lg:text-lg lg:font-extrabold lg:tracking-wider"
                 >
-                  <Plus aria-hidden className="size-7" strokeWidth={3} />
+                  <Plus aria-hidden className="size-7 lg:size-5" strokeWidth={3} />
+                  <span aria-hidden className="hidden lg:inline">START</span>
                 </button>
               </li>
             )}
