@@ -157,6 +157,7 @@ export const WORKOUT_END_MESSAGES = {
   summaryTitle: '今日のまとめ',
   thanks: 'おつかれさま。今日の分は ここまで',
   best: (n: number) => `自己ベスト ${n}回`,
+  total: (kg: string) => `総重量 ${kg}kg`,
   close: 'とじる',
 } as const;
 
