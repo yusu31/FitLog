@@ -1,6 +1,6 @@
 'use client';
 
-import { Minus, Plus, Timer } from 'lucide-react';
+import { Maximize2, Minimize2, Minus, Plus, Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { REST_MAX_S, REST_MIN_S, formatRest, remainingSeconds, stepRestSeconds, writeRestSeconds } from '@/lib/rest-timer';
 
@@ -10,6 +10,8 @@ import { REST_MAX_S, REST_MIN_S, formatRest, remainingSeconds, stepRestSeconds, 
 export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt: number; initialSeconds: number; onClose: () => void }) {
   const [total, setTotal] = useState(initialSeconds);
   const [now, setNow] = useState(startedAt);
+  // 下に固定の帯（ふだん）／大きなタイマーのシート（帯を押したとき）。部品は1つで、並びと大きさだけ変える
+  const [big, setBig] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 250);
@@ -30,21 +32,37 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
   }
 
   return (
-    <section aria-label="休憩タイマー" className="fl-slab mx-4 mt-2 space-y-2 border-teal-light bg-teal-light/40 px-4 py-3">
+    <section
+      aria-label="休憩タイマー"
+      className={
+        big
+          ? 'fixed inset-0 z-40 flex flex-col justify-center gap-5 bg-canvas px-6 py-8'
+          : 'fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[600px] space-y-2 rounded-t-fl border-t-4 border-teal-light bg-canvas px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]'
+      }
+    >
       <p role="status" className="sr-only">
         {done ? '休憩おわり' : '休憩をはじめました'}
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <Timer aria-hidden className="hidden size-5 shrink-0 text-brand min-[260px]:block" />
-        <p aria-hidden className="min-w-0 flex-1 basis-28 font-extrabold">
+        <p aria-hidden className={big ? 'w-full text-center text-xl font-extrabold' : 'min-w-0 flex-1 basis-28 font-extrabold'}>
           {done ? (
             '休憩おわり。次のセットへ'
           ) : (
             <>
-              休憩 <span data-testid="rest-remaining" className="fl-num text-2xl">{formatRest(remaining)}</span>
+              休憩 <span data-testid="rest-remaining" className={big ? 'fl-num block text-[96px] leading-none' : 'fl-num text-2xl'}>{formatRest(remaining)}</span>
             </>
           )}
         </p>
+        <button
+          type="button"
+          aria-label={big ? '小さくして下の帯にもどす' : '大きなタイマーで見る'}
+          aria-expanded={big}
+          onClick={() => setBig((v) => !v)}
+          className="flex size-11 shrink-0 items-center justify-center rounded-fl bg-surface text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        >
+          {big ? <Minimize2 aria-hidden className="size-5" /> : <Maximize2 aria-hidden className="size-5" />}
+        </button>
         {done ? null : (
           <>
             <button
