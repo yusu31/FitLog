@@ -34,7 +34,7 @@ export function SocialSection({ recordId, kind, mine }: { recordId: string; kind
     <div className="space-y-4">
       <Stamps recordId={recordId} kind={kind} online={online} mine={mine} />
       <Comments recordId={recordId} online={online} mine={mine} />
-      {!online && !mine && <p className="text-center text-note font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
+      {!online && !mine && <p className="text-center text-note font-bold text-fg-muted">{FEED_MESSAGES.offlineNote}</p>}
     </div>
   );
 }
@@ -72,7 +72,7 @@ function Stamps({ recordId, kind, online, mine: isMine }: { recordId: string; ki
         {FEED_MESSAGES.stampsHeading}
       </h2>
       {failed ? (
-        <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {FEED_MESSAGES.stampsLoadFailed}
         </p>
       ) : isMine ? (
@@ -96,7 +96,7 @@ function Stamps({ recordId, kind, online, mine: isMine }: { recordId: string; ki
         </ul>
       )}
       {notice && (
-        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {notice}
         </p>
       )}
@@ -107,7 +107,7 @@ function Stamps({ recordId, kind, online, mine: isMine }: { recordId: string; ki
 function ReceivedStamps({ stamps, kind, loaded }: { stamps: readonly FeedStamp[]; kind: FeedItemKind; loaded: boolean }) {
   const received = STAMP_KEYS[kind].map((key) => ({ key, count: stampState(stamps, key).count })).filter((s) => s.count > 0);
   if (!loaded) return null;
-  if (received.length === 0) return <p className="fl-slab px-4 py-4 text-center text-sm font-bold text-sub-strong">{FEED_MESSAGES.stampsNoneYet}</p>;
+  if (received.length === 0) return <p className="fl-slab px-4 py-4 text-center text-sm font-bold text-fg-muted">{FEED_MESSAGES.stampsNoneYet}</p>;
   return (
     <ul aria-label="もらったスタンプ" className="flex flex-wrap gap-1.5">
       {received.map(({ key, count }) => (
@@ -169,18 +169,18 @@ function Comments({ recordId, online, mine }: { recordId: string; online: boolea
         {data !== undefined && !failed ? FEED_MESSAGES.commentsOpen(items.length) : FEED_MESSAGES.commentsHeading}
       </h2>
       {failed ? (
-        <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {FEED_MESSAGES.commentsLoadFailed}
         </p>
       ) : data !== undefined && items.length === 0 ? (
-        <p className="fl-slab px-4 py-4 text-center text-sm font-bold text-sub-strong">{FEED_MESSAGES.commentsEmpty}</p>
+        <p className="fl-slab px-4 py-4 text-center text-sm font-bold text-fg-muted">{FEED_MESSAGES.commentsEmpty}</p>
       ) : data === undefined ? null : (
         <ul aria-label="コメント一覧" className="space-y-2">
           {items.map((c) => (
             <li key={c.id} className="fl-slab flex items-start gap-2 px-3 py-2">
               <div className="min-w-0 flex-1">
-                <p className="text-note font-bold text-sub-strong">
-                  <span className="font-extrabold text-ink">{c.author.name}</span> {formatMonthDay(c.createdAt.slice(0, 10))}{' '}
+                <p className="text-note font-bold text-fg-muted">
+                  <span className="font-extrabold text-fg">{c.author.name}</span> {formatMonthDay(c.createdAt.slice(0, 10))}{' '}
                   {formatJstTime(c.createdAt)}
                 </p>
                 <p className="text-[15px] font-bold break-words">{c.body}</p>
@@ -191,7 +191,7 @@ function Comments({ recordId, online, mine }: { recordId: string; online: boolea
                   aria-label={`${FEED_MESSAGES.commentDelete}: ${c.body}`}
                   disabled={!online || deleteComment.isPending}
                   onClick={() => void remove(c.id)}
-                  className="min-h-11 shrink-0 rounded-full border-2 border-line bg-white px-3 text-sm font-extrabold text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
+                  className="min-h-11 shrink-0 rounded-full border-2 border-line bg-surface px-3 text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
                 >
                   {FEED_MESSAGES.commentDelete}
                 </button>
@@ -202,7 +202,7 @@ function Comments({ recordId, online, mine }: { recordId: string; online: boolea
       )}
       {!mine && (
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-2">
-        <label htmlFor={inputId} className="text-note font-bold text-sub-strong">
+        <label htmlFor={inputId} className="text-note font-bold text-fg-muted">
           {FEED_MESSAGES.commentInputLabel}
         </label>
         <div className="flex gap-2">
@@ -223,7 +223,7 @@ function Comments({ recordId, online, mine }: { recordId: string; online: boolea
       {message && (
         <p
           role={message.kind === 'error' ? 'alert' : 'status'}
-          className={cn('rounded-lg px-3 py-2 text-sm font-bold text-ink', message.kind === 'error' ? 'bg-coral-light' : 'bg-teal-light')}
+          className={cn('rounded-lg px-3 py-2 text-sm font-bold text-fg', message.kind === 'error' ? 'bg-coral-light' : 'bg-teal-light')}
         >
           {message.text}
         </p>

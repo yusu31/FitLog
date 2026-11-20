@@ -461,7 +461,7 @@ describe('B05 仲間タブの改善', () => {
     replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 'r1', isNew: true })] }) }];
     renderFeed();
     const tag = await screen.findByText('新着');
-    expect(tag.className).toContain('text-ink');
+    expect(tag.className).toContain('text-fg');
     expect(tag.className).not.toContain('text-white');
     await user.click(screen.getByRole('button', { name: 'コメント' }));
     expect(screen.queryByText('新着')).not.toBeInTheDocument();
@@ -521,8 +521,7 @@ describe('B05 仲間タブの改善', () => {
     replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ stamps: [{ stampKey: 'clap', count: 1, mine: 'rx', by: [] }] })] }) }];
     renderFeed();
     const button = await screen.findByRole('button', { name: 'おつかれ 1' });
-    expect(button.className).toContain('text-teal-deep');
-    expect(button.className).not.toContain('text-teal-dark');
+    expect(button.className).toContain('text-brand');
   });
 
   it('A04-10: 足跡に種目のアイコンが付く（筋トレ・ラン・休み）', async () => {

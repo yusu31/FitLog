@@ -61,21 +61,21 @@ export function SignupForm() {
         <div className="flex flex-col gap-1.5">
           <Label className="font-extrabold" htmlFor="name">表示名</Label>
           <Input className="h-12 text-base" id="name" name="name" autoComplete="nickname" required maxLength={30} aria-describedby="name-hint" />
-          <p id="name-hint" className="text-sm text-sub">仲間に見える名前です。あとから変えられます</p>
+          <p id="name-hint" className="text-sm text-fg-subtle">仲間に見える名前です。あとから変えられます</p>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label className="font-extrabold" htmlFor="email">メールアドレス</Label>
           <Input className="h-12 text-base" id="email" name="email" type="email" autoComplete="email" required aria-describedby="email-hint" />
-          <p id="email-hint" className="text-sm text-sub">ログインに使います</p>
+          <p id="email-hint" className="text-sm text-fg-subtle">ログインに使います</p>
         </div>
         <PasswordField label={`パスワード（${MIN_PASSWORD_LENGTH}文字以上）`} autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} />
         {error && (
-          <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+          <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
             {error}
           </p>
         )}
         {done && (
-          <p role="status" className="rounded-lg bg-teal-light px-3 py-2 text-sm font-bold text-ink">
+          <p role="status" className="rounded-lg bg-teal-light px-3 py-2 text-sm font-bold text-fg">
             登録できたよ。今日の画面へ移ります
           </p>
         )}
@@ -84,7 +84,7 @@ export function SignupForm() {
         </ThickButton>
       </form>
       <div className="flex flex-col gap-2">
-        <p className="text-center text-sm text-sub">登録済みの方は</p>
+        <p className="text-center text-sm text-fg-subtle">登録済みの方は</p>
         <AuthLinkButton href={withNext('/login', next)}>ログイン</AuthLinkButton>
       </div>
     </AuthLayout>

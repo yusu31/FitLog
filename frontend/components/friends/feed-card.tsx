@@ -110,16 +110,16 @@ export function FeedCard({ item }: { item: FeedItem }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] leading-tight font-extrabold">
             {item.author.name}
-            <span className="ml-2 inline-flex items-center gap-1 text-sub-strong">
-              <KindIcon aria-hidden data-testid="kind-icon" className="size-4 shrink-0 text-teal-dark" />
+            <span className="ml-2 inline-flex items-center gap-1 text-fg-muted">
+              <KindIcon aria-hidden data-testid="kind-icon" className="size-4 shrink-0 text-brand" />
               {title}
             </span>
-            {detail && <span className="ml-1.5 text-sm text-sub-strong">{detail}</span>}
+            {detail && <span className="ml-1.5 text-sm text-fg-muted">{detail}</span>}
           </p>
-          <p className="mt-0.5 text-note font-bold text-sub">
+          <p className="mt-0.5 text-note font-bold text-fg-subtle">
             {formatMonthDay(item.localDate)} {item.late ? <LateTag /> : formatJstTime(item.recordedAt)}
             {item.isNew && !seen && (
-              <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-note font-extrabold text-ink">{FEED_MESSAGES.newTag}</span>
+              <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-note font-extrabold text-fg">{FEED_MESSAGES.newTag}</span>
             )}
           </p>
         </div>
@@ -150,7 +150,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
                   ? `/record-detail?id=${encodeURIComponent(item.id)}&from=me`
                   : `/record-detail?id=${encodeURIComponent(item.id)}&by=${encodeURIComponent(item.author.id)}`
               }
-              className="flex min-h-11 items-center rounded-full border-2 border-line bg-white px-3 text-sm font-extrabold text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+              className="flex min-h-11 items-center rounded-full border-2 border-line bg-surface px-3 text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
             >
               {FRIEND_MESSAGES.open}
             </Link>
@@ -161,7 +161,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
             type="button"
             aria-expanded={openComments}
             onClick={() => setOpenComments((v) => !v)}
-            className="flex min-h-11 items-center gap-1.5 rounded-full border-2 border-line bg-white px-3 text-sm font-extrabold text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            className="flex min-h-11 items-center gap-1.5 rounded-full border-2 border-line bg-surface px-3 text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             <MessageCircle aria-hidden className="size-4" />
             {FEED_MESSAGES.commentsOpen(item.commentCount)}
@@ -171,20 +171,20 @@ export function FeedCard({ item }: { item: FeedItem }) {
 
       {/* だれが押したか（A04-2）。スタンプが付いているときだけ。自分は「あなた」 */}
       {who.length > 0 && (
-        <p data-testid="stamp-who" className="text-note font-bold text-sub-strong">
+        <p data-testid="stamp-who" className="text-note font-bold text-fg-muted">
           {who.join(' ／ ')}
         </p>
       )}
       {stampNote && (
-        <p role="status" className="text-sm font-bold text-teal-deep">
+        <p role="status" className="text-sm font-bold text-brand">
           {stampNote}
         </p>
       )}
-      {hasMine && !stampNote && <p className="text-note font-bold text-sub-strong">{FRIENDS_TEXT.stampUndoHint}</p>}
-      {stampNote === FRIENDS_TEXT.stampSent && <p className="text-note font-bold text-sub-strong">{FRIENDS_TEXT.stampUndoHint}</p>}
-      {!online && <p className="text-note font-bold text-sub-strong">{FEED_MESSAGES.offlineNote}</p>}
+      {hasMine && !stampNote && <p className="text-note font-bold text-fg-muted">{FRIENDS_TEXT.stampUndoHint}</p>}
+      {stampNote === FRIENDS_TEXT.stampSent && <p className="text-note font-bold text-fg-muted">{FRIENDS_TEXT.stampUndoHint}</p>}
+      {!online && <p className="text-note font-bold text-fg-muted">{FEED_MESSAGES.offlineNote}</p>}
       {notice && (
-        <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+        <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {notice}
         </p>
       )}
@@ -234,7 +234,7 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
 
   const disabled = !online || addComment.isPending;
   return (
-    <div ref={panelRef} className="space-y-2 rounded-fl bg-face p-3">
+    <div ref={panelRef} className="space-y-2 rounded-fl bg-canvas p-3">
       <ul aria-label="定型コメント" className="flex flex-wrap gap-1.5">
         {LIGHT_QUICK_COMMENTS[item.kind].map((body) => (
           <li key={body}>
@@ -242,7 +242,7 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
               type="button"
               disabled={disabled}
               onClick={() => void send(body)}
-              className="min-h-11 rounded-full border-2 border-teal-light bg-white px-3 text-sm font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
+              className="min-h-11 rounded-full border-2 border-teal-light bg-surface px-3 text-sm font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
             >
               {body}
             </button>
@@ -250,7 +250,7 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
         ))}
       </ul>
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-2">
-        <label htmlFor={inputId} className="text-note font-bold text-sub-strong">
+        <label htmlFor={inputId} className="text-note font-bold text-fg-muted">
           {FEED_MESSAGES.commentInputLabel}
         </label>
         <div className="flex gap-2">
@@ -270,7 +270,7 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
       {sent.length > 0 && (
         <ul aria-label={FRIENDS_TEXT.sentCommentsLabel} className="space-y-1">
           {sent.map((body, i) => (
-            <li key={`${i}-${body}`} className="rounded-lg bg-white px-3 py-2 text-sm font-bold break-all">
+            <li key={`${i}-${body}`} className="rounded-lg bg-surface px-3 py-2 text-sm font-bold break-all">
               {body}
             </li>
           ))}
@@ -279,7 +279,7 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
       {message && (
         <p
           role={message.kind === 'error' ? 'alert' : 'status'}
-          className={cn('rounded-lg px-3 py-2 text-sm font-bold text-ink', message.kind === 'error' ? 'bg-coral-light' : 'bg-teal-light')}
+          className={cn('rounded-lg px-3 py-2 text-sm font-bold text-fg', message.kind === 'error' ? 'bg-coral-light' : 'bg-teal-light')}
         >
           {message.text}
         </p>

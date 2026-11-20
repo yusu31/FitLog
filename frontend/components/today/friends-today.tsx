@@ -55,11 +55,11 @@ export function FriendsToday({ today, part = 'all' }: { today: string; part?: 'a
     <Link
       href="/friends"
       aria-label={`${TODAY_FRIENDS_MESSAGES.label} ${parts.length > 0 ? parts.join('　') : TODAY_FRIENDS_MESSAGES.none}`}
-      className={`flex min-h-12 items-center gap-2 rounded-fl bg-teal-light px-4 py-2 text-sm font-extrabold text-ink ${FOCUS}`}
+      className={`flex min-h-12 items-center gap-2 rounded-fl bg-teal-light px-4 py-2 text-sm font-extrabold text-fg ${FOCUS}`}
     >
-      <Users aria-hidden className="size-5 shrink-0 text-teal-dark" />
+      <Users aria-hidden className="size-5 shrink-0 text-brand" />
       <span aria-hidden className="min-w-0">
-        <span className="text-teal-deep">{TODAY_FRIENDS_MESSAGES.label}</span>
+        <span className="text-brand">{TODAY_FRIENDS_MESSAGES.label}</span>
         <span className="ml-2">{parts.length > 0 ? parts.join('　') : TODAY_FRIENDS_MESSAGES.none}</span>
       </span>
     </Link>
@@ -70,7 +70,7 @@ function InviteCard({ noGroup }: { noGroup: boolean }) {
   return (
     <section aria-label="仲間" className="fl-slab px-4 py-3">
       <p className="text-sm font-extrabold">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupTitle : TODAY_FRIENDS_MESSAGES.aloneTitle}</p>
-      <p className="mt-1 text-note leading-relaxed font-bold text-sub-strong">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupSteps : TODAY_FRIENDS_MESSAGES.aloneSteps}</p>
+      <p className="mt-1 text-note leading-relaxed font-bold text-fg-muted">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupSteps : TODAY_FRIENDS_MESSAGES.aloneSteps}</p>
       <Link
         href="/friends"
         className={`fl-thick mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-fl bg-teal-dark px-4 text-base font-extrabold text-white [--thick:var(--color-teal-deep)] ${FOCUS}`}

@@ -83,7 +83,7 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
 
   const busy = phase === 'recording' || phase === 'sending';
   return (
-    <div role="dialog" aria-modal="true" aria-label="2秒ラストレップを撮る" className="fixed inset-0 z-30 flex flex-col bg-ink text-white">
+    <div role="dialog" aria-modal="true" aria-label="2秒ラストレップを撮る" className="fixed inset-0 z-30 flex flex-col bg-night text-white">
       <video ref={videoRef} playsInline muted className={`min-h-0 w-full flex-1 bg-black object-cover ${phase === 'error' ? 'hidden' : ''}`} />
       {phase === 'error' && (
         <div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-y-auto px-6 py-4">
@@ -107,7 +107,7 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
           {phase === 'done' && '保存しました。仲間にはその週の終わりまで見えます'}
         </p>
         {error && phase !== 'error' && (
-          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
             {error}
           </p>
         )}

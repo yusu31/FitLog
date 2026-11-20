@@ -18,8 +18,8 @@ export const AVATAR_BG: Record<string, string> = {
 // グループの名前と、いまの人数（大きな数字）。仲間タブ（S-20）とグループの設定（S-32）で同じ見た目を使う
 export function GroupSummary({ group }: { group: GroupDetailResponse }) {
   return (
-    <section className="fl-stripes relative overflow-hidden rounded-fl bg-coral px-[18px] pt-3.5 pb-4 text-ink shadow-[0_4px_0_var(--color-coral-dark)]">
-      <span className="fl-tag bg-gold text-ink">なかま</span>
+    <section className="fl-stripes relative overflow-hidden rounded-fl bg-coral px-[18px] pt-3.5 pb-4 text-fg shadow-[0_4px_0_var(--color-coral-dark)]">
+      <span className="fl-tag bg-gold text-fg">なかま</span>
       <p className="mt-3 flex items-baseline gap-1.5 leading-none">
         <span aria-label="いまの人数" className="fl-num text-7xl">
           {group.members.length}
@@ -39,7 +39,7 @@ export function MemberList({ group }: { group: GroupDetailResponse }) {
 
   return (
     <section>
-      <h2 id="members-heading" className="flex items-center gap-1.5 pb-2 text-note font-bold tracking-widest text-sub">
+      <h2 id="members-heading" className="flex items-center gap-1.5 pb-2 text-note font-bold tracking-widest text-fg-subtle">
         <Users aria-hidden className="size-4" />
         メンバー
       </h2>
@@ -54,7 +54,7 @@ export function MemberList({ group }: { group: GroupDetailResponse }) {
               {Array.from(m.name)[0]}
             </span>
             <span className="min-w-0 flex-1 truncate text-base font-extrabold">{m.name}</span>
-            {m.id === me && <span className="fl-tag bg-gold text-ink">あなた</span>}
+            {m.id === me && <span className="fl-tag bg-gold text-fg">あなた</span>}
           </li>
         ))}
       </ul>

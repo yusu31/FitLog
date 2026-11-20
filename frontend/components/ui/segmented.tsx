@@ -32,7 +32,7 @@ export function Segmented<T extends string>({
             onClick={() => onChange(o.value)}
             className={cn(
               'min-h-11 rounded-fl px-3 text-sm font-bold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-              checked ? 'bg-teal-dark text-white' : 'bg-teal-light text-ink',
+              checked ? 'bg-teal-dark text-white' : 'bg-teal-light text-fg',
             )}
           >
             {o.label}

@@ -15,13 +15,13 @@ export function WeekRunSection() {
 
   return (
     <section aria-labelledby="week-run-heading" className="fl-slab px-4 py-3">
-      <h2 id="week-run-heading" className="text-sm font-extrabold text-sub-strong">
+      <h2 id="week-run-heading" className="text-sm font-extrabold text-fg-muted">
         今週のラン
       </h2>
       <p className="mt-1">
         <span className="fl-num text-3xl">{formatDistance(thisWeek?.runDistanceM ?? 0)}</span>
       </p>
-      <p className="mt-1 text-sm font-bold text-teal-dark">日本縦断: {nextText(locateOnRoute(data.totalRunDistanceM))}</p>
+      <p className="mt-1 text-sm font-bold text-brand">日本縦断: {nextText(locateOnRoute(data.totalRunDistanceM))}</p>
     </section>
   );
 }

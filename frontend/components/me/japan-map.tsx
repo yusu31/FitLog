@@ -85,7 +85,7 @@ export function JapanMap({ pos }: { pos: RoutePosition }) {
   return (
     <div id={TREK_ANCHOR_ID} className="scroll-mt-4">
       {failed ? (
-        <p role="status" className="mt-2 rounded-fl bg-face px-4 py-3 text-sm font-bold text-sub-strong">
+        <p role="status" className="mt-2 rounded-fl bg-canvas px-4 py-3 text-sm font-bold text-fg-muted">
           地図は この端末では出せませんでした。距離と次の町は上に出ています
         </p>
       ) : (

@@ -28,7 +28,7 @@ export function PasteInvite() {
       <label htmlFor="paste-invite" className="text-sm font-extrabold">
         届いた招待リンク
       </label>
-      <p className="text-note text-sub-strong">新しいリンクが届いたら、ここに貼ってください。</p>
+      <p className="text-note text-fg-muted">新しいリンクが届いたら、ここに貼ってください。</p>
       <input
         id="paste-invite"
         value={pasted}
@@ -38,14 +38,14 @@ export function PasteInvite() {
         }}
         placeholder="https://…/invite?token=…"
         autoComplete="off"
-        className="h-12 w-full rounded-lg border-2 border-input bg-white px-3 font-mono text-note text-ink"
+        className="h-12 w-full rounded-lg border-2 border-input bg-surface px-3 font-mono text-note text-fg"
       />
       <ThickButton tone="white" size="sm" onClick={onOpen}>
         <Link2 aria-hidden />
         開く
       </ThickButton>
       {error && (
-        <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+        <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {error}
         </p>
       )}

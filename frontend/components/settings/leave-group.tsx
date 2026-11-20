@@ -36,7 +36,7 @@ export function LeaveGroup({ onLeft }: { onLeft?: () => void }) {
 
   return (
     <section aria-label="グループを出る" className="pt-2 pb-6">
-      <p className="pb-2 text-sm text-sub-strong [word-break:auto-phrase]">
+      <p className="pb-2 text-sm text-fg-muted [word-break:auto-phrase]">
         出ると、仲間の記録が見えなくなります。あなたの記録は残ります。
       </p>
       <ThickButton tone="white" size="sm" onClick={() => setConfirming(true)}>
@@ -44,7 +44,7 @@ export function LeaveGroup({ onLeft }: { onLeft?: () => void }) {
         グループを出る
       </ThickButton>
       {error && (
-        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {error}
         </p>
       )}

@@ -40,28 +40,28 @@ export function DoneSets({
       <ol aria-label="できたセット" className="flex w-full flex-col gap-2">
         {sets.map((s) => (
           <li key={s.id} className="fl-slab relative flex min-h-14 items-center gap-3 py-1.5 pr-1 pl-2.5">
-            <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-gold text-ink">
+            <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-gold text-fg">
               <Check className="size-5" strokeWidth={3} />
             </span>
             <span className="flex-1 leading-tight">
-              <span className="block text-note text-sub-strong">セット{s.setNo}</span>
+              <span className="block text-note text-fg-muted">セット{s.setNo}</span>
               <span className="fl-num text-xl">
                 {formatSetWithReps(s)}
               </span>
             </span>
-            {bestIds.has(s.id) && <span className="fl-tag bg-gold !py-0 !text-note !leading-4 text-ink">{RECORD_MESSAGES.best}</span>}
+            {bestIds.has(s.id) && <span className="fl-tag bg-gold !py-0 !text-note !leading-4 text-fg">{RECORD_MESSAGES.best}</span>}
             <button
               type="button"
               aria-label={`セット${s.setNo}の メニュー`}
               aria-haspopup="menu"
               aria-expanded={menuFor === s.id}
               onClick={() => setMenuFor(menuFor === s.id ? null : s.id)}
-              className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+              className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
             >
               <Ellipsis aria-hidden className="size-6" />
             </button>
             {menuFor === s.id && (
-              <div role="menu" className="absolute top-full right-1 z-10 mt-1 w-56 rounded-fl border-2 border-line bg-white p-1 shadow-lg">
+              <div role="menu" className="absolute top-full right-1 z-10 mt-1 w-56 rounded-fl border-2 border-line bg-surface p-1 shadow-lg">
                 <button
                   type="button"
                   role="menuitem"
@@ -70,12 +70,12 @@ export function DoneSets({
                     setMenuFor(null);
                     setConfirming(s);
                   }}
-                  className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left font-extrabold text-coral-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:text-sub disabled:opacity-100"
+                  className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left font-extrabold text-coral-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:text-fg-subtle disabled:opacity-100"
                 >
                   <Trash2 aria-hidden className="size-5" />
                   削除
                 </button>
-                {!online && <p className="px-3 pb-2 text-note text-sub-strong">電波があるときだけ 消せます</p>}
+                {!online && <p className="px-3 pb-2 text-note text-fg-muted">電波があるときだけ 消せます</p>}
               </div>
             )}
           </li>
@@ -83,13 +83,13 @@ export function DoneSets({
       </ol>
 
       {confirming && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-ink/50 p-4 sm:items-center">
-          <div role="alertdialog" aria-modal="true" aria-labelledby="del-title" aria-describedby="del-desc" className="w-full max-w-sm rounded-2xl bg-white p-5">
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-night/50 p-4 sm:items-center">
+          <div role="alertdialog" aria-modal="true" aria-labelledby="del-title" aria-describedby="del-desc" className="w-full max-w-sm rounded-2xl bg-surface p-5">
             <h2 id="del-title" className="text-xl font-extrabold">
               このセットを 消しますか？
             </h2>
-            <p id="del-desc" className="mt-2 text-sm text-sub-strong">
-              セット{confirming.setNo} ・ <span className="fl-num text-base text-ink">{formatSetWithReps(confirming)}</span> を取り消します。
+            <p id="del-desc" className="mt-2 text-sm text-fg-muted">
+              セット{confirming.setNo} ・ <span className="fl-num text-base text-fg">{formatSetWithReps(confirming)}</span> を取り消します。
             </p>
             <div className="mt-5 flex gap-2">
               <ThickButton autoFocus tone="white" size="sm" className="flex-1" onClick={() => setConfirming(null)}>

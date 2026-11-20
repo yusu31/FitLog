@@ -17,7 +17,7 @@ const PREVIEWS = [
 
 // 入口の「塗りのボタン」に見えるリンク（A01-2・N-06）。厚みボタンと同じく押すと沈み、高さは 44px 以上
 export const AUTH_LINK_BUTTON =
-  'fl-thick inline-flex min-h-11 w-full items-center justify-center rounded-fl border-2 border-teal-light bg-white px-4 text-base font-extrabold tracking-wide text-teal-dark outline-none [--thick:#b8e3e4] focus-visible:ring-4 focus-visible:ring-teal/40';
+  'fl-thick inline-flex min-h-11 w-full items-center justify-center rounded-fl border-2 border-teal-light bg-surface px-4 text-base font-extrabold tracking-wide text-brand outline-none [--thick:#b8e3e4] focus-visible:ring-4 focus-visible:ring-teal/40';
 
 export function AuthLinkButton({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -31,10 +31,10 @@ export function AuthLinkButton({ href, children }: { href: string; children: Rea
 // 大見出し（h1）は「何ができるか」の一文。ログインか登録かは、フォームの上の見出し（h2）で伝える
 export function AuthLayout({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="min-h-dvh bg-[#e9ecef]">
-      <main className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-white">
+    <div className="min-h-dvh bg-line">
+      <main className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-canvas">
         <header className="fl-stripes relative overflow-hidden bg-teal-dark [--stripe:rgb(0_0_0/0.14)] px-6 pt-12 pb-8 text-white">
-          <span className="fl-tag bg-gold text-ink">フィットログ</span>
+          <span className="fl-tag bg-gold text-fg">フィットログ</span>
           <p className="mt-3 text-sm font-bold">筋トレとランの記録アプリ</p>
           <h1 className="mt-6 text-page-title leading-tight font-extrabold">前回の自分と並べて記録。仲間と見せ合う</h1>
           {/* F8: ログイン前の人に、アプリが何かを3行で伝える */}
@@ -63,7 +63,7 @@ export function AuthLayout({ title, children }: { title: string; children: React
                   loading="lazy"
                   className="h-auto w-full rounded-lg border-2 border-teal-light"
                 />
-                <figcaption className="text-center text-sm font-bold text-sub">{p.caption}</figcaption>
+                <figcaption className="text-center text-sm font-bold text-fg-subtle">{p.caption}</figcaption>
               </figure>
             ))}
           </section>

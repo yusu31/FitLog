@@ -76,14 +76,14 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
       data-motion={reduced ? 'reduced' : 'full'}
       onClick={onDismiss}
       className={cn(
-        'relative flex w-full items-start gap-2 rounded-fl px-4 py-4 text-left text-ink outline-none',
+        'relative flex w-full items-start gap-2 rounded-fl px-4 py-4 text-left text-fg outline-none',
         'focus-visible:ring-4 focus-visible:ring-teal/40',
         gold ? 'bg-gold' : 'bg-teal-light',
         !reduced && 'animate-in fade-in duration-300',
       )}
     >
       <span className="min-w-0 flex-1">
-        {isPersonalBest && <span className="fl-tag mb-2 bg-ink text-white">{RECORD_MESSAGES.best}</span>}
+        {isPersonalBest && <span className="fl-tag mb-2 bg-night text-white">{RECORD_MESSAGES.best}</span>}
         <span className="block text-[26px] leading-tight font-extrabold">
           {result === 'up' ? (
             <>
@@ -134,7 +134,7 @@ function TodayParts({ parts, day }: { parts: readonly BodyPart[]; day?: 'today' 
   const names = BODY_PART_ORDER.filter((p) => parts.includes(p)).map((p) => BODY_PART_LABEL[p]);
   return (
     <div data-testid="today-parts" className="mt-3 flex items-center gap-3">
-      <div className="flex gap-2 rounded-lg bg-white px-3 py-2">
+      <div className="flex gap-2 rounded-lg bg-surface px-3 py-2">
         <BodyFigure view="front" levels={levels} size={36} />
         <BodyFigure view="back" levels={levels} size={36} />
       </div>

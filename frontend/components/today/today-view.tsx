@@ -53,9 +53,9 @@ export function TodayView() {
     return (
       <div aria-busy="true" aria-label="読み込み中">
         <h1 className="sr-only">きょう</h1>
-        <div className="h-[128px] animate-pulse bg-face" />
-        <div className="mx-4 mt-4 h-44 animate-pulse rounded-fl bg-face" />
-        <div className="mx-4 mt-4 h-16 animate-pulse rounded-fl bg-face" />
+        <div className="h-[128px] animate-pulse bg-canvas" />
+        <div className="mx-4 mt-4 h-44 animate-pulse rounded-fl bg-canvas" />
+        <div className="mx-4 mt-4 h-16 animate-pulse rounded-fl bg-canvas" />
       </div>
     );
   }
@@ -73,7 +73,7 @@ export function TodayView() {
       {days.length === 7 ? (
         <WeekStrip days={days} today={today} selected={dayDateOf(day, new Date())} />
       ) : (
-        <p role="alert" className="m-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="m-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {LOAD_ERROR}
         </p>
       )}
@@ -87,17 +87,17 @@ export function TodayView() {
         {/* ランの入口は上部に（A07-1）。休みの日でも出す（休みを残したまま、走った日の記録を足せる。UC-13） */}
         <RunLink day={day} />
         {day === 'yesterday' && (
-          <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-ink">{LATE_MESSAGES.banner}</p>
+          <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-fg">{LATE_MESSAGES.banner}</p>
         )}
         {day === 'today' && welcomeBack && (
-          <p className="flex items-center gap-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-ink">
-            <Sparkles aria-hidden className="size-5 shrink-0 text-teal-dark" />
+          <p className="flex items-center gap-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-fg">
+            <Sparkles aria-hidden className="size-5 shrink-0 text-brand" />
             {HOME_MESSAGES.welcomeBack}
           </p>
         )}
 
         {menu === null ? (
-          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
             {LOAD_ERROR}
           </p>
         ) : day === 'yesterday' ? (
@@ -149,7 +149,7 @@ function DayHeading({ date, day }: { date: string; day: DayMode }) {
   return (
     <h2 className="text-lg font-extrabold">
       {label}{' '}
-      <span className="rounded-full bg-teal-light px-2 py-0.5 align-middle text-note font-extrabold text-teal-deep">
+      <span className="rounded-full bg-teal-light px-2 py-0.5 align-middle text-note font-extrabold text-brand">
         {day === 'today' ? LATE_MESSAGES.today : LATE_MESSAGES.yesterday}
       </span>
     </h2>
@@ -163,7 +163,7 @@ function DaySwitch({ day, onChange }: { day: DayMode; onChange: (next: DayMode) 
     { value: 'yesterday', label: LATE_MESSAGES.yesterday },
   ];
   return (
-    <div role="group" aria-label={LATE_MESSAGES.switchLabel} className="flex gap-1 rounded-fl bg-face p-1">
+    <div role="group" aria-label={LATE_MESSAGES.switchLabel} className="flex gap-1 rounded-fl bg-canvas p-1">
       {options.map((o) => (
         <button
           key={o.value}
@@ -172,7 +172,7 @@ function DaySwitch({ day, onChange }: { day: DayMode; onChange: (next: DayMode) 
           onClick={() => onChange(o.value)}
           className={cn(
             'min-h-12 flex-1 rounded-lg text-base font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-            day === o.value ? 'bg-teal-dark text-white shadow-sm' : 'text-sub-strong',
+            day === o.value ? 'bg-teal-dark text-white shadow-sm' : 'text-fg-muted',
           )}
         >
           {o.label}
@@ -222,7 +222,7 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
       </div>
       {!online && <p className="mt-2 text-note font-bold">{WORKOUT_END_MESSAGES.offlineNote}</p>}
       {error && (
-        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {error}
         </p>
       )}
@@ -235,7 +235,7 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
 function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <div aria-hidden onClick={onClose} className="absolute inset-0 bg-ink/50" />
+      <div aria-hidden onClick={onClose} className="absolute inset-0 bg-night/50" />
       <div
         role="dialog"
         aria-modal="true"
@@ -247,7 +247,7 @@ function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: ()
         </div>
         <h2 className="text-2xl font-extrabold">{WORKOUT_END_MESSAGES.thanks}</h2>
         <p className="fl-num text-3xl">{WORKOUT_END_MESSAGES.count(finished.exerciseCount, finished.setCount)}</p>
-        {finished.bestCount > 0 && <p className="text-base font-extrabold text-teal-dark">{WORKOUT_END_MESSAGES.best(finished.bestCount)}</p>}
+        {finished.bestCount > 0 && <p className="text-base font-extrabold text-brand">{WORKOUT_END_MESSAGES.best(finished.bestCount)}</p>}
         <ThickButton autoFocus onClick={onClose}>
           {WORKOUT_END_MESSAGES.close}
         </ThickButton>
@@ -265,7 +265,7 @@ function NextCard({ menu, todayStatus }: { menu: TodayMenu; todayStatus: string 
         <p className="mt-1 text-sm leading-relaxed font-bold">休むのも、立派な記録です。また 気が向いたら 一緒に。</p>
         <Link
           href="/exercises"
-          className="mt-3 inline-flex min-h-11 items-center text-sm font-extrabold text-white underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-white/60"
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-extrabold text-white underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-surface/60"
         >
           {REST_MESSAGES.changeMind}
         </Link>
@@ -315,7 +315,7 @@ function FirstCard() {
       {trial && trial.trialWeightKg !== null && trial.trialReps !== null && (
         <div className="mt-3 rounded-lg bg-black/15 px-3 py-2">
           <p className="flex items-center gap-2">
-            <span className="fl-tag bg-line text-sub-strong">お試し</span>
+            <span className="fl-tag bg-line text-fg-muted">お試し</span>
             <span className="text-sm font-extrabold">{trial.name}</span>
           </p>
           <p className="fl-num mt-1 text-3xl">{formatSet({ weightKg: trial.trialWeightKg, reps: trial.trialReps })}</p>
@@ -341,7 +341,7 @@ function CardFrame({ label, tone, tag, children }: { label: string; tone: keyof 
         cardTones[tone],
       )}
     >
-      <span className="fl-tag bg-gold text-ink">{tag}</span>
+      <span className="fl-tag bg-gold text-fg">{tag}</span>
       {children}
     </section>
   );
@@ -352,7 +352,7 @@ function LinkButton({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="fl-thick relative mt-4 inline-flex min-h-14 w-full items-center justify-center rounded-fl bg-gold px-5 text-lg font-extrabold tracking-wider text-ink outline-none [--thick:var(--color-gold-dark)] focus-visible:ring-4 focus-visible:ring-white/60"
+      className="fl-thick relative mt-4 inline-flex min-h-14 w-full items-center justify-center rounded-fl bg-gold px-5 text-lg font-extrabold tracking-wider text-fg outline-none [--thick:var(--color-gold-dark)] focus-visible:ring-4 focus-visible:ring-surface/60"
     >
       {children}
     </Link>
@@ -364,7 +364,7 @@ function LinkButton({ href, children }: { href: string; children: ReactNode }) {
 function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
   return (
     <section>
-      <h2 className="mb-2 text-sm font-extrabold text-sub-strong">今日のメニュー</h2>
+      <h2 className="mb-2 text-sm font-extrabold text-fg-muted">今日のメニュー</h2>
       <ul aria-label="今日のメニュー" className="space-y-2">
         {items.map((item, i) => {
           const value = item.todayLast ?? item.previous;
@@ -374,7 +374,7 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
                 href={withDay(recordHref(item.exerciseId), day)}
                 className={cn(
                   'fl-slab flex min-h-16 items-center gap-3 px-3 outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-                  item.done && 'bg-face',
+                  item.done && 'bg-canvas',
                 )}
               >
                 <span
@@ -382,21 +382,21 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
                   className={cn(
                     'fl-num flex size-11 shrink-0 items-center justify-center rounded-full border-2 text-xl',
                     item.done
-                      ? 'border-gold bg-gold text-ink shadow-[0_3px_0_var(--color-gold-dark)]'
-                      : 'border-line-dark bg-white text-sub-strong',
+                      ? 'border-gold bg-gold text-fg shadow-[0_3px_0_var(--color-gold-dark)]'
+                      : 'border-line-dark bg-surface text-fg-muted',
                   )}
                 >
                   {item.done ? <Check className="size-6" strokeWidth={3.2} /> : i + 1}
                 </span>
                 <span className="min-w-0 flex-1 text-[15px] leading-tight font-extrabold">
                   {item.name}
-                  {item.done && <small className="block text-note font-bold text-sub-strong">できた</small>}
+                  {item.done && <small className="block text-note font-bold text-fg-muted">できた</small>}
                   {!item.done && item.suggestion && (
-                    <small className="block text-note font-bold text-sub-strong">目標 {formatSet(item.suggestion)}</small>
+                    <small className="block text-note font-bold text-fg-muted">目標 {formatSet(item.suggestion)}</small>
                   )}
                 </span>
-                {value && <span className="fl-num shrink-0 text-xl text-ink">{formatSet(value)}</span>}
-                <ChevronRight data-testid="row-arrow" aria-hidden className="size-5 shrink-0 text-sub-strong" />
+                {value && <span className="fl-num shrink-0 text-xl text-fg">{formatSet(value)}</span>}
+                <ChevronRight data-testid="row-arrow" aria-hidden className="size-5 shrink-0 text-fg-muted" />
               </Link>
             </li>
           );
@@ -404,7 +404,7 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
       </ul>
       <Link
         href={withDay('/exercises', day)}
-        className="mt-2 flex min-h-12 items-center justify-center gap-1.5 rounded-fl border-2 border-dashed border-line-dark text-[15px] font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        className="mt-2 flex min-h-12 items-center justify-center gap-1.5 rounded-fl border-2 border-dashed border-line-dark text-[15px] font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
       >
         <Plus aria-hidden className="size-5" strokeWidth={3} />
         種目を足す
@@ -460,13 +460,13 @@ function RestButton() {
         type="button"
         disabled={sending}
         onClick={onRest}
-        className="mx-auto flex min-h-11 items-center gap-1.5 px-3 text-sm font-extrabold text-sub-strong underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
+        className="mx-auto flex min-h-11 items-center gap-1.5 px-3 text-sm font-extrabold text-fg-muted underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
       >
         <Moon aria-hidden className="size-4" />
         今日は休む
       </button>
       {error && (
-        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+        <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {error}
         </p>
       )}
@@ -479,7 +479,7 @@ function RunLink({ day }: { day: DayMode }) {
   return (
     <Link
       href={withDay('/run', day)}
-      className="fl-slab flex min-h-12 items-center justify-center gap-2 px-4 text-base font-extrabold text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+      className="fl-slab flex min-h-12 items-center justify-center gap-2 px-4 text-base font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
     >
       <Footprints aria-hidden className="size-5" />
       ランを記録

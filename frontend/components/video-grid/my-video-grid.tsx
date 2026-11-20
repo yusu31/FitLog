@@ -24,10 +24,10 @@ function Page({ cursor, isFirst = false }: { cursor: string | undefined; isFirst
   const [more, setMore] = useState(false);
   const { data, isPending, isError } = useGetMyVideos(cursor ? { cursor } : undefined);
 
-  if (isPending) return <div aria-busy="true" aria-label={VIDEO_GRID_MESSAGES.loading} className="h-32 animate-pulse rounded-fl bg-face" />;
+  if (isPending) return <div aria-busy="true" aria-label={VIDEO_GRID_MESSAGES.loading} className="h-32 animate-pulse rounded-fl bg-canvas" />;
   if (isError || !data || data.status !== 200) {
     return (
-      <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+      <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
         {VIDEO_GRID_MESSAGES.loadFailed}
       </p>
     );

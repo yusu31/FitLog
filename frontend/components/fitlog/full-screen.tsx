@@ -13,11 +13,11 @@ export function FullScreen({
   className?: string;
 }) {
   return (
-    <div className="min-h-dvh bg-[#e9ecef]">
-      <div className={cn('relative mx-auto flex min-h-dvh max-w-[430px] flex-col overflow-x-clip bg-white', className)}>
+    <div className="min-h-dvh bg-line">
+      <div className={cn('relative mx-auto flex min-h-dvh max-w-[430px] flex-col overflow-x-clip bg-canvas', className)}>
         <main className="flex flex-1 flex-col">{children}</main>
         {footer && (
-          <div className="sticky bottom-0 z-10 bg-white px-4 pt-2 pb-[max(14px,env(safe-area-inset-bottom))]">{footer}</div>
+          <div className="sticky bottom-0 z-10 bg-canvas px-4 pt-2 pb-[max(14px,env(safe-area-inset-bottom))]">{footer}</div>
         )}
       </div>
     </div>

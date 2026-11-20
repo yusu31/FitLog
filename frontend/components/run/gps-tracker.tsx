@@ -176,17 +176,17 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
         <button
           type="button"
           onClick={onStart}
-          className="fl-slab flex min-h-12 items-center gap-2 px-4 py-3 text-base font-extrabold text-teal-dark outline-none focus-visible:border-teal"
+          className="fl-slab flex min-h-12 items-center gap-2 px-4 py-3 text-base font-extrabold text-brand outline-none focus-visible:border-teal"
         >
           <Navigation aria-hidden className="size-5 shrink-0" />
           <span>{GPS_MESSAGES.start}</span>
         </button>
         {!isNativeApp() && (
-          <p role="note" aria-label="走る前に" className="rounded-fl bg-gold-light px-4 py-3 text-sm font-extrabold text-ink">
+          <p role="note" aria-label="走る前に" className="rounded-fl bg-gold-light px-4 py-3 text-sm font-extrabold text-fg">
             {GPS_MESSAGES.webNotice}
           </p>
         )}
-        <p className="text-note text-sub-strong">{GPS_MESSAGES.hint}</p>
+        <p className="text-note text-fg-muted">{GPS_MESSAGES.hint}</p>
         {problem && <ProblemNote problem={problem} />}
       </div>
     );
@@ -198,7 +198,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
 
   return (
     <section aria-label="GPS で記録中" className="flex flex-1 flex-col gap-4">
-      <p className="text-sm font-extrabold text-sub-strong">{phase === 'paused' ? GPS_MESSAGES.paused : 'GPS で記録中'}</p>
+      <p className="text-sm font-extrabold text-fg-muted">{phase === 'paused' ? GPS_MESSAGES.paused : 'GPS で記録中'}</p>
       <dl className="fl-slab grid gap-3 px-4 py-4">
         <Stat label="距離" unit="km" testId="gps-distance" value={(distanceM / 1000).toFixed(2)} big />
         <div className="grid grid-cols-2 gap-3">
@@ -208,12 +208,12 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
       </dl>
 
       {phase === 'running' && track.points.length === 0 && !problem && (
-        <p role="status" className="rounded-fl bg-face px-4 py-3 text-sm font-bold text-ink">
+        <p role="status" className="rounded-fl bg-canvas px-4 py-3 text-sm font-bold text-fg">
           {GPS_MESSAGES.searching}
         </p>
       )}
       {phase === 'running' && (
-        <p role="note" aria-label="画面について" className="rounded-fl bg-gold-light px-4 py-3 text-sm font-extrabold text-ink">
+        <p role="note" aria-label="画面について" className="rounded-fl bg-gold-light px-4 py-3 text-sm font-extrabold text-fg">
           {isNativeApp() ? GPS_MESSAGES.appBackground : wakeLockMissing ? GPS_MESSAGES.noWakeLock : GPS_MESSAGES.keepScreenOn}
         </p>
       )}
@@ -228,7 +228,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
         <ActionButton onClick={onStop} icon={<Square aria-hidden className="size-5" />} label="終了" primary />
       </div>
       {phase === 'paused' && (
-        <button type="button" onClick={onDiscard} className="min-h-11 self-center rounded-fl px-3 text-sm font-extrabold text-sub-strong underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+        <button type="button" onClick={onDiscard} className="min-h-11 self-center rounded-fl px-3 text-sm font-extrabold text-fg-muted underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
           記録をやめる
         </button>
       )}
@@ -238,7 +238,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
 
 function ProblemNote({ problem }: { problem: Problem }) {
   return (
-    <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+    <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
       {GPS_MESSAGES[problem]}
     </p>
   );
@@ -247,12 +247,12 @@ function ProblemNote({ problem }: { problem: Problem }) {
 function Stat({ label, value, unit, big = false, testId }: { label: string; value: string; unit?: string; big?: boolean; testId: string }) {
   return (
     <div>
-      <dt className="text-note font-extrabold text-sub-strong">{label}</dt>
+      <dt className="text-note font-extrabold text-fg-muted">{label}</dt>
       <dd className="flex items-baseline gap-1">
-        <span data-testid={testId} className={big ? 'fl-num text-[56px] leading-none text-ink' : 'fl-num text-3xl text-ink'}>
+        <span data-testid={testId} className={big ? 'fl-num text-[56px] leading-none text-fg' : 'fl-num text-3xl text-fg'}>
           {value}
         </span>
-        {unit && <span className="text-xl font-extrabold text-sub-strong">{unit}</span>}
+        {unit && <span className="text-xl font-extrabold text-fg-muted">{unit}</span>}
       </dd>
     </div>
   );
@@ -266,7 +266,7 @@ function ActionButton({ onClick, icon, label, primary = false }: { onClick: () =
       className={
         primary
           ? 'flex min-h-14 flex-1 items-center justify-center gap-2 rounded-fl bg-teal-dark text-lg font-extrabold text-white shadow-[0_4px_0_var(--color-teal-deep)] outline-none focus-visible:ring-4 focus-visible:ring-teal/40'
-          : 'fl-slab flex min-h-14 flex-1 items-center justify-center gap-2 text-lg font-extrabold text-ink outline-none focus-visible:border-teal'
+          : 'fl-slab flex min-h-14 flex-1 items-center justify-center gap-2 text-lg font-extrabold text-fg outline-none focus-visible:border-teal'
       }
     >
       {icon}

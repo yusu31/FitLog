@@ -24,7 +24,7 @@ export function BodySettings() {
       <h2 id="body-settings-heading" className="font-extrabold">
         {M.settingsTitle}
       </h2>
-      <p className="text-note text-sub-strong">{M.settingsNote}</p>
+      <p className="text-note text-fg-muted">{M.settingsNote}</p>
       {data && <HeightForm heightCm={data.heightCm} />}
       {mine && <ProfileForm initial={mine} />}
     </section>
@@ -57,13 +57,13 @@ function HeightForm({ heightCm }: { heightCm: number | null }) {
       <Label htmlFor="settings-height" className="font-extrabold">
         {BODY_MESSAGES.heightLabel}
       </Label>
-      <Input id="settings-height" inputMode="decimal" value={text} onChange={(e) => setText(e.target.value)} className="h-11 bg-white" />
-      <p className="text-note text-sub-strong">{BODY_MESSAGES.heightHint}</p>
+      <Input id="settings-height" inputMode="decimal" value={text} onChange={(e) => setText(e.target.value)} className="h-11 bg-surface" />
+      <p className="text-note text-fg-muted">{BODY_MESSAGES.heightHint}</p>
       <ThickButton type="submit" size="sm" className="w-full" disabled={setHeight.isPending}>
         {setHeight.isPending ? BODY_MESSAGES.saving : M.heightSave}
       </ThickButton>
       {notice && (
-        <p role={notice.ok ? 'status' : 'alert'} className="text-sm font-bold text-ink">
+        <p role={notice.ok ? 'status' : 'alert'} className="text-sm font-bold text-fg">
           {notice.text}
         </p>
       )}

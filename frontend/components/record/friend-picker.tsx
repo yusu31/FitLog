@@ -12,7 +12,7 @@ export function FriendPicker({ friends, selected, onToggle }: { friends: FriendG
   if (friends.length === 0) return null;
   return (
     <section aria-label={FRIEND_MESSAGES.heading} className="w-full">
-      <h2 className="text-note font-bold tracking-widest text-sub">
+      <h2 className="text-note font-bold tracking-widest text-fg-subtle">
         <button
           type="button"
           aria-expanded={open}
@@ -20,7 +20,7 @@ export function FriendPicker({ friends, selected, onToggle }: { friends: FriendG
           className="flex min-h-11 w-full items-center justify-between gap-2 rounded-fl px-1 text-left outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           {FRIEND_MESSAGES.heading}
-          {selected.length > 0 && <span className="text-sub-strong">{selected.length}人 えらび中</span>}
+          {selected.length > 0 && <span className="text-fg-muted">{selected.length}人 えらび中</span>}
           <ChevronDown aria-hidden className={cn('size-5 shrink-0 transition-transform motion-reduce:transition-none', open && 'rotate-180')} />
         </button>
       </h2>
@@ -37,7 +37,7 @@ export function FriendPicker({ friends, selected, onToggle }: { friends: FriendG
                 onClick={() => onToggle(f.id)}
                 className={cn(
                   'flex min-h-11 items-center gap-2 rounded-full border-2 px-3 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-                  on ? 'border-teal-dark bg-teal-light text-ink' : 'border-line bg-white text-ink',
+                  on ? 'border-teal-dark bg-teal-light text-fg' : 'border-line bg-surface text-fg',
                   empty && 'opacity-50',
                 )}
               >
@@ -45,7 +45,7 @@ export function FriendPicker({ friends, selected, onToggle }: { friends: FriendG
                   {Array.from(f.name)[0]}
                 </span>
                 {f.name}
-                {empty && <span className="text-note font-bold text-sub-strong">{FRIEND_MESSAGES.none}</span>}
+                {empty && <span className="text-note font-bold text-fg-muted">{FRIEND_MESSAGES.none}</span>}
               </button>
             </li>
           );

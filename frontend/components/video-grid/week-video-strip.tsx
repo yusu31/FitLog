@@ -15,9 +15,9 @@ export function WeekVideoStrip() {
     <section className="space-y-2">
       <h2 className="text-lg font-extrabold">{VIDEO_GRID_MESSAGES.stripLabel}</h2>
       {isPending ? (
-        <div aria-busy="true" aria-label={VIDEO_GRID_MESSAGES.loading} className="h-32 animate-pulse rounded-fl bg-face" />
+        <div aria-busy="true" aria-label={VIDEO_GRID_MESSAGES.loading} className="h-32 animate-pulse rounded-fl bg-canvas" />
       ) : isError || !data || data.status !== 200 ? (
-        <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+        <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {VIDEO_GRID_MESSAGES.loadFailed}
         </p>
       ) : (
@@ -47,7 +47,7 @@ function WeekBody({ week, onOpen }: { week: VideoWeekResponse; onOpen: (href: st
           if (href) onOpen(href);
         }}
       />
-      {!week.unlocked && hasOthers ? <p className="text-sm font-bold text-sub-strong">{VIDEO_GRID_MESSAGES.lockedNote}</p> : null}
+      {!week.unlocked && hasOthers ? <p className="text-sm font-bold text-fg-muted">{VIDEO_GRID_MESSAGES.lockedNote}</p> : null}
     </>
   );
 }

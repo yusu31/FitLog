@@ -58,7 +58,7 @@ export function ConfirmDialog({ open, title, description, confirmLabel, pendingL
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onKeyDown={onKeyDown}>
-      <div data-testid="dialog-backdrop" aria-hidden onClick={onCancel} className="absolute inset-0 bg-ink/50" />
+      <div data-testid="dialog-backdrop" aria-hidden onClick={onCancel} className="absolute inset-0 bg-night/50" />
       <div
         role="alertdialog"
         aria-modal="true"
@@ -69,7 +69,7 @@ export function ConfirmDialog({ open, title, description, confirmLabel, pendingL
         <h2 id={titleId} className="text-lg font-extrabold">
           {title}
         </h2>
-        <p id={descId} className="text-sm leading-relaxed font-bold text-sub-strong [word-break:auto-phrase]">
+        <p id={descId} className="text-sm leading-relaxed font-bold text-fg-muted [word-break:auto-phrase]">
           {description}
         </p>
         <div className="flex gap-2 pt-1">

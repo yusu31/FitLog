@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-2 px-4">
       <h1 className="text-page-title font-extrabold">FitLog</h1>
-      <p className="text-sub">少人数で使う、筋トレとランの記録アプリ</p>
+      <p className="text-fg-subtle">少人数で使う、筋トレとランの記録アプリ</p>
     </main>
   );
 }

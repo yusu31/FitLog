@@ -39,12 +39,12 @@ export function DeleteAccount() {
 
   return (
     <section aria-labelledby="delete-account-heading" className="space-y-3 pt-10">
-      <h2 id="delete-account-heading" className="text-note font-bold tracking-widest text-sub">
+      <h2 id="delete-account-heading" className="text-note font-bold tracking-widest text-fg-subtle">
         {M.heading}
       </h2>
       {open ? (
         <form onSubmit={onSubmit} className="fl-slab space-y-3 px-4 py-3">
-          <p className="text-sm font-bold text-ink [word-break:auto-phrase]">{M.warning}</p>
+          <p className="text-sm font-bold text-fg [word-break:auto-phrase]">{M.warning}</p>
           <div className="flex flex-col gap-1.5">
             <Label className="font-extrabold" htmlFor="delete-password">
               {M.passwordLabel}
@@ -52,7 +52,7 @@ export function DeleteAccount() {
             <Input className="h-12 text-base" id="delete-password" name="password" type="password" autoComplete="current-password" required />
           </div>
           {error && (
-            <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-ink">
+            <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
               {error}
             </p>
           )}
@@ -73,7 +73,7 @@ export function DeleteAccount() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex min-h-11 items-center rounded-fl px-1 text-sm font-bold text-sub-strong underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex min-h-11 items-center rounded-fl px-1 text-sm font-bold text-fg-muted underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           {M.start}
         </button>

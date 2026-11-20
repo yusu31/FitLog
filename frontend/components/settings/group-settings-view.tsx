@@ -33,7 +33,7 @@ export function GroupSettingsView() {
         <Link
           href="/settings"
           aria-label="設定へ戻る"
-          className="flex size-11 items-center justify-center rounded-fl text-sub-strong outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
@@ -43,23 +43,23 @@ export function GroupSettingsView() {
       <div className="space-y-4 px-4 pt-3 pb-10">
         {loading ? (
           <div aria-busy="true" aria-label="読み込み中" className="space-y-3">
-            <div className="h-36 animate-pulse rounded-fl bg-face" />
-            <div className="h-16 animate-pulse rounded-fl bg-face" />
+            <div className="h-36 animate-pulse rounded-fl bg-canvas" />
+            <div className="h-16 animate-pulse rounded-fl bg-canvas" />
           </div>
         ) : isError || !data || (!group && !notInGroup) ? (
-          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-ink">
+          <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
             {GROUP_MESSAGES.loadFailed}
           </p>
         ) : group ? (
           <>
             {justCreated && (
-              <p role="status" className="rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-ink">
+              <p role="status" className="rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-fg">
                 グループを作りました。つぎは、招待リンクを作って仲間に送ろう
               </p>
             )}
             <GroupSummary group={group} />
             <MemberList group={group} />
-            <p className="text-note text-sub-strong [word-break:auto-phrase]">{LIMIT_REASON}</p>
+            <p className="text-note text-fg-muted [word-break:auto-phrase]">{LIMIT_REASON}</p>
             <InvitePanel full={group.members.length >= GROUP_MEMBER_MAX} />
             <LeaveGroup onLeft={() => setJustCreated(false)} />
           </>
@@ -69,10 +69,10 @@ export function GroupSettingsView() {
               <h2 id="create-heading" className="text-xl font-extrabold">
                 グループを作る
               </h2>
-              <p className="mt-1 text-sm text-sub-strong [word-break:auto-phrase]">
+              <p className="mt-1 text-sm text-fg-muted [word-break:auto-phrase]">
                 1つのグループには、あなたを入れて{GROUP_MEMBER_MAX}人まで入れます。作ったあとに、招待リンクで仲間を呼べます。
               </p>
-              <p className="mt-1 text-note text-sub-strong [word-break:auto-phrase]">{LIMIT_REASON}
+              <p className="mt-1 text-note text-fg-muted [word-break:auto-phrase]">{LIMIT_REASON}
               </p>
             </div>
             <CreateGroupForm onCreated={() => setJustCreated(true)} />

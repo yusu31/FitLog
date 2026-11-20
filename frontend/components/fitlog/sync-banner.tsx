@@ -35,7 +35,7 @@ export function SyncBanner() {
         <Bar tone="coral" icon={<KeyRound aria-hidden className="size-5" />} title={SYNC_MESSAGES.pending(summary.count)} note={SYNC_MESSAGES.authNote}>
           <Link
             href={`/login?next=${encodeURIComponent(currentPath())}`}
-            className="inline-flex min-h-11 items-center rounded-fl bg-ink px-4 text-sm font-extrabold text-white outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            className="inline-flex min-h-11 items-center rounded-fl bg-night px-4 text-sm font-extrabold text-white outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             {SYNC_MESSAGES.login}
           </Link>
@@ -55,7 +55,7 @@ export function SyncBanner() {
           <button
             type="button"
             onClick={() => setDismissed(rejectedCount)}
-            className="inline-flex min-h-11 items-center rounded-fl bg-white px-4 text-sm font-extrabold text-ink outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            className="inline-flex min-h-11 items-center rounded-fl bg-surface px-4 text-sm font-extrabold text-fg outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             {SYNC_MESSAGES.dismiss}
           </button>
@@ -65,7 +65,7 @@ export function SyncBanner() {
   );
 }
 
-const TONE = { face: 'bg-face', teal: 'bg-teal-light', coral: 'bg-coral-light' } as const;
+const TONE = { face: 'bg-canvas', teal: 'bg-teal-light', coral: 'bg-coral-light' } as const;
 
 function Bar({
   tone,
@@ -81,11 +81,11 @@ function Bar({
   children?: React.ReactNode;
 }) {
   return (
-    <div className={`flex items-center gap-3 px-4 py-2.5 text-ink ${TONE[tone]}`}>
+    <div className={`flex items-center gap-3 px-4 py-2.5 text-fg ${TONE[tone]}`}>
       {icon && <span className="shrink-0">{icon}</span>}
       <div className="min-w-0 flex-1">
         <p className="text-sm font-extrabold">{title}</p>
-        {note && <p className="text-note font-bold text-sub-strong">{note}</p>}
+        {note && <p className="text-note font-bold text-fg-muted">{note}</p>}
       </div>
       {children}
     </div>

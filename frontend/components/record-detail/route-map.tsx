@@ -89,7 +89,7 @@ export function RouteMap({ route, ghost }: { route: RouteLike; ghost?: RouteLike
 
   if (failed) {
     return (
-      <p role="status" className="fl-slab px-4 py-3 text-sm font-bold text-sub-strong">
+      <p role="status" className="fl-slab px-4 py-3 text-sm font-bold text-fg-muted">
         {DETAIL_MESSAGES.mapUnavailable}
       </p>
     );

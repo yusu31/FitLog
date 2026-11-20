@@ -21,8 +21,8 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
   }, [signedOut, router, pathname]);
 
   return (
-    <div className="min-h-dvh bg-[#e9ecef]">
-      <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-white">
+    <div className="min-h-dvh bg-line">
+      <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-canvas">
         {session ? (
           <main className="flex-1 pb-28">
             {syncBanner && <SyncBanner />}
@@ -30,9 +30,9 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
           </main>
         ) : (
           <main aria-busy="true" aria-label="読み込み中" className="flex-1 space-y-4 px-4 pt-8">
-            <div className="h-8 w-28 animate-pulse rounded-lg bg-face" />
-            <div className="h-40 animate-pulse rounded-fl bg-face" />
-            <div className="h-16 animate-pulse rounded-fl bg-face" />
+            <div className="h-8 w-28 animate-pulse rounded-lg bg-canvas" />
+            <div className="h-40 animate-pulse rounded-fl bg-canvas" />
+            <div className="h-16 animate-pulse rounded-fl bg-canvas" />
             <WakingNote />
           </main>
         )}
@@ -60,7 +60,7 @@ function WakingNote() {
   }, []);
   if (!show) return null;
   return (
-    <p role="status" className="rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-ink">
+    <p role="status" className="rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-fg">
       サーバーを起こしています。数秒お待ちください
     </p>
   );

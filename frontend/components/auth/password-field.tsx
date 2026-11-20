@@ -35,7 +35,7 @@ export function PasswordField({
           aria-label={shown ? '文字を隠す' : '文字を表示'}
           aria-pressed={shown}
           onClick={() => setShown((v) => !v)}
-          className="absolute top-0 right-0 flex size-12 items-center justify-center rounded-lg text-teal-dark outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="absolute top-0 right-0 flex size-12 items-center justify-center rounded-lg text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           {shown ? <EyeOff aria-hidden="true" className="size-5" /> : <Eye aria-hidden="true" className="size-5" />}
         </button>
