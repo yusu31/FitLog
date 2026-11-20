@@ -11,11 +11,12 @@ export const AVATAR_BG: Record<string, string> = {
 
 // 顔の丸（D7-1）。ドット絵キャラ（public/characters/idle_0.png・64×64）の頭の部分だけを切り出して丸に入れ、
 // 丸の色はその人の服の色にする。全員同じキャラなので、人の区別は丸の色と名前で付ける。
-// 切り出しの範囲は、画像の 横20〜44・縦13〜37（頭〜首）。飾りなので読み上げからは外す（名前は隣の文字にある）
-const CROP = { x: 20, y: 13, size: 24, whole: 64 };
+// 切り出しの範囲は、画像の 横16〜48・縦10〜42（頭〜肩）。頭のまわりに透明な部分を残し、そこに服の色が見えるようにする（人の区別）。
+// 飾りなので読み上げからは外す（名前は隣の文字にある）
+const CROP = { x: 16, y: 10, size: 32, whole: 64 };
 
 export function Avatar({ shirtColor, size = 44, className }: { shirtColor: string; size?: number; className?: string }) {
-  const scale = size / CROP.size; // 切り出した24pxが、丸の大きさになる倍率
+  const scale = size / CROP.size; // 切り出した32pxが、丸の大きさになる倍率
   return (
     <span
       aria-hidden

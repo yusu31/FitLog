@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { cn } from 'cn';
 import { useAppSession } from '@/lib/use-app-session';
+import { NotificationBell } from './notification-bell';
 import { SideFriends } from './side-friends';
 import { SyncBanner } from './sync-banner';
 import { TabBar } from './tab-bar';
@@ -25,9 +26,13 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
     <div className="min-h-dvh bg-line">
       {/* PC（lg 以上）は 左=タブのメニュー・中央=画面（600px まで）・右=仲間の今日 の3列。スマホは今のまま */}
       <div className="mx-auto lg:flex lg:max-w-[1200px] lg:justify-center lg:gap-6 lg:px-6">
-      <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col bg-canvas lg:mx-0 lg:w-full lg:max-w-[600px]">
+      <div className="relative mx-auto flex min-h-dvh max-w-[430px] flex-col bg-canvas lg:mx-0 lg:w-full lg:max-w-[600px]">
         {session ? (
           <main className="flex-1 pb-28">
+            {/* 右上のベル（D7-3）。右の角にはキャラ（72px）があるので、その左隣に置く */}
+            <div className="absolute top-2.5 right-[92px] z-10">
+              <NotificationBell />
+            </div>
             {syncBanner && <SyncBanner />}
             {children}
           </main>
