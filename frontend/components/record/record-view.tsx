@@ -44,6 +44,7 @@ import { RestTimerBar } from './rest-timer-bar';
 import { ResultSheet, type SheetData } from './result-sheet';
 import { StepperField } from './stepper-field';
 import { VideoRecorder, canRecordVideo } from './video-recorder';
+import { hasFilmFirst, setFilmFirst } from '@/lib/film-first';
 
 const noSubscribe = () => () => {};
 
@@ -180,6 +181,11 @@ export function RecordView() {
       });
     }
     setRecordId(rid);
+    // ＋のシートで「2秒動画を撮る」を選んでいたら、最初の1セットのあとに撮影を開く（予約はその場で消す）
+    if (isNew && day === 'today' && videoCapable && hasFilmFirst()) {
+      setFilmFirst(false);
+      setFilming(true);
+    }
 
     const setId = crypto.randomUUID();
     const number = isNew ? 1 : setNo;

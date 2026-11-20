@@ -29,8 +29,10 @@ describe('文字サイズ（V-08・A13-5）', () => {
 });
 
 describe('言葉（A13-2・N-05）', () => {
-  it('画面に出る英字ラベル（TEAM・NEXT・NOW・DONE・REST・RUN・INVITE・FITLOG）を使わない', () => {
-    expect(offenders(/['"`>](TEAM|NEXT|NOW|DONE|REST|RUN|INVITE|FITLOG)['"`<]/)).toEqual([]);
+  // D0-6（2026-11-20 本人承認）: 操作語（START・DONE・NEXT・SKIP・REST・RUN・STRENGTH・CLOSE・SAVE）だけは英語にしてよい（docs/screen-design.md 6章）。
+  // 見出し・本文・名前の英字ラベルは引き続き使わない。操作語を使うときは aria-label に日本語を入れる
+  it('画面に出る英字ラベル（TEAM・NOW・INVITE・FITLOG）を使わない。操作語は 6章の表の範囲だけ', () => {
+    expect(offenders(/['"`>](TEAM|NOW|INVITE|FITLOG)['"`<]/)).toEqual([]);
   });
 
   it('通じない言葉（ルーティン・ヒートマップ・次の1枚・記録をくわしく）を使わない', () => {
