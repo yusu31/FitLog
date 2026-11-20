@@ -226,13 +226,34 @@ describe('記録を作る（結合: 本物の PostgreSQL・better-auth）', () =
       expect(await rows()).toHaveLength(1);
     });
 
-    it('ケース3: その日に筋トレがあっても休みは 201 で作れ、休みも残る（逆の順でも同じ）', async () => {
+    it('ケース3: その日に筋トレがあっても休みは 201 で作れ、休みも残る（休みが後なら消さない）', async () => {
       const cookie = await signUpAs('たろう');
       await post(cookie, workout('2026-10-26T01:00:00.000Z')).expect(201);
       await post(cookie, rest('2026-10-26T02:00:00.000Z')).expect(201);
+      expect((await rows()).map((r) => r.kind)).toEqual(['workout', 'rest']);
+    });
+
+    // D2-6: 休みのあとに筋トレ・ランを記録した日は「動いた日」なので、その日の休みを消す
+    it('休みのあとに筋トレ・ランを記録すると、同じ日の休みが消える。別の日・別の人の休みは残る', async () => {
+      const cookie = await signUpAs('たろう');
+      const other = await signUpAs('はなこ');
       await post(cookie, rest('2026-10-27T01:00:00.000Z')).expect(201);
+      await post(cookie, rest('2026-10-28T01:00:00.000Z')).expect(201);
+      await post(other, rest('2026-10-27T01:00:00.000Z')).expect(201);
       await post(cookie, workout('2026-10-27T02:00:00.000Z')).expect(201);
-      expect((await rows()).map((r) => r.kind)).toEqual(['workout', 'rest', 'rest', 'workout']);
+      expect((await rows()).map((r) => r.kind)).toEqual(['rest', 'rest', 'workout']);
+
+      await post(cookie, { id: randomUUID(), kind: 'run', recordedAt: '2026-10-28T02:00:00.000Z', run: { distanceM: 3000, durationS: 1200 } }).expect(201);
+      expect((await rows()).map((r) => r.kind).sort()).toEqual(['rest', 'run', 'workout']);
+    });
+
+    it('同じ筋トレを送り直しても（200）、そのあと付けた休みは消さない', async () => {
+      const cookie = await signUpAs('たろう');
+      const body = workout('2026-10-27T02:00:00.000Z');
+      await post(cookie, body).expect(201);
+      await post(cookie, rest('2026-10-27T03:00:00.000Z')).expect(201);
+      await post(cookie, body).expect(200);
+      expect((await rows()).map((r) => r.kind)).toEqual(['workout', 'rest']);
     });
 
     // T-REST-05: 一意なのは (user_id, local_date)。日本時間の日付で数える

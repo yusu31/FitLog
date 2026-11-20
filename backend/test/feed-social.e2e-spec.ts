@@ -378,8 +378,9 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
 
     it('T-STP-06: 休みの記録には休み用のスタンプだけ（通常のスタンプは 409）。筋トレ・ランには通常のスタンプだけ', async () => {
       const { a1, a2 } = await world();
-      const rest = await createRecord(a1, 'rest');
+      // 休みのあとに同じ日の筋トレを作ると休みが消える（D2-6）ので、筋トレを先に作る
       const workout = await createRecord(a1, 'workout');
+      const rest = await createRecord(a1, 'rest');
       const run = await createRecord(a1, 'run', TUE_NOON);
 
       await react(a2, rest, { id: randomUUID(), stampKey: 'rest_slow' }).expect(201);

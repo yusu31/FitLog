@@ -117,7 +117,8 @@ export function groupErrorMessage(body: unknown, fallback: string, status?: numb
 export const LATE_MESSAGES = {
   today: '今日',
   yesterday: 'きのう',
-  switchLabel: '記録する日',
+  toYesterday: 'きのうの分を記録する',
+  toToday: '今日にもどる',
   banner: 'きのうの分を 記録しています',
   tag: 'あとから記録',
   noVideo: '動画は、その日のうちの記録にだけ付けられます',
@@ -134,6 +135,7 @@ export const TODAY_FRIENDS_MESSAGES = {
   noGroupSteps: 'グループを作って、招待リンクを送ると、仲間の足跡がここに出ます',
   aloneTitle: 'まだ ひとりだけ。仲間を招待しよう',
   aloneSteps: '招待リンクを送ると、仲間の足跡がここに出ます',
+  close: '招待の案内を閉じる',
 } as const;
 
 export const REST_MESSAGES = {

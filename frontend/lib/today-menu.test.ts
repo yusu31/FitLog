@@ -90,7 +90,7 @@ describe('buildMenu（今日のメニューを組み立てる）', () => {
       const today = activeToday(squat([[60, 10], [60, 9]]), curl([[25, 12]]));
       const m = buildMenu([today, prev], TODAY);
       expect(m.allDone).toBe(false);
-      expect(m.session).toEqual({ recordId: 'r2', exerciseCount: 2, setCount: 3 });
+      expect(m.session).toEqual({ recordId: 'r2', exerciseCount: 2, setCount: 3, lastExerciseId: 'lc' });
     });
 
     it('終えた（active が false）か、active の項目が無い記録なら、全部できたとき allDone で session は null', () => {

@@ -67,12 +67,18 @@ export function TodayView() {
   const lastDate = latest.data?.status === 200 ? (latest.data.data.items[0]?.localDate ?? null) : null;
   const welcomeBack = shouldWelcomeBack(lastDate, today);
   const menu = items ? buildMenu(items, dayDateOf(day, new Date())) : null;
+  const yesterday = dayDateOf('yesterday', new Date());
+  const selected = dayDateOf(day, new Date());
+  // 7マスを押して日を選ぶ（D2-2・D2-7）。押せるのは今日ときのうだけ（あとから記録はきのうまで。F-21）
+  const onSelectDate = (date: string) => setDay(date === yesterday ? 'yesterday' : 'today');
+  // 月曜は、きのう（日曜）が前の週で7マスに無い。そのときだけ帯の下に小さい入口を置く
+  const yesterdayInStrip = days.some((d) => d.date === yesterday);
 
   return (
     <>
       <h1 className="sr-only">きょう</h1>
       {days.length === 7 ? (
-        <WeekStrip days={days} today={today} selected={dayDateOf(day, new Date())} />
+        <WeekStrip days={days} today={today} selected={selected} selectable={[today, yesterday]} onSelect={onSelectDate} />
       ) : (
         <p role="alert" className="m-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {LOAD_ERROR}
@@ -83,13 +89,10 @@ export function TodayView() {
       <div className="space-y-4 px-4 pt-4 pb-6">
         {/* 仲間の今日の足跡（A02-1）。グループが無いときは招待の入口（A01-8）。きのうの画面では出さない */}
         {day === 'today' && <FriendsToday today={today} part="summary" />}
-        <DaySwitch day={day} onChange={setDay} />
-        <DayHeading date={dayDateOf(day, new Date())} day={day} />
-        {/* ランの入口は上部に（A07-1）。休みの日でも出す（休みを残したまま、走った日の記録を足せる。UC-13） */}
+        {!yesterdayInStrip && days.length === 7 && <YesterdayOutsideWeek day={day} onChange={setDay} />}
+        <DayHeading date={selected} day={day} />
+        {/* ランの入口は上部に（A07-1）。休みの日でも出す（記録すると、その日の休みは消える。D2-6） */}
         <RunLink day={day} />
-        {day === 'yesterday' && (
-          <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-fg">{LATE_MESSAGES.banner}</p>
-        )}
         {day === 'today' && welcomeBack && (
           <p className="flex items-center gap-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-fg">
             <Sparkles aria-hidden className="size-5 shrink-0 text-brand" />
@@ -144,42 +147,31 @@ export function TodayView() {
   );
 }
 
-// 選んだ日の見出し（A02-7）。「11月4日（水）の記録 今日」。何日の記録をしているかを文字で示す
+// 選んだ日の見出し（A02-7・D2-2）。「今日 11月4日（水）」の1つだけ。きのうは「あとから記録」の札を添える。
+// 日の切り替えは上の7マス（今日・きのうのマスが押せる）
 function DayHeading({ date, day }: { date: string; day: DayMode }) {
-  const label = `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日（${WEEKDAYS[weekdayIndex(date)]}）の記録`;
+  const label = `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日（${WEEKDAYS[weekdayIndex(date)]}）`;
   return (
-    <h2 className="text-lg font-extrabold">
-      {label}{' '}
-      <span className="rounded-full bg-teal-light px-2 py-0.5 align-middle text-note font-extrabold text-brand">
-        {day === 'today' ? LATE_MESSAGES.today : LATE_MESSAGES.yesterday}
-      </span>
-    </h2>
+    <div className="flex items-center gap-2">
+      <h2 className="text-lg font-extrabold">
+        {day === 'today' ? LATE_MESSAGES.today : LATE_MESSAGES.yesterday} <span className="text-fg-muted">{label}</span>
+      </h2>
+      {day === 'yesterday' && <span className="fl-tag bg-gold-light text-fg">{LATE_MESSAGES.tag}</span>}
+    </div>
   );
 }
 
-// 「今日 / きのう」の切り替え（F-21）。きのうの分を、あとから記録するときに使う
-function DaySwitch({ day, onChange }: { day: DayMode; onChange: (next: DayMode) => void }) {
-  const options: { value: DayMode; label: string }[] = [
-    { value: 'today', label: LATE_MESSAGES.today },
-    { value: 'yesterday', label: LATE_MESSAGES.yesterday },
-  ];
+// 月曜だけの、きのう（前の週の日曜）への入口。7マスに無い日を選べるようにする小さいボタン
+function YesterdayOutsideWeek({ day, onChange }: { day: DayMode; onChange: (next: DayMode) => void }) {
+  const toYesterday = day === 'today';
   return (
-    <div role="group" aria-label={LATE_MESSAGES.switchLabel} className="flex gap-1 rounded-fl bg-canvas p-1">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          aria-pressed={day === o.value}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            'min-h-12 flex-1 rounded-lg text-base font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-            day === o.value ? 'bg-teal-dark text-white shadow-sm' : 'text-fg-muted',
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <button
+      type="button"
+      onClick={() => onChange(toYesterday ? 'yesterday' : 'today')}
+      className="flex min-h-11 items-center px-1 text-sm font-extrabold text-brand underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+    >
+      {toYesterday ? LATE_MESSAGES.toYesterday : LATE_MESSAGES.toToday}
+    </button>
   );
 }
 
@@ -217,7 +209,10 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
       <h2 className="mt-3 text-2xl leading-snug font-extrabold">{WORKOUT_END_MESSAGES.active}</h2>
       <p className="fl-num mt-1 text-lg">{WORKOUT_END_MESSAGES.count(session.exerciseCount, session.setCount)}</p>
       {next && <p className="mt-1 text-sm font-bold">次は {next.name}</p>}
-      <LinkButton href={next ? recordHref(next.exerciseId) : '/exercises'}>{WORKOUT_END_MESSAGES.keepGoing}</LinkButton>
+      {/* まだの種目が無ければ、最後に記録した種目のセット入力へ（種目の一覧へ戻さない。D2-4） */}
+      <LinkButton href={next ? recordHref(next.exerciseId) : session.lastExerciseId ? recordHref(session.lastExerciseId) : '/exercises'}>
+        {WORKOUT_END_MESSAGES.keepGoing}
+      </LinkButton>
       {/* 主は「続ける」。「今日はここまで」は小さい副のボタン（A02-3） */}
       <div className="mt-3 flex justify-center">
         <ThickButton tone="white" size="sm" disabled={!online || sending} onClick={onEnd}>
