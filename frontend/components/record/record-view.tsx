@@ -123,6 +123,9 @@ export function RecordView() {
   // 利用者が直した値。一度直したら、次のセット以降もその値を引き継ぐ（features.md 2.3）
   const [edited, setEdited] = useState<SetValue | null>(null);
   const draft = edited ?? initial.draft;
+  // 自重の種目（固定の種目で目安の重さが 0）は回数だけ見せる。懸垂に足す重りなどは「おもりをつける」で出す（D3-11）
+  const [addWeight, setAddWeight] = useState(false);
+  const bodyweightOnly = !!exercise && !exercise.isCustom && exercise.trialWeightKg === 0 && draft.weightKg === 0 && !addWeight;
 
   const [outcomes, setOutcomes] = useState<Record<string, Outcome>>({});
   const [sheet, setSheet] = useState<SheetData | null>(null);
@@ -308,6 +311,14 @@ export function RecordView() {
         <h1 className="text-center text-page-title leading-tight font-extrabold">{exercise.name}</h1>
 
         <div className="w-full space-y-3">
+          {bodyweightOnly ? (
+            <div className="flex items-center justify-between gap-2 rounded-fl bg-canvas px-4 py-2">
+              <p className="text-sm font-extrabold text-fg-muted">{RECORD_MESSAGES.bodyweight}</p>
+              <ThickButton tone="white" size="sm" onClick={() => setAddWeight(true)}>
+                {RECORD_MESSAGES.addWeight}
+              </ThickButton>
+            </div>
+          ) : (
           <StepperField
             label="重量（kg）"
             unit="kg"
@@ -322,6 +333,7 @@ export function RecordView() {
             bigStepLabel="10kg"
             onBigStep={(dir) => setEdited({ ...draft, weightKg: stepWeightBig(draft.weightKg, dir) })}
           />
+          )}
           <StepperField
             label="回数"
             unit="回"

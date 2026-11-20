@@ -21,6 +21,7 @@ vi.mock('@/lib/auth-client', () => ({
 const EXERCISES = [
   { id: 'e-bench', name: 'ベンチプレス', bodyPart: 'chest', isCustom: false, trialWeightKg: 40, trialReps: 10 },
   { id: 'e-mine', name: 'ケトルベルスイング', bodyPart: 'glutes', isCustom: true, trialWeightKg: null, trialReps: null },
+  { id: 'e-pushup', name: '腕立て伏せ', bodyPart: 'chest', isCustom: false, trialWeightKg: 0, trialReps: 10 },
 ];
 const PREVIOUS = {
   previous: {
@@ -92,6 +93,7 @@ beforeEach(() => {
           ? { status: 200, body: NO_PREVIOUS }
           : { status: 200, body: PREVIOUS },
     'GET /api/exercises/e-mine/previous': () => ({ status: 200, body: NO_PREVIOUS }),
+    'GET /api/exercises/e-pushup/previous': () => ({ status: 200, body: NO_PREVIOUS }),
     'POST /api/records': (call) => ({ status: 201, body: { id: call.body?.id, kind: 'workout', recordedAt: call.body?.recordedAt, localDate: '2026-11-02' } }),
     'POST /api/records/:id/sets': (call) => setReply(call),
     'DELETE /api/records/:id/sets/:setId': () => ({ status: 204 }),
@@ -1081,6 +1083,25 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await screen.findByText('いま 2セット目');
       expect(screen.getAllByText(/セット目/)).toHaveLength(1);
     });
+  });
+
+  // D3-11: 自重の種目は重量の欄を隠して回数だけ。「おもりをつける」で出せる。重さのある種目・じぶんの種目は今までどおり
+  it('自重の種目は回数だけを見せ、「おもりをつける」で重量の欄が出る', async () => {
+    search = 'exercise=e-pushup';
+    const user = userEvent.setup();
+    renderView();
+    await screen.findByRole('heading', { name: '腕立て伏せ' });
+    expect(reps()).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: '重量（kg）' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'おもりをつける' }));
+    expect(weight()).toBeInTheDocument();
+  });
+
+  it('重さのある種目には、おもりのボタンを出さない', async () => {
+    renderView();
+    await ready();
+    expect(weight()).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'おもりをつける' })).not.toBeInTheDocument();
   });
 
   it('責める言葉（禁止語）を画面に出さない（T-DATE-13・T-GHOST-13）', async () => {
