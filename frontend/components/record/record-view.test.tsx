@@ -996,6 +996,19 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       expect(stop).toHaveAttribute('href', '/today');
     });
 
+    it('D3-6/7/10 前回の数字は1回だけ・できたセットは副ボタンより上・副ボタンは同じ形', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      const bar = screen.getByRole('group', { name: '前回との くらべ' });
+      expect((bar.textContent ?? '').split('40kg × 10回').length - 1).toBe(1); // 前回の数字は「前回」の行に1回だけ（見出しには出さない）
+      await user.click(doneButton());
+      const list = await screen.findByRole('list', { name: 'できたセット' });
+      const next = await screen.findByRole('link', { name: '次の種目へ' });
+      expect(list.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(next.className).toBe(screen.getByRole('link', { name: /今日はここまで/ }).className.replace('text-fg', 'text-brand'));
+    });
+
     it('A03-3 バーに「前回」「今回」の文字と値、札は「お試し」でなく「目安」', async () => {
       handlers['GET /api/exercises/e-bench/previous'] = () => ({ status: 200, body: NO_PREVIOUS });
       renderView();

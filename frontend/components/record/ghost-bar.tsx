@@ -28,14 +28,10 @@ export function GhostBar({ ghost, current, isTrial, friends = [], label = '前�
   }
   return (
     <div role="group" aria-label="前回との くらべ" className="w-full rounded-fl border-2 border-b-4 border-line bg-canvas px-4 py-3">
-      <div className="mb-2 flex items-baseline justify-between text-note text-fg-muted">
-        <span className="flex items-center gap-2">
-          {label}
-          {isTrial && <span className="fl-tag bg-line-dark !py-0 !text-note !leading-4 text-fg">{RECORD_MESSAGES.trial}</span>}
-        </span>
-        <span className="fl-num text-[22px] text-fg">
-          {formatSetWithReps(ghost)}
-        </span>
+      {/* D3-6: 前回の数字は下の「前回」の行に出すので、見出しには出さない（同じ数字が3行並んでいた） */}
+      <div className="mb-1 flex items-center gap-2 text-note text-fg-muted">
+        {label}
+        {isTrial && <span className="fl-tag bg-line-dark !py-0 !text-note !leading-4 text-fg">{RECORD_MESSAGES.trial}</span>}
       </div>
       <Row label={RECORD_MESSAGES.barPrev} value={formatSetWithReps(ghost)} pct={(a / max) * 100} tone="bg-[repeating-linear-gradient(-45deg,var(--color-line)_0_6px,var(--color-line-dark)_6px_12px)]" />
       <Row label={RECORD_MESSAGES.barNow} value={formatSetWithReps(current)} pct={(b / max) * 100} tone="bg-[repeating-linear-gradient(-45deg,var(--color-teal)_0_6px,var(--color-teal-dark)_6px_12px)]" />

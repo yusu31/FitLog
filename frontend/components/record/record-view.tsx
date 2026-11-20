@@ -48,6 +48,10 @@ import { hasFilmFirst, setFilmFirst } from '@/lib/film-first';
 
 const noSubscribe = () => () => {};
 
+// 「できた」の下に並べる副ボタンの形（D3-7）。主ボタンとの区別を付けるため、色を塗らず細い枠だけにする
+const SUB_BUTTON =
+  'fl-slab flex min-h-12 items-center justify-center gap-1.5 px-2 text-[15px] font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40';
+
 type Outcome = { result: GhostResult | null; isPersonalBest: boolean };
 
 const SEND_ERROR = '送れませんでした。電波の良い所でもう一度ためしてください';
@@ -388,46 +392,44 @@ export function RecordView() {
 
         {/* 結果の板は、画面の下に固定せず、ここ（「できた」のすぐ下）に流す。数秒で畳む（A03-1） */}
   
+        {/* D3-10: できたセット（ベストの札つき）は「できた」のすぐ下＝画面の上のほうに置く */}
+        <DoneSets sets={sets} bestIds={bestIds} online={online} onDelete={onDelete} />
+
+        {/* D3-7: 主は「できた」1つ。ほかは同じ小さい形で2列に並べる（5つ・4種類のスタイル・縦に長い、を直す）。
+            1セットで終えたいときの出口（A03-2）は今日の画面の「今日はここまで」 */}
         {sets.length > 0 && (
-          <div className="w-full space-y-2">
-            {/* 1セットで終えたいときの出口を最上段に（A03-2）。終えるのは今日の画面の「今日はここまで」 */}
-            <Link
-              href={closeHref}
-              className="fl-slab flex min-h-12 w-full flex-col items-center justify-center py-1 font-extrabold text-fg outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
-            >
-              <span className="flex items-center gap-2 text-base">
+          <div className="w-full space-y-1">
+            <div className="grid w-full grid-cols-2 gap-2">
+              <Link
+                href={nextExerciseId ? withDay(`/record?exercise=${encodeURIComponent(nextExerciseId)}`, day) : withDay('/exercises', day)}
+                className={`${SUB_BUTTON} text-brand`}
+              >
+                次の種目へ
+              </Link>
+              <Link href={closeHref} className={`${SUB_BUTTON} text-fg`}>
                 <Moon aria-hidden className="size-5" />
                 {RECORD_MESSAGES.stop}
-              </span>
-              <span className="text-note font-bold text-fg-muted">{RECORD_MESSAGES.stopHint}</span>
-            </Link>
-            <Link
-              href={nextExerciseId ? withDay(`/record?exercise=${encodeURIComponent(nextExerciseId)}`, day) : withDay('/exercises', day)}
-              className="fl-slab flex min-h-12 w-full items-center justify-center text-[15px] font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
-            >
-              次の種目へ
-            </Link>
-            {day === 'today' && (
-              <ThickButton tone="white" size="sm" className="w-full" onClick={() => setRest({ startedAt: Date.now(), seconds: readRestSeconds() })}>
-                <Timer aria-hidden />
-                {RECORD_MESSAGES.restStart}
-              </ThickButton>
-            )}
-            {videoCapable && online && day === 'today' && recordId && (
-              <div className="space-y-1">
-                <ThickButton tone="gold" size="sm" className="w-full" aria-describedby="video-hint" onClick={() => setFilming(true)}>
-                  <Video aria-hidden />
+              </Link>
+              {day === 'today' && (
+                <button type="button" className={`${SUB_BUTTON} text-fg`} onClick={() => setRest({ startedAt: Date.now(), seconds: readRestSeconds() })}>
+                  <Timer aria-hidden className="size-5" />
+                  {RECORD_MESSAGES.restStart}
+                </button>
+              )}
+              {videoCapable && online && day === 'today' && recordId && (
+                <button type="button" aria-describedby="video-hint" className={`${SUB_BUTTON} text-fg`} onClick={() => setFilming(true)}>
+                  <Video aria-hidden className="size-5" />
                   {RECORD_MESSAGES.video}
-                </ThickButton>
-                <p id="video-hint" className="text-center text-note font-bold text-fg-muted">
-                  {RECORD_MESSAGES.videoHint}
-                </p>
-              </div>
+                </button>
+              )}
+            </div>
+            {videoCapable && online && day === 'today' && recordId && (
+              <p id="video-hint" className="text-center text-note font-bold text-fg-muted">
+                {RECORD_MESSAGES.videoHint}
+              </p>
             )}
           </div>
         )}
-
-        <DoneSets sets={sets} bestIds={bestIds} online={online} onDelete={onDelete} />
 
         {/* 筋トレ中は畳んでおく（A02-11） */}
         <FriendPicker friends={friends} selected={pickedFriends} onToggle={togglePicked} />

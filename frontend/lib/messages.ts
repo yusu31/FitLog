@@ -29,7 +29,6 @@ export const RECORD_MESSAGES = {
   waitPrevious: '前回の記録を 読み込んでいます。少し待ってね',
   // A03-2: 「できた」のあとの選択肢
   stop: '今日はここまで',
-  stopHint: '今日の画面で 終われます',
   restStart: '休憩する',
   // A06-1・A06-2: 動画の入口（専門語を使わない）
   video: '2秒動画を撮る',
