@@ -22,7 +22,7 @@ import {
 } from '@/lib/api/generated';
 import { BodyFigure } from '@/components/me/body-figure';
 import { BODY_PART_LABEL, BODY_PART_ORDER } from '@/lib/body-parts';
-import { exerciseHint } from '@/lib/exercise-info';
+import { exerciseHint, exerciseImages } from '@/lib/exercise-info';
 import { levelsOf } from '@/lib/heatmap';
 import { parseDayMode, withDay, type DayMode } from '@/lib/day-mode';
 import { useRequireSession } from '@/lib/use-require-session';
@@ -246,11 +246,15 @@ export function ExercisesView() {
 function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse; day: DayMode; showTrial: boolean }) {
   const { id, name, bodyPart, isCustom, trialWeightKg, trialReps } = exercise;
   const hint = exerciseHint(exercise);
+  const images = exerciseImages(exercise);
+  const [open, setOpen] = useState(false);
   return (
+    <div>
+    <div className="flex items-stretch gap-1.5">
     <Link
       href={withDay(`/record?exercise=${encodeURIComponent(id)}`, day)}
       className={cn(
-        'fl-slab flex min-h-14 items-center gap-3 py-1.5 pr-3 pl-2.5 outline-none',
+        'fl-slab flex min-h-14 min-w-0 flex-1 items-center gap-3 py-1.5 pr-3 pl-2.5 outline-none',
         'transition-transform active:translate-y-0.5 focus-visible:ring-4 focus-visible:ring-teal/40 motion-reduce:transition-none',
       )}
     >
@@ -274,6 +278,27 @@ function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse;
       )}
       <ChevronRight aria-hidden className="size-5 shrink-0 text-fg-subtle" />
     </Link>
+    {images && (
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={`${name}のやり方の写真を${open ? '閉じる' : '見る'}`}
+        onClick={() => setOpen((v) => !v)}
+        className="fl-slab flex w-12 shrink-0 items-center justify-center text-note font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+      >
+        {open ? '閉じる' : '写真'}
+      </button>
+    )}
+    </div>
+    {images && open && (
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+        {images.map((src, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={src} src={src} alt={`${name} ${i === 0 ? '開始' : '終了'}の姿勢`} loading="lazy" className="aspect-[4/3] w-full rounded-xl bg-teal-light object-cover" />
+        ))}
+      </div>
+    )}
+    </div>
   );
 }
 

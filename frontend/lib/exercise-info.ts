@@ -44,3 +44,11 @@ export function exerciseHint(exercise: Pick<ExerciseResponse, 'id' | 'isCustom'>
   const m = SEED_ID.exec(exercise.id);
   return m ? HINTS[Number(m[1])] : undefined;
 }
+
+// 静止画2枚（開始・終了の姿勢）。出典 yuhonas/free-exercise-db（Unlicense）。対応表は public/exercises/SOURCES.json
+export function exerciseImages(exercise: Pick<ExerciseResponse, 'id' | 'isCustom'>): [string, string] | undefined {
+  if (exercise.isCustom) return undefined;
+  const m = SEED_ID.exec(exercise.id);
+  if (!m || !HINTS[Number(m[1])]) return undefined;
+  return [`/exercises/${m[1]}-0.jpg`, `/exercises/${m[1]}-1.jpg`];
+}
