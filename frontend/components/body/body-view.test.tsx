@@ -94,8 +94,8 @@ describe('BodyPage（からだ）', () => {
     const user = userEvent.setup();
     renderWithQuery(<BodyPage />);
     await user.type(await screen.findByLabelText('ひとこと'), '朝ランしてます');
-    await user.click(screen.getByLabelText('ラン'));
-    await user.click(screen.getByLabelText('朝'));
+    await user.click(screen.getByRole('radio', { name: 'ラン' }));
+    await user.click(screen.getByRole('radio', { name: '朝' }));
     await user.click(screen.getAllByRole('button', { name: '保存する' })[1]);
     await waitFor(() => expect(calls).toContain('PUT /api/body/profile'));
   });
