@@ -196,8 +196,8 @@ export function RecordView() {
     const summaryOf = `${exercise.name} ${formatSetWithReps(value)}`;
     const diff = ghost ? ghostDiff(ghost, value) : 0;
     setNotice(null);
-    // 休憩は自動では始めない（A03-2）。「休憩する」ボタンで始める。次の「できた」では、前の休憩を閉じる
-    setRest(null);
+    // 休憩は「できた」で自動で始める（D3 PR-4・本人の選択。A03-2 を上書き）。きのうの分（あとから記録）では始めない。次の「できた」では作り直す
+    setRest(day === 'today' ? { startedAt: Date.now(), seconds: readRestSeconds() } : null);
     setOutcomes((o) => ({ ...o, [setId]: provisional }));
     // 今日の記録で使った部位（F-19）。この記録に入っている種目と、いまの種目の部位
     const bodyPartOf = (id: string) => (exerciseData?.status === 200 ? exerciseData.data.find((e) => e.id === id)?.bodyPart : undefined);
@@ -306,7 +306,7 @@ export function RecordView() {
           </ul>
         </nav>
       )}
-      <div className="flex flex-1 flex-col items-center gap-4 px-4 pt-4 pb-6">
+      <div className={`flex flex-1 flex-col items-center gap-4 px-4 pt-4 ${rest ? 'pb-32' : 'pb-6'}`}>
         <p className="text-sm font-extrabold tracking-widest text-fg-muted">{RECORD_MESSAGES.setNow(setNo)}</p>
         <h1 className="text-center text-page-title leading-tight font-extrabold">{exercise.name}</h1>
 

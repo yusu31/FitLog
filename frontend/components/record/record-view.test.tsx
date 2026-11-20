@@ -245,20 +245,20 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     });
   });
 
-  // T-REST-08（F-34）・A03-2: 休憩は自動で始めず、「休憩する」ボタンで始める。きのうの分（あとから記録）には出さない
+  // T-REST-08（F-34）・D3 PR-4: 「できた」で休憩が自動で始まり、下の帯に出る（A03-2 を上書き）。きのうの分（あとから記録）には出さない
   describe('休憩タイマー', () => {
     beforeEach(() => localStorage.clear());
 
-    it('「できた」を押しただけでは休憩は始まらない。「休憩する」で始まり、スキップで閉じる', async () => {
+    it('「できた」で休憩が自動で始まり、大きなタイマーに切り替えられ、スキップで閉じる', async () => {
       const user = userEvent.setup();
       renderView();
       await ready();
-      expect(screen.queryByRole('button', { name: '休憩する' })).not.toBeInTheDocument();
-      await user.click(doneButton());
-      const start = await screen.findByRole('button', { name: '休憩する' });
       expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
-      await user.click(start);
+      await user.click(doneButton());
       expect(await screen.findByRole('region', { name: '休憩タイマー' })).toBeInTheDocument();
+      const big = screen.getByRole('button', { name: '大きなタイマーで見る' });
+      await user.click(big);
+      expect(screen.getByRole('button', { name: '小さくして下の帯にもどす' })).toHaveAttribute('aria-expanded', 'true');
       await user.click(screen.getByRole('button', { name: '休憩をスキップ' }));
       expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
     });
@@ -269,7 +269,6 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       renderView();
       await ready();
       await user.click(doneButton());
-      await user.click(await screen.findByRole('button', { name: '休憩する' }));
       expect(await screen.findByTestId('rest-remaining')).toHaveTextContent('2:00');
     });
 
@@ -987,7 +986,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       expect(reps().compareDocumentPosition(doneButton()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
-    it('A03-2 「できた」のあとに「今日はここまで」が出る（今日の画面へ）。休憩は自動で始まらない', async () => {
+    it('A03-2 「できた」のあとに「今日はここまで」が出る（今日の画面へ）', async () => {
       const user = userEvent.setup();
       renderView();
       await ready();
@@ -995,7 +994,6 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await user.click(doneButton());
       const stop = await screen.findByRole('link', { name: /今日はここまで/ });
       expect(stop).toHaveAttribute('href', '/today');
-      expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
     });
 
     it('A03-3 バーに「前回」「今回」の文字と値、札は「お試し」でなく「目安」', async () => {
