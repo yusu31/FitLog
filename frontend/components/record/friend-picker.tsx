@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from 'cn';
-import { AVATAR_BG } from '@/components/friends/member-list';
+import { Avatar } from '@/components/fitlog/avatar';
 import type { FriendGhost } from '@/lib/use-friend-ghosts';
 import { FRIEND_MESSAGES } from '@/lib/messages';
 
@@ -41,9 +41,7 @@ export function FriendPicker({ friends, selected, onToggle }: { friends: FriendG
                   empty && 'opacity-50',
                 )}
               >
-                <span aria-hidden className="flex size-6 items-center justify-center rounded-full text-note text-white" style={{ background: AVATAR_BG[f.shirtColor] ?? AVATAR_BG.navy }}>
-                  {Array.from(f.name)[0]}
-                </span>
+                <Avatar shirtColor={f.shirtColor} size={24} />
                 {f.name}
                 {empty && <span className="text-note font-bold text-fg-muted">{FRIEND_MESSAGES.none}</span>}
               </button>

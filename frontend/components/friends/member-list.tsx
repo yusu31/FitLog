@@ -1,19 +1,15 @@
 'use client';
 
 import { Users } from 'lucide-react';
+import Link from 'next/link';
+import { Avatar, AVATAR_BG } from '@/components/fitlog/avatar';
 import { useAppSession } from '@/lib/use-app-session';
 import type { GroupDetailResponse } from '@/lib/api/generated';
 
 export const GROUP_MEMBER_MAX = 5;
 
-// キャラの服の色から、名前の頭文字を置く丸の色を決める（白文字が読める濃い色に寄せる）
-export const AVATAR_BG: Record<string, string> = {
-  teal: '#0e7f83',
-  navy: '#1e2a3a',
-  coral: '#c23b2d',
-  purple: '#6a57cf',
-  gold: '#8a6200',
-};
+// 丸の色の表は fitlog/avatar.tsx に移した（顔の丸 Avatar と同じ表を使う）。既存の import を壊さないため、ここからも出す
+export { AVATAR_BG };
 
 // グループの名前と、いまの人数（大きな数字）。仲間タブ（S-20）とグループの設定（S-32）で同じ見た目を使う
 export function GroupSummary({ group }: { group: GroupDetailResponse }) {
@@ -32,6 +28,31 @@ export function GroupSummary({ group }: { group: GroupDetailResponse }) {
   );
 }
 
+// 仲間タブ（S-20）の上の1行の帯（D7-4）。グループ名・人数・招待への入口だけ。大きな赤いカードは、人数しか載せないのに場所をとっていた
+export function GroupBand({ group }: { group: GroupDetailResponse }) {
+  const full = group.members.length >= GROUP_MEMBER_MAX;
+  return (
+    <section aria-label="グループ" className="fl-slab flex min-h-14 items-center gap-2.5 py-1.5 pr-1.5 pl-4">
+      <Users aria-hidden className="size-5 shrink-0 text-brand" />
+      <h2 className="min-w-0 flex-1 truncate text-base font-extrabold">{group.name}</h2>
+      <p className="shrink-0 text-sm font-bold text-fg-muted">
+        <span aria-label="いまの人数" className="fl-num text-xl text-fg">
+          {group.members.length}
+        </span>
+        人／{GROUP_MEMBER_MAX}人まで
+      </p>
+      {!full && (
+        <Link
+          href="/settings/group"
+          className="flex min-h-11 shrink-0 items-center rounded-fl px-3 text-sm font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        >
+          招待
+        </Link>
+      )}
+    </section>
+  );
+}
+
 // メンバーの一覧（参加した順）。自分には「あなた」を付ける
 export function MemberList({ group }: { group: GroupDetailResponse }) {
   const { data: session } = useAppSession();
@@ -46,13 +67,7 @@ export function MemberList({ group }: { group: GroupDetailResponse }) {
       <ul aria-labelledby="members-heading" className="space-y-2">
         {group.members.map((m) => (
           <li key={m.id} className="fl-slab flex min-h-14 items-center gap-3 p-2.5">
-            <span
-              aria-hidden
-              className="flex size-11 shrink-0 items-center justify-center rounded-full text-[19px] font-extrabold text-white"
-              style={{ background: AVATAR_BG[m.avatar.shirtColor] ?? AVATAR_BG.navy }}
-            >
-              {Array.from(m.name)[0]}
-            </span>
+            <Avatar shirtColor={m.avatar.shirtColor} size={44} />
             <span className="min-w-0 flex-1 truncate text-base font-extrabold">{m.name}</span>
             {m.id === me && <span className="fl-tag bg-gold text-fg">あなた</span>}
           </li>

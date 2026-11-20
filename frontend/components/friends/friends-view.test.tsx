@@ -197,17 +197,21 @@ describe('FriendsView（S-20 仲間）', () => {
       expect(screen.queryByRole('button', { name: '招待リンクを作る' })).not.toBeInTheDocument();
     });
 
-    // A09-5: 作ったばかりのグループに自分の今週の記録（グループを作る前のものも）が並ぶのは仕様。1人の間は、そう一言で伝える
-    it('A09-5: 自分1人の間だけ、「いま見えているのは自分の記録」という一言を出す', async () => {
+    // D7-4・D7-5: 2人以上は1行の帯（人数・招待）。自分1人の間は帯も空の統計も出さず、キャラの絵と「仲間を招待」だけ
+    it('D7-4/5: 自分1人の間は、キャラの絵と一言と招待だけ（帯・「今週のグループ」の空の枠は出さない）', async () => {
       replies['GET /api/groups/current'] = [{ status: 200, body: { ...GROUP, members: [GROUP.members[0]] } }];
       const { unmount } = renderView();
-      expect(await screen.findByText(/今はあなただけ。今週の記録は、グループを作る前のものもここに出ます/)).toBeInTheDocument();
+      expect(await screen.findByText('仲間がいると、続きます')).toBeInTheDocument();
+      expect(screen.getAllByTestId('sprite').map((e) => e.getAttribute('data-pose'))).toContain('welcome');
+      expect(screen.queryByLabelText('いまの人数')).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: '今週のグループ' })).not.toBeInTheDocument();
       unmount();
 
       replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }];
       renderView();
       await screen.findByRole('heading', { name: '朝トレ部' });
-      expect(screen.queryByText(/今はあなただけ/)).not.toBeInTheDocument();
+      expect(screen.queryByText('仲間がいると、続きます')).not.toBeInTheDocument();
+      expect(screen.getByRole('link', { name: '招待' })).toHaveAttribute('href', '/settings/group');
     });
 
     it('招待・グループを出るは S-32 に移したので、ここには置かず、設定へのリンクだけ置く', async () => {

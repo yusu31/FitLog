@@ -13,12 +13,23 @@ import { FRIENDS_TEXT } from './friends-text';
 // 仲間の足跡（S-20。docs/screen-design.md 4章）。今週（日本時間の月曜〜日曜）のグループ合計と、新しい順の足跡。
 // 20件ずつ。「もっと見る」で、前の応答の nextCursor を渡して続きを読む（自分タブの記録の一覧と同じ作り）。
 // 合計はページに関係なく週全体なので、最初のページの値を使う
-export function FeedSection() {
+// hideEmptyTotals: 自分1人で今週まだ記録が無いとき、「今週のグループ」の空の枠（0.0km など）を出さない（D7-5）
+export function FeedSection({ hideEmptyTotals = false }: { hideEmptyTotals?: boolean }) {
   const weekStart = toLocalDate(new Date());
-  return <FeedPage weekStart={weekStart} cursor={undefined} isFirst />;
+  return <FeedPage weekStart={weekStart} cursor={undefined} isFirst hideEmptyTotals={hideEmptyTotals} />;
 }
 
-function FeedPage({ weekStart, cursor, isFirst = false }: { weekStart: string; cursor: string | undefined; isFirst?: boolean }) {
+function FeedPage({
+  weekStart,
+  cursor,
+  isFirst = false,
+  hideEmptyTotals = false,
+}: {
+  weekStart: string;
+  cursor: string | undefined;
+  isFirst?: boolean;
+  hideEmptyTotals?: boolean;
+}) {
   const { data, isPending, isError } = useGetFeed({ weekStart, ...(cursor ? { cursor } : {}) });
   const [more, setMore] = useState(false);
   const [showOlder, setShowOlder] = useState(false);
@@ -43,7 +54,7 @@ function FeedPage({ weekStart, cursor, isFirst = false }: { weekStart: string; c
   const holdBack = hideOlder && olderCount > 0;
   return (
     <>
-      {isFirst && <WeekTotals totals={totals} />}
+      {isFirst && !(hideEmptyTotals && describeTotals(totals).empty) && <WeekTotals totals={totals} />}
       {isFirst && items.length === 0 && (
         <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{FEED_MESSAGES.empty}</p>
       )}

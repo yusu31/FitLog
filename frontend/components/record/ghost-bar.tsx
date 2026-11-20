@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { AVATAR_BG } from '@/components/friends/member-list';
+import { Avatar } from '@/components/fitlog/avatar';
 import { formatSetWithReps } from '@/lib/format';
 import { FRIEND_MESSAGES, RECORD_MESSAGES } from '@/lib/messages';
 import { volumeOf, type SetValue } from '@/lib/shared/ghost';
@@ -68,8 +68,8 @@ function FriendRow({ friends, both, max }: { friends: BarFriend[]; both: boolean
             <span className="fl-num text-note leading-none whitespace-nowrap text-fg">
               {f.value.weightKg}kg×{f.value.reps}
             </span>
-            <span aria-label={f.name} className="mt-0.5 flex size-5 items-center justify-center rounded-full text-note font-extrabold text-white" style={{ background: AVATAR_BG[f.shirtColor] ?? AVATAR_BG.navy }}>
-              {Array.from(f.name)[0]}
+            <span aria-label={f.name} role="img" className="mt-0.5 block">
+              <Avatar shirtColor={f.shirtColor} size={20} />
             </span>
           </span>
         ))}

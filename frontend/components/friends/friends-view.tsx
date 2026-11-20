@@ -10,13 +10,14 @@ import { InvitePanel } from '@/components/settings/invite-panel';
 import { GROUP_MESSAGES } from '@/lib/messages';
 import { FeedSection } from './feed-section';
 import { FRIENDS_TEXT } from './friends-text';
-import { GroupSummary } from './member-list';
+import { GroupBand } from './member-list';
 import { NoGroupGuide } from './no-group-guide';
 
 // S-20 仲間（docs/screen-design.md 4章）。グループがないときは「作る」と「招待リンクで参加する」の2つだけ（NoGroupGuide）。
 // 足跡・週の合計・スタンプ・コメントは FeedSection（feed-section.tsx）。招待・グループを出るは S-32（/settings/group）にある
 export function FriendsView() {
   const { data, isPending, isError } = useGetCurrentGroup();
+  const alone = data?.status === 200 && data.data.members.length <= 1;
 
   return (
     <div className="relative">
@@ -32,12 +33,20 @@ export function FriendsView() {
         <NoGroupGuide />
       ) : (
         <div className="space-y-4 px-4 pt-3">
-          <GroupSummary group={data.data} />
-          {/* 自分1人の間は、次の一手「仲間を招待」を上に出す（N6）。2人以上になったら設定の奥に戻す */}
-          {data.data.members.length <= 1 && <InvitePanel full={false} />}
-          {data.data.members.length <= 1 && <p className="px-1 text-note font-bold text-fg-muted">{FRIENDS_TEXT.aloneFeedNote}</p>}
+          {alone ? (
+            /* 自分1人の間は、帯も空の統計も出さず、キャラの絵と次の一手「仲間を招待」だけ（N6・D7-5） */
+            <section className="flex flex-col items-center gap-1 pt-2">
+              <Sprite pose="welcome" size={96} />
+              <p className="text-base font-extrabold">{FRIENDS_TEXT.aloneTitle}</p>
+              <div className="w-full pt-2">
+                <InvitePanel full={false} />
+              </div>
+            </section>
+          ) : (
+            <GroupBand group={data.data} />
+          )}
           <WeekVideoStrip />
-          <FeedSection />
+          <FeedSection hideEmptyTotals={alone} />
           <Link
             href="/settings/group"
             className="fl-slab flex min-h-14 items-center gap-3 px-4 py-3 font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40"

@@ -3,6 +3,7 @@
 import { ListChecks, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { PageTitle } from '@/components/fitlog/app-shell';
+import { Avatar } from '@/components/fitlog/avatar';
 import { MyVideoGrid } from '@/components/video-grid/my-video-grid';
 import { useListRecords } from '@/lib/api/generated';
 import { toLocalDate } from '@/lib/shared/local-date';
@@ -27,12 +28,7 @@ export function MeView() {
       <PageTitle>じぶん</PageTitle>
       <div className="space-y-4 px-4 pt-3">
         <section className="fl-slab flex items-center gap-3 px-4 py-3">
-          <span
-            aria-hidden
-            className="flex size-12 shrink-0 items-center justify-center rounded-full bg-teal-dark text-xl font-extrabold text-white"
-          >
-            {session ? Array.from(session.user.name)[0] : ''}
-          </span>
+          <Avatar shirtColor="teal" size={48} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-extrabold">{session?.user.name}</p>
           </div>
