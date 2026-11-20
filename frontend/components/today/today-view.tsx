@@ -9,6 +9,7 @@ import { Sprite } from '@/components/fitlog/sprite';
 import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
+import { getRecord, type RecordedExercise } from '@/lib/api/generated';
 import { bestCountOf, endCurrentWorkout } from '@/lib/current-workout';
 import { useRecordMutations } from '@/lib/mutations';
 import { useOnline } from '@/lib/use-browser-state';
@@ -20,7 +21,7 @@ import {
   type WeekDay,
 } from '@/lib/api/generated';
 import { dayDateOf, withDay, type DayMode } from '@/lib/day-mode';
-import { WEEKDAYS, formatSet, weekdayIndex } from '@/lib/format';
+import { WEEKDAYS, formatSet, formatWeight, weekdayIndex } from '@/lib/format';
 import { HOME_MESSAGES, LATE_MESSAGES, REST_MESSAGES, WORKOUT_END_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { todayPose } from '@/lib/today-pose';
@@ -183,7 +184,7 @@ function DaySwitch({ day, onChange }: { day: DayMode; onChange: (next: DayMode) 
 }
 
 type Session = NonNullable<TodayMenu['session']>;
-type Finished = { exerciseCount: number; setCount: number; bestCount: number };
+type Finished = { exerciseCount: number; setCount: number; bestCount: number; exercises: RecordedExercise[] };
 
 // 記録中のカード（N1）。開始は自動（最初の「できた」）なので、ここで出すのは「続ける」と「今日はここまで」だけ。
 // 終了は電波があるときだけ（サーバーに終了時刻を残すため）。送れなかったときは記録中のまま、やさしい文言を出す
@@ -198,8 +199,11 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
     setError(null);
     setSending(true);
     try {
+      // まとめの「セット一覧」用に、終える前の記録を取る。取れなくても、まとめ（種目数・セット数）は出す
+      const detail = await getRecord(session.recordId).catch(() => null);
+      const exercises = detail && detail.status === 200 ? (detail.data.exercises ?? []) : [];
       await endWorkout.mutateAsync({ id: session.recordId });
-      onEnded({ exerciseCount: session.exerciseCount, setCount: session.setCount, bestCount: bestCountOf(session.recordId) });
+      onEnded({ exerciseCount: session.exerciseCount, setCount: session.setCount, bestCount: bestCountOf(session.recordId), exercises });
       endCurrentWorkout();
     } catch (e) {
       setError(sendErrorText(e, WORKOUT_END_MESSAGES.sendError));
@@ -233,6 +237,8 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
 // 終了のまとめ（N1）。大きい祝福はここだけに置き、セットごとの結果シートは小さいままにする（U1）。
 // 自己ベストの回数は、この画面を開いている間に数えた分だけ（読み直したあとは 0 に戻り、出さない）
 function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: () => void }) {
+  // 総重量（kg）。自重（0kg）のセットは足さない
+  const total = finished.exercises.reduce((sum, e) => sum + e.sets.reduce((a, s) => a + s.weightKg * s.reps, 0), 0);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div aria-hidden onClick={onClose} className="absolute inset-0 bg-night/50" />
@@ -248,6 +254,21 @@ function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: ()
         <h2 className="text-2xl font-extrabold">{WORKOUT_END_MESSAGES.thanks}</h2>
         <p className="fl-num text-3xl">{WORKOUT_END_MESSAGES.count(finished.exerciseCount, finished.setCount)}</p>
         {finished.bestCount > 0 && <p className="text-base font-extrabold text-brand">{WORKOUT_END_MESSAGES.best(finished.bestCount)}</p>}
+        {total > 0 && (
+          <p data-testid="total-weight" className="text-sm font-extrabold text-fg-muted">
+            {WORKOUT_END_MESSAGES.total(formatWeight(total))}
+          </p>
+        )}
+        {finished.exercises.length > 0 && (
+          <ul aria-label="やったセット" className="max-h-48 space-y-2 overflow-y-auto rounded-fl bg-canvas px-4 py-3 text-left">
+            {finished.exercises.map((e) => (
+              <li key={e.exerciseId}>
+                <p className="text-sm font-extrabold">{e.name}</p>
+                <p className="fl-num text-note text-fg-muted">{e.sets.map((s) => formatSet(s)).join('　')}</p>
+              </li>
+            ))}
+          </ul>
+        )}
         <ThickButton autoFocus onClick={onClose}>
           {WORKOUT_END_MESSAGES.close}
         </ThickButton>

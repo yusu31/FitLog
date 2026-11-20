@@ -207,6 +207,26 @@ describe('TodayView（S-10 今日）', () => {
       await waitFor(() => expect(screen.queryByRole('region', { name: '記録中' })).not.toBeInTheDocument());
     });
 
+    // D3 PR-5: まとめに、種目ごとのセット一覧と総重量を出す（終える前に記録の詳細を取る）
+    it('まとめに種目ごとのセットと総重量を出す', async () => {
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { [TODAY]: 'rec' })),
+        [WORKOUTS]: [list(activeToday(), PREV), list({ ...activeToday(), active: false }, PREV)],
+        [LATEST]: list(activeToday()),
+        'GET /api/records/r2': ok(activeToday()),
+        [END]: ok({ id: 'r2', kind: 'workout', recordedAt: NOON_WED, localDate: TODAY, endedAt: NOON_WED }),
+      });
+      const user = userEvent.setup();
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '記録中' });
+      await user.click(within(card).getByRole('button', { name: '今日はここまで' }));
+      const summary = await screen.findByRole('dialog', { name: '今日のまとめ' });
+      const sets = within(summary).getByRole('list', { name: 'やったセット' });
+      expect(within(sets).getAllByRole('listitem')).toHaveLength(2);
+      // 60×10 + 60×9 + 25×12 = 600 + 540 + 300
+      expect(within(summary).getByTestId('total-weight')).toHaveTextContent('総重量 1440kg');
+    });
+
     it('電波が無いときは「今日はここまで」を押せず、理由を出す（終了は電波があるときだけ）', async () => {
       installActive();
       renderWithQuery(<TodayView />);
