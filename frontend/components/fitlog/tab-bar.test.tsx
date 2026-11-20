@@ -26,7 +26,7 @@ describe('TabBar（下のタブ）', () => {
     const links = screen.getAllByRole('link');
     expect(links.map((l) => l.textContent)).toEqual(['今日', '仲間', 'まとめ', '自分']);
     expect(links.map((l) => l.getAttribute('href'))).toEqual(['/today', '/friends', '/me/stats', '/me']);
-    expect(screen.getByRole('button', { name: '記録を始める' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'START 記録を始める' })).toBeInTheDocument();
   });
 
   it('/me/stats では「まとめ」だけが選択中で、「自分」は選択中にしない', () => {
@@ -40,12 +40,12 @@ describe('TabBar（下のタブ）', () => {
     pathname = '/today/';
     const user = userEvent.setup();
     render(<TabBar />);
-    await user.click(screen.getByRole('button', { name: '記録を始める' }));
+    await user.click(screen.getByRole('button', { name: 'START 記録を始める' }));
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByRole('link', { name: '筋トレを記録' })).toHaveAttribute('href', '/exercises');
-    expect(within(dialog).getByRole('link', { name: 'ランを記録' })).toHaveAttribute('href', '/run');
-    expect(within(dialog).getByRole('link', { name: 'おやすみにする' })).toHaveAttribute('href', '/rest');
-    await user.click(within(dialog).getByRole('button', { name: '閉じる' }));
+    expect(within(dialog).getByRole('link', { name: 'STRENGTH 筋トレを記録' })).toHaveAttribute('href', '/exercises');
+    expect(within(dialog).getByRole('link', { name: 'RUN ランを記録' })).toHaveAttribute('href', '/run');
+    expect(within(dialog).getByRole('link', { name: 'REST おやすみにする' })).toHaveAttribute('href', '/rest');
+    await user.click(within(dialog).getByRole('button', { name: 'CLOSE 閉じる' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
