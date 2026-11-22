@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { cn } from 'cn';
 import { BodyFigure } from '@/components/me/body-figure';
+import { StampMedal } from '@/components/me/stamp-medal';
 import { Sprite } from '@/components/fitlog/sprite';
-import type { BodyPart } from '@/lib/api/generated';
+import type { BodyPart, StampKey } from '@/lib/api/generated';
 import { BODY_PART_LABEL, BODY_PART_ORDER } from '@/lib/body-parts';
 import { levelsOf } from '@/lib/heatmap';
+import { STAMP_LABEL } from '@/lib/stats';
 import { formatKcal } from '@/lib/body/body';
 import { GHOST_MESSAGES, RECORD_MESSAGES, ghostUpMessage } from '@/lib/messages';
 import { usePrefersReducedMotion } from '@/lib/use-browser-state';
@@ -32,6 +34,8 @@ export type SheetData = {
   day?: 'today' | 'yesterday';
   // 推定消費カロリー（B14b）。体重が無い・時間が測れないときは無い（null も無いのと同じ）。本人だけの数字
   kcal?: number | null;
+  // このセットで新しくとったスタンプ（D5 PR-2）。メダルが1回跳ねる。動きを減らす設定では動かさず、出すだけ
+  newStamps?: readonly StampKey[];
 };
 
 // 結果シート（features.md 2.6）。「できた」の直後に 3秒出し、タップで飛ばせる。
@@ -65,7 +69,7 @@ export function ResultSheet({ sheet, onDismiss }: { sheet: SheetData | null; onD
 }
 
 function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolean; onDismiss: () => void }) {
-  const { result, diff, isPersonalBest, summary, note, parts, monthDay, day, kcal } = sheet;
+  const { result, diff, isPersonalBest, summary, note, parts, monthDay, day, kcal, newStamps } = sheet;
   const kcalText = formatKcal(kcal);
   const gold = result === 'up' || isPersonalBest;
   const [upLabel, upAmount] = ghostUpMessage(diff).split(' ');
@@ -109,6 +113,18 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
           </span>
         )}
         {note && <span className="mt-1 block text-base font-bold">{note}</span>}
+        {newStamps && newStamps.length > 0 && (
+          <span data-testid="new-stamps" className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            {newStamps.map((k) => (
+              <span key={k} className="flex items-center gap-1 text-sm font-extrabold">
+                <span className={reduced ? undefined : 'fl-medal-pop'}>
+                  <StampMedal stampKey={k} earned size={32} />
+                </span>
+                スタンプ「{STAMP_LABEL[k]}」をとった！
+              </span>
+            ))}
+          </span>
+        )}
         {parts && parts.length > 0 && <TodayParts parts={parts} day={day} />}
       </span>
       <CheerSprite pose={isPersonalBest ? 'pb' : 'cheer'} />

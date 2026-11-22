@@ -84,3 +84,21 @@ describe('ResultSheet（約○kcal B14b）', () => {
     expect(screen.queryByTestId('sheet-kcal')).not.toBeInTheDocument();
   });
 });
+
+// D5 PR-2: 新しくスタンプをとった保存の直後だけ、メダルを出して1回お祝いする
+describe('ResultSheet（スタンプのお祝い D5 PR-2）', () => {
+  it('newStamps があれば、スタンプ名つきでメダルを出す', () => {
+    render(<ResultSheet sheet={{ ...base, newStamps: ['first-record'] }} onDismiss={() => {}} />);
+    const box = screen.getByTestId('new-stamps');
+    expect(box).toHaveTextContent('スタンプ「初めての記録」をとった！');
+    expect(box.querySelector('[data-testid="stamp-medal"]')).toHaveAttribute('data-earned', 'true');
+    expect(box.querySelector('.fl-medal-pop')).not.toBeNull();
+  });
+
+  it('newStamps が無い・空なら出さない', () => {
+    const { rerender } = render(<ResultSheet sheet={base} onDismiss={() => {}} />);
+    expect(screen.queryByTestId('new-stamps')).not.toBeInTheDocument();
+    rerender(<ResultSheet sheet={{ ...base, newStamps: [] }} onDismiss={() => {}} />);
+    expect(screen.queryByTestId('new-stamps')).not.toBeInTheDocument();
+  });
+});

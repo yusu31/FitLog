@@ -38,6 +38,8 @@ test('A3 結果シートが 390px で横にはみ出さず、流れの中で見�
   await expect(sheet).toBeVisible();
   // 出現アニメーション（300ms）が終わるのを待ってから測る
   await page.waitForTimeout(500);
+  // 初めての記録ならスタンプのお祝い（D5 PR-2）が少し遅れて足されて板が伸びる。出るなら出たあとの高さで測る（出なくても進む）
+  await page.getByTestId('new-stamps').waitFor({ timeout: 1500 }).catch(() => {});
 
   // B04: 結果の板は画面に固定せず、セット一覧の流れの中に出る。そのため画面の下にあることがあり、
   // 「見える位置までスクロールすれば、板の全体が画面（390×844）に収まる」ことを守る
@@ -47,7 +49,8 @@ test('A3 結果シートが 390px で横にはみ出さず、流れの中で見�
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(390);
   expect(box!.y).toBeGreaterThanOrEqual(0);
-  expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+  // 画面の下端にぴったり合わせて見せたとき、小数のずれ（844.06 など）で落ちないよう 1px の余裕を持たせる
+  expect(box!.y + box!.height).toBeLessThanOrEqual(845);
   // 中身の横はみ出し（文字・体の図が枠より広がっていないか）
   const inner = await sheet.evaluate((el) => el.scrollWidth - el.clientWidth);
   expect(inner, '結果シート内の横はみ出し(px)').toBeLessThanOrEqual(0);

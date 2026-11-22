@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { JapanMap } from '@/components/me/japan-map';
+import { StampMedal } from '@/components/me/stamp-medal';
 import { useGetStats, type StatsCalendarDay, type StatsResponse } from '@/lib/api/generated';
 import { formatMonthDay } from '@/lib/format';
 import { locateOnRoute, nextText, trekText } from '@/lib/japan-route';
 import {
   METRICS,
   STAMP_LABEL,
+  recentStamps,
   STATS_VIEWS,
   formatMetric,
   minMonthOffset,
@@ -330,21 +332,33 @@ function shortDate(date: string): string {
 }
 
 function Stamps({ data }: { data: StatsResponse }) {
+  const recent = recentStamps(data.stamps);
   return (
     <section aria-labelledby="stats-stamps" className="fl-slab px-4 py-3">
       <h2 id="stats-stamps" className="text-sm font-extrabold text-fg-muted">
         スタンプ帳
       </h2>
-      <ul className="mt-2 grid grid-cols-3 gap-2">
+      {recent.length > 0 && (
+        <div data-testid="recent-stamps" className="mt-2 rounded-lg bg-canvas px-2 py-2">
+          <p className="text-note font-extrabold text-fg-muted">最近とった</p>
+          <ul className="mt-1 flex justify-around gap-1">
+            {recent.map((s) => (
+              <li key={s.key} className="flex w-1/4 flex-col items-center text-center text-note font-extrabold">
+                <StampMedal stampKey={s.key} earned size={44} />
+                <span>{STAMP_LABEL[s.key]}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <ul data-testid="all-stamps" className="mt-2 grid grid-cols-3 gap-2">
         {data.stamps.map((s) => (
           <li
             key={s.key}
             data-earned={s.earned}
-            className={cn('rounded-lg px-1 py-3 text-center text-note font-extrabold', s.earned ? 'bg-gold-light text-fg' : 'bg-canvas text-fg-muted')}
+            className={cn('flex flex-col items-center rounded-lg px-1 py-2 text-center text-note font-extrabold', s.earned ? 'bg-gold-light text-fg' : 'bg-canvas text-fg-muted')}
           >
-            <span aria-hidden className="block text-xl">
-              {s.earned ? '★' : '○'}
-            </span>
+            <StampMedal stampKey={s.key} earned={s.earned} />
             {STAMP_LABEL[s.key]}
             {s.earnedAt && <span className="mt-0.5 block text-note font-bold text-fg-muted">{shortDate(s.earnedAt)}</span>}
             <span className="sr-only">{s.earned ? '（獲得済み）' : '（まだ）'}</span>
