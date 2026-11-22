@@ -184,7 +184,8 @@ describe('動画の一覧（結合: 本物の PostgreSQL・better-auth）', () =
       const withVideo = await shoot(a!);
       const plain = randomUUID();
       await http().post('/api/records').set('Cookie', a!).send({ id: plain, kind: 'workout', recordedAt: new Date().toISOString() }).expect(201);
-      const feed = (await http().get(`/api/feed?weekStart=${new Date().toISOString().slice(0, 10)}`).set('Cookie', b!).expect(200)).body as { items: { id: string; hasVideo?: boolean }[] };
+      // API は日本時間の日付で週を決める。UTC の日付だと、日本の月曜の朝（UTC は日曜）に今日の記録が前の週になる
+      const feed = (await http().get(`/api/feed?weekStart=${new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10)}`).set('Cookie', b!).expect(200)).body as { items: { id: string; hasVideo?: boolean }[] };
       expect(feed.items.find((i) => i.id === withVideo.recordId)?.hasVideo).toBe(true);
       expect(feed.items.find((i) => i.id === plain)).toBeDefined();
       expect(feed.items.find((i) => i.id === plain)?.hasVideo).toBeUndefined();
