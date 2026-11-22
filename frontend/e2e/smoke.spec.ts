@@ -15,6 +15,7 @@ test('新規登録すると、今日の画面が開く', async ({ page }) => {
   // ローカルの API は SHA-256 を要求しない（公開環境の Lambda だけが要求する）ので、送られたか自分で確かめる。
   // 付いていないと公開環境では 403 になる（Issue #162）
   const signUpRequest = page.waitForRequest((req) => req.url().includes('/api/auth/sign-up/email') && req.method() === 'POST');
+  await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
   const sent = await signUpRequest;
   expect(await sent.headerValue('x-amz-content-sha256')).toMatch(/^[0-9a-f]{64}$/);

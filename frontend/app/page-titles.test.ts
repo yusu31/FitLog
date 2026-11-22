@@ -3,6 +3,8 @@
 const PAGES: [path: string, title: string][] = [
   ['login', 'ログイン'],
   ['signup', '新規登録'],
+  ['terms', '利用規約'],
+  ['privacy', 'プライバシーの扱い'],
   ['today', '今日'],
   ['friends', '仲間'],
   ['me', '自分'],

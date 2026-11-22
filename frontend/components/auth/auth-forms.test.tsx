@@ -102,6 +102,7 @@ describe('SignupForm（S-02）', () => {
     await user.type(screen.getByLabelText('表示名'), 'ゆうす');
     await user.type(screen.getByLabelText('メールアドレス'), 'a@example.com');
     await user.type(screen.getByLabelText(/パスワード/), 'password123');
+    await user.click(screen.getByRole('checkbox', { name: /同意/ }));
     await user.click(screen.getByRole('button', { name: '登録する' }));
   }
 
@@ -161,6 +162,25 @@ describe('SignupForm（S-02）', () => {
     await user.click(screen.getByRole('button', { name: '登録する' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(text);
     expect(signUpEmail).not.toHaveBeenCalled();
+  });
+
+  // D1: 規約とプライバシーへの同意は必須。チェックしないと送らず、リンクは別タブで開く
+  it('同意にチェックが無いと送らず、直す点を出す。規約・プライバシーのリンクは別タブ', async () => {
+    const user = userEvent.setup();
+    render(<SignupForm />);
+    await user.type(screen.getByLabelText('表示名'), 'ゆうす');
+    await user.type(screen.getByLabelText('メールアドレス'), 'a@example.com');
+    await user.type(screen.getByLabelText(/パスワード/), 'password123');
+    expect(screen.getByRole('checkbox', { name: /同意/ })).not.toBeChecked();
+    await user.click(screen.getByRole('button', { name: '登録する' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('同意が必要です');
+    expect(signUpEmail).not.toHaveBeenCalled();
+    for (const [name, href] of [['利用規約', '/terms'], ['プライバシーの扱い', '/privacy']]) {
+      const link = screen.getByRole('link', { name });
+      expect(link).toHaveAttribute('href', href);
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    }
   });
 
   // T-AUTH-FE-23: パスワードの境界（8文字）。ブラウザの入力検査に最小の長さを渡している
@@ -304,6 +324,7 @@ describe('登録完了の一言（A01-7）', () => {
     await user.type(screen.getByLabelText('表示名'), 'ゆうす');
     await user.type(screen.getByLabelText('メールアドレス'), 'a@example.com');
     await user.type(screen.getByLabelText(/パスワード（/), 'password123');
+    await user.click(screen.getByRole('checkbox', { name: /同意/ }));
     await user.click(screen.getByRole('button', { name: '登録する' }));
     expect(await screen.findByRole('status')).toHaveTextContent('登録できたよ');
     expect(replace).not.toHaveBeenCalled();

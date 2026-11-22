@@ -112,6 +112,7 @@ test('T1 初めて開いて登録し、今日の筋トレを1セット記録す�
   await t.fill(page.getByLabel('表示名'), '新入りの人', '表示名');
   await t.fill(page.getByLabel('メールアドレス'), `audit-t1-${randomUUID().slice(0, 6)}@example.com`, 'メール');
   await t.fill(page.getByLabel(/^パスワード/), PASSWORD, 'パスワード');
+  await page.getByRole('checkbox', { name: /同意/ }).check();
   await t.click(page.getByRole('button', { name: '登録する' }), '登録する');
   await t.click(page.getByRole('link', { name: '種目を選ぶ' }), '種目を選ぶ');
   await t.click(page.getByRole('link', { name: /ベンチプレス/ }).first(), '種目（ベンチプレス）');

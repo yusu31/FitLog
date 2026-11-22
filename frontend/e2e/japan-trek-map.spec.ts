@@ -10,6 +10,7 @@ test('記録のまとめに、日本縦断の地図が出る（canvas があり�
   await page.getByLabel('表示名').fill('E2E太郎');
   await page.getByLabel('メールアドレス').fill(`e2e-trek-${randomUUID().slice(0, 8)}@example.com`);
   await page.getByLabel(/^パスワード/).fill('e2e-password-1234');
+  await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page).toHaveURL(/\/today\/?$/);
 
@@ -29,6 +30,7 @@ test('ラン画面の上に日本縦断への入口があり、押すと記録�
   await page.getByLabel('表示名').fill('E2E太郎');
   await page.getByLabel('メールアドレス').fill(`e2e-trek2-${randomUUID().slice(0, 8)}@example.com`);
   await page.getByLabel(/^パスワード/).fill('e2e-password-1234');
+  await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page).toHaveURL(/\/today\/?$/);
 

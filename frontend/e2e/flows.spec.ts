@@ -10,6 +10,7 @@ async function signUp(page: Page, email: string): Promise<void> {
   await page.getByLabel('表示名').fill('E2E太郎');
   await page.getByLabel('メールアドレス').fill(email);
   await page.getByLabel(/^パスワード/).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page).toHaveURL(/\/today\/?$/);
 }
@@ -72,6 +73,7 @@ test.describe('認証の流れ', () => {
     await page.getByLabel('表示名').fill('E2E次郎');
     await page.getByLabel('メールアドレス').fill(email);
     await page.getByLabel(/^パスワード/).fill(PASSWORD);
+    await page.getByRole('checkbox', { name: /同意/ }).check();
     await page.getByRole('button', { name: '登録する' }).click();
     await expect(page.locator('form [role="alert"]')).toContainText('登録済み');
   });
