@@ -10,6 +10,7 @@ async function signUp(page: Page): Promise<void> {
   await page.getByLabel('表示名').fill('E2E太郎');
   await page.getByLabel('メールアドレス').fill(`e2e-vp390-${randomUUID().slice(0, 8)}@example.com`);
   await page.getByLabel(/^パスワード/).fill('e2e-password-1234');
+  await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page).toHaveURL(/\/today\/?$/);
 }
