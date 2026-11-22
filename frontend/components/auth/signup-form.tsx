@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { AuthLayout, AuthLinkButton, SignupHero } from '@/components/auth/auth-layout';
@@ -28,7 +29,7 @@ export function SignupForm() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     // A13-7: ブラウザ標準の吹き出しは見落としやすいので、自前で検査して画面にエラー文を出す
-    const invalid = validate(String(form.get('name')), String(form.get('email')), String(form.get('password')));
+    const invalid = validate(String(form.get('name')), String(form.get('email')), String(form.get('password')), form.get('terms') === 'on');
     if (invalid) {
       setError(invalid);
       return;
@@ -69,6 +70,20 @@ export function SignupForm() {
           <p id="email-hint" className="text-sm text-fg-subtle">ログインに使います</p>
         </div>
         <PasswordField label={`パスワード（${MIN_PASSWORD_LENGTH}文字以上）`} autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} />
+        {/* D1: 規約とプライバシーへの同意は必須（チェックしないと登録できない）。ページは別タブで開き、入力中の内容を失わない */}
+        <label className="flex min-h-11 items-start gap-3 text-sm leading-relaxed">
+          <input type="checkbox" name="terms" className="mt-0.5 size-6 shrink-0 accent-teal-dark" />
+          <span>
+            <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-brand underline">
+              利用規約
+            </Link>
+            と
+            <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-brand underline">
+              プライバシーの扱い
+            </Link>
+            に同意する
+          </span>
+        </label>
         {error && (
           <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
             {error}
@@ -107,9 +122,10 @@ function messageFor(code: string | undefined): string {
 }
 
 // 送る前の入力検査。問題があれば日本語の文を返す（API 側の検査と同じ基準）
-function validate(name: string, email: string, password: string): string | null {
+function validate(name: string, email: string, password: string, agreed: boolean): string | null {
   if (name.trim() === '') return '表示名を入力してください';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'メールアドレスの形が正しくありません';
   if (password.length < MIN_PASSWORD_LENGTH) return `パスワードは${MIN_PASSWORD_LENGTH}文字以上にしてください`;
+  if (!agreed) return '利用規約とプライバシーの扱いへの同意が必要です';
   return null;
 }

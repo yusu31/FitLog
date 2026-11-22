@@ -240,6 +240,7 @@ test('A13-7 エラー表示（ログイン・登録・招待）', async ({ page 
   await page.getByLabel('表示名').fill('x');
   await page.getByLabel('メールアドレス').fill('not-an-email');
   await page.getByLabel(/^パスワード/).fill('short');
+  await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
   await page.waitForTimeout(1500);
   await shot(page, 'A13-7_signup-invalid');
