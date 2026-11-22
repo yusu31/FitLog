@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { AuthLayout, AuthLinkButton } from '@/components/auth/auth-layout';
+import { LoginHero } from '@/components/auth/login-hero';
 import { PasswordField } from '@/components/auth/password-field';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
@@ -42,15 +43,20 @@ export function LoginForm() {
   }
 
   return (
-    <AuthLayout title="ログイン">
+    <AuthLayout title="ログイン" hero={<LoginHero />}>
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <Label className="font-extrabold" htmlFor="email">メールアドレス</Label>
           <Input className="h-12 text-base" id="email" name="email" type="email" autoComplete="email" required />
         </div>
         <PasswordField label="パスワード" autoComplete="current-password" />
-        {/* A01-6: 再設定の機能は作らない（要件）。管理者への連絡を案内する */}
-        <p className="text-sm text-fg-subtle">パスワードを忘れたら、グループの管理者に連絡してください</p>
+        {/* A01-6・D1: 再設定の機能は作らない（要件 4.3）。小さな「忘れたときは？」を開くと、管理者への連絡を案内する */}
+        <details className="-mt-2 text-sm text-fg-subtle">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center font-bold text-brand underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+            忘れたときは？
+          </summary>
+          <p>パスワードの再設定の機能はありません。グループの管理者に連絡してください</p>
+        </details>
         {error && (
           <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
             {error}

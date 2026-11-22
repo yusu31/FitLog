@@ -39,6 +39,7 @@ import {
   type RecordedExercise,
 } from '@/lib/api/generated';
 import { useAppSession } from '@/lib/use-app-session';
+import { rememberLastKind } from '@/lib/last-kind';
 import { addRejectedSend } from '@/lib/offline/rejected';
 import { classifyFailure, SendCancelled, sendRetryDelay, shouldRetrySend } from '@/lib/offline/retry-policy';
 import { scopeIdOf } from '@/lib/offline/resume';
@@ -151,6 +152,7 @@ export function registerRecordMutations(client: QueryClient, userId: string): vo
       const { id, kind, recordedAt, run } = vars.data;
       const localDate = toLocalDate(new Date(recordedAt));
       markWeekDay(client, localDate, kind);
+      rememberLastKind(kind);
       writeDetail(client, id, {
         id,
         kind,

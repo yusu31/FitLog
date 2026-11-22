@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LoginForm } from './login-form';
 import { SignupForm } from './signup-form';
@@ -182,18 +182,44 @@ describe('ログイン・登録ページの最初の HTML（S2）', () => {
   });
 });
 
-// F8: ログイン前の人にアプリが何かを3行で伝える（ログイン・新規登録の両方）
-describe('アプリの紹介（F8）', () => {
+// D1: 3行の紹介文はやめた（上の帯はロゴと一言だけ。ログインは筋トレ版／ラン版の見本）
+describe('アプリの紹介（F8 → D1 で3行をやめた）', () => {
   it.each([
     ['ログイン', <LoginForm key="l" />],
     ['新規登録', <SignupForm key="s" />],
-  ])('%s画面に紹介が3行ある', (_name, ui) => {
+  ])('%s画面に3行の紹介文は出さない', (_name, ui) => {
     render(ui);
-    const intro = screen.getByRole('list', { name: 'FitLogでできること' });
-    expect(intro.querySelectorAll('li')).toHaveLength(3);
-    expect(intro).toHaveTextContent('前回の自分');
-    expect(intro).toHaveTextContent('仲間');
-    expect(intro).toHaveTextContent('責めない');
+    expect(screen.queryByRole('list', { name: 'FitLogでできること' })).not.toBeInTheDocument();
+  });
+});
+
+// D1: ログインの上半分は、この端末で最後に保存した運動の種類で切り替わる（初回は筋トレ版）
+describe('ログインの上半分（D1）', () => {
+  afterEach(() => localStorage.clear());
+
+  it('覚えていないときは筋トレ版（トレーニング中のキャラと前回の重さ）', () => {
+    render(<LoginForm />);
+    const hero = screen.getByTestId('login-hero');
+    expect(hero).toHaveAttribute('data-kind', 'lift');
+    expect(hero).toHaveTextContent('60kg × 8');
+    expect(within(hero).getByTestId('sprite')).toHaveAttribute('data-pose', 'train');
+  });
+
+  it('最後に保存したのがランなら、ラン版（走るキャラと薄い前回の自分・前回の距離）', () => {
+    localStorage.setItem('fitlog-last-kind', 'run');
+    render(<LoginForm />);
+    const hero = screen.getByTestId('login-hero');
+    expect(hero).toHaveAttribute('data-kind', 'run');
+    expect(hero).toHaveTextContent('5.0km');
+    expect(within(hero).getAllByTestId('sprite').map((e) => e.getAttribute('data-pose'))).toEqual(['run', 'run']);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('前回の自分と並んで走る');
+  });
+
+  it('登録画面は入力欄が上。上の帯はロゴと一言だけ（キャラ・見本の枠は出さない）', () => {
+    render(<SignupForm />);
+    expect(screen.queryByTestId('login-hero')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('sprite')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('前回の自分と並べて記録');
   });
 });
 
@@ -257,11 +283,15 @@ describe('パスワードの表示切替（A01-5）', () => {
   });
 });
 
-// A01-6: 再設定機能は作らず、管理者への連絡を案内する
-describe('パスワードを忘れたとき（A01-6）', () => {
-  it('ログイン画面に管理者へ連絡する案内がある', () => {
+// A01-6・D1: 再設定機能は作らず、小さな「忘れたときは？」を開くと管理者への連絡を案内する
+describe('パスワードを忘れたとき（A01-6・D1）', () => {
+  it('「忘れたときは？」があり、開くと管理者へ連絡する案内が見える', async () => {
+    const user = userEvent.setup();
     render(<LoginForm />);
-    expect(screen.getByText('パスワードを忘れたら、グループの管理者に連絡してください')).toBeInTheDocument();
+    const note = screen.getByText('パスワードの再設定の機能はありません。グループの管理者に連絡してください');
+    expect(note).not.toBeVisible();
+    await user.click(screen.getByText('忘れたときは？'));
+    expect(note).toBeVisible();
   });
 });
 

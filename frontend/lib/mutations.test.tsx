@@ -92,6 +92,24 @@ describe('書き込みの送信（API の形）', () => {
     expect(calls).toEqual([{ method: 'POST', url: '/api/records', body: { id: REC, kind: 'workout', recordedAt: NOW } }]);
   });
 
+  // D1: ログイン前の画面（筋トレ版／ラン版）のために、保存した種類を端末に覚える。休みは覚えない
+  it('記録を作ると、その種類（筋トレ／ラン）を端末に覚える。休みでは変えない', async () => {
+    respond = () => ({ status: 201, body: { id: REC } });
+    const client = makeClient();
+    const { result } = renderHook(() => useRecordMutations(), { wrapper: wrapperFor(client) });
+    const create = (kind: 'workout' | 'run' | 'rest') => act(() => result.current.createRecord.mutateAsync({ data: { id: REC, kind, recordedAt: NOW } }));
+    try {
+      await create('run');
+      expect(localStorage.getItem('fitlog-last-kind')).toBe('run');
+      await create('rest');
+      expect(localStorage.getItem('fitlog-last-kind')).toBe('run');
+      await create('workout');
+      expect(localStorage.getItem('fitlog-last-kind')).toBe('lift');
+    } finally {
+      localStorage.clear();
+    }
+  });
+
   it('セットを足す → POST /api/records/{id}/sets。応答の result・isPersonalBest が返る', async () => {
     respond = () => ({ status: 201, body: { id: SET1, setNo: 1, weightKg: 40, reps: 11, result: 'up', isPersonalBest: true } });
     const client = makeClient();
