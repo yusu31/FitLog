@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { AuthLayout, AuthLinkButton } from '@/components/auth/auth-layout';
+import { AuthLayout, AuthLinkButton, SignupHero } from '@/components/auth/auth-layout';
 import { PasswordField } from '@/components/auth/password-field';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
@@ -56,7 +56,7 @@ export function SignupForm() {
   }
 
   return (
-    <AuthLayout title="新規登録">
+    <AuthLayout title="新規登録" hero={<SignupHero />}>
       <form noValidate onSubmit={onSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <Label className="font-extrabold" htmlFor="name">表示名</Label>
