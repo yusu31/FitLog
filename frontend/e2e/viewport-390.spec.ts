@@ -49,7 +49,8 @@ test('A3 結果シートが 390px で横にはみ出さず、流れの中で見�
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(390);
   expect(box!.y).toBeGreaterThanOrEqual(0);
-  expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+  // 画面の下端にぴったり合わせて見せたとき、小数のずれ（844.06 など）で落ちないよう 1px の余裕を持たせる
+  expect(box!.y + box!.height).toBeLessThanOrEqual(845);
   // 中身の横はみ出し（文字・体の図が枠より広がっていないか）
   const inner = await sheet.evaluate((el) => el.scrollWidth - el.clientWidth);
   expect(inner, '結果シート内の横はみ出し(px)').toBeLessThanOrEqual(0);
