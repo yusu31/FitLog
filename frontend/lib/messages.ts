@@ -265,7 +265,7 @@ export const FEED_MESSAGES = {
   totalsEmpty: '今週は まだ だれも記録していないよ',
   volumeLabel: '総重量',
   distanceLabel: '走った',
-  empty: '今週の足跡は まだないよ。最初の1つを どうぞ',
+  empty: '足跡は まだないよ。最初の1つを どうぞ',
   loadFailed: '足跡を読み込めませんでした。電波の良い所で開き直してください',
   loadMore: 'もっと見る',
   stampFailed: 'スタンプを送れませんでした。少し待って、もう一度お試しください',

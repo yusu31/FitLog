@@ -37,7 +37,7 @@ let replies: Record<string, Reply[]> = {};
 const calls: { method: string; url: string; body?: unknown }[] = [];
 
 // 足跡を開くと「見た」（POST /feed/seen。F4）が必ず1回飛ぶ。ほかのテストではそれを除いて数える
-const feedGets = () => calls.filter((c) => c.method === 'GET' && c.url.startsWith('/api/feed?'));
+const feedGets = () => calls.filter((c) => c.method === 'GET' && (c.url === '/api/feed' || c.url.startsWith('/api/feed?')));
 const sentPosts = () => calls.filter((c) => c.method === 'POST' && c.url !== '/api/feed/seen');
 
 beforeEach(() => {
@@ -81,7 +81,7 @@ describe('FeedSection（S-20 の足跡・週の合計）', () => {
     expect(screen.getByText('はなこ')).toBeInTheDocument();
     expect(screen.getByText('スクワット')).toBeInTheDocument();
     expect(screen.getByText('ほか1種目')).toBeInTheDocument();
-    expect(calls[0].url).toContain(`weekStart=${toLocalDate(new Date())}`);
+    expect(calls[0].url).not.toContain('weekStart'); // 全期間（D7-6）
   });
 
   it('あとから記録（late）の足跡は、時刻を出さず「あとから記録」の札を出す。ふつうの足跡は時刻を出す（F-21）', async () => {
@@ -118,7 +118,7 @@ describe('FeedSection（S-20 の足跡・週の合計）', () => {
       { status: 200, body: feed({ items: [], totals: { recordedUserCount: 0, totalVolumeKg: 0, totalDistanceM: 0 } }) },
     ];
     renderFeed();
-    expect(await screen.findByText('今週の足跡は まだないよ。最初の1つを どうぞ')).toBeInTheDocument();
+    expect(await screen.findByText('足跡は まだないよ。最初の1つを どうぞ')).toBeInTheDocument();
     expect(screen.getByText('今週は まだ だれも記録していないよ')).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: '仲間の足跡' })).not.toBeInTheDocument();
   });
@@ -387,7 +387,7 @@ describe('新着の印', () => {
     replies['POST /api/feed/seen'] = [{ status: 204 }];
     renderFeed();
     await userEvent.click(await screen.findByRole('button', { name: 'もっと見る' }));
-    await waitFor(() => expect(calls.filter((c) => c.method === 'GET' && c.url.startsWith('/api/feed?')).length).toBe(2));
+    await waitFor(() => expect(feedGets().length).toBe(2));
     expect(calls.filter((c) => c.method === 'POST' && c.url === '/api/feed/seen')).toHaveLength(1);
   });
 
@@ -561,8 +561,7 @@ describe('B05 仲間タブの改善', () => {
     expect(links[0].getAttribute('href')).toMatch(/^\/record-detail\?id=run1&by=/);
   });
 
-  it('A04-13: 今日の足跡だけ見せ、前の日の分は「前の日の足跡を見る」で開く', async () => {
-    const user = userEvent.setup();
+  it('D7-6: 週の区切りなしで全期間を出す（古い日の足跡も最初から並ぶ）。weekStart は付けない', async () => {
     replies['GET /api/feed'] = [
       {
         status: 200,
@@ -571,15 +570,32 @@ describe('B05 仲間タブの改善', () => {
     ];
     renderFeed();
     await screen.findByText('スクワット');
-    expect(screen.queryByText('デッドリフト')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /前の日の足跡を見る/ }));
     expect(screen.getByText('デッドリフト')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /前の日の足跡を見る/ })).not.toBeInTheDocument();
+    expect(calls[0].url).not.toContain('weekStart');
   });
 
-  it('A04-13: 今日の足跡が無いときは一言を出し、前の日の分は開ける', async () => {
-    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 'o1', localDate: '2020-01-01' })] }) }];
+  it('D7-6: 下までスクロールすると（印が画面に入ると）自動で続きを読む', async () => {
+    let fire: ((entries: { isIntersecting: boolean }[]) => void) | undefined;
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(cb: (entries: { isIntersecting: boolean }[]) => void) {
+          fire = cb;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    replies['GET /api/feed'] = [
+      { status: 200, body: feed({ nextCursor: 'CUR2' }) },
+      { status: 200, body: feed({ items: [item({ id: 'p2', exerciseNames: ['デッドリフト'] })], nextCursor: null }) },
+    ];
     renderFeed();
-    expect(await screen.findByText('今日の足跡は まだないよ')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /前の日の足跡を見る/ })).toBeInTheDocument();
+    await screen.findByText('スクワット');
+    await waitFor(() => expect(fire).toBeDefined());
+    fire!([{ isIntersecting: true }]);
+    expect(await screen.findByText('デッドリフト')).toBeInTheDocument();
+    expect(feedGets()[1].url).toContain('cursor=CUR2');
   });
 });

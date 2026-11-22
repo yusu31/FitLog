@@ -98,7 +98,11 @@ describe('parseFeedQuery（GET /feed）', () => {
     expect(parseFeedQuery({ weekStart: '2026-11-02' }).weekStart).toBe('2026-11-02');
   });
 
-  it.each([[undefined], [''], ['2026-02-30'], ['2026/10/26'], ['あした'], [20261026]])('weekStart %j は 400', (weekStart) => {
+  it('weekStart が無ければ全期間（weekStart は undefined のまま）', () => {
+    expect(parseFeedQuery({}).weekStart).toBeUndefined();
+  });
+
+  it.each([[''], ['2026-02-30'], ['2026/10/26'], ['あした'], [20261026]])('weekStart %j は 400', (weekStart) => {
     expect(detailsOf(() => parseFeedQuery({ weekStart }))[0]).toMatch(/^weekStart:/);
   });
 

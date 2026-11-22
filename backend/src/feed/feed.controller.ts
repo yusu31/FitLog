@@ -25,11 +25,11 @@ export class FeedController {
   constructor(private readonly feed: FeedService) {}
 
   @Get()
-  @ApiOperation({ operationId: 'getFeed', summary: '同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す' })
-  @ApiQuery({ name: 'weekStart', required: true, example: '2026-10-26', description: '日本時間の日付（YYYY-MM-DD）。この日を含む週（月曜〜日曜）を返す' })
+  @ApiOperation({ operationId: 'getFeed', summary: '同じグループの足跡（新しい順・20件ずつ。週を指定すればその週だけ、しなければ全期間）と、1週間ぶんの合計を返す' })
+  @ApiQuery({ name: 'weekStart', required: false, example: '2026-10-26', description: '日本時間の日付（YYYY-MM-DD）。付けると、この日を含む週（月曜〜日曜）の足跡と合計を返す。付けなければ足跡は全期間、合計は今週' })
   @ApiQuery({ name: 'cursor', required: false, description: '前の応答の nextCursor をそのまま渡す（続きを読む）' })
   @ApiOkResponse({ type: FeedResponse })
-  @ApiBadRequestResponse({ type: ErrorResponse, description: 'weekStart が実在する YYYY-MM-DD でない・無い、cursor が壊れている（VALIDATION_ERROR）' })
+  @ApiBadRequestResponse({ type: ErrorResponse, description: 'weekStart が付いていて実在する YYYY-MM-DD でない、cursor が壊れている（VALIDATION_ERROR）' })
   getFeed(@Session() session: UserSession, @Query('weekStart') weekStart?: string, @Query('cursor') cursor?: string) {
     return this.feed.feed(session.user.id, { weekStart, cursor });
   }

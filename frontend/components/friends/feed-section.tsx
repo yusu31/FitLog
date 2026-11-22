@@ -6,33 +6,20 @@ import { ThickButton } from '@/components/fitlog/thick-button';
 import { getGetFeedUnreadQueryKey, markFeedSeen, useGetFeed, type FeedTotals } from '@/lib/api/generated';
 import { describeTotals } from '@/lib/feed';
 import { FEED_MESSAGES } from '@/lib/messages';
-import { toLocalDate } from '@/lib/shared/local-date';
 import { FeedCard } from './feed-card';
-import { FRIENDS_TEXT } from './friends-text';
 
-// 仲間の足跡（S-20。docs/screen-design.md 4章）。今週（日本時間の月曜〜日曜）のグループ合計と、新しい順の足跡。
-// 20件ずつ。「もっと見る」で、前の応答の nextCursor を渡して続きを読む（自分タブの記録の一覧と同じ作り）。
-// 合計はページに関係なく週全体なので、最初のページの値を使う
+// 仲間の足跡（S-20。docs/screen-design.md 4章）。週の区切りはやめ、同じグループの全期間を新しい順に流す（D7-6・判断ログ 50）。
+// 20件ずつ。下までスクロールすると、前の応答の nextCursor を渡して自動で続きを読む（自分タブの記録の一覧と同じ作り）。
+// 自動で動かない環境（古いブラウザ・キーボード操作）のために「もっと見る」ボタンも残す。
+// 今週の合計は上の帯に小さく出す。ページに関係なく週全体なので、最初のページの値を使う
 // hideEmptyTotals: 自分1人で今週まだ記録が無いとき、「今週のグループ」の空の枠（0.0km など）を出さない（D7-5）
 export function FeedSection({ hideEmptyTotals = false }: { hideEmptyTotals?: boolean }) {
-  const weekStart = toLocalDate(new Date());
-  return <FeedPage weekStart={weekStart} cursor={undefined} isFirst hideEmptyTotals={hideEmptyTotals} />;
+  return <FeedPage cursor={undefined} isFirst hideEmptyTotals={hideEmptyTotals} />;
 }
 
-function FeedPage({
-  weekStart,
-  cursor,
-  isFirst = false,
-  hideEmptyTotals = false,
-}: {
-  weekStart: string;
-  cursor: string | undefined;
-  isFirst?: boolean;
-  hideEmptyTotals?: boolean;
-}) {
-  const { data, isPending, isError } = useGetFeed({ weekStart, ...(cursor ? { cursor } : {}) });
+function FeedPage({ cursor, isFirst = false, hideEmptyTotals = false }: { cursor: string | undefined; isFirst?: boolean; hideEmptyTotals?: boolean }) {
+  const { data, isPending, isError } = useGetFeed(cursor ? { cursor } : {});
   const [more, setMore] = useState(false);
-  const [showOlder, setShowOlder] = useState(false);
   useMarkSeen(isFirst && !isPending && !isError && data?.status === 200);
 
   if (isPending) {
@@ -45,21 +32,12 @@ function FeedPage({
       </p>
     );
   }
-  const { items: allItems, nextCursor, totals } = data.data;
-  // 最初のページは「今日」の足跡だけ見せ、前の日の分と続きは1つのボタンの奥に置く（A04-13）
-  const today = toLocalDate(new Date());
-  const hideOlder = isFirst && !showOlder;
-  const olderCount = isFirst ? allItems.filter((i) => i.localDate !== today).length : 0;
-  const items = hideOlder ? allItems.filter((i) => i.localDate === today) : allItems;
-  const holdBack = hideOlder && olderCount > 0;
+  const { items, nextCursor, totals } = data.data;
   return (
     <>
       {isFirst && !(hideEmptyTotals && describeTotals(totals).empty) && <WeekTotals totals={totals} />}
       {isFirst && items.length === 0 && (
         <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{FEED_MESSAGES.empty}</p>
-      )}
-      {isFirst && allItems.length > 0 && items.length === 0 && (
-        <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{FRIENDS_TEXT.todayEmpty}</p>
       )}
       {items.length > 0 && (
         <ul aria-label="仲間の足跡" className="space-y-2">
@@ -68,22 +46,37 @@ function FeedPage({
           ))}
         </ul>
       )}
-      {holdBack && (
-        <ThickButton tone="white" size="sm" className="w-full" onClick={() => setShowOlder(true)}>
-          {FRIENDS_TEXT.showOlder(olderCount)}
-        </ThickButton>
-      )}
-      {!holdBack &&
-        nextCursor &&
+      {nextCursor &&
         (more ? (
-          <FeedPage weekStart={weekStart} cursor={nextCursor} />
+          <FeedPage cursor={nextCursor} />
         ) : (
-          <ThickButton tone="white" size="sm" className="w-full" onClick={() => setMore(true)}>
-            {FEED_MESSAGES.loadMore}
-          </ThickButton>
+          <>
+            <ThickButton tone="white" size="sm" className="w-full" onClick={() => setMore(true)}>
+              {FEED_MESSAGES.loadMore}
+            </ThickButton>
+            <ScrollSentinel onReach={() => setMore(true)} />
+          </>
         ))}
     </>
   );
+}
+
+// 画面の下に近づいたら続きを読む合図（IntersectionObserver）。使えない環境では何もしない（ボタンで読める）
+function ScrollSentinel({ onReach }: { onReach: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) onReach();
+      },
+      { rootMargin: '300px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onReach]);
+  return <div ref={ref} aria-hidden data-testid="feed-sentinel" className="h-px" />;
 }
 
 // 新着の印（F4）。最初のページが読めたら「見た」を1回だけ送り、下のタブの点を消す。
@@ -101,30 +94,30 @@ function useMarkSeen(ready: boolean) {
   }, [ready, queryClient]);
 }
 
-// 今週のグループ合計。順位・連続日数は出さない。だれも記録していない週は数字ではなく一言
+// 今週のグループ合計。上の帯に小さく出す（D7-6）。順位・連続日数は出さない。だれも記録していない週は数字ではなく一言
 function WeekTotals({ totals }: { totals: FeedTotals }) {
   const view = describeTotals(totals);
   return (
-    <section aria-labelledby="week-totals-heading" className="fl-slab px-4 py-3">
-      <h2 id="week-totals-heading" className="text-sm font-extrabold text-fg-muted">
+    <section aria-labelledby="week-totals-heading" className="fl-slab px-4 py-2">
+      <h2 id="week-totals-heading" className="text-note font-extrabold text-fg-muted">
         {FEED_MESSAGES.weekHeading}
       </h2>
       {view.empty ? (
-        <p className="mt-1 text-sm font-bold">{FEED_MESSAGES.totalsEmpty}</p>
+        <p className="text-sm font-bold">{FEED_MESSAGES.totalsEmpty}</p>
       ) : (
-        <>
-          <p className="mt-0.5 text-lg font-extrabold">{view.recorded}</p>
-          <dl className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-sm font-bold">
-            <div className="flex items-baseline gap-1.5">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
+          <p className="text-sm font-extrabold">{view.recorded}</p>
+          <dl className="flex flex-wrap gap-x-4 gap-y-0.5 text-note font-bold">
+            <div className="flex items-baseline gap-1">
               <dt className="text-fg-muted">{FEED_MESSAGES.volumeLabel}</dt>
-              <dd className="fl-num text-lg">{view.volume}</dd>
+              <dd className="fl-num text-sm">{view.volume}</dd>
             </div>
-            <div className="flex items-baseline gap-1.5">
+            <div className="flex items-baseline gap-1">
               <dt className="text-fg-muted">{FEED_MESSAGES.distanceLabel}</dt>
-              <dd className="fl-num text-lg">{view.distance}</dd>
+              <dd className="fl-num text-sm">{view.distance}</dd>
             </div>
           </dl>
-        </>
+        </div>
       )}
     </section>
   );

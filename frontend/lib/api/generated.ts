@@ -970,7 +970,7 @@ export interface FeedTotals {
 }
 
 export interface FeedResponse {
-  /** その週の月曜の日付（指定した日を含む週） */
+  /** 合計の対象の週の月曜の日付（指定した日を含む週。指定しなければ今週） */
   weekStart: string;
   /** 新しい順（運動した時刻の降順。同じ時刻は id の降順）。1回に 20 件。自分の記録も含む。グループに入っていなければ空 */
   items: FeedItem[];
@@ -1273,8 +1273,8 @@ export type GetStatsParams = {
 };
 
 export type GetFeedParams = {
-  /** 日本時間の日付（YYYY-MM-DD）。この日を含む週（月曜〜日曜）を返す */
-  weekStart: string;
+  /** 日本時間の日付（YYYY-MM-DD）。付けると、この日を含む週（月曜〜日曜）の足跡と合計を返す。付けなければ足跡は全期間、合計は今週 */
+  weekStart?: string;
   /** 前の応答の nextCursor をそのまま渡す（続きを読む） */
   cursor?: string;
 };
@@ -5458,7 +5458,7 @@ export type getFeedResponseError = (getFeedResponse400) & {
 
 export type getFeedResponse = (getFeedResponseSuccess | getFeedResponseError)
 
-export const getGetFeedUrl = (params: GetFeedParams,) => {
+export const getGetFeedUrl = (params?: GetFeedParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -5474,9 +5474,9 @@ export const getGetFeedUrl = (params: GetFeedParams,) => {
 }
 
 /**
- * @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す
+ * @summary 同じグループの足跡（新しい順・20件ずつ。週を指定すればその週だけ、しなければ全期間）と、1週間ぶんの合計を返す
  */
-export const getFeed = async (params: GetFeedParams, options?: RequestInit): Promise<getFeedResponse> => {
+export const getFeed = async (params?: GetFeedParams, options?: RequestInit): Promise<getFeedResponse> => {
 
   const res = await fetch(getGetFeedUrl(params),
   {
@@ -5505,7 +5505,7 @@ export const getGetFeedQueryKey = (params?: GetFeedParams,) => {
     }
 
 
-export const getGetFeedQueryOptions = <TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
+export const getGetFeedQueryOptions = <TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(params?: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
@@ -5527,9 +5527,9 @@ export type GetFeedQueryResult = NonNullable<Awaited<ReturnType<typeof getFeed>>
 export type GetFeedQueryError = ErrorResponse
 
 
-/** @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す */
+/** @summary 同じグループの足跡（新しい順・20件ずつ。週を指定すればその週だけ、しなければ全期間）と、1週間ぶんの合計を返す */
 export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
- params: GetFeedParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>> & Pick<
+ params: undefined |  GetFeedParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getFeed>>,
           TError,
@@ -5538,9 +5538,9 @@ export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError =
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す */
+/** @summary 同じグループの足跡（新しい順・20件ずつ。週を指定すればその週だけ、しなければ全期間）と、1週間ぶんの合計を返す */
 export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
- params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>> & Pick<
+ params?: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getFeed>>,
           TError,
@@ -5549,14 +5549,14 @@ export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError =
       >, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す */
+/** @summary 同じグループの足跡（新しい順・20件ずつ。週を指定すればその週だけ、しなければ全期間）と、1週間ぶんの合計を返す */
 export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
- params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
+ params?: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/** @summary 同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す */
+/** @summary 同じグループの足跡（新しい順・20件ずつ。週を指定すればその週だけ、しなければ全期間）と、1週間ぶんの合計を返す */
 export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorResponse>(
- params: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
+ params?: GetFeedParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeed>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

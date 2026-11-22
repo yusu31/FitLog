@@ -1482,9 +1482,9 @@
         "parameters": [
           {
             "name": "weekStart",
-            "required": true,
+            "required": false,
             "in": "query",
-            "description": "日本時間の日付（YYYY-MM-DD）。この日を含む週（月曜〜日曜）を返す",
+            "description": "日本時間の日付（YYYY-MM-DD）。付けると、この日を含む週（月曜〜日曜）の足跡と合計を返す。付けなければ足跡は全期間、合計は今週",
             "schema": {
               "example": "2026-10-26",
               "type": "string"
@@ -1512,7 +1512,7 @@
             }
           },
           "400": {
-            "description": "weekStart が実在する YYYY-MM-DD でない・無い、cursor が壊れている（VALIDATION_ERROR）",
+            "description": "weekStart が付いていて実在する YYYY-MM-DD でない、cursor が壊れている（VALIDATION_ERROR）",
             "content": {
               "application/json": {
                 "schema": {
@@ -1522,7 +1522,7 @@
             }
           }
         },
-        "summary": "同じグループのその週の足跡（新しい順・20件ずつ）と、その週の合計を返す",
+        "summary": "同じグループの足跡（新しい順・20件ずつ。週を指定すればその週だけ、しなければ全期間）と、1週間ぶんの合計を返す",
         "tags": [
           "feed"
         ]
@@ -4026,7 +4026,7 @@
           "weekStart": {
             "type": "string",
             "example": "2026-10-26",
-            "description": "その週の月曜の日付（指定した日を含む週）"
+            "description": "合計の対象の週の月曜の日付（指定した日を含む週。指定しなければ今週）"
           },
           "items": {
             "description": "新しい順（運動した時刻の降順。同じ時刻は id の降順）。1回に 20 件。自分の記録も含む。グループに入っていなければ空",

@@ -117,7 +117,7 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       await http().get(`/api/feed?weekStart=${WEEK}`).expect(401);
     });
 
-    it.each([['weekStart なし', ''], ['実在しない日付', 'weekStart=2026-02-30'], ['形が違う', 'weekStart=2026/10/26'], ['cursor が壊れている', `weekStart=${WEEK}&cursor=xxxx`]])(
+    it.each([['実在しない日付', 'weekStart=2026-02-30'], ['形が違う', 'weekStart=2026/10/26'], ['cursor が壊れている', `weekStart=${WEEK}&cursor=xxxx`]])(
       '%s は 400 VALIDATION_ERROR',
       async (_name, query) => {
         const { a1 } = await world();
@@ -234,6 +234,23 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       const wed = await getFeed(a1, 'weekStart=2026-10-28');
       expect(wed.weekStart).toBe('2026-10-26');
       expect(wed.items.map((i) => i.id)).toEqual([sun]);
+    });
+
+    // D7-6: 週を指定しなければ、同じグループの全期間を新しい順に返す（他のグループは混ざらない）。weekStart は合計の週（今週）
+    it('weekStart なし: 週をまたいで全期間が新しい順に出る。他のグループの記録は出ない。合計は今週ぶん', async () => {
+      const { a1, a2, b1 } = await world();
+      const old = await createRecord(a1, 'workout', '2026-10-25T14:59:00.000Z');
+      const mid = await createRecord(a2, 'workout', '2026-11-01T14:59:00.000Z');
+      const recent = await createRecord(a1, 'workout', '2026-11-02T00:00:00.000Z');
+      await createRecord(b1, 'workout', '2026-11-02T01:00:00.000Z'); // 別のグループ
+
+      const feed = await getFeed(a1, '');
+      expect(feed.items.map((i) => i.id)).toEqual([recent, mid, old]);
+      const today = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+      const dow = new Date(`${today}T00:00:00Z`).getUTCDay();
+      const monday = new Date(Date.parse(`${today}T00:00:00Z`) - ((dow + 6) % 7) * 86_400_000).toISOString().slice(0, 10);
+      expect(feed.weekStart).toBe(monday);
+      expect(feed.totals.recordedUserCount).toBe(0); // 古い記録は今週の合計に入らない
     });
 
     // 20件目と21件目（段階的に読み込む。1回に20件）
