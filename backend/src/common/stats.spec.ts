@@ -18,6 +18,11 @@ describe('calendar（1年分のマス）', () => {
     const at = (d: string) => calendar.find((c) => c.date === d)!.status;
     expect([at('2026-11-10'), at('2026-11-11'), at('2026-11-12')]).toEqual(['rec', 'rest', 'none']);
   });
+  it('日ごとの総重量とラン距離が入る（期間のタイル用）', () => {
+    const { calendar } = buildStats([day('2026-11-10', { weightKg: 1200.04, runM: 5000 })], '2026-11-12');
+    expect(calendar.find((c) => c.date === '2026-11-10')).toMatchObject({ weightKg: 1200, runM: 5000 });
+    expect(calendar.find((c) => c.date === '2026-11-11')).toMatchObject({ weightKg: 0, runM: 0 });
+  });
   it('範囲の外（365日前）の記録は入らない', () => {
     const { calendar } = buildStats([day('2025-11-12')], '2026-11-12');
     expect(calendar.every((c) => c.status === 'none')).toBe(true);

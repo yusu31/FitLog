@@ -19,7 +19,8 @@ function statsOf(over: Partial<StatsResponse> = {}): StatsResponse {
     const d = new Date(`${today}T00:00:00Z`);
     d.setUTCDate(d.getUTCDate() - (364 - i));
     const date = d.toISOString().slice(0, 10);
-    return { date, status: (date === '2026-11-10' ? 'rest' : date === '2026-11-11' ? 'rec' : 'none') as 'rec' | 'rest' | 'none' };
+    const status = (date === '2026-11-10' ? 'rest' : date === '2026-11-11' || date === '2026-11-03' ? 'rec' : 'none') as 'rec' | 'rest' | 'none';
+    return { date, status, weightKg: date === '2026-11-11' ? 800 : date === '2026-11-03' ? 2700 : 0, runM: date === '2026-11-11' ? 5000 : date === '2026-11-03' ? 7300 : 0 };
   });
   return {
     today,
@@ -32,15 +33,6 @@ function statsOf(over: Partial<StatsResponse> = {}): StatsResponse {
     totalRunDistanceM: 12300,
     ...over,
   };
-}
-
-// 12週ぶんの週ごとの数字。2026-11-09（今週）から7日ずつさかのぼる
-function weeksOf(weight: (i: number) => number, run: (i: number) => number) {
-  return Array.from({ length: 12 }, (_, i) => {
-    const d = new Date('2026-11-09T00:00:00Z');
-    d.setUTCDate(d.getUTCDate() - (11 - i) * 7);
-    return { weekStart: d.toISOString().slice(0, 10), totalWeightKg: weight(i), runDistanceM: run(i) };
-  });
 }
 
 function stubStats(body: unknown, status = 200) {
@@ -56,112 +48,81 @@ function stubStats(body: unknown, status = 200) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('StatsPage（S-35 記録のまとめ）', () => {
-  it('月に切り替えると、今月の数字（動いた日・おやすみ・総重量・ラン）と、総重量の換算を出す', async () => {
+  it('初期は週。今週の合計4つ（動いた日・おやすみ・総重量・ラン）と、6週のタイル', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
-    await userEvent.setup().click(await screen.findByRole('button', { name: '月' }));
-    const section = screen.getByText('11月の数字').closest('section')!;
-    expect(section).toHaveTextContent('4 日');
-    expect(section).toHaveTextContent('1 日');
-    expect(section).toHaveTextContent('3500 kg');
-    expect(section).toHaveTextContent('12.3 km');
-    expect(section).toHaveTextContent('軽自動車 3台ぶん');
+    expect(await screen.findByTestId('stats-title')).toHaveTextContent('11/9〜11/15');
+    const totals = screen.getByTestId('stats-totals');
+    expect(totals).toHaveTextContent('動いた日1日');
+    expect(totals).toHaveTextContent('おやすみ1日');
+    expect(totals).toHaveTextContent('800kg');
+    expect(totals).toHaveTextContent('5.0km');
+    const tiles = within(screen.getByTestId('stats-tiles')).getAllByRole('button');
+    expect(tiles).toHaveLength(6);
+    expect(tiles[5]).toHaveAttribute('aria-pressed', 'true'); // 右端が今週
+    expect(tiles[5]).toHaveAccessibleName('11/9〜 1日');
   });
 
-  it('マスは週が初期表示（7マス）。月・年に切り替えると数が変わり、休みはどの期間でも「おやすみ」の札で出る', async () => {
+  it('◀で先週へ。押した週のタイルでもその週へ移る。今週より先へは進めない', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
-    const grid = await screen.findByTestId('stats-grid');
-    expect(within(grid).getAllByRole('listitem')).toHaveLength(7);
+    const user = userEvent.setup();
+    await screen.findByTestId('stats-title');
+    expect(screen.getByRole('button', { name: '次へ' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '前へ' }));
+    expect(screen.getByTestId('stats-title')).toHaveTextContent('11/2〜11/8');
+    expect(screen.getByRole('button', { name: '次へ' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: /^10\/26〜/ }));
+    expect(screen.getByTestId('stats-title')).toHaveTextContent('10/26〜11/1');
+  });
+
+  it('月に切り替えると、今月の合計・日付つきカレンダー・6か月のタイル。総重量の換算も出す', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: '月' }));
+    expect(screen.getByTestId('stats-title')).toHaveTextContent('2026年11月');
+    const totals = screen.getByTestId('stats-totals');
+    expect(totals).toHaveTextContent('動いた日2日');
+    expect(totals).toHaveTextContent('3.5t');
+    expect(totals).toHaveTextContent('12.3km');
+    expect(screen.getByText('軽自動車 3台ぶん')).toBeInTheDocument();
+    const grid = screen.getByTestId('stats-grid');
+    expect(within(grid).getAllByRole('listitem').filter((li) => li.hasAttribute('data-status'))).toHaveLength(30);
     expect(within(grid).getByLabelText('11/10 おやすみ')).toHaveAttribute('data-status', 'rest');
-
-    const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: '月' }));
-    expect(screen.getByRole('button', { name: '月' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(screen.getByTestId('stats-grid')).getByLabelText('11/10 おやすみ')).toHaveAttribute('data-status', 'rest');
-    expect(within(screen.getByTestId('stats-grid')).getAllByRole('listitem').filter((li) => li.hasAttribute('data-status'))).toHaveLength(30);
-
-    await user.click(screen.getByRole('button', { name: '年' }));
-    expect(within(screen.getByTestId('stats-grid')).getAllByRole('listitem').filter((li) => li.hasAttribute('data-status'))).toHaveLength(365);
-    expect(within(screen.getByTestId('stats-grid')).getByLabelText('11/10 おやすみ')).toHaveAttribute('data-status', 'rest');
-  });
-
-  it('A08-4: 週・月・年のどのマスにも曜日の見出しが付く', async () => {
-    stubStats(statsOf());
-    renderWithQuery(<StatsPage />);
-    const row = await screen.findByTestId('stats-weekdays');
-    expect(row.textContent).toMatch(/^[日月火水木金土]{7}$/);
-    const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: '月' }));
+    expect(within(grid).getByLabelText('11/10 おやすみ')).toHaveTextContent('10');
     expect(screen.getByTestId('stats-weekdays').textContent).toBe('月火水木金土日');
-    await user.click(screen.getByRole('button', { name: '年' }));
-    expect(screen.getByTestId('stats-weekdays')).toHaveTextContent('上から月〜日'); // 年はマスが細かいので、読み方の一文
+    expect(within(screen.getByTestId('stats-tiles')).getAllByRole('button')).toHaveLength(6);
   });
 
-  it('A08-5: 週・月・年を切り替えると、下の数字も同じ期間に変わる。見出しに期間（いつからいつまで）を出す', async () => {
+  it('年は1年分（365マス・半年2段）と12か月のタイル。◀▶は無く、タイルを押すとその月へ移る', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
     const user = userEvent.setup();
-    // 初期は週（今週＝月曜 11/9〜今日 11/12）
-    const week = (await screen.findByText('今週の数字')).closest('section')!;
-    expect(week).toHaveTextContent('11/9〜11/12');
-    expect(week).toHaveTextContent('2 日');
-    expect(week).toHaveTextContent('800 kg');
-    expect(week).toHaveTextContent('5 km');
-
-    await user.click(screen.getByRole('button', { name: '月' }));
-    const month = screen.getByText('11月の数字').closest('section')!;
-    expect(month).toHaveTextContent('11/1〜11/12');
-    expect(month).toHaveTextContent('3500 kg');
-    expect(screen.queryByText('今週の数字')).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: '年' }));
-    const year = screen.getByText('この1年の数字').closest('section')!;
-    expect(year).toHaveTextContent('11/13〜11/12'); // 365日ぶん（1年前の翌日から今日まで）
-    expect(year).toHaveTextContent('40 日');
-    expect(year).toHaveTextContent('42000 kg');
-    expect(year).toHaveTextContent('120 km');
-    expect(screen.queryByText(/切り替わるのはこのマスだけ/)).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: '年' }));
+    expect(screen.getByTestId('stats-title')).toHaveTextContent('11/13〜11/12');
+    expect(screen.queryByRole('button', { name: '前へ' })).not.toBeInTheDocument();
+    const cells = screen.getAllByTestId('stats-grid').flatMap((g) => within(g).getAllByRole('listitem').filter((li) => li.hasAttribute('data-status')));
+    expect(cells).toHaveLength(365);
+    expect(screen.getByLabelText('11/10 おやすみ')).toHaveAttribute('data-status', 'rest');
+    expect(screen.getByTestId('stats-weekdays')).toHaveTextContent('上から月〜日');
+    expect(within(screen.getByTestId('stats-tiles')).getAllByRole('button')).toHaveLength(12);
+    await user.click(screen.getByRole('button', { name: /^10月 / }));
+    expect(screen.getByTestId('stats-title')).toHaveTextContent('2026年10月');
+    expect(screen.getByRole('button', { name: '月' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('A08-8: 筋トレ・ランの切替タブ。初期は筋トレ（総重量のグラフ）で、ランのグラフ・日本縦断は隠れている', async () => {
+  it('見る数字を切り替えるとタイルの数字が変わる。日本縦断はラン（距離）のときだけ出る', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
-    expect(await screen.findByRole('region', { name: '週ごとの総重量' })).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: '週ごとのラン' })).not.toBeInTheDocument();
+    const user = userEvent.setup();
+    await screen.findByTestId('stats-title');
     expect(screen.queryByText('日本縦断')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '筋トレ' })).toHaveAttribute('aria-pressed', 'true');
-    await userEvent.setup().click(screen.getByRole('button', { name: 'ラン' }));
-    expect(screen.getByRole('button', { name: 'ラン' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('region', { name: '週ごとのラン' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '総重量' }));
+    expect(screen.getByRole('button', { name: '11/9〜 800kg' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'ラン' }));
+    expect(screen.getByRole('button', { name: '11/9〜 5.0km' })).toBeInTheDocument();
     expect(screen.getByText('日本縦断')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: '週ごとの総重量' })).not.toBeInTheDocument();
-  });
-
-  it('A08-8: 筋トレの記録が無くランだけの人は、最初からランのタブで開く', async () => {
-    stubStats(statsOf({ weekly: weeksOf(() => 0, (i) => (i >= 9 ? 3000 : 0)) }));
-    renderWithQuery(<StatsPage />);
-    expect(await screen.findByRole('region', { name: '週ごとのラン' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'ラン' })).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  it('A08-2・A08-3: グラフは記録を始めた週から右だけを出し、左端の週の日付と「今週」をラベルにする', async () => {
-    stubStats(statsOf({ weekly: weeksOf((i) => (i >= 9 ? 100 : 0), () => 0) }));
-    renderWithQuery(<StatsPage />);
-    const section = await screen.findByRole('region', { name: '週ごとの総重量' });
-    expect(within(section).getAllByRole('listitem')).toHaveLength(3);
-    expect(section.querySelectorAll('svg rect[data-bar]')).toHaveLength(3);
-    const labels = within(section).getByTestId('chart-labels');
-    expect(labels).toHaveTextContent('10/26の週');
-    expect(labels).toHaveTextContent('今週');
-  });
-
-  it('A08-2: まだ記録の無いほうのグラフは、空の棒でなく一言の案内にする', async () => {
-    stubStats(statsOf({ weekly: weeksOf(() => 0, () => 0), totalRunDistanceM: 0 }));
-    renderWithQuery(<StatsPage />);
-    const section = await screen.findByRole('region', { name: '週ごとの総重量' });
-    expect(section.querySelectorAll('svg rect[data-bar]')).toHaveLength(0);
-    expect(section).toHaveTextContent('記録するとここに');
   });
 
   it('A08-6・V-04: まだのスタンプは☆で欠けを見せない（星は獲得済みだけ）。文字は面の上で 4.5:1 以上の濃さ', async () => {
@@ -220,34 +181,17 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     expect(second).toHaveTextContent('2周目');
   });
 
-  it('グラフは、読み上げ用に週ごとの数字も持つ（始めた週から）', async () => {
-    stubStats(statsOf());
-    renderWithQuery(<StatsPage />);
-    const list = await screen.findByRole('list', { name: '週ごとの総重量の数字' });
-    expect(within(list).getAllByRole('listitem')).toHaveLength(11); // 0kg の最初の1週は出さない（A08-2）
-    expect(within(list).getAllByRole('listitem')[10]).toHaveTextContent('1100kg');
-  });
-
-  it('U8: グラフに、いちばん多い週と今週の数字を見える文字で出す', async () => {
-    stubStats(statsOf());
-    renderWithQuery(<StatsPage />);
-    const section = (await screen.findByRole('region', { name: '週ごとの総重量' }));
-    expect(section).toHaveTextContent('最大');
-    expect(section).toHaveTextContent('右が今週 1100kg');
-  });
-
   it('記録がまったく無くても、責めずに表示できる（換算は出ない・スタンプはすべてまだ）', async () => {
     stubStats(
       statsOf({
-        week: { activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 },
-        month: { month: '2026-11', activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 },
-        year: { activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: 0 },
+        calendar: statsOf().calendar.map((c) => ({ ...c, status: 'none' as const, weightKg: 0, runM: 0 })),
         stamps: STAMP_KEYS.map((key) => ({ key, earned: false, earnedAt: null })),
       }),
     );
     renderWithQuery(<StatsPage />);
-    const section = (await screen.findByText('今週の数字')).closest('section')!;
-    expect(section.textContent).not.toMatch(/ぶん/);
+    await screen.findByTestId('stats-title');
+    expect(screen.getByTestId('stats-totals')).toHaveTextContent('動いた日0日');
+    expect(document.body.textContent).not.toMatch(/ぶん/);
   });
 
   it('読み込めなかったときは、責めずに開き直しを案内する', async () => {

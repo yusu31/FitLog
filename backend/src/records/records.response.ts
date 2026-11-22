@@ -276,6 +276,12 @@ export class StatsCalendarDay {
 
   @ApiProperty({ enum: ['rec', 'rest', 'none'], description: '記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec' })
   status!: CellStatus;
+
+  @ApiProperty({ minimum: 0, description: 'その日の総重量（重量×回数の合計。kg。小数1桁）。期間のタイルの数字に使う' })
+  weightKg!: number;
+
+  @ApiProperty({ minimum: 0, description: 'その日のランの合計距離（m）' })
+  runM!: number;
 }
 
 // 週・月・年の切替に合わせて見せる数字（A08-5）。数える範囲は今日まで（今日より後の日は入らない）

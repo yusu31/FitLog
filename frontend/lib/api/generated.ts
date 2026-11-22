@@ -520,6 +520,16 @@ export interface StatsCalendarDay {
   date: string;
   /** 記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec */
   status: StatsCalendarDayStatus;
+  /**
+     * その日の総重量（重量×回数の合計。kg。小数1桁）。期間のタイルの数字に使う
+     * @minimum 0
+     */
+  weightKg: number;
+  /**
+     * その日のランの合計距離（m）
+     * @minimum 0
+     */
+  runM: number;
 }
 
 export interface StatsPeriod {

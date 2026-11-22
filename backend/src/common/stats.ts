@@ -22,7 +22,7 @@ export type PeriodNumbers = { activeDays: number; restDays: number; totalWeightK
 
 export type StatsResult = {
   today: string;
-  calendar: { date: string; status: CellStatus }[];
+  calendar: { date: string; status: CellStatus; weightKg: number; runM: number }[];
   week: PeriodNumbers; // 今週（月曜〜今日）
   month: { month: string } & PeriodNumbers; // 今月（1日〜今日）
   year: PeriodNumbers; // calendar と同じ365日
@@ -38,7 +38,8 @@ export function buildStats(days: readonly DayAgg[], today: string): StatsResult 
 
   const calendar = Array.from({ length: CALENDAR_DAYS }, (_, i) => {
     const date = addDays(today, i - (CALENDAR_DAYS - 1));
-    return { date, status: byDate.get(date)?.status ?? ('none' as CellStatus) };
+    const d = byDate.get(date);
+    return { date, status: d?.status ?? ('none' as CellStatus), weightKg: round1(d?.weightKg ?? 0), runM: d?.runM ?? 0 };
   });
 
   // from〜today の日だけを足し合わせる（今日より後は数えない）
