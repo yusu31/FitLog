@@ -956,6 +956,10 @@ export interface FeedItem {
   commentCount: number;
   /** 動画が付いている記録だけ true（カードに再生の印を出す。A06-4）。それ以外は省く。見られるかどうかは GET /videos/week の unlocked と GET /videos/{id}/url が決める */
   hasVideo?: boolean;
+  /** 動画の id（hasVideo のときだけ）。見るときは GET /videos/{id}/url。見られるかどうかは今週自分が撮ったか（GET /videos/week の unlocked）と videoVisibleUntil で決まる */
+  videoId?: string;
+  /** 動画を仲間が見られる期限（記録の週の日曜 24:00 JST。UTC）。hasVideo のときだけ。本人は期限なしで見られる */
+  videoVisibleUntil?: string;
   /** 新着の印（F4）。最後に仲間タブを見た時刻（POST /feed/seen）より後に来た仲間の記録と、仲間の新しいスタンプ・コメントが付いた自分の記録だけ true。それ以外は省く */
   isNew?: boolean;
 }
