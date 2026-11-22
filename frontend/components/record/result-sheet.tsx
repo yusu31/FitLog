@@ -114,11 +114,11 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
         )}
         {note && <span className="mt-1 block text-base font-bold">{note}</span>}
         {newStamps && newStamps.length > 0 && (
-          <span data-testid="new-stamps" className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-surface px-3 py-2">
+          <span data-testid="new-stamps" className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             {newStamps.map((k) => (
               <span key={k} className="flex items-center gap-1 text-sm font-extrabold">
                 <span className={reduced ? undefined : 'fl-medal-pop'}>
-                  <StampMedal stampKey={k} earned size={40} />
+                  <StampMedal stampKey={k} earned size={32} />
                 </span>
                 スタンプ「{STAMP_LABEL[k]}」をとった！
               </span>
