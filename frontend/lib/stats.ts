@@ -132,3 +132,13 @@ export const STAMP_LABEL: Record<StampKey, string> = {
   'run-100k': '累計100km',
   'run-500k': '累計500km',
 };
+
+// 最近とった4つ（新しい順。同じ日は帳の並びの後ろのほうを先に）。まだ1つもなければ出さない
+export function recentStamps(stamps: StatsResponse['stamps'], limit = 4): StatsResponse['stamps'] {
+  return stamps
+    .map((s, i) => ({ s, i }))
+    .filter(({ s }) => s.earned && s.earnedAt)
+    .sort((x, y) => (y.s.earnedAt! === x.s.earnedAt! ? y.i - x.i : y.s.earnedAt! < x.s.earnedAt! ? -1 : 1))
+    .slice(0, limit)
+    .map(({ s }) => s);
+}

@@ -125,20 +125,31 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     expect(screen.getByText('日本縦断')).toBeInTheDocument();
   });
 
-  it('A08-6・V-04: まだのスタンプは☆で欠けを見せない（星は獲得済みだけ）。文字は面の上で 4.5:1 以上の濃さ', async () => {
+  it('A08-6・V-04: まだのスタンプは灰色のメダルで、文字は面の上で 4.5:1 以上の濃さ。とったものは色つき', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
     const stamps = (await screen.findByText('スタンプ帳')).closest('section')!;
-    const notYet = within(stamps).getByText('初めての5km').closest('li')!;
-    expect(notYet.textContent).not.toContain('☆');
+    const all = within(stamps.querySelector('[data-testid="all-stamps"]') as HTMLElement);
+    const notYet = all.getByText('初めての5km').closest('li')!;
     expect(notYet.className).toContain('text-fg-muted');
-    expect(within(stamps).getByText('初めての記録').closest('li')!.textContent).toContain('★');
+    expect(notYet.querySelector('[data-testid="stamp-medal"]')).toHaveAttribute('data-earned', 'false');
+    expect(all.getByText('初めての記録').closest('li')!.querySelector('[data-testid="stamp-medal"]')).toHaveAttribute('data-earned', 'true');
+  });
+
+  it('最近とった4つを帳の上に出す（新しい順）。まだ1つもなければ出さない', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const stamps = (await screen.findByText('スタンプ帳')).closest('section')!;
+    const recent = within(stamps.querySelector('[data-testid="recent-stamps"]') as HTMLElement).getAllByRole('listitem');
+    expect(recent.length).toBeGreaterThan(0);
+    expect(recent.length).toBeLessThanOrEqual(4);
+    expect(recent[0]).toHaveTextContent('総重量1t'); // 11/16 が最新
   });
 
   it('スタンプ帳は全部並べ、獲得済みとまだを文字でも区別する。「あと◯」は出さない', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
-    const stamps = (await screen.findByText('スタンプ帳')).closest('section')!;
+    const stamps = (await screen.findByText('スタンプ帳')).closest('section')!.querySelector('[data-testid="all-stamps"]') as HTMLElement;
     expect(within(stamps).getAllByRole('listitem')).toHaveLength(STAMP_KEYS.length);
     expect(within(stamps).getByText('初めての記録').closest('li')).toHaveTextContent('獲得済み');
     expect(within(stamps).getByText('初めての5km').closest('li')).toHaveTextContent('まだ');
@@ -148,7 +159,7 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
   it('獲得済みのスタンプには取得日（月/日）を出す。まだのスタンプには出さない（U10）', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
-    const stamps = (await screen.findByText('スタンプ帳')).closest('section')!;
+    const stamps = (await screen.findByText('スタンプ帳')).closest('section')!.querySelector('[data-testid="all-stamps"]') as HTMLElement;
     expect(within(stamps).getByText('初めての記録').closest('li')).toHaveTextContent('11/3');
     expect(within(stamps).getByText('総重量1t').closest('li')).toHaveTextContent('11/16');
     expect(within(stamps).getByText('初めての5km').closest('li')).not.toHaveTextContent(/\d+\/\d+/);

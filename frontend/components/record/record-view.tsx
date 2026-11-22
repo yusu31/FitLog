@@ -3,12 +3,12 @@
 import { Moon, Timer, Video, X } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { Sprite } from '@/components/fitlog/sprite';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
-import { ListRecordsKind, getCalories, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
+import { ListRecordsKind, getCalories, getStats, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import { formatSetProgress, formatSetWithReps } from '@/lib/format';
 import { activeRecordId, noteBest, recordForNextSet } from '@/lib/current-workout';
@@ -84,6 +84,11 @@ export function RecordView() {
   // 祝福の「今月◯日目」（F-20）。画面を開いたときの集計を使う。取れていなければ出さない
   const { data: statsData } = useGetStats({ date: dayDateOf(day, new Date()) }, { query: { enabled: signedIn } });
   const monthDay = statsData?.status === 200 ? monthDayCount(statsData.data) : undefined;
+  // 開いた時点でとっていたスタンプ。保存のあとに増えた分を、結果シートでお祝いする（D5 PR-2）
+  const earnedRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!earnedRef.current && statsData?.status === 200) earnedRef.current = new Set(statsData.data.stamps.filter((s) => s.earned).map((s) => s.key));
+  }, [statsData]);
 
   // 続きの記録（N2）。メモリにあればそれ。ページを読み直してメモリが消えたときは、サーバーが「記録中」と返した今日の記録を使う
   // （今日の画面と同じ条件の一覧なので、キャッシュを共有する）。きのうの分は、今日の記録に混ざらないよう使わない
@@ -229,6 +234,18 @@ export function RecordView() {
             if (kcal) setSheet((s) => (s && s.setId === setId ? { ...s, kcal } : s));
           })
           .catch(() => {});
+        // 新しくとったスタンプ（D5 PR-2）。開いたときの集計と比べる。取れなければお祝いしないだけ
+        const known = earnedRef.current;
+        if (known) {
+          getStats({ date: dayDateOf(day, new Date()) })
+            .then((r) => {
+              if (r.status !== 200) return;
+              const fresh = r.data.stamps.filter((st) => st.earned && !known.has(st.key)).map((st) => st.key);
+              for (const k of fresh) known.add(k);
+              if (fresh.length > 0) setSheet((cur) => (cur && cur.setId === setId ? { ...cur, newStamps: fresh } : cur));
+            })
+            .catch(() => {});
+        }
       })
       .catch((e: unknown) => {
         setNotice(errorText(e));
