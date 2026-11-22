@@ -87,8 +87,11 @@ test('T-FIRST-01 登録した直後の人が、今日 → 種目を選ぶ → �
   await page.locator('a[href^="/record?exercise="]').first().click();
   // 画面3: 記録。「できた」1タップで結果が出る
   await expect(page).toHaveURL(/\/record\/?\?exercise=/);
+  // 結果の板は保存の応答を待たず先に出る（仮の結果）。保存が届く前に移動すると送信が途切れるので、セットの保存（POST /records/:id/sets）の成功を待ってから移動する
+  const saved = page.waitForResponse((r) => r.request().method() === 'POST' && /\/records\/[^/]+\/sets$/.test(new URL(r.url()).pathname) && r.ok());
   await page.getByRole('button', { name: 'できた' }).click();
   await expect(page.getByTestId('result-sheet')).toBeVisible();
+  await saved;
 
   // 保存された: 今日の画面に戻ると、その種目が「できた」になる
   await page.goto('/today/');
