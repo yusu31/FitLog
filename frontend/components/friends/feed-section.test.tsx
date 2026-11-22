@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { toLocalDate } from '@/lib/shared/local-date';
+import { mediaState } from './feed-media';
 import { FeedSection } from './feed-section';
 
 vi.mock('@/lib/auth-client', () => ({
@@ -597,5 +598,72 @@ describe('B05 仲間タブの改善', () => {
     fire!([{ isIntersecting: true }]);
     expect(await screen.findByText('デッドリフト')).toBeInTheDocument();
     expect(feedGets()[1].url).toContain('cursor=CUR2');
+  });
+});
+
+describe('足跡カードの動画（BeReal 風。D7-6 PR-2）', () => {
+  const week = (unlocked: boolean) => ({ status: 200, body: { weekStart: '2026-11-16', unlocked, items: [] } });
+  const future = new Date(Date.now() + 3 * 86400_000).toISOString();
+  const past = new Date(Date.now() - 86400_000).toISOString();
+  const videoItem = (over: Record<string, unknown> = {}) => item({ hasVideo: true, videoId: 'v1', videoVisibleUntil: future, ...over });
+
+  it('今週自分も撮っていれば、仲間の動画も縦の枠に出る。角に数字の札（種目名）', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [videoItem()] }) }];
+    replies['GET /api/videos/week'] = [week(true)];
+    replies['GET /api/videos/v1/url'] = [{ status: 200, body: { url: 'https://s3.example/videos/v1?sig=x', expiresInSeconds: 300 } }];
+    renderFeed();
+    const media = await screen.findByTestId('feed-media');
+    expect(within(media).getByTestId('number-badge')).toHaveTextContent('スクワット');
+    expect(await within(media).findByRole('button', { name: 'はなこのスクワットの動画を再生する' })).toBeInTheDocument();
+  });
+
+  it('今週まだ撮っていないとき、仲間の動画はぼかして「1本撮ると見られます」。動画の URL は取りに行かない', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [videoItem()] }) }];
+    replies['GET /api/videos/week'] = [week(false)];
+    renderFeed();
+    expect(await screen.findByRole('img', { name: 'はなこのスクワットの動画: 1本撮ると 見られます' })).toBeInTheDocument();
+    expect(calls.some((c) => c.url.includes('/url'))).toBe(false);
+  });
+
+  it('見られる期限が過ぎた仲間の動画は、期間が過ぎたことだけ伝える（URL は取りに行かない）', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [videoItem({ videoVisibleUntil: past })] }) }];
+    replies['GET /api/videos/week'] = [week(true)];
+    renderFeed();
+    expect(await screen.findByRole('img', { name: 'はなこのスクワットの動画: 見られる期間が過ぎました' })).toBeInTheDocument();
+    expect(calls.some((c) => c.url.includes('/url'))).toBe(false);
+  });
+
+  it('動画が無い足跡には縦の枠を出さず、数字の札だけ', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed() }];
+    renderFeed();
+    await screen.findByText('スクワット');
+    expect(screen.queryByTestId('feed-media')).not.toBeInTheDocument();
+    expect(screen.getByTestId('number-badge')).toHaveTextContent('ほか1種目');
+    expect(calls.some((c) => c.url === '/api/videos/week')).toBe(false);
+  });
+
+  it('押した人の顔と人数が出る（同じ人が複数のスタンプを押しても1人）', async () => {
+    const stamps = [
+      { stampKey: 'nice', count: 2, mine: null, by: [{ id: 'u3', name: 'じろう' }, { id: 'u4', name: 'さぶろう' }] },
+      { stampKey: 'fire', count: 1, mine: null, by: [{ id: 'u3', name: 'じろう' }] },
+    ];
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ stamps })] }) }];
+    renderFeed();
+    const faces = await screen.findByTestId('reaction-faces');
+    expect(faces).toHaveAttribute('aria-label', '2人が反応');
+    expect(within(faces).getAllByTestId('avatar')).toHaveLength(2);
+  });
+});
+
+describe('mediaState（動画の見え方）', () => {
+  const now = Date.parse('2026-11-20T00:00:00.000Z');
+  const until = '2026-11-22T15:00:00.000Z';
+  it('本人は期限が過ぎても・撮っていなくても open', () => {
+    expect(mediaState({ isOwn: true, visibleUntil: '2026-11-01T00:00:00.000Z', unlocked: false, now })).toBe('open');
+  });
+  it('仲間: 期限の前で撮っていれば open／撮っていなければ locked／期限の時刻ちょうどは expired', () => {
+    expect(mediaState({ isOwn: false, visibleUntil: until, unlocked: true, now })).toBe('open');
+    expect(mediaState({ isOwn: false, visibleUntil: until, unlocked: false, now })).toBe('locked');
+    expect(mediaState({ isOwn: false, visibleUntil: until, unlocked: true, now: Date.parse(until) })).toBe('expired');
   });
 });

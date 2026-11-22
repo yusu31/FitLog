@@ -33,6 +33,7 @@ import { useOnline } from '@/lib/use-browser-state';
 import { useAppSession } from '@/lib/use-app-session';
 import { FRIENDS_TEXT, LIGHT_QUICK_COMMENTS } from './friends-text';
 import { Avatar } from '@/components/fitlog/avatar';
+import { FeedMedia, MediaBadges } from './feed-media';
 import { StampButton, StampChip } from './stamp-button';
 
 // 「新着」の札を外すまでの時間。カードが画面に見えてから、この時間そのまま見えていたら「読んだ」とみなす（通り過ぎただけでは外さない。A04-8）
@@ -104,11 +105,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] leading-tight font-extrabold">
             {item.author.name}
-            <span className="ml-2 inline-flex items-center gap-1 text-fg-muted">
-              <KindIcon aria-hidden data-testid="kind-icon" className="size-4 shrink-0 text-brand" />
-              {title}
-            </span>
-            {detail && <span className="ml-1.5 text-sm text-fg-muted">{detail}</span>}
+            <KindIcon aria-hidden data-testid="kind-icon" className="ml-2 inline size-4 shrink-0 align-[-2px] text-brand" />
           </p>
           <p className="mt-0.5 text-note font-bold text-fg-subtle">
             {formatMonthDay(item.localDate)} {item.late ? <LateTag /> : formatJstTime(item.recordedAt)}
@@ -118,6 +115,9 @@ export function FeedCard({ item }: { item: FeedItem }) {
           </p>
         </div>
       </div>
+
+      {/* BeReal 風（D7-6）: 動画があれば縦の写真の面に数字の札と押した人の顔を重ねる。無ければ数字の札と顔の行だけ */}
+      {item.hasVideo ? <FeedMedia item={item} isOwn={isOwn} title={title} detail={detail} /> : <MediaBadges item={item} title={title} detail={detail} />}
 
       <ul aria-label={`${item.author.name}の${title}へのスタンプ`} className="flex flex-wrap gap-1.5">
         {STAMP_KEYS[item.kind].map((key) => {

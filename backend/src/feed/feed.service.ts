@@ -74,7 +74,7 @@ export class FeedService {
       ...(runs.has(record.id) ? { run: runs.get(record.id) } : {}),
       stamps: stamps.get(record.id) ?? [],
       commentCount: commentCounts.get(record.id) ?? 0,
-      ...(withVideo.has(record.id) ? { hasVideo: true } : {}),
+      ...(withVideo.has(record.id) ? { hasVideo: true, videoId: withVideo.get(record.id)!.id, videoVisibleUntil: withVideo.get(record.id)!.visibleUntil } : {}),
       ...(isNew(record, authorId) ? { isNew: true } : {}),
     }));
 
@@ -132,10 +132,10 @@ export class FeedService {
 
   // 動画が付いている記録の id（カードの再生の印。A06-4）。ids は足跡の1ページ分で、すでに見える範囲に絞られている。
   // 印だけで、動画の id・URL は返さない（見られるかどうかは動画の API が決める）
-  private async recordsWithVideo(ids: string[]): Promise<Set<string>> {
-    if (ids.length === 0) return new Set();
-    const rows = await this.db.select({ recordId: videos.recordId }).from(videos).where(inArray(videos.recordId, ids));
-    return new Set(rows.map((r) => r.recordId));
+  private async recordsWithVideo(ids: string[]): Promise<Map<string, { id: string; visibleUntil: string }>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.db.select({ id: videos.id, recordId: videos.recordId, visibleUntil: videos.visibleUntil }).from(videos).where(inArray(videos.recordId, ids));
+    return new Map(rows.map((r) => [r.recordId, { id: r.id, visibleUntil: r.visibleUntil.toISOString() }]));
   }
 
   // 種目名の要約。重複なし・最初にセットを足した順（記録の詳細と同じ並び）

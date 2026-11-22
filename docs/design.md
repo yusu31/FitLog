@@ -187,7 +187,7 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 
 ### GET /api/records（記録の一覧）と GET /api/records/{id}（詳細）
 
-詳細 `GET /api/records/{id}` だけ、動画があるとき `videoId`（uuid）が付く（見るときは `GET /videos/{videoId}/url`。一覧には付けない）。足跡 `GET /api/feed` の項目には、動画があるときだけ `hasVideo: true`（カードの再生の印。A06-4）が付く（動画の id・URL は付けない）。動画の行は署名付き POST を発行するときに作るので、S3 への送信が失敗した記録にも `videoId` は付く。画面は再生に失敗したら「再生できませんでした」とだけ出す。
+詳細 `GET /api/records/{id}` だけ、動画があるとき `videoId`（uuid）が付く（見るときは `GET /videos/{videoId}/url`。一覧には付けない）。足跡 `GET /api/feed` の項目には、動画があるときだけ `hasVideo: true`（A06-4）・`videoId`・`videoVisibleUntil`（仲間が見られる期限。カードの動画の枠用。D7-6）が付く（URL は付けない。見るときは `GET /videos/{videoId}/url`）。動画の行は署名付き POST を発行するときに作るので、S3 への送信が失敗した記録にも `videoId` は付く。画面は再生に失敗したら「再生できませんでした」とだけ出す。
 
 `GET /api/records?kind=workout&limit=1` の応答（一覧。詳細は `items` の1件と同じ形）:
 
