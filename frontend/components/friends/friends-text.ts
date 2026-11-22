@@ -6,8 +6,6 @@ export const FRIENDS_TEXT = {
   stampCancelled: 'スタンプを取り消したよ',
   stampUndoHint: 'もう一度押すと取り消せます',
   sentCommentsLabel: '送ったコメント',
-  todayEmpty: '今日の足跡は まだないよ',
-  showOlder: (n: number): string => `前の日の足跡を見る（${n}件）`,
   groupSettings: 'グループの設定（メンバー・招待・出る）',
   // 自分1人のグループ（A09-5）。足跡には自分の今週の記録が、グループを作る前のものも含めて並ぶ
   aloneTitle: '仲間がいると、続きます',

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, between, count, desc, eq, gt, inArray, lt, ne, or, sql } from 'drizzle-orm';
-import { weekDates } from '../common/week.js';
+import { toLocalDate } from '../common/local-date.js';
+import { weekDates, weekStartOf } from '../common/week.js';
 import { DB, type Db } from '../db/db.module.js';
 import { comments, exercises, reactions, records, runDetails, users, videos, workoutSets } from '../db/schema.js';
 import { encodeCursor } from '../records/list-input.js';
@@ -24,8 +25,11 @@ export class FeedService {
   constructor(@Inject(DB) private readonly db: Db) {}
 
   async feed(userId: string, rawQuery: { weekStart?: unknown; cursor?: unknown }): Promise<FeedResponse> {
-    const { weekStart, cursor } = parseFeedQuery(rawQuery);
-    const scope = feedScope(this.db, userId, weekStart);
+    const { weekStart: requested, cursor } = parseFeedQuery(rawQuery);
+    // 週を指定しない（D7-6）と、足跡は同じグループの全期間。合計は常に1週間ぶん（指定した週、なければ今週）
+    const weekStart = requested ?? weekStartOf(toLocalDate(new Date()));
+    const weekScope = feedScope(this.db, userId, weekStart);
+    const scope = requested ? weekScope : ownerInMyGroup(this.db, userId);
 
     // 運動した時刻の降順、同じ時刻は id の降順。cursor は「最後に読んだ1件」の（時刻, id）。
     // limit+1 件読み、余った1件があれば続きがある（ちょうど割り切れるときに空のページを返さない）
@@ -52,7 +56,7 @@ export class FeedService {
       this.runsOf(ids),
       this.stampsOf(ids, userId),
       this.commentCountsOf(ids),
-      this.totals(scope),
+      this.totals(weekScope),
       this.myRecordsWithNewReactions(userId, seenAt, ids),
       this.recordsWithVideo(ids),
     ]);

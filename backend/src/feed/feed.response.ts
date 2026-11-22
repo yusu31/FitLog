@@ -82,7 +82,7 @@ export class FeedTotals {
 }
 
 export class FeedResponse {
-  @ApiProperty({ example: '2026-10-26', description: 'その週の月曜の日付（指定した日を含む週）' })
+  @ApiProperty({ example: '2026-10-26', description: '合計の対象の週の月曜の日付（指定した日を含む週。指定しなければ今週）' })
   weekStart!: string;
 
   @ApiProperty({ type: [FeedItem], description: `新しい順（運動した時刻の降順。同じ時刻は id の降順）。1回に ${FEED_PAGE_SIZE} 件。自分の記録も含む。グループに入っていなければ空` })

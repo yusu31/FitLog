@@ -13,16 +13,19 @@ export const FEED_PAGE_SIZE = 20;
 
 const invalid = (details: string[]) => new BadRequestException({ code: 'VALIDATION_ERROR', message: '入力が正しくありません', details });
 
-// GET /feed のクエリの検査。weekStart は実在する日付（その日を含む週の月曜に直す）。cursor は前の応答の nextCursor だけ。
+// GET /feed のクエリの検査。weekStart は任意（D7-6）。付けるなら実在する日付（その日を含む週の月曜に直す）で、
+// 付けなければ全期間の足跡を返す（undefined のまま返す）。cursor は前の応答の nextCursor だけ。
 // 理由は項目ごとに集めて、1回で直せるようにする
-export function parseFeedQuery(query: { weekStart?: unknown; cursor?: unknown }): { weekStart: string; cursor: ListCursor | undefined } {
+export function parseFeedQuery(query: { weekStart?: unknown; cursor?: unknown }): { weekStart: string | undefined; cursor: ListCursor | undefined } {
   const details: string[] = [];
 
-  let weekStart = '';
-  try {
-    weekStart = weekStartOf(parseWeekDate(query.weekStart, 'weekStart'));
-  } catch (err) {
-    details.push(...((err as BadRequestException).getResponse() as { details: string[] }).details);
+  let weekStart: string | undefined;
+  if (query.weekStart !== undefined) {
+    try {
+      weekStart = weekStartOf(parseWeekDate(query.weekStart, 'weekStart'));
+    } catch (err) {
+      details.push(...((err as BadRequestException).getResponse() as { details: string[] }).details);
+    }
   }
 
   let cursor: ListCursor | undefined;
