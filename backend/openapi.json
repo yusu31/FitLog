@@ -3184,11 +3184,23 @@
               "none"
             ],
             "description": "記録した日は rec、休んだ日は rest、何もない日は none。同じ日に記録と休みがあれば rec"
+          },
+          "weightKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "その日の総重量（重量×回数の合計。kg。小数1桁）。期間のタイルの数字に使う"
+          },
+          "runM": {
+            "type": "number",
+            "minimum": 0,
+            "description": "その日のランの合計距離（m）"
           }
         },
         "required": [
           "date",
-          "status"
+          "status",
+          "weightKg",
+          "runM"
         ]
       },
       "StatsPeriod": {

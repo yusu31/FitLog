@@ -1,6 +1,6 @@
-import type { StampKey, StatsCalendarDay, StatsPeriod, StatsResponse } from '@/lib/api/generated';
-import { formatMonthDay, weekdayIndex } from '@/lib/format';
-import { weekDates, weekStartOf, type CellStatus } from '@/lib/shared/week';
+import type { StampKey, StatsCalendarDay, StatsResponse } from '@/lib/api/generated';
+import { weekdayIndex } from '@/lib/format';
+import { addDays, weekDates, weekStartOf, type CellStatus } from '@/lib/shared/week';
 
 // 記録のまとめ（F-22 週・月・年／F-26 今月の数字／F-27 グラフ／F-29 スタンプ帳。docs/features.md 2.13）の画面側の純粋な関数。
 
@@ -11,34 +11,95 @@ export const STATS_VIEWS: ReadonlyArray<{ view: StatsView; label: string }> = [
   { view: 'year', label: '年' },
 ];
 
-// date が null のマスは、月の最初の週の前の空き（見えない枠）
-export type GridCell = { date: string | null; status: CellStatus };
+// 期間の数字（動いた日・おやすみ・総重量・ラン）。calendar の日ごとの値を足し合わせる。範囲は from〜to（今日まで・calendar の範囲内だけ）
+export type Totals = { days: number; rest: number; kg: number; m: number };
+export type Metric = 'days' | 'kg' | 'm';
+export const METRICS: ReadonlyArray<{ key: Metric; label: string }> = [
+  { key: 'days', label: '動いた日' },
+  { key: 'kg', label: '総重量' },
+  { key: 'm', label: 'ラン' },
+];
 
-// 週・月・年のマス（F-22）。休みの色は全期間で同じにする（状態をそのまま渡す）。今日より後の日は、状態が何であっても none（まだ記録できない日）。
-// 週・月は月曜始まりの7列（上から下へ行を進める）。年は縦7段（月〜日）で、左から右へ週を進める
-export function buildGrid(view: StatsView, calendar: readonly StatsCalendarDay[], today: string): GridCell[] {
-  const statusOf = new Map(calendar.map((c) => [c.date, c.status]));
-  const cell = (date: string): GridCell => ({ date, status: date > today ? 'none' : (statusOf.get(date) ?? 'none') });
-  const lead = (first: string): GridCell[] => Array.from({ length: (weekdayIndex(first) + 6) % 7 }, () => ({ date: null, status: 'none' as CellStatus }));
-
-  if (view === 'week') return weekDates(weekStartOf(today)).map(cell);
-  if (view === 'month') {
-    const first = `${today.slice(0, 7)}-01`;
-    const days: GridCell[] = [];
-    for (let d = new Date(`${first}T00:00:00Z`); d.toISOString().slice(0, 7) === today.slice(0, 7); d.setUTCDate(d.getUTCDate() + 1)) {
-      days.push(cell(d.toISOString().slice(0, 10)));
-    }
-    return [...lead(first), ...days];
+export function sumRange(calendar: readonly StatsCalendarDay[], from: string, to: string): Totals {
+  const t: Totals = { days: 0, rest: 0, kg: 0, m: 0 };
+  for (const c of calendar) {
+    if (c.date < from || c.date > to) continue;
+    if (c.status === 'rec') t.days += 1;
+    if (c.status === 'rest') t.rest += 1;
+    t.kg += c.weightKg;
+    t.m += c.runM;
   }
-  return [...lead(calendar[0].date), ...calendar.map((c) => cell(c.date))];
+  t.kg = Math.round(t.kg * 10) / 10;
+  return t;
 }
 
-// 週・月・年の切替に合わせて見せる数字（A08-5）。見出しと期間（いつからいつまで）も、切替と同じ範囲にそろえる
-export function periodOf(view: StatsView, data: Pick<StatsResponse, 'today' | 'calendar' | 'week' | 'month' | 'year'>): { heading: string; range: string; numbers: StatsPeriod } {
-  const to = formatMonthDay(data.today);
-  if (view === 'week') return { heading: '今週の数字', range: `${formatMonthDay(weekStartOf(data.today))}〜${to}`, numbers: data.week };
-  if (view === 'month') return { heading: `${Number(data.month.month.slice(5))}月の数字`, range: `${formatMonthDay(`${data.month.month}-01`)}〜${to}`, numbers: data.month };
-  return { heading: 'この1年の数字', range: `${formatMonthDay(data.calendar[0].date)}〜${to}`, numbers: data.year };
+const DAY_MS = 86_400_000;
+const utc = (date: string): number => Date.parse(`${date}T00:00:00Z`);
+
+// 週のずれ（0＝今週、-1＝先週）の月曜〜日曜
+export function weekRange(today: string, off: number): { from: string; to: string } {
+  const from = addDays(weekStartOf(today), off * 7);
+  return { from, to: addDays(from, 6) };
+}
+
+// 月のずれ（0＝今月）の1日〜月末
+export function monthRange(today: string, off: number): { from: string; to: string; ym: string } {
+  const d = new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1 + off, 1));
+  const ym = d.toISOString().slice(0, 7);
+  const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
+  return { from: `${ym}-01`, to: last, ym };
+}
+
+// さかのぼれる限界（calendar の最初の日を含む週・月まで）
+export function minWeekOffset(today: string, firstDate: string): number {
+  return -Math.round((utc(weekStartOf(today)) - utc(weekStartOf(firstDate))) / (7 * DAY_MS));
+}
+export function minMonthOffset(today: string, firstDate: string): number {
+  return -((Number(today.slice(0, 4)) - Number(firstDate.slice(0, 4))) * 12 + Number(today.slice(5, 7)) - Number(firstDate.slice(5, 7)));
+}
+
+// 横に並べる6つのタイルの、先頭のずれ。選んだものを含み、右端は今（0）まで・左端は限界まで
+export function tileWindowStart(off: number, min: number): number {
+  return Math.max(min, Math.min(off - 2, -5));
+}
+
+// 数字タイルの表示値。単位は別に返し、画面で小さく出す
+export function formatMetric(metric: Metric, v: number): { value: string; unit: string } {
+  if (metric === 'days') return { value: String(v), unit: '日' };
+  if (metric === 'kg') return v >= 1000 ? { value: (v / 1000).toFixed(1), unit: 't' } : { value: String(v), unit: 'kg' };
+  return { value: (v / 1000).toFixed(1), unit: 'km' };
+}
+
+// 月のカレンダー（月曜始まり。先頭の空きは date が null）。今日より後の日は none
+export type GridCell = { date: string | null; status: CellStatus };
+export function monthGrid(calendar: readonly StatsCalendarDay[], today: string, off: number): GridCell[] {
+  const { from, to } = monthRange(today, off);
+  const statusOf = new Map(calendar.map((c) => [c.date, c.status]));
+  const lead: GridCell[] = Array.from({ length: (weekdayIndex(from) + 6) % 7 }, () => ({ date: null, status: 'none' as CellStatus }));
+  const days: GridCell[] = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) days.push({ date: d, status: d > today ? 'none' : (statusOf.get(d) ?? 'none') });
+  return [...lead, ...days];
+}
+
+// 年の色のマス。calendar を月曜始まりの週（縦7）に並べ、半分ずつ2段にする。月の1日がある列に月の見出しを付ける
+export type HeatHalf = { cells: (GridCell | null)[]; labels: { col: number; text: string }[]; cols: number };
+export function yearHeat(calendar: readonly StatsCalendarDay[]): HeatHalf[] {
+  const first = calendar[0].date;
+  const lastDate = calendar[calendar.length - 1].date;
+  const statusOf = new Map(calendar.map((c) => [c.date, c.status]));
+  const weeks: (GridCell | null)[][] = [];
+  for (let w = weekStartOf(first); w <= lastDate; w = addDays(w, 7)) {
+    weeks.push(weekDates(w).map((d) => (d < first || d > lastDate ? null : { date: d, status: statusOf.get(d) ?? 'none' })));
+  }
+  const half = Math.ceil(weeks.length / 2);
+  return [weeks.slice(0, half), weeks.slice(half)].map((ws) => ({
+    cols: ws.length,
+    cells: ws.flat(),
+    labels: ws.flatMap((col, i) => {
+      const one = col.find((c) => c?.date?.endsWith('-01'));
+      return one?.date ? [{ col: i + 1, text: `${Number(one.date.slice(5, 7))}月` }] : [];
+    }),
+  }));
 }
 
 // 祝福に重ねる「今月◯日目」（F-20）。今月動いた日数に、今日がまだ数えられていなければ今日の分を足す。
@@ -53,12 +114,6 @@ export function weightEquivalent(kg: number): string | null {
   if (kg >= 1000) return `軽自動車 ${Math.floor(kg / 1000)}台ぶん`;
   if (kg >= 10) return `お米の袋 ${Math.floor(kg / 10)}袋ぶん`;
   return null;
-}
-
-// 棒グラフの棒の高さ（0〜1）。最大値が 0 のときはすべて 0。0 でない値は、見えるよう最低 0.04 にする
-export function barRatios(values: readonly number[]): number[] {
-  const max = Math.max(0, ...values);
-  return values.map((v) => (max === 0 || v <= 0 ? 0 : Math.max(0.04, v / max)));
 }
 
 // スタンプ帳（F-29）の表示名。初めて・累計だけ。「あと◯」は出さない

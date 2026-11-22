@@ -1,15 +1,32 @@
 'use client';
 
 import { cn } from 'cn';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { JapanMap } from '@/components/me/japan-map';
-import { useGetStats, type StatsResponse, type StatsWeek } from '@/lib/api/generated';
-import { formatDistance, formatMonthDay } from '@/lib/format';
+import { useGetStats, type StatsCalendarDay, type StatsResponse } from '@/lib/api/generated';
+import { formatMonthDay } from '@/lib/format';
 import { locateOnRoute, nextText, trekText } from '@/lib/japan-route';
-import { STAMP_LABEL, STATS_VIEWS, barRatios, buildGrid, periodOf, weightEquivalent, type StatsView } from '@/lib/stats';
+import {
+  METRICS,
+  STAMP_LABEL,
+  STATS_VIEWS,
+  formatMetric,
+  minMonthOffset,
+  minWeekOffset,
+  monthGrid,
+  monthRange,
+  sumRange,
+  tileWindowStart,
+  weekRange,
+  weightEquivalent,
+  yearHeat,
+  type GridCell,
+  type Metric,
+  type StatsView,
+} from '@/lib/stats';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useRequireSession } from '@/lib/use-require-session';
 
@@ -17,13 +34,16 @@ const STATUS_CLASS = { rec: 'bg-gold', rest: 'bg-grape', none: 'bg-canvas' } as 
 // 月曜始まり（マスの並びと同じ。A08-4）
 const WEEKDAY_HEAD = ['月', '火', '水', '木', '金', '土', '日'] as const;
 const STATUS_TEXT = { rec: '記録あり', rest: 'おやすみ', none: '' } as const;
+const segClass = (on: boolean) =>
+  cn(
+    'min-h-11 flex-1 rounded-fl border-2 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+    on ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-surface text-brand',
+  );
 
-// S-35 記録のまとめ（docs/screen-design.md 4章・F-22・F-26・F-27・F-29）。自分タブから入る。
-// 週・月・年のマス／今月の数字／週ごとのグラフ／スタンプ帳。連続日数・目標線・「あと◯」は出さない。休みは全期間で同じ紫
+// S-35 記録のまとめ（F-22・F-26・F-27・F-29。D5）。自分タブから入る。
+// 週・月・年の切替＋◀▶／合計4つ／数字のタイルを並べて比べる／スタンプ帳。連続日数・目標線・「あと◯」は出さない。休みは全期間で同じ紫
 export function StatsPage() {
   useRequireSession();
-  // 週・月・年の切替は、マスと下の数字で同じものを使う（A08-5）
-  const [view, setView] = useState<StatsView>('week');
   const stats = useGetStats({ date: toLocalDate(new Date()) });
   const data = stats.data?.status === 200 ? stats.data.data : null;
 
@@ -42,9 +62,7 @@ export function StatsPage() {
       <div className="space-y-4 px-4 pt-3 pb-10">
         {data ? (
           <>
-            <Calendar data={data} view={view} onView={setView} />
-            <PeriodNumbers data={data} view={view} />
-            <TrainingTabs data={data} />
+            <Period data={data} />
             <Stamps data={data} />
           </>
         ) : (
@@ -57,45 +75,179 @@ export function StatsPage() {
   );
 }
 
-function Calendar({ data, view, onView }: { data: StatsResponse; view: StatsView; onView: (view: StatsView) => void }) {
-  const cells = buildGrid(view, data.calendar, data.today);
+type Tile = { off: number; label: string; value: number; selected: boolean };
+
+// 期間の切替・◀▶・合計・タイル。年は1年分（calendar の365日）で◀▶は無い。年のタイルを押すと、その月へ移る
+function Period({ data }: { data: StatsResponse }) {
+  const { today, calendar } = data;
+  const [view, setView] = useState<StatsView>('week');
+  const [off, setOff] = useState(0);
+  const [metric, setMetric] = useState<Metric>('days');
+  const first = calendar[0].date;
+  const min = view === 'week' ? minWeekOffset(today, first) : view === 'month' ? minMonthOffset(today, first) : 0;
+
+  const range = view === 'week' ? weekRange(today, off) : view === 'month' ? monthRange(today, off) : { from: first, to: today };
+  const totals = sumRange(calendar, range.from, range.to > today ? today : range.to);
+  const title =
+    view === 'week'
+      ? `${formatMonthDay(range.from)}〜${formatMonthDay(range.to)}`
+      : view === 'month'
+        ? `${Number(range.from.slice(0, 4))}年${Number(range.from.slice(5, 7))}月`
+        : `この1年（${formatMonthDay(first)}〜${formatMonthDay(today)}）`;
+
+  // 横に並べる数字のタイル（週は6週・月は6か月・年は12か月）
+  let tiles: Tile[];
+  if (view === 'week') {
+    const start = tileWindowStart(off, min);
+    tiles = Array.from({ length: 6 }, (_, i) => {
+      const o = start + i;
+      const r = weekRange(today, o);
+      return { off: o, label: `${formatMonthDay(r.from)}〜`, value: sumRange(calendar, r.from, r.to)[metric], selected: o === off };
+    });
+  } else {
+    const count = view === 'month' ? 6 : 12;
+    const start = view === 'month' ? tileWindowStart(off, min) : -11;
+    tiles = Array.from({ length: count }, (_, i) => {
+      const o = start + i;
+      const r = monthRange(today, o);
+      return { off: o, label: `${Number(r.ym.slice(5))}月`, value: sumRange(calendar, r.from, r.to)[metric], selected: view === 'month' && o === off };
+    });
+  }
+  const max = Math.max(1, ...tiles.map((t) => t.value));
+  const equivalent = weightEquivalent(totals.kg);
+
   return (
-    <section aria-labelledby="stats-cal" className="fl-slab px-4 py-3">
-      <h2 id="stats-cal" className="text-sm font-extrabold text-fg-muted">
-        記録のあしあと
-      </h2>
-      <div role="group" aria-label="期間" className="mt-2 flex gap-2">
-        {STATS_VIEWS.map((v) => (
-          <button
-            key={v.view}
-            type="button"
-            aria-pressed={view === v.view}
-            onClick={() => onView(v.view)}
-            className={cn(
-              'min-h-11 flex-1 rounded-fl border-2 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-              view === v.view ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-surface text-brand',
-            )}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
-      {view === 'year' ? (
-        <p data-testid="stats-weekdays" className="mt-3 text-note font-bold text-fg-muted">
-          たては上から月〜日、よこは左から右へ週が進みます
-        </p>
-      ) : (
-        <p aria-hidden data-testid="stats-weekdays" className="mt-3 grid grid-cols-7 gap-1 text-center text-note font-bold text-fg-muted">
-          {WEEKDAY_HEAD.map((w) => (
-            <span key={w}>{w}</span>
+    <>
+      <section aria-labelledby="stats-period" className="fl-slab px-4 py-3">
+        <h2 id="stats-period" className="sr-only">
+          期間ごとの記録
+        </h2>
+        <div role="group" aria-label="期間" className="flex gap-2">
+          {STATS_VIEWS.map((v) => (
+            <button
+              key={v.view}
+              type="button"
+              aria-pressed={view === v.view}
+              onClick={() => {
+                setView(v.view);
+                setOff(0);
+              }}
+              className={segClass(view === v.view)}
+            >
+              {v.label}
+            </button>
           ))}
-        </p>
-      )}
-      <ol
-        aria-label={`${STATS_VIEWS.find((v) => v.view === view)!.label}のマス`}
-        data-testid="stats-grid"
-        className={cn(view === 'year' ? 'mt-2' : 'mt-1', 'grid gap-1', view === 'year' ? 'grid-flow-col grid-rows-7' : 'grid-cols-7')}
-      >
+        </div>
+        <div className="mt-3 flex items-center justify-between">
+          {view === 'year' ? <span className="size-11" /> : <NavButton label="前へ" disabled={off <= min} onClick={() => setOff(off - 1)} dir="prev" />}
+          <p data-testid="stats-title" className="text-center font-extrabold">
+            {title}
+          </p>
+          {view === 'year' ? <span className="size-11" /> : <NavButton label="次へ" disabled={off >= 0} onClick={() => setOff(off + 1)} dir="next" />}
+        </div>
+        <dl data-testid="stats-totals" className="mt-2 grid grid-cols-4 gap-1 text-center">
+          <Stat label="動いた日" value={String(totals.days)} unit="日" />
+          <Stat label="おやすみ" value={String(totals.rest)} unit="日" />
+          <Stat label="総重量" {...formatMetric('kg', totals.kg)} />
+          <Stat label="ラン" {...formatMetric('m', totals.m)} />
+        </dl>
+        {equivalent && <p className="mt-2 text-center text-sm font-bold">{equivalent}</p>}
+        {view === 'month' && <MonthCalendar cells={monthGrid(calendar, today, off)} today={today} />}
+        {view === 'year' && <YearHeat calendar={calendar} today={today} />}
+      </section>
+
+      <section aria-labelledby="stats-tiles" className="fl-slab px-4 py-3">
+        <h2 id="stats-tiles" className="text-sm font-extrabold text-fg-muted">
+          {view === 'week' ? '週' : '月'}ごとの{METRICS.find((m) => m.key === metric)!.label}
+        </h2>
+        <div role="group" aria-label="見る数字" className="mt-2 flex gap-2">
+          {METRICS.map((m) => (
+            <button
+              key={m.key}
+              type="button"
+              aria-pressed={metric === m.key}
+              onClick={() => setMetric(m.key)}
+              className={cn(
+                'min-h-11 rounded-full border-2 px-4 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+                metric === m.key ? 'border-teal bg-teal-light text-brand' : 'border-teal-light bg-surface text-brand',
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <ul data-testid="stats-tiles" className="mt-3 grid grid-cols-6 gap-1.5">
+          {tiles.map((t) => {
+            const f = formatMetric(metric, t.value);
+            return (
+              <li key={t.off} className="min-w-0">
+                <button
+                  type="button"
+                  aria-pressed={t.selected}
+                  aria-label={`${t.label} ${f.value}${f.unit}`}
+                  onClick={() => {
+                    if (view === 'year') setView('month');
+                    setOff(t.off);
+                  }}
+                  className={cn(
+                    'relative flex min-h-14 w-full flex-col items-center overflow-hidden rounded-xl px-0.5 pt-1.5 pb-2 outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+                    t.selected ? 'bg-gold-light' : 'bg-canvas',
+                  )}
+                >
+                  <span className="whitespace-nowrap text-[0.6rem] font-extrabold text-fg-muted">{t.label}</span>
+                  <span className="fl-num text-lg leading-tight">
+                    {f.value}
+                    <small className="text-[0.6em]">{f.unit}</small>
+                  </span>
+                  <i aria-hidden className={cn('absolute bottom-0 left-0 h-[3px] rounded-r', t.selected ? 'bg-gold' : 'bg-teal')} style={{ width: `${Math.round((t.value / max) * 100)}%` }} />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+      {metric === 'm' && <JapanTrek totalMeters={data.totalRunDistanceM} />}
+    </>
+  );
+}
+
+function NavButton({ label, disabled, onClick, dir }: { label: string; disabled: boolean; onClick: () => void; dir: 'prev' | 'next' }) {
+  const Icon = dir === 'prev' ? ChevronLeft : ChevronRight;
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex size-11 items-center justify-center rounded-full border-2 border-teal-light text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-35"
+    >
+      <Icon aria-hidden className="size-5" />
+    </button>
+  );
+}
+
+function Stat({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <div className="flex flex-col-reverse">
+      <dt className="text-[0.65rem] font-extrabold text-fg-muted">{label}</dt>
+      <dd className="m-0">
+        <span className="fl-num text-2xl">{value}</span>
+        <small className="text-[0.65em] font-bold">{unit}</small>
+      </dd>
+    </div>
+  );
+}
+
+// 月のカレンダー（日付つき・月曜始まり）。休みは全期間で同じ紫
+function MonthCalendar({ cells, today }: { cells: GridCell[]; today: string }) {
+  return (
+    <div className="mt-3">
+      <p aria-hidden data-testid="stats-weekdays" className="grid grid-cols-7 gap-1 text-center text-note font-bold text-fg-muted">
+        {WEEKDAY_HEAD.map((w) => (
+          <span key={w}>{w}</span>
+        ))}
+      </p>
+      <ol aria-label="月のマス" data-testid="stats-grid" className="mt-1 grid grid-cols-7 gap-1">
         {cells.map((c, i) =>
           c.date === null ? (
             <li key={`blank-${i}`} aria-hidden />
@@ -103,161 +255,52 @@ function Calendar({ data, view, onView }: { data: StatsResponse; view: StatsView
             <li
               key={c.date}
               data-status={c.status}
-              aria-label={[formatMonthDay(c.date), c.date === data.today ? '今日' : '', STATUS_TEXT[c.status]].filter(Boolean).join(' ')}
-              className={cn('aspect-square', view === 'year' ? 'min-w-0 rounded-sm' : 'min-h-7 rounded-full', STATUS_CLASS[c.status], c.date === data.today && 'ring-2 ring-fg')}
-            />
+              aria-label={[formatMonthDay(c.date), c.date === today ? '今日' : '', STATUS_TEXT[c.status]].filter(Boolean).join(' ')}
+              className={cn('fl-num flex aspect-square items-center justify-center rounded-full text-sm', STATUS_CLASS[c.status], c.status === 'none' && 'text-fg-muted', c.date === today && 'ring-2 ring-fg')}
+            >
+              {Number(c.date.slice(8))}
+            </li>
           ),
         )}
       </ol>
-      <p className="mt-2 flex flex-wrap justify-center gap-3 text-note text-fg-muted">
-        {(['rec', 'rest', 'none'] as const).map((s) => (
-          <span key={s} className="flex items-center gap-1">
-            <i aria-hidden className={cn('size-3 rounded-full', STATUS_CLASS[s])} />
-            {s === 'rec' ? '記録' : s === 'rest' ? 'おやすみ' : 'なし'}
-          </span>
-        ))}
-      </p>
-      <p className="mt-2 text-center text-note text-fg-muted">下の数字も、選んだ期間に合わせて変わります。グラフは週ごとです</p>
-    </section>
-  );
-}
-
-// 週・月・年の切替に合わせた数字（A08-5）。見出しの下に、いつからいつまでかを出す
-function PeriodNumbers({ data, view }: { data: StatsResponse; view: StatsView }) {
-  const { heading, range, numbers } = periodOf(view, data);
-  const equivalent = weightEquivalent(numbers.totalWeightKg);
-  return (
-    <section aria-labelledby="stats-period" className="fl-slab px-4 py-3">
-      <h2 id="stats-period" className="text-sm font-extrabold text-fg-muted">
-        {heading}
-      </h2>
-      <p className="text-note text-fg-muted">{range}</p>
-      <dl className="mt-2 grid grid-cols-2 gap-3 text-center">
-        <Stat label="動いた日" value={numbers.activeDays} unit="日" />
-        <Stat label="おやすみ" value={numbers.restDays} unit="日" />
-        <Stat label="総重量" value={numbers.totalWeightKg} unit="kg" />
-        <Stat label="ラン" value={Math.round(numbers.runDistanceM / 100) / 10} unit="km" />
-      </dl>
-      {equivalent && <p className="mt-2 text-center text-sm font-bold">{equivalent}</p>}
-    </section>
-  );
-}
-
-function Stat({ label, value, unit }: { label: string; value: number; unit: string }) {
-  return (
-    <div className="rounded-lg bg-canvas py-2">
-      <dt className="text-note text-fg-muted">{label}</dt>
-      <dd className="m-0">
-        <span className="fl-num text-3xl">{value}</span> <span className="text-sm font-bold">{unit}</span>
-      </dd>
     </div>
   );
 }
 
-// 筋トレ・ランの切替（A08-8）。ランのタブにだけ、週ごとのランと日本縦断（F-28）を出す（縦に長いのを避ける）
-function TrainingTabs({ data }: { data: StatsResponse }) {
-  const weightTotal = data.weekly.reduce((sum, w) => sum + w.totalWeightKg, 0);
-  const runTotal = data.totalRunDistanceM + data.weekly.reduce((sum, w) => sum + w.runDistanceM, 0);
-  // 筋トレの記録が無くランだけの人は、最初からランを見せる
-  const [tab, setTab] = useState<'weight' | 'run'>(weightTotal === 0 && runTotal > 0 ? 'run' : 'weight');
+// 年の色のマス。半年ずつ2段・月の見出し。たては上から月〜日、よこは左から右へ週が進む
+function YearHeat({ calendar, today }: { calendar: readonly StatsCalendarDay[]; today: string }) {
+  const halves = yearHeat(calendar);
   return (
-    <>
-      <div role="group" aria-label="記録の種類" className="flex gap-2">
-        {(
-          [
-            ['weight', '筋トレ'],
-            ['run', 'ラン'],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={tab === key}
-            onClick={() => setTab(key)}
-            className={cn(
-              'min-h-11 flex-1 rounded-fl border-2 text-sm font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
-              tab === key ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-surface text-brand',
+    <div className="mt-3 space-y-1">
+      <p data-testid="stats-weekdays" className="text-note font-bold text-fg-muted">
+        たては上から月〜日、よこは左から右へ週が進みます
+      </p>
+      {halves.map((h, hi) => (
+        <div key={hi}>
+          <div aria-hidden className="grid h-3 text-[0.58rem] font-extrabold text-fg-muted" style={{ gridTemplateColumns: `repeat(${h.cols}, 1fr)` }}>
+            {h.labels.map((l) => (
+              <span key={l.col} className="whitespace-nowrap" style={{ gridColumn: l.col }}>
+                {l.text}
+              </span>
+            ))}
+          </div>
+          <ol aria-label={hi === 0 ? '年のマス（前半）' : '年のマス（後半）'} data-testid="stats-grid" className="mt-0.5 grid grid-flow-col grid-rows-7 gap-0.5" style={{ gridTemplateColumns: `repeat(${h.cols}, 1fr)` }}>
+            {h.cells.map((c, i) =>
+              c === null || c.date === null ? (
+                <li key={`b${i}`} aria-hidden />
+              ) : (
+                <li
+                  key={c.date}
+                  data-status={c.status}
+                  aria-label={[formatMonthDay(c.date), c.date === today ? '今日' : '', STATUS_TEXT[c.status]].filter(Boolean).join(' ')}
+                  className={cn('aspect-square min-w-0 rounded-sm', c.status === 'none' ? 'bg-line' : STATUS_CLASS[c.status], c.date === today && 'ring-2 ring-fg')}
+                />
+              ),
             )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      {tab === 'weight' ? (
-        <WeeklyChart title="週ごとの総重量" weeks={data.weekly} pick={(w) => w.totalWeightKg} format={(v) => `${v}kg`} />
-      ) : (
-        <>
-          <WeeklyChart title="週ごとのラン" weeks={data.weekly} pick={(w) => w.runDistanceM} format={formatDistance} />
-          <JapanTrek totalMeters={data.totalRunDistanceM} />
-        </>
-      )}
-    </>
-  );
-}
-
-// 週ごとのグラフ。始めた週（最初に0でない週）から右だけを出す（A08-2: 左の空っぽを見せない）。左端の週の日付と「今週」をラベルにする（A08-3）
-function WeeklyChart({
-  title,
-  weeks,
-  pick,
-  format,
-}: {
-  title: string;
-  weeks: readonly StatsWeek[];
-  pick: (w: StatsWeek) => number;
-  format: (v: number) => string;
-}) {
-  const start = weeks.findIndex((w) => pick(w) > 0);
-  if (start === -1) {
-    return (
-      <section aria-label={title} className="fl-slab px-4 py-3">
-        <h2 className="text-sm font-extrabold text-fg-muted">{title}</h2>
-        <p className="mt-2 rounded-lg bg-canvas px-3 py-6 text-center text-sm font-bold text-fg-muted">記録するとここに、週ごとのグラフが出ます</p>
-      </section>
-    );
-  }
-  const shown = weeks.slice(start);
-  const values = shown.map(pick);
-  const ratios = barRatios(values);
-  const slot = Math.min(40, 240 / shown.length);
-  return (
-    <section aria-label={title} className="fl-slab px-4 py-3">
-      <h2 className="text-sm font-extrabold text-fg-muted">{title}</h2>
-      <svg viewBox={`0 0 ${shown.length * slot} 80`} role="img" aria-label={`${title}の棒グラフ`} className="mt-2 w-full">
-        {/* 記録がない週も「空の箱」にならないよう、全部の週に薄い土台の線を引く（U8） */}
-        {shown.map((w, i) => (
-          <rect key={`base-${w.weekStart}`} x={i * slot + slot * 0.15} y={78} width={slot * 0.7} height={2} rx={1} className="fill-line" />
-        ))}
-        {ratios.map((r, i) => (
-          <rect
-            key={shown[i].weekStart}
-            data-bar
-            x={i * slot + slot * 0.15}
-            y={80 - r * 76}
-            width={slot * 0.7}
-            height={r * 76}
-            rx={2}
-            className={i === ratios.length - 1 ? 'fill-gold' : 'fill-teal'}
-          />
-        ))}
-      </svg>
-      <p aria-hidden data-testid="chart-labels" className="flex justify-between text-note font-bold text-fg-muted">
-        <span>{formatMonthDay(shown[0].weekStart)}の週</span>
-        <span>今週</span>
-      </p>
-      <ul aria-label={`${title}の数字`} className="sr-only">
-        {shown.map((w) => (
-          <li key={w.weekStart}>
-            {formatMonthDay(w.weekStart)}の週 {format(pick(w))}
-          </li>
-        ))}
-      </ul>
-      {/* 目盛りの代わりに、いちばん多い週・今週の数字を見える文字で出す（U8） */}
-      <p aria-hidden className="mt-1 flex justify-between text-note font-bold text-fg-muted">
-        <span>最大 {format(Math.max(0, ...values))}</span>
-        <span>右が今週 {format(values[values.length - 1] ?? 0)}</span>
-      </p>
-    </section>
+          </ol>
+        </div>
+      ))}
+    </div>
   );
 }
 
