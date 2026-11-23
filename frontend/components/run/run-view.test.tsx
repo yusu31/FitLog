@@ -43,6 +43,7 @@ vi.mock('@/lib/auth-client', () => ({ authClient: { useSession: () => session } 
 
 const NOW = '2026-11-04T03:00:00.000Z';
 const POST = 'POST /api/records';
+const STATS_URL = 'GET /api/me/stats?date=2026-11-04';
 
 beforeEach(() => {
   search = '';
@@ -62,7 +63,14 @@ const min = () => screen.getByRole('textbox', { name: '時間（分）' });
 const sec = () => screen.getByRole('textbox', { name: '時間（秒）' });
 const save = () => screen.getByRole('button', { name: '保存する' });
 
+// 開始前の画面では入力欄は隠れている。「手入力で記録」を押して出す（もう出ているときは何もしない）
+async function openManual(user: ReturnType<typeof userEvent.setup>) {
+  const open = screen.queryByRole('button', { name: '手入力で記録' });
+  if (open) await user.click(open);
+}
+
 async function fill(user: ReturnType<typeof userEvent.setup>, k: string, m: string, s = '') {
+  await openManual(user);
   await user.clear(km());
   if (k) await user.type(km(), k);
   await user.clear(min());
@@ -104,10 +112,16 @@ describe('RunView（S-13 記録（ラン））', () => {
   });
 
   describe('入力', () => {
-    it('距離（km）と時間（分・秒）の欄がある。何も入れていないうちは保存できない', () => {
+    // D4: 開始前の画面は START が主役。手入力の欄と保存ボタンは「手入力で記録」を押すまで出さない
+    it('はじめは入力欄も保存ボタンも出さず、「手入力で記録」を押すと出る', async () => {
       installFakeApi({});
+      const user = userEvent.setup();
       renderWithQuery(<RunView />);
       expect(screen.getByRole('heading', { level: 1, name: 'ラン' })).toBeInTheDocument();
+      expect(screen.queryByRole('textbox', { name: '距離（km）' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '保存する' })).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: '手入力で記録' }));
+      expect(screen.queryByRole('button', { name: '手入力で記録' })).not.toBeInTheDocument();
       expect(km()).toHaveValue('');
       expect(min()).toHaveValue('');
       expect(sec()).toHaveValue('');
@@ -120,10 +134,18 @@ describe('RunView（S-13 記録（ラン））', () => {
       expect(screen.getByText(/ラン用のアプリ.*書き出し/)).toBeInTheDocument();
     });
 
-    it('地図は、この画面に置かない（範囲外。GPX を選ぶ入口だけある）', () => {
+    it('ルートの地図は、取り込む前には出さない（GPX を選ぶ入口と、日本縦断の帯だけある）', () => {
       installFakeApi({});
       renderWithQuery(<RunView />);
-      expect(screen.queryByText(/地図/)).not.toBeInTheDocument();
+      expect(screen.queryByTestId('route-preview')).not.toBeInTheDocument();
+      expect(screen.getByTestId('trek-strip')).toBeInTheDocument();
+    });
+
+    it('日本縦断の帯に、いまの場所と次の地点までを出す（累計 160km → 鹿児島のあたり・次の熊本まで 10.0km）', async () => {
+      installFakeApi({ [STATS_URL]: { status: 200, body: { totalRunDistanceM: 160_000 } } });
+      renderWithQuery(<RunView />);
+      expect(await screen.findByText('次の熊本まで 10.0km')).toBeInTheDocument();
+      expect(screen.getByTestId('trek-strip')).toHaveTextContent('鹿児島のあたり');
     });
 
     // T-RUNP-04（U18）: 保存後の表示も 0.01km の桁まで（取り込み直後の 5.04 とそろう）
@@ -138,7 +160,6 @@ describe('RunView（S-13 記録（ラン））', () => {
 
     // T-RUNP-05（U6）: 保存前の累計と保存後の累計を比べて、日本縦断の前進を出す。累計が分からないとき（電波なしなど）は出さない
     describe('日本縦断の前進（U6）', () => {
-      const STATS_URL = 'GET /api/me/stats?date=2026-11-04';
       it('地点をまたいだら「◯◯に着きました」と次の地点までを出す', async () => {
         installFakeApi({ [POST]: { status: 201, body: { id: 'x' } }, [STATS_URL]: { status: 200, body: { totalRunDistanceM: 160_000 } } });
         const user = userEvent.setup();
@@ -163,7 +184,7 @@ describe('RunView（S-13 記録（ラン））', () => {
         installFakeApi({ [POST]: { status: 201, body: { id: 'x' } }, [STATS_URL]: { status: 200, body: { totalRunDistanceM: 160_000 } } });
         const user = userEvent.setup();
         renderWithQuery(<RunView />);
-        expect(screen.getByRole('link', { name: '日本縦断' })).toHaveAttribute('href', '/me/stats#japan-trek');
+        expect(screen.getByRole('link', { name: /日本縦断/ })).toHaveAttribute('href', '/me/stats#japan-trek');
         await waitFor(() => expect(calls).toContain(STATS_URL));
         await fill(user, '5', '30');
         await user.click(save());
@@ -185,6 +206,7 @@ describe('RunView（S-13 記録（ラン））', () => {
       installFakeApi({});
       const user = userEvent.setup();
       renderWithQuery(<RunView />);
+      await openManual(user);
       expect(screen.getByTestId('pace')).toHaveTextContent('--');
       await fill(user, '5.2', '32', '10');
       expect(screen.getByTestId('pace')).toHaveTextContent(`6'11"/km`);
@@ -383,6 +405,7 @@ describe('RunView（S-13 記録（ラン））', () => {
       installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
       const user = userEvent.setup();
       renderWithQuery(<RunView />);
+      await openManual(user);
       await user.type(km(), '3');
       await pick(user, fileOf(text));
 

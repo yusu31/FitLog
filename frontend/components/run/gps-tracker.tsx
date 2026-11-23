@@ -172,21 +172,22 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
 
   if (phase === 'idle') {
     return (
-      <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={onStart}
-          className="fl-slab flex min-h-12 items-center gap-2 px-4 py-3 text-base font-extrabold text-brand outline-none focus-visible:border-teal"
-        >
-          <Navigation aria-hidden className="size-5 shrink-0" />
-          <span>{GPS_MESSAGES.start}</span>
-        </button>
-        {!isNativeApp() && (
-          <p role="note" aria-label="走る前に" className="rounded-fl bg-gold-light px-4 py-3 text-sm font-extrabold text-fg">
-            {GPS_MESSAGES.webNotice}
-          </p>
-        )}
-        <p className="text-note text-fg-muted">{GPS_MESSAGES.hint}</p>
+      <div className="flex flex-col gap-3">
+        {/* 開始前の画面（D4）。地図に見立てた背景の真ん中に特大の START。今いる場所の地図ではなく、飾りの絵 */}
+        <div className="relative grid h-72 place-items-center overflow-hidden rounded-fl bg-[#e8efe9]">
+          <StartBackdrop />
+          <button
+            type="button"
+            onClick={onStart}
+            className="relative grid size-36 place-items-center rounded-full border-4 border-white bg-gold text-fg shadow-[0_7px_0_var(--color-gold-dark),0_10px_24px_-6px_rgb(0_0_0/0.35)] outline-none focus-visible:ring-4 focus-visible:ring-teal/60 active:translate-y-0.5"
+          >
+            <span aria-hidden className="fl-num text-4xl tracking-wider">
+              START
+            </span>
+            <span className="sr-only">START（{GPS_MESSAGES.start}）</span>
+            <Navigation aria-hidden className="absolute bottom-5 size-4 text-fg/70" />
+          </button>
+        </div>
         {problem && <ProblemNote problem={problem} />}
       </div>
     );
@@ -233,6 +234,28 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
         </button>
       )}
     </section>
+  );
+}
+
+// 地図に見立てた飾りの背景（川・道・公園）。位置は表さない
+function StartBackdrop() {
+  return (
+    <svg aria-hidden viewBox="0 0 282 290" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full">
+      <rect width="282" height="290" fill="#e8efe9" />
+      <path d="M-10 210 C60 190 90 240 170 220 S260 180 300 196" stroke="#cfe6f0" strokeWidth="26" fill="none" />
+      <g stroke="#ffffff" strokeLinecap="round" fill="none">
+        <path d="M-10 80 L300 120" strokeWidth="10" />
+        <path d="M90 -10 L130 300" strokeWidth="12" />
+        <path d="M200 -10 L180 300" strokeWidth="7" />
+        <path d="M-10 150 L300 160" strokeWidth="6" />
+        <path d="M30 -10 L60 300" strokeWidth="5" />
+      </g>
+      <g fill="#d6e6d4">
+        <rect x="140" y="20" width="46" height="40" rx="6" />
+        <rect x="18" y="96" width="60" height="44" rx="6" />
+        <rect x="206" y="128" width="60" height="22" rx="6" />
+      </g>
+    </svg>
   );
 }
 
