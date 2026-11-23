@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: process.env.NODE_ENV === "development",
   // 画像の最適化はサーバーが要る。静的書き出しでは使えないので切る。
   images: { unoptimized: true },
+  // 設定の「版」に出す。公開の手順で SW_REVISION に git のコミットを渡す（無ければ dev）
+  env: { NEXT_PUBLIC_APP_REVISION: process.env.SW_REVISION ?? "dev" },
   // 開発中だけ出る Next.js の印（左下）が、下のタブに重なるので右上へ
   devIndicators: { position: "top-right" },
   // 雛形の cacheComponents・partialPrefetching は output: "export" と併用できない

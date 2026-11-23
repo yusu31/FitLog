@@ -8,6 +8,7 @@ import { Avatar } from '@/components/fitlog/avatar';
 import { Sprite } from '@/components/fitlog/sprite';
 import { getListNotificationsQueryKey, markNotificationsSeen, useListNotifications } from '@/lib/api/generated';
 import { describeNotification, formatNotificationTime, notificationHref } from '@/lib/notifications';
+import { usePreferences } from '@/lib/use-preferences';
 
 // S-37 お知らせ（D7-3）。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった を新しい順に。
 // 開いて一覧が読めたら「見た」を送る。ベルの数字は0にするが、この画面では「どれが新しかったか」の点を残す
@@ -15,6 +16,9 @@ export function NotificationsView() {
   const { data, isPending, isError } = useListNotifications();
   const ready = data?.status === 200;
   useMarkSeen(ready);
+  const { notify } = usePreferences();
+  // 設定でオフにした種類は出さない
+  const items = data?.status === 200 ? data.data.items.filter((n) => notify[n.kind]) : [];
 
   return (
     <div className="relative">
@@ -26,14 +30,14 @@ export function NotificationsView() {
           <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
             お知らせを読み込めませんでした。電波の良い所でもう一度ためしてください
           </p>
-        ) : data.data.items.length === 0 ? (
+        ) : items.length === 0 ? (
           <section className="flex flex-col items-center gap-1 pt-6">
             <Sprite pose="idle" size={96} />
             <p className="text-base font-extrabold">まだ おしらせは ありません</p>
           </section>
         ) : (
           <ul aria-label="お知らせの一覧" className="space-y-2">
-            {data.data.items.map((n) => (
+            {items.map((n) => (
               <li key={n.id}>
                 <Link
                   href={notificationHref(n)}
