@@ -1,8 +1,9 @@
 'use client';
 
-import { Navigation, Pause, Play, Square } from 'lucide-react';
+import { CircleHelp, Navigation, Pause, Play, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GpxRun } from '@/lib/gpx/parse-gpx';
+import { gpsDeviceOf, markNoticeSeen, readNoticeSeen, type GpsDevice } from '@/lib/gps/device';
 import { canWatchLocation, isNativeApp, startLocationWatch, type StopWatch } from '@/lib/gps/source';
 import { addFix, breakSegment, emptyTrack, finishTrack, movingMs, type FinishError, type TrackState } from '@/lib/gps/track';
 import { GPS_MESSAGES } from '@/lib/messages';
@@ -26,6 +27,7 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
   const [track, setTrack] = useState<TrackState>(emptyTrack);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [wakeLockMissing, setWakeLockMissing] = useState(false);
+  const [notice, setNotice] = useState(false); // START 直後の案内（端末ごと・はじめの1回）。「？」でも開く
   const [now, setNow] = useState(() => Date.now());
 
   // 開始時刻・一時停止の合計・今の一時停止の始まり（ms）。画面に出す時間の計算に使うので state で持つ
@@ -117,6 +119,10 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
       setProblem('unsupported');
       return;
     }
+    // 画面を消すと止まる端末（アプリ以外）には、はじめの1回だけ案内を出す。出したら覚えて、次からは出さない
+    const showNotice = currentDevice() !== 'app' && !readNoticeSeen();
+    setNotice(showNotice);
+    if (showNotice) markNoticeSeen();
     setProblem(null);
     setWakeLockMissing(false);
     setTrack(emptyTrack());
@@ -151,6 +157,10 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
     releaseWakeLock();
     setProblem(null);
     changePhase('idle');
+  }
+
+  function closeNotice() {
+    setNotice(false);
   }
 
   function onStop() {
@@ -213,10 +223,22 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
           {GPS_MESSAGES.searching}
         </p>
       )}
-      {phase === 'running' && (
+      {/* 常時の黄色の注意はやめた。画面を点けたままにできないときだけ、本当の問題として出す */}
+      {phase === 'running' && wakeLockMissing && !isNativeApp() && (
         <p role="note" aria-label="画面について" className="rounded-fl bg-gold-light px-4 py-3 text-sm font-extrabold text-fg">
-          {isNativeApp() ? GPS_MESSAGES.appBackground : wakeLockMissing ? GPS_MESSAGES.noWakeLock : GPS_MESSAGES.keepScreenOn}
+          {GPS_MESSAGES.noWakeLock}
         </p>
+      )}
+      {notice && <RunNotice device={currentDevice()} onClose={closeNotice} />}
+      {!notice && currentDevice() !== 'app' && (
+        <button
+          type="button"
+          onClick={() => setNotice(true)}
+          className="flex min-h-11 items-center gap-1 self-start rounded-fl px-2 text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        >
+          <CircleHelp aria-hidden className="size-4" />
+          {GPS_MESSAGES.noticeHelp}
+        </button>
       )}
       {problem && <ProblemNote problem={problem} />}
 
@@ -233,6 +255,28 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
           記録をやめる
         </button>
       )}
+    </section>
+  );
+}
+
+function currentDevice(): GpsDevice {
+  return gpsDeviceOf(navigator.userAgent, isNativeApp(), navigator.maxTouchPoints);
+}
+
+// START 直後の案内。画面の上をふさがない（「終了」を押せるまま）よう、記録中の画面の中に置くカード
+function RunNotice({ device, onClose }: { device: GpsDevice; onClose: () => void }) {
+  if (device === 'app') return null;
+  return (
+    <section aria-label="走る前に" className="rounded-fl bg-gold-light px-4 py-3 text-fg">
+      <p className="text-sm font-extrabold">{GPS_MESSAGES.noticeTitle}</p>
+      <p className="mt-1 text-sm font-bold">{device === 'ios-web' ? GPS_MESSAGES.noticeIosWeb : GPS_MESSAGES.noticeAndroidWeb}</p>
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-2 min-h-11 rounded-fl bg-fg px-5 text-sm font-extrabold text-white outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+      >
+        {GPS_MESSAGES.noticeOk}
+      </button>
     </section>
   );
 }
