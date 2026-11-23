@@ -61,7 +61,9 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | メソッド | パス | 説明 | 備考 |
 |----------|------|------|------|
 | GET | `/me` | 自分のユーザー情報（名前・キャラの設定・入っているグループ） | |
-| PATCH | `/me` | 名前・キャラの設定（`avatar`）を変更する | F-32 |
+| PATCH | `/me` | 名前・キャラの設定（`avatar`）を変更する | F-32（名前は better-auth の `/update-user`。キャラは下の `/avatar`） |
+| GET | `/avatar` | 自分のキャラの設定（`body`・`hair`・`hairColor`・`shirtColor`・`pantsColor`・`accessory`） | F-32（D6 PR-3）。小物の無い古い行は `accessory: none` にそろえて返す |
+| PUT | `/avatar` | 自分のキャラの設定を保存する（置き換え） | F-32（D6 PR-3）。6項目とも決まった値のどれか（`accessory` だけ省略可＝none）。選べない値は 400 `VALIDATION_ERROR`。仲間のキャラは仲間の API（グループ・フィード・お知らせ）の `avatar` に入る |
 
 ### グループ（F-02）
 

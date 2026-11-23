@@ -9,6 +9,7 @@ const PAGES: [path: string, title: string][] = [
   ['friends', '仲間'],
   ['me', '自分'],
   ['me/stats', '記録のまとめ'],
+  ['me/chara', 'キャラを変える'],
   ['exercises', '種目を選ぶ'],
   ['record', '筋トレを記録'],
   ['record-detail', '記録の詳細'],

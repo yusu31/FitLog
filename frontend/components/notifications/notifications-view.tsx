@@ -43,7 +43,7 @@ export function NotificationsView() {
                   href={notificationHref(n)}
                   className="fl-slab flex min-h-14 items-center gap-3 py-2 pr-3 pl-2.5 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
                 >
-                  <Avatar shirtColor={n.actor.avatar.shirtColor} size={44} />
+                  <Avatar avatar={n.actor.avatar} size={44} />
                   <span className="min-w-0 flex-1 leading-snug">
                     <span className="block text-[15px] font-extrabold">{describeNotification(n)}</span>
                     <span className="block text-note font-bold text-fg-subtle">{formatNotificationTime(String(n.at))}</span>

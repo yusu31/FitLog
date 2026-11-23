@@ -3,6 +3,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { createAuth } from './auth/auth.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
+import { AvatarModule } from './avatar/avatar.module.js';
 import { BodyModule } from './body/body.module.js';
 import { DB, Db, DbModule } from './db/db.module.js';
 import { ExportModule } from './export/export.module.js';
@@ -23,6 +24,7 @@ import { VideosModule } from './videos/videos.module.js';
     ExportModule,
     RecordsModule,
     RoutinesModule,
+    AvatarModule,
     BodyModule,
     FeedModule,
     NotificationsModule,

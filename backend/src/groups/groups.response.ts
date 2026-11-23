@@ -28,6 +28,9 @@ export class AvatarResponse {
 
   @ApiProperty({ example: 'navy' })
   pantsColor!: string;
+
+  @ApiProperty({ example: 'none', required: false, description: '小物。古い行には無い（無ければ none として扱う）' })
+  accessory?: string;
 }
 
 export class MemberResponse {

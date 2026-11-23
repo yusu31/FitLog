@@ -20,3 +20,10 @@
 | legs/shorts/shorts/thin | OGA-BY 3.0 | ElizaWy, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) | 7 |
 | torso/clothes/shortsleeve/tshirt/female | OGA-BY 3.0 | ElizaWy, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) | 7 |
 | torso/clothes/shortsleeve/tshirt/male | OGA-BY 3.0 | ElizaWy, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike) | 7 |
+| arms/wrists/cuffs/male | OGA-BY 3.0 | bluecarrot16, JaidynReiman | 5 |
+| arms/wrists/cuffs/thin | OGA-BY 3.0 | bluecarrot16, JaidynReiman | 5 |
+| facial/glasses/halfmoon/adult | OGA-BY 3.0 | ElizaWy | 5 |
+| hat/cloth/bandana/adult | OGA-BY 3.0 | Matthew Krohn (makrohn), JaidynReiman, Marcel van de Steeg (MadMarcel) | 5 |
+| hat/cloth/bandana2/adult | OGA-BY 3.0 | Napsio (Vitruvian Studio), JaidynReiman, Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Marcel van de Steeg (MadMarcel) | 5 |
+| hat/headband/thick/adult | OGA-BY 3.0+ | JaidynReiman | 5 |
+| hat/headband/tied/adult | OGA-BY 3.0 | Nila122 | 5 |
