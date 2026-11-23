@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { cn } from 'cn';
 import { BodyFigure } from '@/components/me/body-figure';
 import { StampMedal } from '@/components/me/stamp-medal';
-import { Sprite } from '@/components/fitlog/sprite';
+import { MyChara } from '@/components/fitlog/my-chara';
 import type { BodyPart, StampKey } from '@/lib/api/generated';
 import { BODY_PART_LABEL, BODY_PART_ORDER } from '@/lib/body-parts';
 import { levelsOf } from '@/lib/heatmap';
@@ -139,7 +139,7 @@ function CheerSprite({ pose }: { pose: 'pb' | 'cheer' }) {
   if (failed) return null;
   return (
     <span onErrorCapture={() => setFailed(true)} className="shrink-0">
-      <Sprite pose={pose} size={64} />
+      <MyChara pose={pose} size={64} />
     </span>
   );
 }

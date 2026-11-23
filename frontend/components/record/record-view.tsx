@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
-import { Sprite } from '@/components/fitlog/sprite';
+import { MyChara } from '@/components/fitlog/my-chara';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
 import { ListRecordsKind, getCalories, getStats, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
@@ -297,7 +297,7 @@ export function RecordView() {
             style={{ width: `${Math.max(pct, 6)}%` }}
           />
         </div>
-        <Sprite pose="train" size={64} />
+        <MyChara pose="train" size={64} />
       </header>
       <p data-testid="set-progress" className="px-4 pt-1 text-note font-bold text-fg-muted">
         {formatSetProgress(done, previous?.previous?.sets.length ?? 0)}

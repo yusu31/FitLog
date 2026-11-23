@@ -36,7 +36,10 @@ export function disposeClients(): void {
 
 export function renderWithQuery(ui: ReactElement) {
   const client = trackClient(new QueryClient({ defaultOptions: { queries: { retry: false } } }));
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  const wrap = (el: ReactElement) => <QueryClientProvider client={client}>{el}</QueryClientProvider>;
+  const result = render(wrap(ui));
+  // rerender も同じ QueryClientProvider で包む（外すと useQuery が QueryClient を見つけられない）
+  return { ...result, rerender: (el: ReactElement) => result.rerender(wrap(el)) };
 }
 
 type Status = 'rec' | 'rest' | 'none';

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FullScreen } from '@/components/fitlog/full-screen';
-import { Sprite } from '@/components/fitlog/sprite';
+import { MyChara } from '@/components/fitlog/my-chara';
 import { REST_MESSAGES } from '@/lib/messages';
 import { useRequireSession } from '@/lib/use-require-session';
 
@@ -47,7 +47,7 @@ function RelaxFigure() {
   return (
     <div data-testid="rest-figure" aria-hidden="true" className="relative mb-2 leading-none">
       <span className="absolute bottom-2 left-1/2 -z-0 h-10 w-56 -translate-x-1/2 rounded-[50%] bg-[#ece8fd]" />
-      <Sprite pose="relax" size={192} className="relative" />
+      <MyChara pose="relax" size={192} className="relative" />
     </div>
   );
 }
