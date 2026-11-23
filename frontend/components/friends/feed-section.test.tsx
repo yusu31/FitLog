@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
+import { DEFAULT_PREFS, PREFS_KEY, savePrefs } from '@/lib/preferences';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { mediaState } from './feed-media';
 import { FeedSection } from './feed-section';
@@ -615,6 +616,23 @@ describe('足跡カードの動画（BeReal 風。D7-6 PR-2）', () => {
     const media = await screen.findByTestId('feed-media');
     expect(within(media).getByTestId('number-badge')).toHaveTextContent('スクワット');
     expect(await within(media).findByRole('button', { name: 'はなこのスクワットの動画を再生する' })).toBeInTheDocument();
+  });
+
+  it('設定で自動再生をオンにすると、動画に autoplay が付く（はじめは付かない）', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [videoItem()] }) }];
+    replies['GET /api/videos/week'] = [week(true)];
+    replies['GET /api/videos/v1/url'] = [{ status: 200, body: { url: 'https://s3.example/videos/v1?sig=x', expiresInSeconds: 300 } }];
+    savePrefs({ ...DEFAULT_PREFS, autoplayVideo: true });
+    try {
+      renderFeed();
+      const media = await screen.findByTestId('feed-media');
+      await within(media).findByRole('button', { name: 'はなこのスクワットの動画を再生する' });
+      expect(media.querySelector('video')).toHaveProperty('autoplay', true);
+    } finally {
+      localStorage.removeItem(PREFS_KEY);
+      savePrefs(DEFAULT_PREFS);
+      localStorage.removeItem(PREFS_KEY);
+    }
   });
 
   it('今週まだ撮っていないとき、仲間の動画はぼかして「1本撮ると見られます」。動画の URL は取りに行かない', async () => {

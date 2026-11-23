@@ -4,6 +4,7 @@ import { Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useListNotifications } from '@/lib/api/generated';
 import { badgeText } from '@/lib/notifications';
+import { usePreferences } from '@/lib/use-preferences';
 
 // 右上のベル（D7-3）。押すとお知らせの一覧（/notifications）。未読があれば数字を出す。
 // 1分ごとと、画面に戻ったときに取り直す（タブの新着の印と同じ）。失敗しても数字を出さないだけで、ベルは使える。
@@ -12,7 +13,9 @@ export const NOTIFICATIONS_REFRESH_MS = 60_000;
 
 export function NotificationBell() {
   const { data } = useListNotifications({ query: { staleTime: NOTIFICATIONS_REFRESH_MS, refetchInterval: NOTIFICATIONS_REFRESH_MS, retry: false } });
-  const count = data?.status === 200 ? data.data.unreadCount : 0;
+  const { notify } = usePreferences();
+  // 設定でオフにした種類は数えない（一覧と同じ）
+  const count = data?.status === 200 ? data.data.items.filter((n) => n.unread && notify[n.kind]).length : 0;
   return (
     <Link
       href="/notifications"

@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { NotificationBell } from '@/components/fitlog/notification-bell';
+import { DEFAULT_PREFS, PREFS_KEY, savePrefs } from '@/lib/preferences';
 import { NotificationsView } from './notifications-view';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => '/notifications' }));
@@ -40,7 +41,12 @@ beforeEach(() => {
     }),
   );
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  localStorage.removeItem(PREFS_KEY);
+  savePrefs(DEFAULT_PREFS);
+  localStorage.removeItem(PREFS_KEY);
+});
 
 const renderWith = (ui: React.ReactElement) => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -48,6 +54,14 @@ const renderWith = (ui: React.ReactElement) => {
 };
 
 describe('NotificationsView（S-35 お知らせ）', () => {
+  it('設定でオフにした種類は一覧に出さない', async () => {
+    savePrefs({ ...DEFAULT_PREFS, notify: { ...DEFAULT_PREFS.notify, comment: false } });
+    list = { status: 200, body: { unreadCount: 2, items: [item({ id: 'comment:2', kind: 'comment', stampKey: null }), item({ id: 'friend_joined:4', kind: 'friend_joined', recordId: null, recordKind: null, stampKey: null })] } };
+    renderWith(<NotificationsView />);
+    expect(await screen.findByText('はなこさんが仲間に加わりました')).toBeInTheDocument();
+    expect(screen.queryByText('はなこさんがコメントしました')).not.toBeInTheDocument();
+  });
+
   it('新しい順に、文・時刻・未読の点・リンクを出し、読めたら「見た」を1回だけ送る', async () => {
     list = {
       status: 200,
@@ -91,7 +105,7 @@ describe('NotificationsView（S-35 お知らせ）', () => {
 
 describe('NotificationBell（右上のベル）', () => {
   it('未読があれば数字と読み上げの名前を出す。0件なら数字は出さない', async () => {
-    list = { status: 200, body: { unreadCount: 3, items: [] } };
+    list = { status: 200, body: { unreadCount: 3, items: [item({ id: 'stamp:1' }), item({ id: 'stamp:2' }), item({ id: 'stamp:3' })] } };
     const { unmount } = renderWith(<NotificationBell />);
     const link = await screen.findByRole('link', { name: 'お知らせ（未読3件）' });
     expect(link).toHaveAttribute('href', '/notifications');
@@ -105,8 +119,15 @@ describe('NotificationBell（右上のベル）', () => {
   });
 
   it('10件以上は「9+」', async () => {
-    list = { status: 200, body: { unreadCount: 12, items: [] } };
+    list = { status: 200, body: { unreadCount: 12, items: Array.from({ length: 12 }, (_, i) => item({ id: `stamp:${i}` })) } };
     renderWith(<NotificationBell />);
     expect(await screen.findByTestId('notification-badge')).toHaveTextContent('9+');
+  });
+
+  it('設定でオフにした種類は数えない', async () => {
+    savePrefs({ ...DEFAULT_PREFS, notify: { ...DEFAULT_PREFS.notify, stamp: false } });
+    list = { status: 200, body: { unreadCount: 2, items: [item({ id: 'stamp:1' }), item({ id: 'comment:2', kind: 'comment', stampKey: null })] } };
+    renderWith(<NotificationBell />);
+    expect(await screen.findByRole('link', { name: 'お知らせ（未読1件）' })).toBeInTheDocument();
   });
 });

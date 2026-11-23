@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { Avatar } from '@/components/fitlog/avatar';
 import { VIDEO_GRID_MESSAGES } from '@/components/video-grid/messages';
 import { useGetCurrentGroup, useGetVideosThisWeek, useGetVideoUrl, type FeedItem, type FeedStamp } from '@/lib/api/generated';
+import { usePreferences } from '@/lib/use-preferences';
 
 // 足跡カードの「写真の面」（BeReal 風。D7-6 PR-2・判断ログ 65）。
 // 動画があるときは縦 3:4 の枠を幅いっぱいに出し、角に記録の数字の札、右下に押した人の顔と数を重ねる。動画が無いときは数字の札と反応の行だけ（MediaBadges を単独で使う）。
@@ -99,6 +100,7 @@ function OpenVideo({ videoId, label }: { videoId: string; label: string }) {
   const [failed, setFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
+  const { autoplayVideo } = usePreferences();
   const src = data?.status === 200 ? data.data.url : undefined;
   const playable = Boolean(src) && !failed;
 
@@ -120,8 +122,9 @@ function OpenVideo({ videoId, label }: { videoId: string; label: string }) {
         src={`${src}#t=0.1`}
         muted
         loop
+        autoPlay={autoplayVideo}
         playsInline
-        preload="metadata"
+        preload={autoplayVideo ? 'auto' : 'metadata'}
         aria-hidden="true"
         tabIndex={-1}
         onPlay={() => setPlaying(true)}

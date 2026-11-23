@@ -11,6 +11,7 @@ import { AddToHome } from './add-to-home';
 import { DeleteAccount } from './delete-account';
 import { ExportRecords } from './export-records';
 import { InlineNameEdit } from './inline-name-edit';
+import { PreferencesSection } from './preferences-section';
 import { readTheme, saveTheme, subscribeTheme, THEME_OPTIONS, type ThemeMode } from '@/lib/theme';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { authClient } from '@/lib/auth-client';
@@ -125,6 +126,8 @@ export function SettingsView() {
             }}
           />
         </section>
+
+        <PreferencesSection />
 
         <AddToHome />
 
