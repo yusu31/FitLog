@@ -3,7 +3,7 @@
 import { Settings } from 'lucide-react';
 import Link from 'next/link';
 import { PageTitle } from '@/components/fitlog/app-shell';
-import { Sprite } from '@/components/fitlog/sprite';
+import { MyChara } from '@/components/fitlog/my-chara';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { InvitePanel } from '@/components/settings/invite-panel';
 import { GROUP_MESSAGES } from '@/lib/messages';
@@ -22,7 +22,7 @@ export function FriendsView() {
     <div className="relative">
       <PageTitle>なかま</PageTitle>
       {/* 自分1人のときは、中央にキャラが出るので右上は隠す（2体並べない） */}
-      {!alone && <Sprite pose="idle" size={72} className="absolute top-0 right-4" />}
+      {!alone && <MyChara pose="idle" size={72} className="absolute top-0 right-4" />}
       {isPending ? (
         <div aria-busy="true" aria-label="読み込み中" className="mx-4 mt-3 h-40 animate-pulse rounded-fl bg-canvas" />
       ) : isError || !data || (data.status !== 200 && data.status !== 404) ? (
@@ -36,7 +36,7 @@ export function FriendsView() {
           {alone ? (
             /* 自分1人の間は、帯も空の統計も出さず、キャラの絵と次の一手「仲間を招待」だけ（N6・D7-5） */
             <section className="flex flex-col items-center gap-1 pt-2">
-              <Sprite pose="welcome" size={96} />
+              <MyChara pose="welcome" size={96} />
               <p className="text-base font-extrabold">{FRIENDS_TEXT.aloneTitle}</p>
               <div className="w-full pt-2">
                 <InvitePanel full={false} />

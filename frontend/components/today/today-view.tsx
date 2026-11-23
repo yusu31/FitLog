@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from 'cn';
-import { Sprite } from '@/components/fitlog/sprite';
+import { MyChara } from '@/components/fitlog/my-chara';
 import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
@@ -121,7 +121,7 @@ export function TodayView() {
           <>
             {/* キャラはつぎにやることの右上に立つ（足が少しカードに重なる）。飾りなので読み上げない */}
             <div className="relative z-10 -mb-7 flex justify-end pr-3">
-              <Sprite
+              <MyChara
                 pose={todayPose({ restToday: todayStatus === 'rest', allDone: menu.allDone, welcomeBack, now: new Date() })}
                 size={112}
               />
@@ -244,7 +244,7 @@ function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: ()
         className="fl-slab relative m-4 w-full max-w-[398px] space-y-3 px-5 pt-6 pb-5 text-center shadow-lg"
       >
         <div className="flex justify-center">
-          <Sprite pose={finished.bestCount > 0 ? 'pb' : 'cheer'} size={144} />
+          <MyChara pose={finished.bestCount > 0 ? 'pb' : 'cheer'} size={144} />
         </div>
         <h2 className="text-2xl font-extrabold">{WORKOUT_END_MESSAGES.thanks}</h2>
         <p className="fl-num text-3xl">{WORKOUT_END_MESSAGES.count(finished.exerciseCount, finished.setCount)}</p>

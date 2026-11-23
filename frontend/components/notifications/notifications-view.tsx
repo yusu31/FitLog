@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { PageTitle } from '@/components/fitlog/app-shell';
 import { Avatar } from '@/components/fitlog/avatar';
-import { Sprite } from '@/components/fitlog/sprite';
+import { MyChara } from '@/components/fitlog/my-chara';
 import { getListNotificationsQueryKey, markNotificationsSeen, useListNotifications } from '@/lib/api/generated';
 import { describeNotification, formatNotificationTime, notificationHref } from '@/lib/notifications';
 import { usePreferences } from '@/lib/use-preferences';
@@ -32,7 +32,7 @@ export function NotificationsView() {
           </p>
         ) : items.length === 0 ? (
           <section className="flex flex-col items-center gap-1 pt-6">
-            <Sprite pose="idle" size={96} />
+            <MyChara pose="idle" size={96} />
             <p className="text-base font-extrabold">まだ おしらせは ありません</p>
           </section>
         ) : (

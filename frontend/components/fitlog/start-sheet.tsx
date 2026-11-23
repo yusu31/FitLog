@@ -12,7 +12,7 @@ import { Dumbbell, Footprints, Moon } from "lucide-react";
 import { setFilmFirst } from "@/lib/film-first";
 import { canRecordVideo } from "@/components/record/video-recorder";
 import { ThickButton } from "./thick-button";
-import { Sprite } from "./sprite";
+import { MyChara } from "./my-chara";
 
 const noSubscribe = () => () => {};
 
@@ -85,7 +85,7 @@ export function StartSheet({
         className="w-full max-w-[430px] space-y-4 rounded-t-3xl bg-surface p-5 pb-[max(20px,env(safe-area-inset-bottom))]"
       >
         <div className="flex items-end gap-3">
-          <Sprite pose="ready" size={72} />
+          <MyChara pose="ready" size={72} />
           <div className="rounded-2xl bg-teal-light px-4 py-3">
             <h2 id={titleId} className="text-base font-extrabold text-brand">
               始めるぞー！
