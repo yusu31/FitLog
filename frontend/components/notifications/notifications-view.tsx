@@ -10,7 +10,7 @@ import { getListNotificationsQueryKey, markNotificationsSeen, useListNotificatio
 import { describeNotification, formatNotificationTime, notificationHref } from '@/lib/notifications';
 import { usePreferences } from '@/lib/use-preferences';
 
-// S-37 お知らせ（D7-3）。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった を新しい順に。
+// S-37 通知（D7-3）。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった を新しい順に。
 // 開いて一覧が読めたら「見た」を送る。ベルの数字は0にするが、この画面では「どれが新しかったか」の点を残す
 export function NotificationsView() {
   const { data, isPending, isError } = useListNotifications();
@@ -28,7 +28,7 @@ export function NotificationsView() {
           <div aria-busy="true" aria-label="読み込み中" className="h-40 animate-pulse rounded-fl bg-canvas" />
         ) : isError || !data || data.status !== 200 ? (
           <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
-            お知らせを読み込めませんでした。電波の良い所でもう一度ためしてください
+            通知を読み込めませんでした。電波の良い所でもう一度ためしてください
           </p>
         ) : items.length === 0 ? (
           <section className="flex flex-col items-center gap-1 pt-6">
@@ -36,7 +36,7 @@ export function NotificationsView() {
             <p className="text-base font-extrabold">まだ おしらせは ありません</p>
           </section>
         ) : (
-          <ul aria-label="お知らせの一覧" className="space-y-2">
+          <ul aria-label="通知の一覧" className="space-y-2">
             {items.map((n) => (
               <li key={n.id}>
                 <Link

@@ -53,7 +53,7 @@ const renderWith = (ui: React.ReactElement) => {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 };
 
-describe('NotificationsView（S-35 お知らせ）', () => {
+describe('NotificationsView（S-35 通知）', () => {
   it('設定でオフにした種類は一覧に出さない', async () => {
     savePrefs({ ...DEFAULT_PREFS, notify: { ...DEFAULT_PREFS.notify, comment: false } });
     list = { status: 200, body: { unreadCount: 2, items: [item({ id: 'comment:2', kind: 'comment', stampKey: null }), item({ id: 'friend_joined:4', kind: 'friend_joined', recordId: null, recordKind: null, stampKey: null })] } };
@@ -74,7 +74,7 @@ describe('NotificationsView（S-35 お知らせ）', () => {
       },
     };
     renderWith(<NotificationsView />);
-    const ul = await screen.findByRole('list', { name: 'お知らせの一覧' });
+    const ul = await screen.findByRole('list', { name: '通知の一覧' });
     const [first, second] = within(ul).getAllByRole('link');
     expect(first).toHaveTextContent('はなこさんがコメントしました');
     expect(first).toHaveTextContent('11/21 12:05');
@@ -88,17 +88,17 @@ describe('NotificationsView（S-35 お知らせ）', () => {
     expect(within(first).getByTestId('unread-dot')).toBeInTheDocument();
   });
 
-  it('お知らせが無いときは、キャラの絵と一言だけ', async () => {
+  it('通知が無いときは、キャラの絵と一言だけ', async () => {
     list = { status: 200, body: { unreadCount: 0, items: [] } };
     renderWith(<NotificationsView />);
     expect(await screen.findByText('まだ おしらせは ありません')).toBeInTheDocument();
-    expect(screen.queryByRole('list', { name: 'お知らせの一覧' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: '通知の一覧' })).not.toBeInTheDocument();
   });
 
   it('読み込みに失敗したら、案内を出し、「見た」は送らない', async () => {
     list = { status: 500, body: { code: 'INTERNAL', message: 'x' } };
     renderWith(<NotificationsView />);
-    expect(await screen.findByRole('alert')).toHaveTextContent('お知らせを読み込めませんでした');
+    expect(await screen.findByRole('alert')).toHaveTextContent('通知を読み込めませんでした');
     expect(calls).not.toContain('POST /api/notifications/seen');
   });
 });
@@ -107,14 +107,14 @@ describe('NotificationBell（右上のベル）', () => {
   it('未読があれば数字と読み上げの名前を出す。0件なら数字は出さない', async () => {
     list = { status: 200, body: { unreadCount: 3, items: [item({ id: 'stamp:1' }), item({ id: 'stamp:2' }), item({ id: 'stamp:3' })] } };
     const { unmount } = renderWith(<NotificationBell />);
-    const link = await screen.findByRole('link', { name: 'お知らせ（未読3件）' });
+    const link = await screen.findByRole('link', { name: '通知（未読3件）' });
     expect(link).toHaveAttribute('href', '/notifications');
     expect(screen.getByTestId('notification-badge')).toHaveTextContent('3');
     unmount();
 
     list = { status: 200, body: { unreadCount: 0, items: [] } };
     renderWith(<NotificationBell />);
-    expect(await screen.findByRole('link', { name: 'お知らせ' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: '通知' })).toBeInTheDocument();
     expect(screen.queryByTestId('notification-badge')).not.toBeInTheDocument();
   });
 
@@ -128,6 +128,6 @@ describe('NotificationBell（右上のベル）', () => {
     savePrefs({ ...DEFAULT_PREFS, notify: { ...DEFAULT_PREFS.notify, stamp: false } });
     list = { status: 200, body: { unreadCount: 2, items: [item({ id: 'stamp:1' }), item({ id: 'comment:2', kind: 'comment', stampKey: null })] } };
     renderWith(<NotificationBell />);
-    expect(await screen.findByRole('link', { name: 'お知らせ（未読1件）' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: '通知（未読1件）' })).toBeInTheDocument();
   });
 });

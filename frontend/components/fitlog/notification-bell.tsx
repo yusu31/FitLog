@@ -6,7 +6,7 @@ import { useListNotifications } from '@/lib/api/generated';
 import { badgeText } from '@/lib/notifications';
 import { usePreferences } from '@/lib/use-preferences';
 
-// 右上のベル（D7-3）。押すとお知らせの一覧（/notifications）。未読があれば数字を出す。
+// 右上のベル（D7-3）。押すと通知の一覧（/notifications）。未読があれば数字を出す。
 // 1分ごとと、画面に戻ったときに取り直す（タブの新着の印と同じ）。失敗しても数字を出さないだけで、ベルは使える。
 // マークだけで分かるものは枠なし（D0 の決定 15）。数字のバッジは枠の外に重ねる
 export const NOTIFICATIONS_REFRESH_MS = 60_000;
@@ -19,7 +19,7 @@ export function NotificationBell() {
   return (
     <Link
       href="/notifications"
-      aria-label={count > 0 ? `お知らせ（未読${count}件）` : 'お知らせ'}
+      aria-label={count > 0 ? `通知（未読${count}件）` : '通知'}
       className="relative flex size-11 items-center justify-center rounded-full text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
     >
       <Bell aria-hidden className="size-6" />

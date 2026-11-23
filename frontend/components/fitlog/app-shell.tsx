@@ -44,8 +44,9 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
             <WakingNote />
           </main>
         )}
-        <TabBar signedIn={Boolean(session)} />
       </div>
+      {/* メニューは3列の行の直下に置く（中央の列の中だと縦に積まれて中身が下へ押し出される）。スマホでは fixed なので位置は変わらない */}
+      <TabBar signedIn={Boolean(session)} />
       {session && <SideFriends />}
       </div>
     </div>

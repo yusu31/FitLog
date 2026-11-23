@@ -62,12 +62,23 @@ export function StampMedal({ stampKey, earned, size = 56, className }: { stampKe
     >
       {/* 下の影（立体に見せる） */}
       <ellipse cx="28" cy="60" rx="14" ry="3" className="fill-night/20" />
-      {/* リボン */}
-      <path d="M17 34 L11 58 L20 53 L25 60 L29 38 Z" className={earned ? tone.face : 'fill-fg-muted/40'} />
-      <path d="M39 34 L45 58 L36 53 L31 60 L27 38 Z" className={earned ? tone.face : 'fill-fg-muted/40'} opacity={earned ? 0.8 : 1} />
-      {/* 丸 */}
-      <circle cx="28" cy="26" r="22" className={earned ? tone.face : 'fill-fg-muted/30'} />
-      <circle cx="28" cy="26" r="17.5" fill="none" strokeWidth="2" className={earned ? tone.ring : 'stroke-fg-muted/30'} />
+      {earned ? (
+        <>
+          {/* リボン → 丸 の順に重ねる（丸が手前） */}
+          <path d="M17 34 L11 58 L20 53 L25 60 L29 38 Z" className={tone.face} />
+          <path d="M39 34 L45 58 L36 53 L31 60 L27 38 Z" className={tone.face} opacity={0.8} />
+          <circle cx="28" cy="26" r="22" className={tone.face} />
+          <circle cx="28" cy="26" r="17.5" fill="none" strokeWidth="2" className={tone.ring} />
+        </>
+      ) : (
+        // まだ：形は全部ふつうに塗り、グループ全体に薄さをかける（形ごとに薄くすると、重なった所が濃く透けて見える）
+        <g opacity={0.35} className="fill-fg-muted">
+          <path d="M17 34 L11 58 L20 53 L25 60 L29 38 Z" />
+          <path d="M39 34 L45 58 L36 53 L31 60 L27 38 Z" />
+          <circle cx="28" cy="26" r="22" />
+          <circle cx="28" cy="26" r="17.5" fill="none" strokeWidth="2" className="stroke-white/70" />
+        </g>
+      )}
       <text
         x="28"
         y="26"

@@ -3,7 +3,7 @@ import { DEFAULT_PREFS, PREFS_KEY, parsePrefs, readPrefs, savePrefs } from './pr
 afterEach(() => localStorage.removeItem(PREFS_KEY));
 
 describe('端末の設定', () => {
-  it('何も保存されていなければ既定値（自動再生オフ・お知らせ全部オン・19時）', () => {
+  it('何も保存されていなければ既定値（自動再生オフ・通知全部オン・19時）', () => {
     expect(parsePrefs(null)).toEqual(DEFAULT_PREFS);
     expect(DEFAULT_PREFS.autoplayVideo).toBe(false);
     expect(DEFAULT_PREFS.reminderHour).toBe(19);

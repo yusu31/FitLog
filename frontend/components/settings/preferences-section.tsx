@@ -7,14 +7,14 @@ import { usePreferences } from '@/lib/use-preferences';
 
 const REVISION = process.env.NEXT_PUBLIC_APP_REVISION ?? 'dev';
 
-// 設定の「お知らせ」「動画」「規約・版」。端末に保存する（サーバーには送らない）
+// 設定の「通知」「動画」「規約・版」。端末に保存する（サーバーには送らない）
 export function PreferencesSection() {
   const prefs = usePreferences();
   return (
     <>
       <section aria-labelledby="prefs-notify" className="space-y-2">
         <h2 id="prefs-notify" className="text-note font-bold tracking-widest text-fg-subtle">
-          お知らせ
+          通知
         </h2>
         <ul className="fl-slab divide-y divide-line px-4">
           {NOTIFY_OPTIONS.map(({ kind, label }) => (

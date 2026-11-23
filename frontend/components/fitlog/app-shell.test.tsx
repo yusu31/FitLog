@@ -10,6 +10,16 @@ vi.mock('@/lib/auth-client', () => ({ authClient: { useSession: () => session } 
 beforeEach(() => replace.mockReset());
 
 describe('AppShell（タブのある画面の枠）', () => {
+  // PC（lg）の3列: メニューは中央の列（flex-col）の外に置く。中に入れると order-first でも縦に積まれ、中身が画面の下へ押し出される（#341 以降の不具合）
+  it('PC の3列にするため、メニューは中央の列の外（3列の行の直下）にある', () => {
+    session = { data: { user: { id: 'u1' } }, isPending: false };
+    render(<AppShell>中身</AppShell>);
+    const nav = screen.getByRole('navigation', { name: 'メイン' });
+    const main = screen.getByRole('main');
+    expect(main.parentElement?.contains(nav)).toBe(false);
+    expect(nav.parentElement).toBe(main.parentElement?.parentElement);
+  });
+
   // 未ログインなら、戻り先つきでログイン画面へ。中身は描かない
   it('ログインしていなければ /login?next= へ移し、中身を出さない', () => {
     session = { data: null, isPending: false };
