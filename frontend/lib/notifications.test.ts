@@ -2,7 +2,7 @@ import { badgeText, describeNotification, formatNotificationTime, notificationHr
 
 const actor = { id: 'u2', name: 'はなこ', avatar: { body: 'A', hair: 1, hairColor: 'brown', shirtColor: 'coral', pantsColor: 'navy' } };
 
-describe('お知らせの文言とリンク（D7-3）', () => {
+describe('通知の文言とリンク（D7-3）', () => {
   it.each([
     [{ kind: 'stamp', recordKind: 'workout', stampKey: 'nice' }, 'はなこさんが「ナイス」を送りました'],
     [{ kind: 'comment', recordKind: 'run', stampKey: null }, 'はなこさんがコメントしました'],

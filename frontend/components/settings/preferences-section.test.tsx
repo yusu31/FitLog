@@ -6,7 +6,7 @@ import { PreferencesSection } from './preferences-section';
 afterEach(() => localStorage.removeItem(PREFS_KEY));
 
 describe('PreferencesSection（設定の端末ごとの項目）', () => {
-  it('お知らせの種類を切り替えると、端末に保存される', async () => {
+  it('通知の種類を切り替えると、端末に保存される', async () => {
     const user = userEvent.setup();
     render(<PreferencesSection />);
     const sw = screen.getByRole('switch', { name: 'スタンプをもらったとき' });

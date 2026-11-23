@@ -1,4 +1,4 @@
-// 端末ごとの設定（お知らせの種類・誘う時刻・動画の自動再生）。見た目（theme.ts）と同じく localStorage に置く。
+// 端末ごとの設定（通知の種類・誘う時刻・動画の自動再生）。見た目（theme.ts）と同じく localStorage に置く。
 // サーバーには送らない。壊れた値・保存できない環境では既定値で動く（fail-open）
 export type NotifyKind = 'stamp' | 'comment' | 'friend_record' | 'friend_joined';
 

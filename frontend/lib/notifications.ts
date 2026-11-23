@@ -1,4 +1,4 @@
-// お知らせ（D7-3）の文言とリンク先。画面の部品から切り離した純粋な関数。順位・数を競う言い方は入れない。
+// 通知（D7-3）の文言とリンク先。画面の部品から切り離した純粋な関数。順位・数を競う言い方は入れない。
 import type { NotificationItem } from '@/lib/api/generated';
 import { STAMP_LABELS } from '@/lib/feed';
 

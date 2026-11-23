@@ -4,9 +4,9 @@ export type ThemeMode = 'light' | 'dark' | 'auto';
 
 export const THEME_KEY = 'fitlog-theme';
 export const THEME_OPTIONS = [
-  { value: 'light', label: 'LIGHT' },
-  { value: 'dark', label: 'DARK' },
-  { value: 'auto', label: 'AUTO' },
+  { value: 'light', label: 'ライト' },
+  { value: 'dark', label: 'ダーク' },
+  { value: 'auto', label: '自動' },
 ] as const satisfies readonly { value: ThemeMode; label: string }[];
 
 // ダークのときのアドレスバーの色（ライトは PWA の THEME_COLOR）

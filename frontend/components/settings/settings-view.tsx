@@ -115,7 +115,7 @@ export function SettingsView() {
 
         <section aria-labelledby="appearance-heading" className="space-y-2">
           <h2 id="appearance-heading" className="text-note font-bold tracking-widest text-fg-subtle">
-            APPEARANCE
+            画面の色
           </h2>
           <Segmented
             legend="見た目"
