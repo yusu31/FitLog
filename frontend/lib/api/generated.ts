@@ -72,6 +72,11 @@ export interface AvatarResponse {
 export interface MemberResponse {
   id: string;
   name: string;
+  /**
+     * ひとこと（プロフィール）。無ければ null
+     * @nullable
+     */
+  bio?: string | null;
   /** キャラの設定。メールアドレスは返さない */
   avatar: AvatarResponse;
 }

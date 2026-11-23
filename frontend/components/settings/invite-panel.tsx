@@ -86,9 +86,9 @@ export function InvitePanel({ full }: { full: boolean }) {
 
   return (
     <section aria-labelledby="invite-heading" className="pb-4">
-      <h2 id="invite-heading" className="flex items-center gap-1.5 pb-2 text-note font-bold tracking-widest text-fg-subtle">
-        <Send aria-hidden className="size-4" />
-        なかまを まねく
+      <h2 id="invite-heading" className="flex items-center gap-2 pb-2 text-base font-extrabold">
+        <Send aria-hidden className="size-5 text-brand" />
+        仲間を招待する
       </h2>
 
       {full ? (

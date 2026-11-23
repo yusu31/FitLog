@@ -10,13 +10,13 @@ afterEach(() => vi.unstubAllGlobals());
 
 // B14b: 設定に身長とプロフィール3欄。血液型・MBTI・基礎代謝は作らない
 describe('BodySettings（設定の身長・プロフィール）', () => {
-  it('身長と、プロフィール3欄（ひとこと・よくやる運動・動きやすい時間帯）に今の値が入る', async () => {
+  it('身長と、プロフィール（ひとことだけ）に今の値が入る。よくやる運動・時間帯は無い', async () => {
     installFakeApi({ 'GET /api/body': { status: 200, body: BODY }, 'GET /api/body/profile': { status: 200, body: PROFILE } });
     renderWithQuery(<BodySettings />);
     expect(await screen.findByLabelText('身長（cm）')).toHaveValue('170');
     expect(screen.getByLabelText('ひとこと')).toHaveValue('朝ランしてます');
-    expect(screen.getByRole('radio', { name: 'ラン' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: '朝' })).toBeChecked();
+    expect(screen.queryByRole('radio', { name: '朝' })).not.toBeInTheDocument();
+    expect(screen.queryByText('よくやる運動')).not.toBeInTheDocument();
   });
 
   it('血液型・MBTI・基礎代謝の欄は無い', async () => {

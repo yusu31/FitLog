@@ -68,7 +68,10 @@ export function MemberList({ group }: { group: GroupDetailResponse }) {
         {group.members.map((m) => (
           <li key={m.id} className="fl-slab flex min-h-14 items-center gap-3 p-2.5">
             <Avatar avatar={m.avatar} size={44} />
-            <span className="min-w-0 flex-1 truncate text-base font-extrabold">{m.name}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-extrabold">{m.name}</p>
+              {m.bio && <p className="truncate text-sm text-fg-muted">{m.bio}</p>}
+            </div>
             {m.id === me && <span className="fl-tag bg-gold text-fg">あなた</span>}
           </li>
         ))}
