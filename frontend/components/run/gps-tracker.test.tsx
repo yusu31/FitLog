@@ -18,8 +18,11 @@ const clearWatch = vi.fn();
 const release = vi.fn(() => Promise.resolve());
 const wakeRequest = vi.fn(() => Promise.resolve({ release }));
 
-function stubBrowser(opts: { geolocation?: boolean; wakeLock?: boolean } = {}) {
-  const { geolocation = true, wakeLock = true } = opts;
+const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 15; SM-S931B) AppleWebKit/537.36 Chrome/130 Mobile Safari/537.36';
+const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1';
+
+function stubBrowser(opts: { geolocation?: boolean; wakeLock?: boolean; userAgent?: string } = {}) {
+  const { geolocation = true, wakeLock = true, userAgent = ANDROID_UA } = opts;
   success = null;
   failure = null;
   watchPosition.mockReset().mockImplementation((s: Success, f: Failure) => {
@@ -31,6 +34,8 @@ function stubBrowser(opts: { geolocation?: boolean; wakeLock?: boolean } = {}) {
   release.mockClear();
   wakeRequest.mockClear();
   vi.stubGlobal('navigator', {
+    userAgent,
+    maxTouchPoints: 5,
     ...(geolocation ? { geolocation: { watchPosition, clearWatch } } : {}),
     ...(wakeLock ? { wakeLock: { request: wakeRequest } } : {}),
   });
@@ -53,6 +58,7 @@ function tick(ms: number) {
 }
 
 beforeEach(() => {
+  localStorage.clear();
   vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], now: new Date(START) });
   stubBrowser();
 });
@@ -77,20 +83,64 @@ describe('GpsTracker（GPS で記録する・Web 版）', () => {
     expect(wakeRequest).toHaveBeenCalledWith('screen');
     expect(onActiveChange).toHaveBeenLastCalledWith(true);
     expect(screen.getByText(GPS_MESSAGES.searching)).toBeInTheDocument();
-    expect(screen.getByText(GPS_MESSAGES.keepScreenOn)).toBeInTheDocument();
   });
 
   // D4: 走る前の画面に、常時の黄色の注意は出さない（START 直後に1回だけのシートで伝える。PR-2）
   it('始める前の画面に、「画面を消さないでね」の常時の注意は出さない', () => {
     setup();
     expect(screen.queryByRole('note', { name: '走る前に' })).not.toBeInTheDocument();
-    expect(screen.queryByText(GPS_MESSAGES.webNotice)).not.toBeInTheDocument();
+    expect(screen.queryByText(GPS_MESSAGES.noticeAndroidWeb)).not.toBeInTheDocument();
   });
 
-  it('動いている間も、画面を消さない案内を目立つ枠で出し続ける', async () => {
-    const { user } = setup();
-    await user.click(screen.getByRole('button', { name: /GPS で記録する/ }));
-    expect(screen.getByRole('note', { name: '画面について' })).toHaveTextContent(GPS_MESSAGES.keepScreenOn);
+  // D4: START 直後に、はじめの1回だけ案内を出す。次からは出さず、「画面を消すと？」で読み返せる
+  describe('START 直後の案内（端末ごと・はじめの1回）', () => {
+    const start = (user: ReturnType<typeof setup>['user']) => user.click(screen.getByRole('button', { name: /GPS で記録する/ }));
+
+    it('Android のブラウザ: はじめの1回は「画面を消さない」と「ポケットなら Android アプリ」を出す。「わかった」で閉じる', async () => {
+      stubBrowser({ userAgent: ANDROID_UA });
+      const { user } = setup();
+      await start(user);
+      expect(screen.getByRole('region', { name: '走る前に' })).toHaveTextContent(GPS_MESSAGES.noticeAndroidWeb);
+      expect(GPS_MESSAGES.noticeAndroidWeb).toContain('Android アプリ');
+      await user.click(screen.getByRole('button', { name: GPS_MESSAGES.noticeOk }));
+      expect(screen.queryByRole('region', { name: '走る前に' })).not.toBeInTheDocument();
+    });
+
+    it('iPhone: 「画面を消さない」だけ。アプリの話は出さない', async () => {
+      stubBrowser({ userAgent: IPHONE_UA });
+      const { user } = setup();
+      await start(user);
+      const card = screen.getByRole('region', { name: '走る前に' });
+      expect(card).toHaveTextContent(GPS_MESSAGES.noticeIosWeb);
+      expect(card).not.toHaveTextContent('Android');
+    });
+
+    it('2回目の START では出さない。「画面を消すと？」を押すと読み返せる', async () => {
+      stubBrowser({ userAgent: ANDROID_UA });
+      const first = setup();
+      await start(first.user);
+      cleanup();
+      const second = setup();
+      await start(second.user);
+      expect(screen.queryByRole('region', { name: '走る前に' })).not.toBeInTheDocument();
+      await second.user.click(screen.getByRole('button', { name: GPS_MESSAGES.noticeHelp }));
+      expect(screen.getByRole('region', { name: '走る前に' })).toBeInTheDocument();
+    });
+
+    it('案内は「終了」を押せる画面の中に置く（上をふさがない）', async () => {
+      stubBrowser({ userAgent: ANDROID_UA });
+      const { user } = setup();
+      await start(user);
+      expect(screen.getByRole('button', { name: '終了' })).toBeVisible();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('画面を点けたままにできない端末では、本当の問題として注意を出す（常時の枠ではない）', async () => {
+      stubBrowser({ userAgent: ANDROID_UA, wakeLock: false });
+      const { user } = setup();
+      await start(user);
+      expect(await screen.findByRole('note', { name: '画面について' })).toHaveTextContent(GPS_MESSAGES.noWakeLock);
+    });
   });
 
   it('位置が届くたびに距離・時間・ペースがその場で変わる（精度の悪い点は距離に足さない）', async () => {
