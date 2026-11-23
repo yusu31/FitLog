@@ -54,7 +54,8 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
                   'lg:h-12 lg:w-full lg:flex-row lg:justify-start lg:gap-3 lg:px-4 lg:text-sm',
                   'focus-visible:ring-4 focus-visible:ring-teal/40',
                   // 選択中の文字は濃いティール（ティール10%の背景の上で 4.5 以上）
-                  active ? 'bg-teal/10 text-brand' : 'text-fg-subtle',
+                  // PC（lg）のメニューは灰色の地の上なので、選択中は白い面・ほかは濃いめの文字にして 4.5:1 を保つ
+                  active ? 'bg-teal/10 text-brand lg:bg-surface' : 'text-fg-subtle lg:text-fg-muted',
                 )}
               >
                 <span className="relative">
