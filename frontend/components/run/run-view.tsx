@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, FileUp, Map, X } from 'lucide-react';
+import { Check, ChevronRight, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useId, useState, type ChangeEvent } from 'react';
@@ -12,7 +12,7 @@ import { RouteMap } from '@/components/record-detail/route-map';
 import { GpsTracker } from '@/components/run/gps-tracker';
 import { useGetStats } from '@/lib/api/generated';
 import { parseDayMode, recordedAtFor } from '@/lib/day-mode';
-import { trekProgress } from '@/lib/japan-route';
+import { locateOnRoute, nextText, TOTAL_KM, trekProgress } from '@/lib/japan-route';
 import { parseGpx, type GpxRun, type RouteLineString } from '@/lib/gpx/parse-gpx';
 import { GPS_MESSAGES, GPX_MESSAGES, LATE_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
@@ -68,6 +68,7 @@ export function RunView() {
   const [gpx, setGpx] = useState<Gpx | null>(null);
   const [gpxMessage, setGpxMessage] = useState<{ text: string; kind: 'error' | 'info' } | null>(null);
   const [saved, setSaved] = useState<Saved | null>(null);
+  const [manual, setManual] = useState(false); // 「手入力で記録」を押したら入力欄を出す（GPX を読み込んだあとも出す）
   const [tracking, setTracking] = useState(false); // GPS で記録している間は、入力欄を隠して保存も止める
   // 送っている最中の値。送れずに再送待ちになったら（failureCount>0）、結果の画面へ進む（送信待ちの帯が知らせる）
   const [inFlight, setInFlight] = useState<Saved | null>(null);
@@ -76,6 +77,8 @@ export function RunView() {
   const { distanceM, durationS } = toRun(kmText, minText, secText);
   const problem: RunError | null = validateRun(distanceM, durationS);
   const touched = kmText.trim() !== '' || minText.trim() !== '' || secText.trim() !== '';
+  // GPS の終了や GPX で値が入ったときも入力欄を出す
+  const entryOpen = manual || gpx !== null || touched;
   // 範囲の説明は、その欄に何か入れたあとだけ出す（まっさらなうちは責めない）
   const distanceProblem = kmText.trim() !== '' && validateRun(distanceM, 60) === 'distance';
   const durationProblem = (minText.trim() !== '' || secText.trim() !== '') && validateRun(100, durationS) === 'duration';
@@ -226,9 +229,11 @@ export function RunView() {
   return (
     <FullScreen
       footer={
-        <ThickButton onClick={onSave} disabled={problem !== null || sending || tracking}>
-          保存する
-        </ThickButton>
+        entryOpen && !tracking ? (
+          <ThickButton onClick={onSave} disabled={problem !== null || sending}>
+            保存する
+          </ThickButton>
+        ) : undefined
       }
     >
       <header className="flex items-center gap-1 px-2 pt-3">
@@ -239,27 +244,31 @@ export function RunView() {
         >
           <X aria-hidden className="size-6" />
         </Link>
-        <Link
-          href="/me/stats#japan-trek"
-          className="ml-auto flex min-h-11 items-center gap-1 rounded-fl px-3 text-sm font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
-        >
-          <Map aria-hidden className="size-5" />
-          日本縦断
-        </Link>
       </header>
 
-      <div className="flex flex-1 flex-col gap-5 px-4 pt-2 pb-8">
+      <div className={cn('flex flex-1 flex-col gap-5 px-4 pt-2', entryOpen ? 'pb-24' : 'pb-8')}>
         <h1 className="text-page-title leading-tight font-extrabold">ラン</h1>
         {day === 'yesterday' && (
           <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-fg">{LATE_MESSAGES.banner}</p>
         )}
 
         <GpsTracker onFinish={onGpsFinish} onActiveChange={setTracking} />
-        {!tracking && <GpxPicker online={online} gpx={gpx} message={gpxMessage} onPick={onPickGpx} onClear={clearGpx} />}
+        {!tracking && <TrekStrip totalRunM={totalRunM} />}
+        {!tracking && (
+          <GpxPicker
+            online={online}
+            gpx={gpx}
+            message={gpxMessage}
+            onPick={onPickGpx}
+            onClear={clearGpx}
+            manualOpen={entryOpen}
+            onOpenManual={() => setManual(true)}
+          />
+        )}
         {/* 保存する前に、読み取ったルートの形を確かめられる（U19）。保存後の詳細と同じ地図の部品 */}
         {!tracking && gpx && <RouteMap route={gpx.route} />}
 
-        {!tracking && (
+        {!tracking && entryOpen && (
           <>
         <NumberField
           label="距離（km）"
@@ -302,33 +311,67 @@ export function RunView() {
   );
 }
 
-// GPX を選ぶ入口。電波が無いときは選べない（GPX は電波があるときだけ）
+// 日本縦断の小さな進み具合（D4）。押すと日本地図。累計が分からないとき（読み込み前・電波なし）は進みを出さず、入口だけ
+function TrekStrip({ totalRunM }: { totalRunM: number | undefined }) {
+  const pos = totalRunM === undefined ? null : locateOnRoute(totalRunM);
+  return (
+    <Link
+      href="/me/stats#japan-trek"
+      data-testid="trek-strip"
+      className="fl-slab block space-y-1.5 px-4 py-3 outline-none focus-visible:border-teal"
+    >
+      <span className="flex items-center justify-between text-sm font-extrabold">
+        <span>日本縦断{pos ? ` · ${pos.name}のあたり` : ''}</span>
+        <span className="flex items-center text-brand">
+          日本地図で見る
+          <ChevronRight aria-hidden className="size-4" />
+        </span>
+      </span>
+      {pos && (
+        <>
+          <span aria-hidden className="relative block h-1.5 overflow-hidden rounded-full bg-line">
+            <span className="absolute inset-y-0 left-0 bg-coral" style={{ width: `${Math.min(100, (pos.kmInLap / TOTAL_KM) * 100)}%` }} />
+          </span>
+          <span className="block text-note font-bold text-fg-muted">{nextText(pos)}</span>
+        </>
+      )}
+    </Link>
+  );
+}
+
+// 手入力・GPX は、START の下の小さなリンク。電波が無いときは GPX を選べない（GPX は電波があるときだけ）
 function GpxPicker({
   online,
   gpx,
   message,
   onPick,
   onClear,
+  manualOpen,
+  onOpenManual,
 }: {
   online: boolean;
   gpx: Gpx | null;
   message: { text: string; kind: 'error' | 'info' } | null;
   onPick: (e: ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
+  manualOpen: boolean;
+  onOpenManual: () => void;
 }) {
+  const linkClass = 'flex min-h-11 items-center rounded-fl px-2 text-sm font-extrabold text-brand underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40';
   return (
     <div className="flex flex-col gap-2">
-      <label
-        className={cn(
-          'fl-slab flex min-h-12 items-center gap-2 px-4 py-3 text-base font-extrabold text-fg-muted focus-within:border-teal',
-          online ? 'cursor-pointer' : 'opacity-60',
+      <div className="flex justify-center gap-5">
+        {!manualOpen && (
+          <button type="button" onClick={onOpenManual} className={linkClass}>
+            手入力で記録
+          </button>
         )}
-      >
-        <FileUp aria-hidden className="size-5 shrink-0" />
-        <span>ほかのアプリの記録を取り込む</span>
-        <input type="file" accept=".gpx,application/gpx+xml" disabled={!online} onChange={onPick} className="sr-only" />
-      </label>
-      <p className="text-note text-fg-muted">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）で書き出した記録のファイル（GPX 形式）を選んでください。</p>
+        <label className={cn(linkClass, 'focus-within:ring-4 focus-within:ring-teal/40', online ? 'cursor-pointer' : 'opacity-60')}>
+          <span>ほかのアプリの記録を取り込む</span>
+          <input type="file" accept=".gpx,application/gpx+xml" disabled={!online} onChange={onPick} className="sr-only" />
+        </label>
+      </div>
+      <p className="text-center text-note text-fg-muted">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）で書き出した記録のファイル（GPX 形式）を選んでください。</p>
       {!online && <p className="text-sm font-bold text-fg-muted">{GPX_MESSAGES.offline}</p>}
       {gpx && (
         <p className="flex items-center justify-between gap-2 text-sm font-bold text-fg">
