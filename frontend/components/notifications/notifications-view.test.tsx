@@ -78,10 +78,10 @@ describe('NotificationsView（S-35 通知）', () => {
     const [first, second] = within(ul).getAllByRole('link');
     expect(first).toHaveTextContent('はなこさんがコメントしました');
     expect(first).toHaveTextContent('11/21 12:05');
-    expect(first).toHaveAttribute('href', '/record-detail?id=r1&from=me');
+    expect(first).toHaveAttribute('href', '/record-detail?id=r1&from=me&back=notifications');
     expect(within(first).getByTestId('unread-dot')).toBeInTheDocument();
     expect(second).toHaveTextContent('はなこさんがランを記録しました');
-    expect(second).toHaveAttribute('href', '/record-detail?id=r3');
+    expect(second).toHaveAttribute('href', '/record-detail?id=r3&by=u2&back=notifications');
     expect(within(second).queryByTestId('unread-dot')).not.toBeInTheDocument();
     await waitFor(() => expect(calls.filter((c) => c === 'POST /api/notifications/seen')).toHaveLength(1));
     // 見たあとも、この画面の未読の点は消えない（どれが新しかったか分かるように）

@@ -5,7 +5,12 @@ import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { GroupSettingsView } from './group-settings-view';
 
 const replace = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }), usePathname: () => '/settings/group/' }));
+let search = '';
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace }),
+  usePathname: () => '/settings/group/',
+  useSearchParams: () => new URLSearchParams(search),
+}));
 let session: { data: unknown; isPending: boolean } = { data: { user: { id: 'u1', name: 'たろう' } }, isPending: false };
 vi.mock('@/lib/auth-client', () => ({ authClient: { useSession: () => session } }));
 
@@ -63,6 +68,15 @@ describe('GroupSettingsView（S-32 グループの設定）', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'グループの設定' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '設定へ戻る' })).toHaveAttribute('href', '/settings');
     await screen.findByRole('heading', { name: '朝トレ部' });
+  });
+
+  it('仲間タブの「招待」から来た（?back=friends）ときは、仲間へ戻る（02-9 N5）', async () => {
+    search = 'back=friends';
+    replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }];
+    renderView();
+    expect(screen.getByRole('link', { name: '仲間へ戻る' })).toHaveAttribute('href', '/friends');
+    await screen.findByRole('heading', { name: '朝トレ部' });
+    search = '';
   });
 
   it('ログインしていなければ、戻り先つきでログイン画面へ移し、グループは取りにいかない', () => {

@@ -90,7 +90,7 @@ export function ExercisesView() {
     >
       <header className="flex items-center gap-1 px-2 pt-3">
         <Link
-          href="/today"
+          href={withDay('/today', day)}
           aria-label="とじる"
           className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >

@@ -2,6 +2,7 @@
 
 import { Settings } from 'lucide-react';
 import Link from 'next/link';
+import { withBack } from '@/lib/back-target';
 import { PageTitle } from '@/components/fitlog/app-shell';
 import { MyChara } from '@/components/fitlog/my-chara';
 import { useGetCurrentGroup } from '@/lib/api/generated';
@@ -47,7 +48,7 @@ export function FriendsView() {
           )}
           <FeedSection hideEmptyTotals={alone} />
           <Link
-            href="/settings/group"
+            href={withBack('/settings/group', 'friends')}
             className="fl-slab flex min-h-14 items-center gap-3 px-4 py-3 font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             <Settings aria-hidden className="size-5 text-brand" />

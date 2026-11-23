@@ -209,7 +209,7 @@ describe('FriendsView（S-20 仲間）', () => {
       renderView();
       await screen.findByRole('heading', { name: '朝トレ部' });
       expect(screen.queryByText('仲間がいると、続きます')).not.toBeInTheDocument();
-      expect(screen.getByRole('link', { name: '招待' })).toHaveAttribute('href', '/settings/group');
+      expect(screen.getByRole('link', { name: '招待' })).toHaveAttribute('href', '/settings/group?back=friends');
     });
 
     it('招待・グループを出るは S-32 に移したので、ここには置かず、設定へのリンクだけ置く', async () => {
@@ -217,7 +217,7 @@ describe('FriendsView（S-20 仲間）', () => {
       await screen.findByRole('heading', { name: '朝トレ部' });
       expect(screen.queryByRole('button', { name: '招待リンクを作る' })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'グループを出る' })).not.toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /グループの設定/ })).toHaveAttribute('href', '/settings/group');
+      expect(screen.getByRole('link', { name: /グループの設定/ })).toHaveAttribute('href', '/settings/group?back=friends');
     });
   });
 

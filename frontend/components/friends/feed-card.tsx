@@ -141,7 +141,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
             <Link
               href={
                 isOwn
-                  ? `/record-detail?id=${encodeURIComponent(item.id)}&from=me`
+                  ? `/record-detail?id=${encodeURIComponent(item.id)}&from=me&back=friends`
                   : `/record-detail?id=${encodeURIComponent(item.id)}&by=${encodeURIComponent(item.author.id)}`
               }
               className="flex min-h-11 items-center rounded-full border-2 border-line bg-surface px-3 text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"

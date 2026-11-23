@@ -89,6 +89,31 @@ describe('RecordDetailView（S-21 記録の詳細）', () => {
     });
   });
 
+  describe('戻り先（02-9 N3）', () => {
+    it('通知から開いた（back=notifications）ら、通知へ戻る。仲間の記録でも「コピーして始める」は出る', async () => {
+      search = 'id=r1&by=u2&back=notifications';
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), '/api/exercises': ok([]) });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('button', { name: 'コピーして始める' });
+      expect(screen.getByRole('link', { name: '通知へ戻る' })).toHaveAttribute('href', '/notifications');
+    });
+
+    it('仲間タブで自分の記録を開いた（from=me&back=friends）ら、自分ではなく仲間へ戻る', async () => {
+      search = 'id=r1&from=me&back=friends';
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('button', { name: 'いつものメニューに保存' });
+      expect(screen.getByRole('link', { name: '仲間へ戻る' })).toHaveAttribute('href', '/friends');
+    });
+
+    it('戻り先が無ければ今までどおり（自分の記録→自分）', async () => {
+      install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });
+      renderWithQuery(<RecordDetailView />);
+      await screen.findByRole('button', { name: 'いつものメニューに保存' });
+      expect(screen.getByRole('link', { name: '自分にもどる' })).toHaveAttribute('href', '/me');
+    });
+  });
+
   describe('いつものメニューに保存（F3）', () => {
     it('自分の筋トレ（セットあり）には「いつものメニューに保存」が出る', async () => {
       install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), [prevUrl('sq')]: ok(prev([], null)) });

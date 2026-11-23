@@ -200,7 +200,7 @@ describe('スタンプ', () => {
     renderFeed();
     await screen.findAllByRole('link', { name: 'くわしく見る' });
     const hrefs = screen.getAllByRole('link', { name: 'くわしく見る' }).map((l) => l.getAttribute('href'));
-    expect(hrefs).toContain('/record-detail?id=mine1&from=me');
+    expect(hrefs).toContain('/record-detail?id=mine1&from=me&back=friends');
     expect(hrefs.some((h) => h?.startsWith('/record-detail?id=th1&by=u2'))).toBe(true);
   });
 

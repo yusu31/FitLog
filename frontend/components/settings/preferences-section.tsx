@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { withBack } from '@/lib/back-target';
 import { Switch } from '@/components/ui/switch';
 import { NOTIFY_OPTIONS, REMINDER_HOURS, savePrefs } from '@/lib/preferences';
 import { usePreferences } from '@/lib/use-preferences';
@@ -70,12 +71,12 @@ export function PreferencesSection() {
         </h2>
         <ul className="fl-slab divide-y divide-line px-4">
           <li>
-            <Link href="/terms" className="flex min-h-14 items-center font-bold outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+            <Link href={withBack('/terms', 'settings')} className="flex min-h-14 items-center font-bold outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
               利用規約
             </Link>
           </li>
           <li>
-            <Link href="/privacy" className="flex min-h-14 items-center font-bold outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+            <Link href={withBack('/privacy', 'settings')} className="flex min-h-14 items-center font-bold outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
               プライバシー
             </Link>
           </li>

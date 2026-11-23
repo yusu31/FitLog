@@ -14,11 +14,11 @@ describe('通知の文言とリンク（D7-3）', () => {
     expect(describeNotification({ ...n, actor })).toBe(text);
   });
 
-  it('リンク先: 仲間が加わった→仲間タブ／自分の記録へのスタンプ・コメント→from=me／仲間の記録→from なし', () => {
-    expect(notificationHref({ kind: 'friend_joined', recordId: null })).toBe('/friends');
-    expect(notificationHref({ kind: 'stamp', recordId: 'r 1' })).toBe('/record-detail?id=r%201&from=me');
-    expect(notificationHref({ kind: 'comment', recordId: 'r1' })).toBe('/record-detail?id=r1&from=me');
-    expect(notificationHref({ kind: 'friend_record', recordId: 'r1' })).toBe('/record-detail?id=r1');
+  it('リンク先: 仲間が加わった→仲間タブ／自分の記録へのスタンプ・コメント→from=me／仲間の記録→書いた人（by=）。どれも「＜」で通知へ戻る', () => {
+    expect(notificationHref({ kind: 'friend_joined', recordId: null, actor })).toBe('/friends');
+    expect(notificationHref({ kind: 'stamp', recordId: 'r 1', actor })).toBe('/record-detail?id=r%201&from=me&back=notifications');
+    expect(notificationHref({ kind: 'comment', recordId: 'r1', actor })).toBe('/record-detail?id=r1&from=me&back=notifications');
+    expect(notificationHref({ kind: 'friend_record', recordId: 'r1', actor })).toBe('/record-detail?id=r1&by=u2&back=notifications');
   });
 
   it('ベルの数字は9を超えたら「9+」', () => {

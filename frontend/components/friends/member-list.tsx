@@ -2,6 +2,7 @@
 
 import { Users } from 'lucide-react';
 import Link from 'next/link';
+import { withBack } from '@/lib/back-target';
 import { Avatar, AVATAR_BG } from '@/components/fitlog/avatar';
 import { useAppSession } from '@/lib/use-app-session';
 import type { GroupDetailResponse } from '@/lib/api/generated';
@@ -43,7 +44,7 @@ export function GroupBand({ group }: { group: GroupDetailResponse }) {
       </p>
       {!full && (
         <Link
-          href="/settings/group"
+          href={withBack('/settings/group', 'friends')}
           className="flex min-h-11 shrink-0 items-center rounded-fl px-3 text-sm font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           招待

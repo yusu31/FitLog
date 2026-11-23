@@ -4,6 +4,7 @@ import { ChevronLeft, Moon, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { backTarget } from '@/lib/back-target';
 import { ghostLegend } from '@/lib/map/ghost-legend';
 import { RouteMap } from './route-map';
 import { SocialSection } from './social-section';
@@ -53,7 +54,8 @@ export function RecordDetailView() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const { data, isPending, isError } = useGetRecord(id, { query: { enabled: signedIn && id !== '' } });
-  const back = mine ? { href: '/me', label: DETAIL_MESSAGES.backMe } : { href: '/friends', label: DETAIL_MESSAGES.backFriends };
+  // 戻り先は「来た所」（?back=）。無ければ自分の記録は自分へ、それ以外は仲間へ（N3。自分の記録か＝from=me とは別の値）
+  const back = backTarget(params.get('back'), ['friends', 'notifications'], mine ? { href: '/me', label: DETAIL_MESSAGES.backMe } : { href: '/friends', label: DETAIL_MESSAGES.backFriends });
 
   function onDelete() {
     setConfirming(false);
