@@ -7,15 +7,16 @@ import { BodyPage } from './body-view';
 vi.mock('@/lib/use-require-session', () => ({ useRequireSession: () => ({ signedIn: true }) }));
 
 const today = toLocalDate(new Date());
+const daysAgo = (n: number) => toLocalDate(new Date(Date.now() - n * 86_400_000));
 const BODY = {
   heightCm: 170,
-  latest: { date: '2026-11-18', kg: 70.2 },
+  latest: { date: daysAgo(1), kg: 70.2 },
   bmi: 24.3,
   avg7: 70.4,
   deltaFromPrevious: -0.5,
   weights: [
-    { date: '2026-11-17', kg: 70.7, avg7: 70.7 },
-    { date: '2026-11-18', kg: 70.2, avg7: 70.4 },
+    { date: daysAgo(2), kg: 70.7, avg7: 70.7 },
+    { date: daysAgo(1), kg: 70.2, avg7: 70.4 },
   ],
 };
 const EMPTY = { heightCm: null, latest: null, bmi: null, avg7: null, deltaFromPrevious: null, weights: [] };
@@ -69,24 +70,79 @@ describe('BodyPage（からだ）', () => {
     expect(row).toHaveTextContent('60kg × 13回');
   });
 
-  it('体重を入れて保存すると、今日の日付で PUT する', async () => {
+  it('ルーラーは前回の値から始まり、矢印キーで 0.1kg ずつ動く', async () => {
+    installFakeApi(routes());
+    const user = userEvent.setup();
+    renderWithQuery(<BodyPage />);
+    const ruler = await screen.findByRole('slider', { name: '体重（kg）' });
+    expect(ruler).toHaveAttribute('aria-valuenow', '70.2');
+    ruler.focus();
+    await user.keyboard('{ArrowRight}{ArrowRight}');
+    expect(ruler).toHaveAttribute('aria-valuenow', '70.4');
+    await user.keyboard('{PageDown}');
+    expect(ruler).toHaveAttribute('aria-valuenow', '69.4');
+  });
+
+  it('ルーラーを動かして保存すると、今日の日付でその値を PUT する', async () => {
     installFakeApi({ ...routes(EMPTY, { items: [] }), [`PUT /api/body/weights/${today}`]: { status: 200 } });
     const user = userEvent.setup();
     renderWithQuery(<BodyPage />);
-    await user.type(await screen.findByLabelText('体重（kg）'), '70.2');
+    const ruler = await screen.findByRole('slider', { name: '体重（kg）' });
+    expect(ruler).toHaveAttribute('aria-valuenow', '60');
+    ruler.focus();
+    await user.keyboard('{ArrowRight}');
     await user.click(screen.getAllByRole('button', { name: '保存する' })[0]);
     await waitFor(() => expect(calls).toContain(`PUT /api/body/weights/${today}`));
     expect(await screen.findByText('保存しました')).toBeInTheDocument();
   });
 
-  it('範囲外の体重は送らず、理由を出す', async () => {
+  it('何も入れていない人が動かさずに保存しても、体重は送らない', async () => {
     installFakeApi(routes(EMPTY, { items: [] }));
     const user = userEvent.setup();
     renderWithQuery(<BodyPage />);
-    await user.type(await screen.findByLabelText('体重（kg）'), '19.9');
+    await screen.findByRole('slider', { name: '体重（kg）' });
     await user.click(screen.getAllByRole('button', { name: '保存する' })[0]);
-    expect(await screen.findByRole('alert')).toHaveTextContent('体重は 20〜300');
+    expect(await screen.findByText('保存しました')).toBeInTheDocument();
     expect(calls.some((c) => c.startsWith('PUT'))).toBe(false);
+  });
+
+  it('ルーラーは範囲（20〜300）の外へは動かない', async () => {
+    installFakeApi({ ...routes(EMPTY, { items: [] }) });
+    const user = userEvent.setup();
+    renderWithQuery(<BodyPage />);
+    const ruler = await screen.findByRole('slider', { name: '体重（kg）' });
+    ruler.focus();
+    for (let i = 0; i < 25; i += 1) await user.keyboard('{PageDown}{PageDown}');
+    expect(ruler).toHaveAttribute('aria-valuenow', '20');
+  });
+
+  it('グラフは週・月・年で切り替わり、期間の外の点は出ない', async () => {
+    installFakeApi({
+      ...routes({ ...BODY, weights: [{ date: daysAgo(100), kg: 72, avg7: 72 }, ...BODY.weights] }),
+    });
+    const user = userEvent.setup();
+    renderWithQuery(<BodyPage />);
+    await screen.findByRole('heading', { name: '体重のうつりかわり' });
+    expect(screen.getByRole('button', { name: '月' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByTestId('weight-dot')).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: '年' }));
+    expect(screen.getAllByTestId('weight-dot')).toHaveLength(3);
+    await user.click(screen.getByRole('button', { name: '週' }));
+    expect(screen.getAllByTestId('weight-dot')).toHaveLength(2);
+  });
+
+  it('BMI は色の帯と目盛りで見せ、判定の言葉は出さない', async () => {
+    installFakeApi(routes());
+    renderWithQuery(<BodyPage />);
+    const band = (await screen.findByRole('img', { name: 'BMI 24.3 の位置' })).parentElement!;
+    for (const mark of ['18.5', '25', '30']) expect(within(band).getByText(mark)).toBeInTheDocument();
+  });
+
+  it('推定1RM の式（重量×…）は出さない', async () => {
+    installFakeApi(routes());
+    renderWithQuery(<BodyPage />);
+    await screen.findByText('スクワット');
+    expect(document.body.textContent).not.toMatch(/÷30|1[+＋]回数/);
   });
 
   it('プロフィールを保存すると PUT /api/body/profile を呼ぶ', async () => {

@@ -734,7 +734,7 @@ export interface BodyResponse {
      * @nullable
      */
   deltaFromPrevious: number | null;
-  /** 直近120件（古い順） */
+  /** 直近370件（古い順。約1年分） */
   weights: WeightPointResponse[];
 }
 

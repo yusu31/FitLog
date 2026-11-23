@@ -1,10 +1,37 @@
-import { BODY_MESSAGES, chartShape, type ChartPoint } from '@/lib/body/body';
+'use client';
 
-// 体重のグラフ。7日平均の線が主役（太く）、日々の体重の点はうすく。縦軸は kg の上端・下端だけ小さく添える
+import { useState } from 'react';
+import { BODY_MESSAGES, PERIODS, chartShape, filterByPeriod, type ChartPoint, type Period } from '@/lib/body/body';
+import { toLocalDate } from '@/lib/shared/local-date';
+
+// 体重のグラフ。週・月・年で切り替える。7日平均の線が主役（太く）、日々の体重の点はうすく。縦軸は kg の上端・下端だけ小さく添える
 export function WeightChart({ points }: { points: ChartPoint[] }) {
+  const [period, setPeriod] = useState<Period>('month');
+  const shown = filterByPeriod(points, period, toLocalDate(new Date()));
+  return (
+    <div className="space-y-2">
+      <div role="group" aria-label={BODY_MESSAGES.periodLabel} className="flex gap-1">
+        {PERIODS.map((p) => (
+          <button
+            key={p.value}
+            type="button"
+            aria-pressed={period === p.value}
+            onClick={() => setPeriod(p.value)}
+            className="min-h-11 flex-1 rounded-lg bg-line text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40 aria-pressed:bg-fg aria-pressed:text-surface"
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <Chart points={points.length === 0 ? [] : shown} empty={points.length === 0 ? BODY_MESSAGES.chartEmpty : BODY_MESSAGES.chartEmptyPeriod} />
+    </div>
+  );
+}
+
+function Chart({ points, empty }: { points: ChartPoint[]; empty: string }) {
   const shape = chartShape(points);
   if (!shape) {
-    return <p className="rounded-lg bg-canvas px-3 py-6 text-center text-sm font-bold text-fg-muted">{BODY_MESSAGES.chartEmpty}</p>;
+    return <p className="rounded-lg bg-canvas px-3 py-6 text-center text-sm font-bold text-fg-muted">{empty}</p>;
   }
   const last = points[points.length - 1];
   return (
