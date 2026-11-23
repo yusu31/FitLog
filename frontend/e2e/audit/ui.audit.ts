@@ -30,6 +30,10 @@ const SCREENS: Shot[] = [
   { name: 'settings-account', path: '/settings/account/' },
   { name: 'settings-group', path: '/settings/group/' },
   { name: 'settings-credits', path: '/settings/credits/' },
+  // 2026-11-24（P5）: P1 の後に増えた画面を足した（前後の比較は元の画面どうしで行い、足した分は別に数える）
+  { name: 'me-body', path: '/me/body/' },
+  { name: 'me-chara', path: '/me/chara/' },
+  { name: 'notifications', path: '/notifications/' },
   {
     // 記録中の画面（いつものメニューから始める）
     name: 'record',
@@ -64,6 +68,8 @@ const PUBLIC: Shot[] = [
   { name: 'login', path: '/login/' },
   { name: 'signup', path: '/signup/' },
   { name: 'invite-invalid', path: '/invite/?token=invalid' },
+  { name: 'terms', path: '/terms/' },
+  { name: 'privacy', path: '/privacy/' },
 ];
 
 // 見えている要素の style・位置・大きさを集める（ブラウザ内で実行）

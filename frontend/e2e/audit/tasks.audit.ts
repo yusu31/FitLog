@@ -171,7 +171,9 @@ test('T7 今週・今月どれだけ動いたかを振り返る', async ({ page 
   const t = new Tracker(page, 'T7');
   await t.start();
   await t.click(tab(page, '自分'), 'タブ「自分」');
-  await t.click(page.getByRole('link', { name: /記録のまとめ/ }).first(), '記録のまとめ');
+  // 2026-11-24（P5）: 画面の移動を待たずに撮っていた（step-3 が /me のまま）ので、移動と描画を待つ。手数は同じ
+  await t.click(page.getByRole('link', { name: /記録のまとめ/ }).first(), '記録のまとめ', { settle: true });
+  await page.waitForURL(/\/me\/stats/);
   await t.click(page.getByRole('group', { name: '期間' }).getByRole('button', { name: '月' }), '月に切替');
   t.finish();
 });
@@ -196,10 +198,9 @@ test('T9 表示名を変える。ログアウトと退会の場所を確かめ�
   const t = new Tracker(page, 'T9');
   await t.start();
   await t.click(page.getByRole('link', { name: '設定' }).first(), '設定');
-  await t.click(page.getByRole('link', { name: /アカウントの設定/ }), 'アカウントの設定');
+  // 2026-11-24（P5）: 表示名は設定の上（その場で直す）だけになった（#397）。アカウントの設定は開かない
   await t.fill(page.getByLabel('表示名'), 'ヨシコさん', '表示名');
-  await t.click(page.getByRole('button', { name: '名前を保存する' }), '名前を保存する');
-  await t.click(page.getByRole('link', { name: '設定へ戻る' }).or(page.getByRole('button', { name: '設定へ戻る' })), '設定へ戻る');
+  await t.click(page.getByRole('button', { name: '名前を保存' }), '名前を保存', { settle: true });
   t.finish();
 });
 
@@ -298,11 +299,11 @@ test('E1 アプリの中を見て回る（自分と仲間の足跡の詳細を�
   const self = page.locator('li').filter({ hasText: s.users.active.name }).filter({ has: page.getByRole('link', { name: 'くわしく見る' }) }).first();
   await t.click(self.getByRole('link', { name: 'くわしく見る' }), '自分の足跡の「くわしく見る」', settle);
   // 自分の足跡は自分用の詳細（from=me）で開くので、戻る先は「自分」タブ（#329）。仲間の足跡へ行くには仲間タブへ入り直す
-  await t.click(page.getByRole('link', { name: /にもどる$/ }).first(), '画面上の「にもどる」（自分タブへ）', settle);
+  await t.click(page.getByRole('link', { name: /(にもどる|へ戻る)$/ }).first(), '画面上の「にもどる」（自分タブへ）', settle);
   await t.click(tab(page, '仲間'), 'タブ「仲間」', settle);
   await t.click(page.locator('li').filter({ hasText: 'ユウスケ' }).first().getByRole('link', { name: 'くわしく見る' }), '仲間（ユウスケ）の足跡の「くわしく見る」', settle);
   // 詳細画面には下タブが無いので、いったん戻ってから「自分」へ
-  await t.click(page.getByRole('link', { name: /にもどる$/ }).first(), '画面上の「仲間にもどる」', settle);
+  await t.click(page.getByRole('link', { name: /(にもどる|へ戻る)$/ }).first(), '画面上の「仲間にもどる」', settle);
   await t.click(tab(page, '自分'), 'タブ「自分」', settle);
   await t.click(page.getByRole('link', { name: /ベンチプレス ほか1種目/ }).first(), '自分の記録（11/17）を開く', settle);
   t.finish();
