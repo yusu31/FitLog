@@ -19,12 +19,13 @@ import {
   type OneRepMaxItem,
 } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
-import { BODY_MESSAGES, formatDelta, parseHeightText, parseWeightText } from '@/lib/body/body';
+import { BMI_SCALE, BODY_MESSAGES, bmiBarLabel, bmiPercent, clampWeight, formatDelta, heightFrom, parseHeightText, rulerPrev } from '@/lib/body/body';
 import { formatMonthDay } from '@/lib/format';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useRequireSession } from '@/lib/use-require-session';
 import { ProfileForm } from './profile-form';
 import { WeightChart } from './weight-chart';
+import { WeightRuler } from './weight-ruler';
 
 type Notice = { ok: boolean; text: string } | null;
 
@@ -90,19 +91,20 @@ function Inputs({ data }: { data: BodyResponse }) {
   const setHeight = useSetHeight();
   const today = toLocalDate(new Date());
   const todayKg = data.weights.find((w) => w.date === today)?.kg;
-  const [weightText, setWeightText] = useState(todayKg === undefined ? '' : String(todayKg));
+  const last = data.latest;
+  // ルーラーは、今日の体重 → 前回の体重 → 60kg の順で始める。動かさず前回の値のまま保存してもよい
+  const [weight, setWeightValue] = useState(todayKg ?? last?.kg ?? 60);
+  const [touched, setTouched] = useState(false);
   const [heightText, setHeightText] = useState(data.heightCm === null ? '' : String(data.heightCm));
   const [notice, setNotice] = useState<Notice>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setNotice(null);
-    const weight = weightText.trim() === '' ? null : parseWeightText(weightText);
     const height = heightText.trim() === '' ? null : parseHeightText(heightText);
-    if (weightText.trim() !== '' && weight === null) return setNotice({ ok: false, text: BODY_MESSAGES.weightInvalid });
     if (heightText.trim() !== '' && height === null) return setNotice({ ok: false, text: BODY_MESSAGES.heightInvalid });
     try {
-      if (weight !== null) {
+      if (touched || last !== null) {
         const res = await setWeight.mutateAsync({ date: today, data: { kg: weight } });
         if (res.status !== 200) return setNotice({ ok: false, text: messageOf(res.data, BODY_MESSAGES.saveFailed) });
       }
@@ -123,13 +125,21 @@ function Inputs({ data }: { data: BodyResponse }) {
       <h2 id="body-inputs" className="text-sm font-extrabold text-fg-muted">
         {BODY_MESSAGES.weightSection}
       </h2>
-      <div className="space-y-2">
-        <Label htmlFor="body-weight" className="font-extrabold">
-          {BODY_MESSAGES.weightLabel}
-        </Label>
-        <Input id="body-weight" inputMode="decimal" value={weightText} onChange={(e) => setWeightText(e.target.value)} className="h-11 bg-surface" />
-        <p className="text-note text-fg-muted">{BODY_MESSAGES.weightHint}</p>
-      </div>
+      <p aria-live="polite" className="text-center font-extrabold">
+        <span className="fl-num text-6xl leading-none">{weight.toFixed(1)}</span>
+        <span className="ml-1 text-xl text-fg-muted">kg</span>
+      </p>
+      <p className="text-center text-note font-bold text-fg-muted">
+        {last ? rulerPrev(last.kg, formatMonthDay(last.date)) : BODY_MESSAGES.rulerFirst}
+      </p>
+      <WeightRuler
+        value={weight}
+        onChange={(kg) => {
+          setTouched(true);
+          setWeightValue(clampWeight(kg));
+        }}
+      />
+      <p className="text-note text-fg-muted">{BODY_MESSAGES.weightHint}</p>
       <div className="space-y-2">
         <Label htmlFor="body-height" className="font-extrabold">
           {BODY_MESSAGES.heightLabel}
@@ -171,7 +181,7 @@ function Numbers({ data }: { data: BodyResponse }) {
           <dd className="text-xl font-extrabold">{formatDelta(data.deltaFromPrevious)}</dd>
         </div>
       </dl>
-      {data.bmi === null && <p className="mt-2 text-note text-fg-muted">{BODY_MESSAGES.bmiNeed}</p>}
+      {data.bmi === null ? <p className="mt-2 text-note text-fg-muted">{BODY_MESSAGES.bmiNeed}</p> : <BmiBand bmi={data.bmi} heightCm={data.heightCm} />}
     </section>
   );
 }
@@ -206,5 +216,27 @@ function OneRepMaxSection({ items }: { items: OneRepMaxItem[] | null }) {
         <p className="mt-2 text-sm font-bold text-fg-muted">{BODY_MESSAGES.oneRmEmpty}</p>
       )}
     </section>
+  );
+}
+
+// BMI の帯。色の区間と 18.5・25・30 の目盛りだけで、自分の位置に印を置く。判定の言葉は出さない
+function BmiBand({ bmi, heightCm }: { bmi: number; heightCm: number | null }) {
+  const at = (v: number) => `${bmiPercent(v)}%`;
+  const [a, b, c] = BMI_SCALE.marks;
+  const gradient = `linear-gradient(90deg, #8fc5e8 0 ${at(a)}, #7ccf9a ${at(a)} ${at(b)}, #ffd36b ${at(b)} ${at(c)}, #ff9a8a ${at(c)})`;
+  return (
+    <div className="mt-3">
+      <div role="img" aria-label={bmiBarLabel(bmi)} className="relative h-2 rounded" style={{ background: gradient }}>
+        <i className="absolute -top-1 h-4 w-1 -translate-x-1/2 rounded-sm bg-fg" style={{ left: at(bmi) }} />
+      </div>
+      <div aria-hidden className="relative mt-1 h-3 text-note font-bold text-fg-muted">
+        {BMI_SCALE.marks.map((m) => (
+          <span key={m} className="absolute -translate-x-1/2" style={{ left: at(m) }}>
+            {m}
+          </span>
+        ))}
+      </div>
+      {heightCm !== null && <p className="mt-1 text-note text-fg-muted">{heightFrom(heightCm)}</p>}
+    </div>
   );
 }

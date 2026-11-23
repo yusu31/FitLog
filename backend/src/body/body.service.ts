@@ -7,7 +7,7 @@ import { avg7, bmi, deltaFromPrevious, estimateKcal, metsForRun, METS_WORKOUT, o
 import { parseHeightInput, parseMeasuredOn, parseProfileInput, parseWeightInput } from './body-input.js';
 import type { BodyResponse, CaloriesResponse, OneRepMaxResponse, ProfileResponse } from './body.response.js';
 
-const HISTORY_LIMIT = 120;
+const HISTORY_LIMIT = 370;
 
 const weightNotFound = () => new NotFoundException({ code: 'WEIGHT_NOT_FOUND', message: 'その日の体重が見つかりません', details: null });
 const recordNotFound = () => new NotFoundException({ code: 'RECORD_NOT_FOUND', message: '記録が見つかりません', details: null });

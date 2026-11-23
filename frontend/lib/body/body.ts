@@ -13,7 +13,7 @@ export const BODY_MESSAGES = {
   loadFailed: '読み込めませんでした。電波の良い所で開き直してください',
   weightSection: '今日の体重',
   weightLabel: '体重（kg）',
-  weightHint: `${WEIGHT_MIN}〜${WEIGHT_MAX} の範囲で、小数1桁まで。同じ日にもう一度入れると上書きします`,
+  weightHint: '同じ日にもう一度保存すると上書きします',
   heightLabel: '身長（cm）',
   heightHint: `${HEIGHT_MIN}〜${HEIGHT_MAX} の範囲。自分だけに見えます`,
   save: '保存する',
@@ -32,8 +32,12 @@ export const BODY_MESSAGES = {
   chartSection: '体重のうつりかわり',
   chartHint: '太い線が7日の平均、うすい点が日々の体重です。日々の上下は気にしなくて大丈夫です',
   chartEmpty: '体重を入れると、ここにグラフが出ます',
+  chartEmptyPeriod: 'この期間の体重はまだありません。期間を広げてみてください',
+  periodLabel: '期間',
+  rulerHint: '左右に動かす・矢印キーでも動きます',
+  rulerFirst: '動かして今日の体重に合わせます',
   oneRmSection: '種目ごとの推定1RM',
-  oneRmHint: '1回だけ持ち上げられる重さの目安です（重量×(1+回数÷30)）',
+  oneRmHint: '1回だけ持ち上げられる重さの目安です',
   oneRmApprox: '目安',
   oneRmApproxHint: '13回以上のセットは外れやすいので、あくまで目安です',
   oneRmEmpty: '筋トレを記録すると、種目ごとに出ます',
@@ -45,6 +49,10 @@ export const BODY_MESSAGES = {
   activeLegend: '動きやすい時間帯',
   none: '決めない',
 } as const;
+
+export const rulerPrev = (kg: number, date: string) => `前回 ${kg}kg（${date}）· この値から始まります`;
+export const bmiBarLabel = (bmi: number) => `BMI ${bmi} の位置`;
+export const heightFrom = (cm: number) => `身長 ${cm}cm で計算しています`;
 
 export const FAVORITE_OPTIONS = [
   { value: 'workout', label: '筋トレ' },
@@ -144,4 +152,34 @@ export const BODY_CONNECT_MESSAGES = {
 export function formatKcal(kcal: number | null | undefined): string | null {
   if (kcal === null || kcal === undefined || !(kcal > 0)) return null;
   return `約 ${kcal} kcal`;
+}
+
+export const PERIODS = [
+  { value: 'week', label: '週', days: 7 },
+  { value: 'month', label: '月', days: 30 },
+  { value: 'year', label: '年', days: 365 },
+] as const;
+export type Period = (typeof PERIODS)[number]['value'];
+
+// 期間に入る点だけにする。today を含む直近 days 日（週＝7日・月＝30日・年＝365日）
+export function filterByPeriod(points: ChartPoint[], period: Period, today: string): ChartPoint[] {
+  const days = PERIODS.find((p) => p.value === period)!.days;
+  const from = dayNumber(today) - (days - 1);
+  return points.filter((p) => dayNumber(p.date) >= from);
+}
+
+// ルーラーの範囲と、0.1 ごとの幅（px）
+export const RULER_PX = 10;
+
+// 0.1 刻みに丸めて範囲内に収める
+export function clampWeight(kg: number): number {
+  return Math.min(WEIGHT_MAX, Math.max(WEIGHT_MIN, Math.round(kg * 10) / 10));
+}
+
+// BMI の帯。左端 15・右端 35 の直線で位置（%）を出す。帯の色の境目は 18.5・25・30 の目盛り
+export const BMI_SCALE = { min: 15, max: 35, marks: [18.5, 25, 30] } as const;
+export function bmiPercent(bmi: number): number {
+  const { min, max } = BMI_SCALE;
+  const clamped = Math.min(max, Math.max(min, bmi));
+  return Math.round(((clamped - min) / (max - min)) * 1000) / 10;
 }

@@ -36,7 +36,7 @@ export class BodyResponse {
   @ApiProperty({ type: Number, example: -0.5, nullable: true, description: '1つ前の測定からの増減（kg。減ったら負）。測定が2件未満なら null' })
   deltaFromPrevious!: number | null;
 
-  @ApiProperty({ type: [WeightPointResponse], description: '直近120件（古い順）' })
+  @ApiProperty({ type: [WeightPointResponse], description: '直近370件（古い順。約1年分）' })
   weights!: WeightPointResponse[];
 }
 
