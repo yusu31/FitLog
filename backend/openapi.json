@@ -1177,6 +1177,68 @@
         ]
       }
     },
+    "/api/avatar": {
+      "get": {
+        "operationId": "getMyAvatar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarSettings"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分のキャラの設定（体型・髪型・髪／服／ズボンの色・小物）",
+        "tags": [
+          "avatar"
+        ]
+      },
+      "put": {
+        "operationId": "setMyAvatar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "選べない値（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分のキャラの設定を保存する（置き換え）",
+        "tags": [
+          "avatar"
+        ]
+      }
+    },
     "/api/body": {
       "get": {
         "operationId": "getBody",
@@ -2256,6 +2318,11 @@
           "pantsColor": {
             "type": "string",
             "example": "navy"
+          },
+          "accessory": {
+            "type": "string",
+            "example": "none",
+            "description": "小物。古い行には無い（無ければ none として扱う）"
           }
         },
         "required": [
@@ -3539,6 +3606,83 @@
         "required": [
           "name",
           "recordId"
+        ]
+      },
+      "AvatarSettings": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B"
+            ],
+            "description": "A=男性寄り・B=女性寄りの体つき"
+          },
+          "hair": {
+            "type": "number",
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "description": "髪型の番号（1 短髪・2 ナチュラル・3 流し前髪・4 ストレート・5 ツンツン）"
+          },
+          "hairColor": {
+            "type": "string",
+            "enum": [
+              "brown",
+              "black",
+              "blonde",
+              "red",
+              "gray",
+              "blue"
+            ]
+          },
+          "shirtColor": {
+            "type": "string",
+            "enum": [
+              "teal",
+              "navy",
+              "coral",
+              "purple",
+              "gold",
+              "green"
+            ]
+          },
+          "pantsColor": {
+            "type": "string",
+            "enum": [
+              "navy",
+              "black",
+              "gray",
+              "khaki",
+              "teal",
+              "maroon"
+            ]
+          },
+          "accessory": {
+            "type": "string",
+            "enum": [
+              "none",
+              "band1",
+              "band2",
+              "bandana",
+              "bandana2",
+              "glasses",
+              "wrist"
+            ],
+            "description": "小物。省くと none（なし）"
+          }
+        },
+        "required": [
+          "body",
+          "hair",
+          "hairColor",
+          "shirtColor",
+          "pantsColor"
         ]
       },
       "LatestWeightResponse": {

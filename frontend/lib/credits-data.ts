@@ -18,4 +18,11 @@ export const CREDIT_PARTS: { part: string; license: string; authors: string }[] 
   { part: 'legs/shorts/shorts/thin', license: 'OGA-BY 3.0', authors: 'ElizaWy, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike)' },
   { part: 'torso/clothes/shortsleeve/tshirt/female', license: 'OGA-BY 3.0', authors: 'ElizaWy, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike)' },
   { part: 'torso/clothes/shortsleeve/tshirt/male', license: 'OGA-BY 3.0', authors: 'ElizaWy, JaidynReiman, Johannes Sjölund (wulax), Stephen Challener (Redshrike)' },
+  { part: 'arms/wrists/cuffs/male', license: 'OGA-BY 3.0', authors: 'bluecarrot16, JaidynReiman' },
+  { part: 'arms/wrists/cuffs/thin', license: 'OGA-BY 3.0', authors: 'bluecarrot16, JaidynReiman' },
+  { part: 'facial/glasses/halfmoon/adult', license: 'OGA-BY 3.0', authors: 'ElizaWy' },
+  { part: 'hat/cloth/bandana/adult', license: 'OGA-BY 3.0', authors: 'Matthew Krohn (makrohn), JaidynReiman, Marcel van de Steeg (MadMarcel)' },
+  { part: 'hat/cloth/bandana2/adult', license: 'OGA-BY 3.0', authors: 'Napsio (Vitruvian Studio), JaidynReiman, Michael Whitlock (bigbeargames), Matthew Krohn (makrohn), Marcel van de Steeg (MadMarcel)' },
+  { part: 'hat/headband/thick/adult', license: 'OGA-BY 3.0+', authors: 'JaidynReiman' },
+  { part: 'hat/headband/tied/adult', license: 'OGA-BY 3.0', authors: 'Nila122' },
 ];

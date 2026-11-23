@@ -9,6 +9,7 @@ export const PRECACHE_PAGES: readonly string[] = [
   '/login/',
   '/me/',
   '/me/body/',
+  '/me/chara/',
   '/me/stats/',
   '/notifications/',
   '/privacy/',

@@ -101,7 +101,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
   return (
     <li ref={cardRef} className="fl-slab space-y-3 px-4 py-4" onClickCapture={() => setSeen(true)}>
       <div className="flex items-center gap-3">
-        <Avatar shirtColor={item.author.avatar.shirtColor} size={44} />
+        <Avatar avatar={item.author.avatar} size={44} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] leading-tight font-extrabold">
             {item.author.name}

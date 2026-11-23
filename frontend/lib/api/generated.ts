@@ -65,6 +65,8 @@ export interface AvatarResponse {
   hairColor: string;
   shirtColor: string;
   pantsColor: string;
+  /** 小物。古い行には無い（無ければ none として扱う） */
+  accessory?: string;
 }
 
 export interface MemberResponse {
@@ -690,6 +692,95 @@ export interface CreateRoutineRequest {
   name: string;
   /** 写す元の、自分の筋トレの記録（セットが1つ以上あるもの） */
   recordId: string;
+}
+
+/**
+ * A=男性寄り・B=女性寄りの体つき
+ */
+export type AvatarSettingsBody = typeof AvatarSettingsBody[keyof typeof AvatarSettingsBody];
+
+
+export const AvatarSettingsBody = {
+  A: 'A',
+  B: 'B',
+} as const;
+
+/**
+ * 髪型の番号（1 短髪・2 ナチュラル・3 流し前髪・4 ストレート・5 ツンツン）
+ */
+export type AvatarSettingsHair = typeof AvatarSettingsHair[keyof typeof AvatarSettingsHair];
+
+
+export const AvatarSettingsHair = {
+  NUMBER_1: 1,
+  NUMBER_2: 2,
+  NUMBER_3: 3,
+  NUMBER_4: 4,
+  NUMBER_5: 5,
+} as const;
+
+export type AvatarSettingsHairColor = typeof AvatarSettingsHairColor[keyof typeof AvatarSettingsHairColor];
+
+
+export const AvatarSettingsHairColor = {
+  brown: 'brown',
+  black: 'black',
+  blonde: 'blonde',
+  red: 'red',
+  gray: 'gray',
+  blue: 'blue',
+} as const;
+
+export type AvatarSettingsShirtColor = typeof AvatarSettingsShirtColor[keyof typeof AvatarSettingsShirtColor];
+
+
+export const AvatarSettingsShirtColor = {
+  teal: 'teal',
+  navy: 'navy',
+  coral: 'coral',
+  purple: 'purple',
+  gold: 'gold',
+  green: 'green',
+} as const;
+
+export type AvatarSettingsPantsColor = typeof AvatarSettingsPantsColor[keyof typeof AvatarSettingsPantsColor];
+
+
+export const AvatarSettingsPantsColor = {
+  navy: 'navy',
+  black: 'black',
+  gray: 'gray',
+  khaki: 'khaki',
+  teal: 'teal',
+  maroon: 'maroon',
+} as const;
+
+/**
+ * 小物。省くと none（なし）
+ */
+export type AvatarSettingsAccessory = typeof AvatarSettingsAccessory[keyof typeof AvatarSettingsAccessory];
+
+
+export const AvatarSettingsAccessory = {
+  none: 'none',
+  band1: 'band1',
+  band2: 'band2',
+  bandana: 'bandana',
+  bandana2: 'bandana2',
+  glasses: 'glasses',
+  wrist: 'wrist',
+} as const;
+
+export interface AvatarSettings {
+  /** A=男性寄り・B=女性寄りの体つき */
+  body: AvatarSettingsBody;
+  /** 髪型の番号（1 短髪・2 ナチュラル・3 流し前髪・4 ストレート・5 ツンツン） */
+  hair: AvatarSettingsHair;
+  hairColor: AvatarSettingsHairColor;
+  shirtColor: AvatarSettingsShirtColor;
+  pantsColor: AvatarSettingsPantsColor;
+  /** 小物。省くと none（なし） */
+  accessory?: AvatarSettingsAccessory;
 }
 
 export interface LatestWeightResponse {
@@ -4434,6 +4525,224 @@ export const useDeleteRoutine = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getDeleteRoutineMutationOptions(options), queryClient);
+    }
+
+export type getMyAvatarResponse200 = {
+  data: AvatarSettings
+  status: 200
+}
+
+export type getMyAvatarResponseSuccess = (getMyAvatarResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getMyAvatarResponse = (getMyAvatarResponseSuccess)
+
+export const getGetMyAvatarUrl = () => {
+
+
+
+
+  return `/api/avatar`
+}
+
+/**
+ * @summary 自分のキャラの設定（体型・髪型・髪／服／ズボンの色・小物）
+ */
+export const getMyAvatar = async ( options?: RequestInit): Promise<getMyAvatarResponse> => {
+
+  const res = await fetch(getGetMyAvatarUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getMyAvatarResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getMyAvatarResponse
+}
+
+
+
+
+
+export const getGetMyAvatarQueryKey = () => {
+    return [
+    `/api/avatar`
+    ] as const;
+    }
+
+
+export const getGetMyAvatarQueryOptions = <TData = Awaited<ReturnType<typeof getMyAvatar>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyAvatar>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyAvatarQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyAvatar>>> = ({ signal }) => getMyAvatar({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyAvatar>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMyAvatarQueryResult = NonNullable<Awaited<ReturnType<typeof getMyAvatar>>>
+export type GetMyAvatarQueryError = unknown
+
+
+/** @summary 自分のキャラの設定（体型・髪型・髪／服／ズボンの色・小物） */
+export function useGetMyAvatar<TData = Awaited<ReturnType<typeof getMyAvatar>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyAvatar>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyAvatar>>,
+          TError,
+          Awaited<ReturnType<typeof getMyAvatar>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分のキャラの設定（体型・髪型・髪／服／ズボンの色・小物） */
+export function useGetMyAvatar<TData = Awaited<ReturnType<typeof getMyAvatar>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyAvatar>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyAvatar>>,
+          TError,
+          Awaited<ReturnType<typeof getMyAvatar>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分のキャラの設定（体型・髪型・髪／服／ズボンの色・小物） */
+export function useGetMyAvatar<TData = Awaited<ReturnType<typeof getMyAvatar>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyAvatar>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分のキャラの設定（体型・髪型・髪／服／ズボンの色・小物） */
+export function useGetMyAvatar<TData = Awaited<ReturnType<typeof getMyAvatar>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyAvatar>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyAvatarQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type setMyAvatarResponse200 = {
+  data: AvatarSettings
+  status: 200
+}
+
+export type setMyAvatarResponse400 = {
+  data: ErrorResponse
+  status: 400
+}
+
+export type setMyAvatarResponseSuccess = (setMyAvatarResponse200) & {
+  headers: Headers;
+};
+export type setMyAvatarResponseError = (setMyAvatarResponse400) & {
+  headers: Headers;
+};
+
+export type setMyAvatarResponse = (setMyAvatarResponseSuccess | setMyAvatarResponseError)
+
+export const getSetMyAvatarUrl = () => {
+
+
+
+
+  return `/api/avatar`
+}
+
+/**
+ * @summary 自分のキャラの設定を保存する（置き換え）
+ */
+export const setMyAvatar = async (avatarSettings: AvatarSettings, options?: RequestInit): Promise<setMyAvatarResponse> => {
+
+  const res = await fetch(getSetMyAvatarUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
+    body: JSON.stringify(avatarSettings)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: setMyAvatarResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as setMyAvatarResponse
+}
+
+
+
+
+
+export const getSetMyAvatarMutationKey = () => ['setMyAvatar'] as const;
+
+export const getSetMyAvatarMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyAvatar>>, TError,SetMyAvatarMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof setMyAvatar>>, TError,SetMyAvatarMutationVariables, TContext> => {
+
+const mutationKey = getSetMyAvatarMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setMyAvatar>>, SetMyAvatarMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  setMyAvatar(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetMyAvatarMutationResult = NonNullable<Awaited<ReturnType<typeof setMyAvatar>>>
+    export type SetMyAvatarMutationBody = AvatarSettings
+    export type SetMyAvatarMutationError = ErrorResponse
+    export type SetMyAvatarMutationVariables = {data: AvatarSettings}
+
+    /** @summary 自分のキャラの設定を保存する（置き換え） */
+export const useSetMyAvatar = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyAvatar>>, TError,SetMyAvatarMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setMyAvatar>>,
+        TError,
+        SetMyAvatarMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetMyAvatarMutationOptions(options), queryClient);
     }
 
 export type getBodyResponse200 = {

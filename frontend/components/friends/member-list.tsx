@@ -67,7 +67,7 @@ export function MemberList({ group }: { group: GroupDetailResponse }) {
       <ul aria-labelledby="members-heading" className="space-y-2">
         {group.members.map((m) => (
           <li key={m.id} className="fl-slab flex min-h-14 items-center gap-3 p-2.5">
-            <Avatar shirtColor={m.avatar.shirtColor} size={44} />
+            <Avatar avatar={m.avatar} size={44} />
             <span className="min-w-0 flex-1 truncate text-base font-extrabold">{m.name}</span>
             {m.id === me && <span className="fl-tag bg-gold text-fg">あなた</span>}
           </li>

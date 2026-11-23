@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { PageTitle } from '@/components/fitlog/app-shell';
 import { Avatar } from '@/components/fitlog/avatar';
 import { MyVideoGrid } from '@/components/video-grid/my-video-grid';
-import { useListRecords } from '@/lib/api/generated';
+import { useGetMyAvatar, useListRecords } from '@/lib/api/generated';
+import { CHARA_MESSAGES } from '@/lib/chara-messages';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useAppSession } from '@/lib/use-app-session';
 import { isRunHeavyWeek } from '@/lib/week-focus';
@@ -18,6 +19,7 @@ import { WeekRunSection } from './week-run-section';
 // 「設定」は /settings へのリンク。ログアウトは設定（S-31）にだけ置く（自分タブで目立つと押し間違えるため）
 export function MeView() {
   const { data: session } = useAppSession();
+  const avatar = useGetMyAvatar();
   // 記録の一覧の1ページ目（RecordsList と同じ呼び出し。TanStack Query が1回分を共有する）で、今週ランが多い人かを見る（N9）
   const first = useListRecords({ limit: PAGE_SIZE });
   const items = first.data?.status === 200 ? first.data.data.items : [];
@@ -28,9 +30,12 @@ export function MeView() {
       <PageTitle>じぶん</PageTitle>
       <div className="space-y-4 px-4 pt-3">
         <section className="fl-slab flex items-center gap-3 px-4 py-3">
-          <Avatar shirtColor="teal" size={48} />
+          <Avatar avatar={avatar.data?.status === 200 ? avatar.data.data : null} size={48} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-extrabold">{session?.user.name}</p>
+            <Link href="/me/chara" className="inline-flex min-h-11 items-center text-sm font-bold text-brand underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+              {CHARA_MESSAGES.entry}
+            </Link>
           </div>
           {/* 設定の画面（S-31 /settings）は別の担当が作る。ここはリンクだけ。ThickButton（white・sm）と同じ見た目 */}
           <Link

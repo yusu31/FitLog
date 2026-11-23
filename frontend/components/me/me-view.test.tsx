@@ -28,7 +28,7 @@ vi.mock('@/lib/auth-client', () => ({
 }));
 
 // 自分の過去の動画（MyVideoGrid）は、この画面のどのテストでも呼ばれる。決めていないテストでは「動画なし」を返す
-const installFakeApi: typeof installApi = (routes) => installApi({ '/api/videos/mine': { status: 200, body: { items: [], nextCursor: null } }, ...routes });
+const installFakeApi: typeof installApi = (routes) => installApi({ '/api/videos/mine': { status: 200, body: { items: [], nextCursor: null } }, '/api/avatar': { status: 200, body: { body: 'A', hair: 1, hairColor: 'brown', shirtColor: 'teal', pantsColor: 'navy', accessory: 'none' } }, ...routes });
 const FIRST = '/api/records?limit=20';
 const ok = (body: unknown) => ({ status: 200, body });
 const page = (items: unknown[], nextCursor: string | null = null) => ok({ items, nextCursor });
