@@ -2,12 +2,6 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { cn } from 'cn';
 
-// A01-1: 実画面の見本（静止画。docs/images の画面を public/previews に置いたもの）
-const PREVIEWS = [
-  { src: '/previews/today.png', alt: '今日の画面の見本', caption: '今日：前回値入りで記録' },
-  { src: '/previews/friends.png', alt: '仲間の画面の見本', caption: '仲間：足跡とスタンプ' },
-];
-
 // 入口の「塗りのボタン」に見えるリンク（A01-2・N-06）。厚みボタンと同じく押すと沈み、高さは 44px 以上
 export const AUTH_LINK_BUTTON =
   'fl-thick inline-flex min-h-11 w-full items-center justify-center rounded-fl border-2 border-teal-light bg-surface px-4 text-base font-extrabold tracking-wide text-brand outline-none [--thick:#b8e3e4] focus-visible:ring-4 focus-visible:ring-teal/40';
@@ -40,23 +34,6 @@ export function AuthLayout({ title, hero, children }: { title: string; hero: Rea
         <div className="flex flex-1 flex-col gap-6 px-6 pt-6 pb-10">
           <h2 className="text-xl font-extrabold">{title}</h2>
           {children}
-          <section aria-label="画面の見本" className="mt-2 grid grid-cols-2 gap-3">
-            {PREVIEWS.map((p) => (
-              <figure key={p.src} className="flex flex-col gap-1.5">
-                {/* 静的書き出しでは画像の最適化を使わない（next.config.ts）ので img を使う */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p.src}
-                  alt={p.alt}
-                  width={780}
-                  height={1688}
-                  loading="lazy"
-                  className="h-auto w-full rounded-lg border-2 border-teal-light"
-                />
-                <figcaption className="text-center text-sm font-bold text-fg-subtle">{p.caption}</figcaption>
-              </figure>
-            ))}
-          </section>
         </div>
       </main>
     </div>

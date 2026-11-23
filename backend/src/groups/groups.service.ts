@@ -56,7 +56,7 @@ export class GroupsService {
     const [group] = await this.db.select({ id: groups.id, name: groups.name }).from(groups).where(eq(groups.id, groupId));
     // メールアドレスは仲間に見せない（名前とキャラの設定だけ）
     const members = await this.db
-      .select({ id: users.id, name: users.name, avatar: users.avatar })
+      .select({ id: users.id, name: users.name, bio: users.bio, avatar: users.avatar })
       .from(groupMembers)
       .innerJoin(users, eq(users.id, groupMembers.userId))
       .where(eq(groupMembers.groupId, groupId))

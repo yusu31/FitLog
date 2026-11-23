@@ -46,41 +46,9 @@ describe('AccountSettingsView（アカウントの設定）', () => {
     expect(screen.getByRole('link', { name: '設定へ戻る' })).toHaveAttribute('href', '/settings');
   });
 
-  it('表示名の欄に今の名前が入っていて、30 文字までに制限する', () => {
+  it('表示名はここに無い（設定の上の1か所だけ）', () => {
     renderWithQuery(<AccountSettingsView />);
-    const input = screen.getByLabelText('表示名');
-    expect(input).toHaveValue('たろう');
-    expect(input).toHaveAttribute('maxlength', '30');
-  });
-
-  it('表示名を変えて保存すると updateUser を呼び、保存できたことを知らせる', async () => {
-    const user = userEvent.setup();
-    renderWithQuery(<AccountSettingsView />);
-    const input = screen.getByLabelText('表示名');
-    await user.clear(input);
-    await user.type(input, 'はなこ');
-    await user.click(screen.getByRole('button', { name: '名前を保存する' }));
-    expect(updateUser).toHaveBeenCalledWith({ name: 'はなこ' });
-    expect(await screen.findByRole('status')).toHaveTextContent('保存しました');
-  });
-
-  it('表示名が空白だけなら、送らずに知らせる', async () => {
-    const user = userEvent.setup();
-    renderWithQuery(<AccountSettingsView />);
-    const input = screen.getByLabelText('表示名');
-    await user.clear(input);
-    await user.type(input, '   ');
-    await user.click(screen.getByRole('button', { name: '名前を保存する' }));
-    expect(updateUser).not.toHaveBeenCalled();
-    expect(await screen.findByRole('alert')).toHaveTextContent('表示名');
-  });
-
-  it('名前の保存が通信で止まったら、責めない文言で知らせる', async () => {
-    updateUser.mockRejectedValue(new TypeError('Failed to fetch'));
-    const user = userEvent.setup();
-    renderWithQuery(<AccountSettingsView />);
-    await user.click(screen.getByRole('button', { name: '名前を保存する' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('通信できませんでした');
+    expect(screen.queryByLabelText('表示名')).not.toBeInTheDocument();
   });
 
   it('パスワードを変えると、他の端末のログインを外す指定つきで changePassword を呼ぶ', async () => {

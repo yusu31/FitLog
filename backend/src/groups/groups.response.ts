@@ -40,6 +40,9 @@ export class MemberResponse {
   @ApiProperty({ example: 'たろう' })
   name!: string;
 
+  @ApiProperty({ type: 'string', example: '朝ランが好きです', nullable: true, required: false, description: 'ひとこと（プロフィール）。無ければ null' })
+  bio?: string | null;
+
   @ApiProperty({ type: AvatarResponse, description: 'キャラの設定。メールアドレスは返さない' })
   avatar!: AvatarResponse;
 }

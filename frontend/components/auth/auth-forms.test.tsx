@@ -243,16 +243,15 @@ describe('ログインの上半分（D1）', () => {
   });
 });
 
-// A01-1: 最初の画面で「何ができるか」が大見出しになり、実画面の見本（今日・仲間）が見える
-describe('入口の見出しと見本（A01-1）', () => {
+// A01-1: 最初の画面で「何ができるか」が大見出しになる（下の見本画像は 2026-11-23 に本人判断で消した）
+describe('入口の見出し（A01-1）', () => {
   it.each([
     ['ログイン', <LoginForm key="l" />],
     ['新規登録', <SignupForm key="s" />],
-  ])('%s: 大見出しは何ができるかの一文で、今日と仲間の見本画像がある', (_name, ui) => {
+  ])('%s: 大見出しは何ができるかの一文で、古い見本画像は出さない', (_name, ui) => {
     render(ui);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('前回の自分と並べて記録');
-    expect(screen.getByRole('img', { name: '今日の画面の見本' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: '仲間の画面の見本' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /画面の見本/ })).not.toBeInTheDocument();
   });
 
   it('ログインか新規登録かは、フォームの見出し（h2）で分かる', () => {

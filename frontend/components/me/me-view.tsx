@@ -30,7 +30,10 @@ export function MeView() {
       <PageTitle>じぶん</PageTitle>
       <div className="space-y-4 px-4 pt-3">
         <section className="fl-slab flex items-center gap-3 px-4 py-3">
-          <Avatar avatar={avatar.data?.status === 200 ? avatar.data.data : null} size={48} />
+          {/* 顔の丸も「キャラを変える」へ（同じ行き先なので読み上げ・Tab からは外す） */}
+          <Link href="/me/chara" aria-hidden="true" tabIndex={-1} className="shrink-0 rounded-full outline-none">
+            <Avatar avatar={avatar.data?.status === 200 ? avatar.data.data : null} size={48} />
+          </Link>
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-extrabold">{session?.user.name}</p>
             <Link href="/me/chara" className="inline-flex min-h-11 items-center text-sm font-bold text-brand underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">

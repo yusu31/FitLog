@@ -2343,6 +2343,12 @@
             "type": "string",
             "example": "たろう"
           },
+          "bio": {
+            "type": "string",
+            "example": "朝ランが好きです",
+            "nullable": true,
+            "description": "ひとこと（プロフィール）。無ければ null"
+          },
           "avatar": {
             "description": "キャラの設定。メールアドレスは返さない",
             "allOf": [

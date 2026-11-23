@@ -150,8 +150,8 @@ describe('BodyPage（からだ）', () => {
     const user = userEvent.setup();
     renderWithQuery(<BodyPage />);
     await user.type(await screen.findByLabelText('ひとこと'), '朝ランしてます');
-    await user.click(screen.getByRole('radio', { name: 'ラン' }));
-    await user.click(screen.getByRole('radio', { name: '朝' }));
+    // よくやる運動・動きやすい時間帯は画面から外した（2026-11-23）
+    expect(screen.queryByRole('radio', { name: '朝' })).not.toBeInTheDocument();
     await user.click(screen.getAllByRole('button', { name: '保存する' })[1]);
     await waitFor(() => expect(calls).toContain('PUT /api/body/profile'));
   });

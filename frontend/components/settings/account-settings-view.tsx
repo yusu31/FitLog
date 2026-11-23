@@ -14,12 +14,11 @@ import { useAppSession } from '@/lib/use-app-session';
 import { useRequireSession } from '@/lib/use-require-session';
 
 // 登録時と同じ境界（API 側でも守る。ここは入力中に気づかせるため）
-const MAX_NAME_LENGTH = 30;
 const MIN_PASSWORD_LENGTH = 8;
 
 type Notice = { kind: 'ok' | 'error'; text: string } | null;
 
-// アカウントの設定（F2-a。設定 S-31 から開く）。表示名とパスワードを変える。
+// アカウントの設定（F2-a。設定 S-31 から開く）。ひとこととパスワードを変える。表示名は設定の上（InlineNameEdit）だけ（2026-11-23 本人判断で一本化）。
 // 変更は better-auth の標準の窓口（updateUser・changePassword）を使い、自前の API は作らない
 export function AccountSettingsView() {
   const { signedIn } = useRequireSession();
@@ -41,7 +40,6 @@ export function AccountSettingsView() {
 
       {signedIn && user && (
         <div className="space-y-5 px-4 pt-3 pb-10">
-          <NameForm initialName={user.name} />
           <BodySettings />
           <PasswordForm />
         </div>
@@ -60,58 +58,6 @@ function NoticeText({ notice }: { notice: Notice }) {
     <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
       {notice.text}
     </p>
-  );
-}
-
-function NameForm({ initialName }: { initialName: string }) {
-  const [pending, setPending] = useState(false);
-  const [notice, setNotice] = useState<Notice>(null);
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const name = String(new FormData(event.currentTarget).get('name')).trim();
-    setNotice(null);
-    if (name.length < 1 || name.length > MAX_NAME_LENGTH) {
-      setNotice({ kind: 'error', text: ACCOUNT_MESSAGES.nameEmpty });
-      return;
-    }
-    setPending(true);
-    try {
-      const { error } = await authClient.updateUser({ name });
-      setNotice(error ? { kind: 'error', text: ACCOUNT_MESSAGES.nameFailed } : { kind: 'ok', text: ACCOUNT_MESSAGES.nameSaved });
-    } catch {
-      setNotice({ kind: 'error', text: ACCOUNT_MESSAGES.network });
-    } finally {
-      setPending(false);
-    }
-  }
-
-  return (
-    <section aria-labelledby="name-heading" className="fl-slab space-y-3 px-4 py-3">
-      <h2 id="name-heading" className="font-extrabold">
-        名前の変更
-      </h2>
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1.5">
-          <Label className="font-extrabold" htmlFor="account-name">
-            表示名
-          </Label>
-          <Input
-            className="h-12 text-base"
-            id="account-name"
-            name="name"
-            autoComplete="nickname"
-            required
-            maxLength={MAX_NAME_LENGTH}
-            defaultValue={initialName}
-          />
-        </div>
-        <NoticeText notice={notice} />
-        <ThickButton type="submit" disabled={pending}>
-          {pending ? '保存中…' : '名前を保存する'}
-        </ThickButton>
-      </form>
-    </section>
   );
 }
 
