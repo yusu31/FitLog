@@ -73,6 +73,8 @@ describe('ExercisesView（S-11 種目を選ぶ）', () => {
     search = 'day=yesterday';
     renderView();
     expect(await screen.findByRole('link', { name: /ベンチプレス/ })).toHaveAttribute('href', '/record?exercise=e-bench&day=yesterday');
+    // 「とじる」も、きのうの今日の画面へ戻す（02-9 N7。日付が落ちると今日に戻ってしまう）
+    expect(screen.getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today?day=yesterday');
   });
 
   it('自分で追加した種目には「じぶんの」の印が付く', async () => {

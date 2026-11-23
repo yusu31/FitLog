@@ -2,9 +2,8 @@
 
 import { cn } from 'cn';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
 import { useState } from 'react';
-import { FullScreen } from '@/components/fitlog/full-screen';
+import { PageTitle } from '@/components/fitlog/app-shell';
 import { JapanMap } from '@/components/me/japan-map';
 import { StampMedal } from '@/components/me/stamp-medal';
 import { useGetStats, type StatsCalendarDay, type StatsResponse } from '@/lib/api/generated';
@@ -42,7 +41,7 @@ const segClass = (on: boolean) =>
     on ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-surface text-brand',
   );
 
-// S-35 記録のまとめ（F-22・F-26・F-27・F-29。D5）。自分タブから入る。
+// S-35 記録のまとめ（F-22・F-26・F-27・F-29。D5）。下のタブ「まとめ」の画面。タブ付き（page 側で AppShell に包む）にして「＜」は置かない（02-9 N1。全画面だとタブが消え、自分へ戻る作りで迷った）。
 // 週・月・年の切替＋◀▶／合計4つ／数字のタイルを並べて比べる／スタンプ帳。連続日数・目標線・「あと◯」は出さない。休みは全期間で同じ紫
 export function StatsPage() {
   useRequireSession();
@@ -50,17 +49,8 @@ export function StatsPage() {
   const data = stats.data?.status === 200 ? stats.data.data : null;
 
   return (
-    <FullScreen>
-      <header className="flex items-center gap-1 px-2 pt-3">
-        <Link
-          href="/me"
-          aria-label="自分へ戻る"
-          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
-        >
-          <ChevronLeft aria-hidden className="size-7" />
-        </Link>
-        <h1 className="text-page-title font-extrabold">記録のまとめ</h1>
-      </header>
+    <>
+      <PageTitle>記録のまとめ</PageTitle>
       <div className="space-y-4 px-4 pt-3 pb-10">
         {data ? (
           <>
@@ -73,7 +63,7 @@ export function StatsPage() {
           </p>
         )}
       </div>
-    </FullScreen>
+    </>
   );
 }
 

@@ -38,8 +38,8 @@ describe('PreferencesSection（設定の端末ごとの項目）', () => {
 
   it('規約・プライバシーへのリンクと版を出す', () => {
     render(<PreferencesSection />);
-    expect(screen.getByRole('link', { name: '利用規約' })).toHaveAttribute('href', '/terms');
-    expect(screen.getByRole('link', { name: 'プライバシー' })).toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: '利用規約' })).toHaveAttribute('href', '/terms?back=settings');
+    expect(screen.getByRole('link', { name: 'プライバシー' })).toHaveAttribute('href', '/privacy?back=settings');
     expect(screen.getByText('版')).toBeInTheDocument();
   });
 });

@@ -2,11 +2,13 @@
 
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { CreateGroupForm } from '@/components/friends/create-group-form';
 import { GROUP_MEMBER_MAX, GroupSummary, MemberList } from '@/components/friends/member-list';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { useGetCurrentGroup } from '@/lib/api/generated';
+import { backTarget } from '@/lib/back-target';
 import { GROUP_MESSAGES } from '@/lib/messages';
 import { useRequireSession } from '@/lib/use-require-session';
 import { InvitePanel } from './invite-panel';
@@ -19,6 +21,8 @@ const LIMIT_REASON = '1人が入れるグループは1つ・5人までです。�
 // グループがなければ「グループを作る」、あれば メンバー・招待リンク・グループを出る
 export function GroupSettingsView() {
   const { signedIn } = useRequireSession();
+  // 仲間タブの「招待」から来たら仲間へ、設定から来たら設定へ戻す（N5）
+  const back = backTarget(useSearchParams().get('back'), ['friends'], { href: '/settings', label: '設定へ戻る' });
   const { data, isPending, isError } = useGetCurrentGroup({ query: { enabled: signedIn } });
   // 作った直後だけ「つぎは招待リンク」の案内を出す
   const [justCreated, setJustCreated] = useState(false);
@@ -31,8 +35,8 @@ export function GroupSettingsView() {
     <FullScreen>
       <header className="flex items-center gap-1 px-2 pt-3">
         <Link
-          href="/settings"
-          aria-label="設定へ戻る"
+          href={back.href}
+          aria-label={back.label}
           className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <ChevronLeft aria-hidden className="size-7" />

@@ -1,17 +1,23 @@
+'use client';
+
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { backTarget } from '@/lib/back-target';
 import { FullScreen } from '@/components/fitlog/full-screen';
 
 // 利用規約（/terms/）とプライバシーの扱い（/privacy/）。ログイン前の登録画面から開くので、ログインは要らない（useRequireSession を呼ばない）。
 // 個人が学習のために作った最大5人の招待制アプリ向けの、やさしい言葉の約束事。書いてあることは実装の事実だけにする（D1 PR-2・判断ログ 65）
 function LegalPage({ title, lead, children }: { title: string; lead: string; children: ReactNode }) {
+  // 設定から開いたら設定へ戻す（N2。ログイン中に登録画面へ戻ると、ログアウトしたように見える）
+  const back = backTarget(useSearchParams().get('back'), ['settings'], { href: '/signup', label: '登録画面へ戻る' });
   return (
     <FullScreen>
       <header className="flex items-center gap-1 px-2 pt-3">
         <Link
-          href="/signup"
-          aria-label="登録画面へ戻る"
+          href={back.href}
+          aria-label={back.label}
           className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <ChevronLeft aria-hidden className="size-7" />

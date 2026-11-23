@@ -19,11 +19,15 @@ export function describeNotification(n: Pick<NotificationItem, 'kind' | 'actor' 
   }
 }
 
-// 押したときの行き先。記録に関係するものは記録の詳細へ。自分の記録（スタンプ・コメント）は from=me で開く
-export function notificationHref(n: Pick<NotificationItem, 'kind' | 'recordId'>): string {
+// 押したときの行き先。記録に関係するものは記録の詳細へ。自分の記録（スタンプ・コメント）は from=me で開く。
+// 仲間の記録は、した人（actor）が書いた人なので by= を付ける（フィードから開いたときと同じく「まねする」を出す。N4）。
+// どちらも「＜」で通知へ戻す（back=notifications。N3）
+export function notificationHref(n: Pick<NotificationItem, 'kind' | 'recordId' | 'actor'>): string {
   if (n.kind === 'friend_joined' || !n.recordId) return '/friends';
   const id = encodeURIComponent(n.recordId);
-  return n.kind === 'friend_record' ? `/record-detail?id=${id}` : `/record-detail?id=${id}&from=me`;
+  return n.kind === 'friend_record'
+    ? `/record-detail?id=${id}&by=${encodeURIComponent(n.actor.id)}&back=notifications`
+    : `/record-detail?id=${id}&from=me&back=notifications`;
 }
 
 // ベルの数字。10以上は「9+」（タブの新着の印と同じ）
