@@ -1,18 +1,19 @@
 // 画面に出す数字・日付の整え方（S-10 今日・S-30 自分）。純粋な関数。
 // 日付は日本時間の日付（YYYY-MM-DD）。曜日は UTC の暦で読む（端末のタイムゾーンを使わない）。
 import type { SetValue } from '@/lib/today-menu';
+import { toUnit, type WeightUnit } from '@/lib/unit';
 
 export const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'] as const;
 
-// 25 → "25"、22.5 → "22.5"
-export const formatWeight = (kg: number): string => String(kg);
+// 25 → "25"、22.5 → "22.5"。lb のときは lb に直した数（単位の文字は付けない）
+export const formatWeight = (kg: number, unit: WeightUnit = 'kg'): string => String(toUnit(kg, unit));
 
 // 重量 × 回数。自重（0kg）は「自重 × 回数」にする
-export const formatSet = ({ weightKg, reps }: SetValue): string =>
-  weightKg === 0 ? `自重 × ${reps}` : `${formatWeight(weightKg)}kg × ${reps}`;
+export const formatSet = ({ weightKg, reps }: SetValue, unit: WeightUnit = 'kg'): string =>
+  weightKg === 0 ? `自重 × ${reps}` : `${formatWeight(weightKg, unit)}${unit} × ${reps}`;
 
 // 「40kg × 10回」。自重（0kg）は「自重 × 10回」（0kg と出さない）
-export const formatSetWithReps = ({ weightKg, reps }: SetValue): string => `${formatSet({ weightKg, reps })}回`;
+export const formatSetWithReps = ({ weightKg, reps }: SetValue, unit: WeightUnit = 'kg'): string => `${formatSet({ weightKg, reps }, unit)}回`;
 
 // 記録画面の上のバーの読み上げ（U2・A4）。「0/100」ではなく、何セット できたかと、前回のセット数
 export const formatSetProgress = (done: number, previousCount: number): string =>

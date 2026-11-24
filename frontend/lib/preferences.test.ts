@@ -1,4 +1,4 @@
-import { DEFAULT_PREFS, PREFS_KEY, parsePrefs, readPrefs, savePrefs } from './preferences';
+import { DEFAULT_PREFS, PREFS_KEY, firstTabPath, parsePrefs, readPrefs, savePrefs } from './preferences';
 
 afterEach(() => localStorage.removeItem(PREFS_KEY));
 
@@ -24,5 +24,26 @@ describe('端末の設定', () => {
     savePrefs({ ...DEFAULT_PREFS, autoplayVideo: true });
     expect(readPrefs().autoplayVideo).toBe(true);
     expect(readPrefs()).toBe(readPrefs());
+  });
+});
+
+describe('端末の設定（最初のタブ・単位。D6-5）', () => {
+  it('既定は 今日・kg', () => {
+    expect(DEFAULT_PREFS.firstTab).toBe('today');
+    expect(DEFAULT_PREFS.unit).toBe('kg');
+  });
+
+  it('保存された最初のタブ・単位を読む。知らない値は既定に戻す', () => {
+    const p = parsePrefs(JSON.stringify({ firstTab: 'friends', unit: 'lb' }));
+    expect(p.firstTab).toBe('friends');
+    expect(p.unit).toBe('lb');
+    const bad = parsePrefs(JSON.stringify({ firstTab: 'me', unit: 'stone' }));
+    expect(bad.firstTab).toBe('today');
+    expect(bad.unit).toBe('kg');
+  });
+
+  it('最初のタブから行き先を決める', () => {
+    expect(firstTabPath('today')).toBe('/today');
+    expect(firstTabPath('friends')).toBe('/friends');
   });
 });

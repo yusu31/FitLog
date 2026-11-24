@@ -35,6 +35,7 @@ import { setOutcomes } from '@/lib/record-detail';
 import { BODY_CONNECT_MESSAGES, formatKcal } from '@/lib/body/body';
 import { useOnline } from '@/lib/use-browser-state';
 import { useRequireSession } from '@/lib/use-require-session';
+import { useWeightUnit } from '@/lib/use-preferences';
 
 // S-21 記録の詳細（docs/screen-design.md 1章。v8 の部品の組み合わせ）。02-2 では記録の種類・日時・セット・ラン・取り消しまで。
 // スタンプ・コメント・動画・ルートは 02-4 で足す（枠は置かない）。
@@ -282,6 +283,7 @@ function Workout({ record, mine }: { record: RecordDetailResponse; mine: boolean
 // 1種目ぶん。自分の記録なら、その記録より前の「前回」「自己ベスト」を取って、セットごとの結果を出す
 // （取れない間・取れなかったときは、結果を出さずセットの値だけ出す）
 function ExerciseBlock({ exercise, recordedAt, mine }: { exercise: RecordedExercise; recordedAt: string; mine: boolean }) {
+  const unit = useWeightUnit();
   const { data } = useGetPrevious(exercise.exerciseId, { before: recordedAt }, { query: { enabled: mine } });
   const previous = mine && data?.status === 200 ? data.data : null;
   const outcomes = previous
@@ -297,7 +299,7 @@ function ExerciseBlock({ exercise, recordedAt, mine }: { exercise: RecordedExerc
           return (
             <li key={s.id} className="fl-slab flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
               <span className="w-12 shrink-0 text-note font-bold text-fg-muted">セット{s.setNo}</span>
-              <span className="fl-num min-w-0 flex-1 text-xl">{formatSet(s)}</span>
+              <span className="fl-num min-w-0 flex-1 text-xl">{formatSet(s, unit)}</span>
               {o?.isBest && <span className="fl-tag bg-gold !py-0 !text-note !leading-4 text-fg">{RECORD_MESSAGES.best}</span>}
               {o && (o.result === 'up' || o.result === 'down') && (
                 <span className="w-full pl-[60px] text-note font-bold text-fg-muted">{resultText(o.result, o.diff)}</span>

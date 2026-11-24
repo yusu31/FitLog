@@ -2,14 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { DEFAULT_NEXT_PATH } from '@/lib/next-path';
+import { firstTabPath, readPrefs } from '@/lib/preferences';
 
-// 最初の画面（docs/screen-design.md 2章）: 今日へ移す。ログインしていなければ、今日の枠がログイン画面へ移す。
+// 最初の画面（docs/screen-design.md 2章）: 設定の「最初に開くタブ」（既定は今日）へ移す。ログインしていなければ、今日の枠がログイン画面へ移す。
 // 静的書き出しなのでサーバーでの転送は使えず、画面で移す
 export default function Home() {
   const router = useRouter();
   useEffect(() => {
-    router.replace(DEFAULT_NEXT_PATH);
+    router.replace(firstTabPath(readPrefs().firstTab));
   }, [router]);
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-2 px-4">

@@ -869,6 +869,46 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     });
   });
 
+  describe('重さの単位 lb（D6-5）', () => {
+    beforeEach(() => localStorage.setItem('fitlog-prefs', JSON.stringify({ unit: 'lb' })));
+    afterEach(() => localStorage.removeItem('fitlog-prefs'));
+
+    it('lb のときは lb で出し、5lb ずつ動き、保存は kg（0.5 刻み）に直して送る', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      const lb = () => screen.getByRole('spinbutton', { name: '重量（lb）' });
+      expect(lb()).toHaveValue(88.2); // 40kg
+      await user.click(screen.getByRole('button', { name: '重量を 5lb ふやす' }));
+      expect(lb()).toHaveValue(90.4); // 90lb → 41kg（0.5kg 刻みに丸めた値を lb に戻した表示）
+      await user.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      expect(setCalls()[0].body).toMatchObject({ weightKg: 41, reps: 10 });
+    });
+
+    it('lb で数字を直接打つと、kg に直して持つ（135lb → 61kg）', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      const input = screen.getByRole('spinbutton', { name: '重量（lb）' });
+      await user.clear(input);
+      await user.type(input, '135');
+      await user.tab();
+      await user.click(doneButton());
+      await waitFor(() => expect(setCalls()).toHaveLength(1));
+      expect(setCalls()[0].body).toMatchObject({ weightKg: 61 });
+    });
+
+    it('前回のバー・できたセットも lb で出す', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      expect(screen.getByRole('group', { name: '前回との くらべ' })).toHaveTextContent('88.2lb');
+      await user.click(doneButton());
+      expect(await screen.findByRole('list', { name: 'できたセット' })).toHaveTextContent('88.2lb × 10回');
+    });
+  });
+
   // N3: 記録画面に「次の種目へ」が無く、×で閉じて種目を選び直す4手以上だった
   describe('次の種目へ（N3）', () => {
     const TODAY_JST = '2026-10-26'; // 固定した「今」（beforeEach で Date を止めた日）と同じ日

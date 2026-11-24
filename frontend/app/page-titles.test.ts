@@ -20,6 +20,7 @@ const PAGES: [path: string, title: string][] = [
   ['settings/account', 'アカウントの設定'],
   ['settings/credits', 'クレジット'],
   ['settings/group', 'グループの設定'],
+  ['settings/help', 'ヘルプ・使い方'],
 ];
 
 describe('ページタイトル（A2）', () => {

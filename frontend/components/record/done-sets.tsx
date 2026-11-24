@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { formatSetWithReps } from '@/lib/format';
 import { RECORD_MESSAGES } from '@/lib/messages';
+import { useWeightUnit } from '@/lib/use-preferences';
 
 export type DoneSet = { id: string; setNo: number; weightKg: number; reps: number };
 
@@ -21,6 +22,7 @@ export function DoneSets({
   online: boolean;
   onDelete: (set: DoneSet) => void;
 }) {
+  const unit = useWeightUnit();
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<DoneSet | null>(null);
   useEffect(() => {
@@ -46,7 +48,7 @@ export function DoneSets({
             <span className="flex-1 leading-tight">
               <span className="block text-note text-fg-muted">セット{s.setNo}</span>
               <span className="fl-num text-xl">
-                {formatSetWithReps(s)}
+                {formatSetWithReps(s, unit)}
               </span>
             </span>
             {bestIds.has(s.id) && <span className="fl-tag bg-gold !py-0 !text-note !leading-4 text-fg">{RECORD_MESSAGES.best}</span>}
@@ -89,7 +91,7 @@ export function DoneSets({
               このセットを 消しますか？
             </h2>
             <p id="del-desc" className="mt-2 text-sm text-fg-muted">
-              セット{confirming.setNo} ・ <span className="fl-num text-base text-fg">{formatSetWithReps(confirming)}</span> を取り消します。
+              セット{confirming.setNo} ・ <span className="fl-num text-base text-fg">{formatSetWithReps(confirming, unit)}</span> を取り消します。
             </p>
             <div className="mt-5 flex gap-2">
               <ThickButton autoFocus tone="white" size="sm" className="flex-1" onClick={() => setConfirming(null)}>

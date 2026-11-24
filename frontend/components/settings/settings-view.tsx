@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Info, LogOut, UserRound, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CircleHelp, Info, LogOut, UserRound, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useSyncExternalStore, type ReactNode } from 'react';
@@ -21,7 +21,7 @@ import { GROUP_MESSAGES } from '@/lib/messages';
 import { useRequireSession } from '@/lib/use-require-session';
 
 // S-31 設定（docs/screen-design.md 1章）。タブの無い全画面。
-// ユーザー情報・グループ（S-32 へ）・キャラ（S-33）・クレジット（S-34）・ログアウト。
+// ユーザー情報・アカウント（ログアウト・退会）・グループ（S-32 へ）・ヘルプ・クレジット（S-34）。
 // キャラの編集は「できれば」の範囲なので、押せない見た目だけ置く（クレジットは F-31 を出すので S-34 へ）
 export function SettingsView() {
   const router = useRouter();
@@ -62,9 +62,9 @@ export function SettingsView() {
       <div className="space-y-5 px-4 pt-3 pb-28">
         {user && <InlineNameEdit key={user.name} initialName={user.name} email={user.email} />}
 
-        <section aria-labelledby="settings-list-heading">
-          <h2 id="settings-list-heading" className="pb-2 text-note font-bold tracking-widest text-fg-subtle">
-            設定
+        <section aria-labelledby="account-heading" className="space-y-2">
+          <h2 id="account-heading" className="text-note font-bold tracking-widest text-fg-subtle">
+            アカウント
           </h2>
           <ul className="space-y-2">
             <li>
@@ -79,6 +79,25 @@ export function SettingsView() {
                 <ChevronRight aria-hidden className="size-5 shrink-0 text-fg-subtle" />
               </Link>
             </li>
+          </ul>
+          <ThickButton tone="white" onClick={onSignOut}>
+            <LogOut aria-hidden />
+            ログアウト
+          </ThickButton>
+          {error && (
+            <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
+              {error}
+            </p>
+          )}
+          {/* 退会はログアウトのすぐ下（一番下までスクロールしなくても見つかる） */}
+          <DeleteAccount />
+        </section>
+
+        <section aria-labelledby="settings-list-heading">
+          <h2 id="settings-list-heading" className="pb-2 text-note font-bold tracking-widest text-fg-subtle">
+            設定
+          </h2>
+          <ul className="space-y-2">
             <li>
               {groupLabel === null ? (
                 <div aria-busy="true" aria-label="グループを読み込み中" className="h-16 animate-pulse rounded-fl bg-canvas" />
@@ -97,6 +116,18 @@ export function SettingsView() {
                   <ChevronRight aria-hidden className="size-5 shrink-0 text-fg-subtle" />
                 </Link>
               )}
+            </li>
+            <li>
+              <Link
+                href="/settings/help"
+                className="fl-slab flex min-h-16 items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+              >
+                <RowIcon>
+                  <CircleHelp aria-hidden className="size-5" />
+                </RowIcon>
+                <span className="min-w-0 flex-1 truncate font-extrabold">ヘルプ・使い方</span>
+                <ChevronRight aria-hidden className="size-5 shrink-0 text-fg-subtle" />
+              </Link>
             </li>
             <li>
               <Link
@@ -133,19 +164,6 @@ export function SettingsView() {
 
         <ExportRecords />
 
-        <div className="space-y-2">
-          <ThickButton tone="white" onClick={onSignOut}>
-            <LogOut aria-hidden />
-            ログアウト
-          </ThickButton>
-          {error && (
-            <p role="alert" className="rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
-              {error}
-            </p>
-          )}
-        </div>
-
-        <DeleteAccount />
       </div>
     </FullScreen>
   );

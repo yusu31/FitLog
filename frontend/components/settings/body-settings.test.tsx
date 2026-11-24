@@ -10,10 +10,10 @@ afterEach(() => vi.unstubAllGlobals());
 
 // B14b: 設定に身長とプロフィール3欄。血液型・MBTI・基礎代謝は作らない
 describe('BodySettings（設定の身長・プロフィール）', () => {
-  it('身長と、プロフィール（ひとことだけ）に今の値が入る。よくやる運動・時間帯は無い', async () => {
+  it('身長の表示と、プロフィール（ひとことだけ）に今の値が入る。よくやる運動・時間帯は無い', async () => {
     installFakeApi({ 'GET /api/body': { status: 200, body: BODY }, 'GET /api/body/profile': { status: 200, body: PROFILE } });
     renderWithQuery(<BodySettings />);
-    expect(await screen.findByLabelText('身長（cm）')).toHaveValue('170');
+    expect(await screen.findByText('170cm')).toBeInTheDocument();
     expect(screen.getByLabelText('ひとこと')).toHaveValue('朝ランしてます');
     expect(screen.queryByRole('radio', { name: '朝' })).not.toBeInTheDocument();
     expect(screen.queryByText('よくやる運動')).not.toBeInTheDocument();
@@ -22,34 +22,23 @@ describe('BodySettings（設定の身長・プロフィール）', () => {
   it('血液型・MBTI・基礎代謝の欄は無い', async () => {
     installFakeApi({ 'GET /api/body': { status: 200, body: BODY }, 'GET /api/body/profile': { status: 200, body: PROFILE } });
     renderWithQuery(<BodySettings />);
-    await screen.findByLabelText('身長（cm）');
+    await screen.findByText('170cm');
     expect(document.body.textContent).not.toMatch(/血液型|MBTI|基礎代謝/);
   });
 
-  it('身長を保存すると PUT /api/body/height に送る', async () => {
-    installFakeApi({
-      'GET /api/body': { status: 200, body: BODY },
-      'GET /api/body/profile': { status: 200, body: PROFILE },
-      'PUT /api/body/height': { status: 200 },
-    });
-    renderWithQuery(<BodySettings />);
-    const input = await screen.findByLabelText('身長（cm）');
-    await userEvent.clear(input);
-    await userEvent.type(input, '172.5');
-    await userEvent.click(screen.getByRole('button', { name: '身長を保存する' }));
-    expect(await screen.findByText('保存しました')).toBeInTheDocument();
-    expect(calls).toContain('PUT /api/body/height');
-  });
-
-  it('範囲外の身長は送らず、理由を出す', async () => {
+  it('身長は表示と「からだ」へのリンクだけで、入力欄は無い（入力は /me/body だけ）', async () => {
     installFakeApi({ 'GET /api/body': { status: 200, body: BODY }, 'GET /api/body/profile': { status: 200, body: PROFILE } });
     renderWithQuery(<BodySettings />);
-    const input = await screen.findByLabelText('身長（cm）');
-    await userEvent.clear(input);
-    await userEvent.type(input, '50');
-    await userEvent.click(screen.getByRole('button', { name: '身長を保存する' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('100〜250');
-    expect(calls.some((c) => c.startsWith('PUT'))).toBe(false);
+    expect(await screen.findByText('170cm')).toBeInTheDocument();
+    expect(screen.queryByLabelText('身長（cm）')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '身長を保存する' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '「からだ」で変える' })).toHaveAttribute('href', '/me/body');
+  });
+
+  it('身長が未入力なら「未入力」と出す', async () => {
+    installFakeApi({ 'GET /api/body': { status: 200, body: { ...BODY, heightCm: null } }, 'GET /api/body/profile': { status: 200, body: PROFILE } });
+    renderWithQuery(<BodySettings />);
+    expect(await screen.findByText('未入力')).toBeInTheDocument();
   });
 
   it('プロフィールを保存すると PUT /api/body/profile に送る', async () => {

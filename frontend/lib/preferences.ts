@@ -1,3 +1,5 @@
+import type { WeightUnit } from '@/lib/unit';
+
 // 端末ごとの設定（通知の種類・誘う時刻・動画の自動再生）。見た目（theme.ts）と同じく localStorage に置く。
 // サーバーには送らない。壊れた値・保存できない環境では既定値で動く（fail-open）
 export type NotifyKind = 'stamp' | 'comment' | 'friend_record' | 'friend_joined';
@@ -9,7 +11,16 @@ export const NOTIFY_OPTIONS: readonly { kind: NotifyKind; label: string }[] = [
   { kind: 'friend_joined', label: '仲間が加わったとき' },
 ];
 
+export type FirstTab = 'today' | 'friends';
+export const FIRST_TAB_OPTIONS: readonly { value: FirstTab; label: string; path: string }[] = [
+  { value: 'today', label: '今日', path: '/today' },
+  { value: 'friends', label: '仲間', path: '/friends' },
+];
+
 export type Preferences = {
+  // 最初に開くタブ（起動時の / の行き先）と、重さの表示単位（保存は kg のまま）
+  firstTab: FirstTab;
+  unit: WeightUnit;
   autoplayVideo: boolean;
   notify: Record<NotifyKind, boolean>;
   // 誘う通知（その日に記録が無いときだけ・1日1回）。Web Push は別の PR で作るので、いまは時刻の保存だけ
@@ -23,6 +34,8 @@ export const REMINDER_DEFAULT_HOUR = 19;
 export const REMINDER_HOURS = Array.from({ length: 17 }, (_, i) => i + 6);
 
 export const DEFAULT_PREFS: Preferences = {
+  firstTab: 'today',
+  unit: 'kg',
   autoplayVideo: false,
   notify: { stamp: true, comment: true, friend_record: true, friend_joined: true },
   reminderOn: true,
@@ -39,6 +52,8 @@ export function parsePrefs(raw: string | null | undefined): Preferences {
     for (const { kind } of NOTIFY_OPTIONS) if (typeof notifyRaw[kind] === 'boolean') notify[kind] = notifyRaw[kind];
     const hour = v.reminderHour;
     return {
+      firstTab: v.firstTab === 'friends' ? 'friends' : DEFAULT_PREFS.firstTab,
+      unit: v.unit === 'lb' ? 'lb' : DEFAULT_PREFS.unit,
       autoplayVideo: typeof v.autoplayVideo === 'boolean' ? v.autoplayVideo : DEFAULT_PREFS.autoplayVideo,
       notify,
       reminderOn: typeof v.reminderOn === 'boolean' ? v.reminderOn : DEFAULT_PREFS.reminderOn,
@@ -87,3 +102,6 @@ export function savePrefs(next: Preferences): void {
 }
 
 export const SERVER_PREFS = DEFAULT_PREFS;
+
+// 起動時（/）の行き先
+export const firstTabPath = (tab: FirstTab): string => FIRST_TAB_OPTIONS.find((o) => o.value === tab)?.path ?? '/today';

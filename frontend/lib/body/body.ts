@@ -36,6 +36,7 @@ export const BODY_MESSAGES = {
   periodLabel: '期間',
   rulerHint: '左右に動かす・矢印キーでも動きます',
   rulerFirst: '動かして今日の体重に合わせます',
+  rulerGuess: (cm: number) => `身長 ${cm}cm からの目安（BMI 22）から始まります。動かして今日の体重に合わせます`,
   oneRmSection: '種目ごとの推定1RM',
   oneRmHint: '1回だけ持ち上げられる重さの目安です',
   oneRmApprox: '目安',
@@ -50,7 +51,7 @@ export const BODY_MESSAGES = {
   none: '決めない',
 } as const;
 
-export const rulerPrev = (kg: number, date: string) => `前回 ${kg}kg（${date}）· この値から始まります`;
+export const rulerPrev = (value: number, date: string, unit = 'kg') => `前回 ${value}${unit}（${date}）· この値から始まります`;
 export const bmiBarLabel = (bmi: number) => `BMI ${bmi} の位置`;
 export const heightFrom = (cm: number) => `身長 ${cm}cm で計算しています`;
 
@@ -144,7 +145,7 @@ export const BODY_CONNECT_MESSAGES = {
   inviteNote: '入れると、7日の平均と BMI が出ます。自分だけに見えます',
   settingsTitle: 'からだ',
   settingsNote: '身長は自分だけに見えます。プロフィールは同じグループの仲間に見えます',
-  heightSave: '身長を保存する',
+  heightLink: '「からだ」で変える',
   kcalNote: '推定（自分だけに見えます）',
 } as const;
 
@@ -174,6 +175,15 @@ export const RULER_PX = 10;
 // 0.1 刻みに丸めて範囲内に収める
 export function clampWeight(kg: number): number {
   return Math.min(WEIGHT_MAX, Math.max(WEIGHT_MIN, Math.round(kg * 10) / 10));
+}
+
+// 体重の記録が無い人の、ルーラーの始まりの目安。身長から BMI 22 の体重（0.1kg 刻み）。身長が無ければ 60kg
+export const RULER_DEFAULT_KG = 60;
+export const GUESS_BMI = 22;
+export function guessWeight(heightCm: number | null): number {
+  if (heightCm === null || !(heightCm >= HEIGHT_MIN && heightCm <= HEIGHT_MAX)) return RULER_DEFAULT_KG;
+  const m = heightCm / 100;
+  return clampWeight(GUESS_BMI * m * m);
 }
 
 // BMI の帯。左端 15・右端 35 の直線で位置（%）を出す。帯の色の境目は 18.5・25・30 の目盛り

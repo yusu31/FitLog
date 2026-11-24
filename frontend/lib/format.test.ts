@@ -1,4 +1,4 @@
-import { formatJstTime, formatDistance, formatPace, formatResumeProgress, formatSetProgress, formatSetWithReps } from './format';
+import { formatJstTime, formatDistance, formatPace, formatResumeProgress, formatSetProgress, formatSetWithReps, formatSet, formatWeight } from './format';
 
 describe('formatPace（1kmあたりのペース）', () => {
   it.each([
@@ -75,5 +75,24 @@ describe('formatDistance（距離の表示）', () => {
     [0, '0.0km'],
   ])('%i m → %s', (m, expected) => {
     expect(formatDistance(m)).toBe(expected);
+  });
+});
+
+describe('単位つきの表示（D6-5。保存は kg のまま）', () => {
+  it('kg は今までどおり', () => {
+    expect(formatWeight(22.5)).toBe('22.5');
+    expect(formatSet({ weightKg: 40, reps: 10 })).toBe('40kg × 10');
+    expect(formatSetWithReps({ weightKg: 40, reps: 10 })).toBe('40kg × 10回');
+  });
+
+  it('lb は lb に直し（小数1桁まで）、単位の文字も lb にする', () => {
+    expect(formatWeight(40, 'lb')).toBe('88.2');
+    expect(formatWeight(100, 'lb')).toBe('220.5');
+    expect(formatSet({ weightKg: 40, reps: 10 }, 'lb')).toBe('88.2lb × 10');
+    expect(formatSetWithReps({ weightKg: 40, reps: 10 }, 'lb')).toBe('88.2lb × 10回');
+  });
+
+  it('自重（0kg）は単位に関わらず「自重」', () => {
+    expect(formatSet({ weightKg: 0, reps: 12 }, 'lb')).toBe('自重 × 12');
   });
 });

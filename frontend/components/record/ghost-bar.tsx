@@ -3,6 +3,7 @@ import { Avatar } from '@/components/fitlog/avatar';
 import { formatSet, formatSetWithReps } from '@/lib/format';
 import { FRIEND_MESSAGES, RECORD_MESSAGES } from '@/lib/messages';
 import { volumeOf, type SetValue } from '@/lib/shared/ghost';
+import { useWeightUnit } from '@/lib/use-preferences';
 
 // バーの長さに使う量。重量が両方あれば 重量×回数、自重（0kg）が混じるときは回数
 const amount = (s: SetValue, bothWeighted: boolean) => (bothWeighted ? volumeOf(s) : s.reps);
@@ -13,6 +14,7 @@ const amount = (s: SetValue, bothWeighted: boolean) => (bothWeighted ? volumeOf(
 export type BarFriend = { id: string; name: string; shirtColor: string; value: SetValue };
 
 export function GhostBar({ ghost, current, isTrial, friends = [], label = RECORD_MESSAGES.barPrev }: { ghost: SetValue | null; current: SetValue; isTrial: boolean; friends?: BarFriend[]; label?: string }) {
+  const unit = useWeightUnit();
   const all = [ghost, current, ...friends.map((f) => f.value)].filter((v): v is SetValue => !!v);
   const both = all.every((v) => v.weightKg > 0);
   const max = Math.max(...all.map((v) => amount(v, both)), 1) * 1.15;
@@ -22,10 +24,10 @@ export function GhostBar({ ghost, current, isTrial, friends = [], label = RECORD
         // D3-6: 「前回 60kg × 8回 → 今回 60kg × 8回」の1行。お試し値のときは前回ではなく「目安」と書く
         <p className="flex flex-wrap items-baseline gap-x-2 text-sm font-bold text-fg-muted">
           <span>{isTrial ? RECORD_MESSAGES.trial : label} </span>
-          <span className="fl-num text-fg">{formatSetWithReps(ghost)} </span>
+          <span className="fl-num text-fg">{formatSetWithReps(ghost, unit)} </span>
           <ArrowRight aria-hidden className="size-4 self-center" />
           <span>{RECORD_MESSAGES.barNow} </span>
-          <span className="fl-num text-fg">{formatSetWithReps(current)}</span>
+          <span className="fl-num text-fg">{formatSetWithReps(current, unit)}</span>
         </p>
       ) : (
         <p className="text-sm font-bold text-fg-muted">{RECORD_MESSAGES.noPrevious}</p>
@@ -36,6 +38,7 @@ export function GhostBar({ ghost, current, isTrial, friends = [], label = RECORD
 }
 
 function FriendRow({ friends, both, max }: { friends: BarFriend[]; both: boolean; max: number }) {
+  const unit = useWeightUnit();
   if (friends.length === 0) return null;
   return (
     <div className="mt-1.5 flex items-end gap-2.5 text-note text-fg-muted">
@@ -49,7 +52,7 @@ function FriendRow({ friends, both, max }: { friends: BarFriend[]; both: boolean
             style={{ left: `${Math.min(100, (amount(f.value, both) / max) * 100)}%` }}
           >
             <span className="fl-num text-note leading-none whitespace-nowrap text-fg">
-              {formatSet(f.value).replace(/ /g, '')}
+              {formatSet(f.value, unit).replace(/ /g, '')}
             </span>
             <span aria-label={f.name} role="img" className="mt-0.5 block">
               <Avatar shirtColor={f.shirtColor} size={20} />

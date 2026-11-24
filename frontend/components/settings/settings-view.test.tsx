@@ -151,6 +151,35 @@ describe('SettingsView（S-31 設定）', () => {
     expect(screen.getByRole('link', { name: /クレジット/ })).toHaveAttribute('href', '/settings/credits');
   });
 
+  // L19: ログアウトと退会は「アカウント」の節に置く（一番下までスクロールしなくても見つかる）
+  it('「アカウント」の節に、アカウントの設定・ログアウト・退会を、この順で置く', () => {
+    renderView();
+    const section = screen.getByRole('region', { name: 'アカウント' });
+    const link = within(section).getByRole('link', { name: 'アカウントの設定' });
+    const logout = within(section).getByRole('button', { name: 'ログアウト' });
+    const del = within(section).getByRole('button', { name: '退会の手続きへ' });
+    expect(link.compareDocumentPosition(logout) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(logout.compareDocumentPosition(del) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('ログアウトと退会は、書き出し・ホーム画面に追加より上にある', () => {
+    renderView();
+    const del = screen.getByRole('button', { name: '退会の手続きへ' });
+    const exportButton = screen.getByRole('button', { name: /記録を書き出す（CSV）/ });
+    expect(del.compareDocumentPosition(exportButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('ヘルプ・使い方は /settings/help へのリンク', () => {
+    renderView();
+    expect(screen.getByRole('link', { name: /ヘルプ・使い方/ })).toHaveAttribute('href', '/settings/help');
+  });
+
+  it('最初に開くタブと重さの単位を選べる（表示の節）', () => {
+    renderView();
+    expect(screen.getByRole('radiogroup', { name: '最初に開くタブ' })).toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: '重さの単位' })).toBeInTheDocument();
+  });
+
   it('ログアウトを押すと signOut を呼び、ログイン画面へ移す', async () => {
     const user = userEvent.setup();
     renderView();

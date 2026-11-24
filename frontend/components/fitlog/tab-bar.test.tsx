@@ -107,3 +107,26 @@ describe('TabBar の新着の数字', () => {
     expect(await screen.findByTestId('friends-new-badge')).toHaveTextContent('新');
   });
 });
+
+describe('TabBar（狭い画面。L2）', () => {
+  it('各タブと START は幅を縮められる形（min-w-0・flex-1・最大64px／56px）で、はみ出さない', () => {
+    pathname = '/today/';
+    render(<TabBar />);
+    for (const name of ['今日', '仲間', 'まとめ', '自分']) {
+      const li = screen.getByRole('link', { name }).closest('li')!;
+      expect(li).toHaveClass('min-w-0', 'flex-1', 'max-w-16');
+      expect(screen.getByRole('link', { name })).toHaveClass('w-full');
+    }
+    const start = screen.getByRole('button', { name: 'START 記録を始める' });
+    expect(start.closest('li')).toHaveClass('min-w-0', 'flex-1', 'max-w-14');
+    expect(start).toHaveClass('aspect-square', 'w-full', 'max-w-14');
+  });
+
+  it('195px 幅などの狭い画面では、文字を消してアイコンだけにする（読み上げの名前は残す）', () => {
+    pathname = '/today/';
+    render(<TabBar />);
+    const label = screen.getByText('今日');
+    expect(label).toHaveClass('max-[239px]:sr-only');
+    expect(screen.getByRole('link', { name: '今日' })).toBeInTheDocument();
+  });
+});

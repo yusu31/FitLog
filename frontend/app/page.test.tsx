@@ -18,3 +18,16 @@ describe('Home（最初の画面）', () => {
     expect(replace).toHaveBeenCalledWith('/today');
   });
 });
+
+describe('Home（最初に開くタブ。D6-5）', () => {
+  afterEach(() => {
+    localStorage.removeItem('fitlog-prefs');
+    replace.mockClear();
+  });
+
+  it('設定が「仲間」なら、仲間の画面へ移す', () => {
+    localStorage.setItem('fitlog-prefs', JSON.stringify({ firstTab: 'friends' }));
+    render(<Home />);
+    expect(replace).toHaveBeenCalledWith('/friends');
+  });
+});

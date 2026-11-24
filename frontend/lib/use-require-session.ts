@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { loginRedirectPath } from '@/lib/login-failure';
 import { useAppSession } from '@/lib/use-app-session';
 
 // タブの無い画面（種目を選ぶ・記録）用の、ログインの案内。AppShell と同じ考え方で、
@@ -16,7 +17,7 @@ export function useRequireSession(): { signedIn: boolean } {
   useEffect(() => {
     if (signedOut) {
       const search = typeof window === 'undefined' ? '' : window.location.search;
-      router.replace(`/login?next=${encodeURIComponent(pathname + search)}`);
+      router.replace(loginRedirectPath(pathname + search));
     }
   }, [signedOut, router, pathname]);
 
