@@ -28,6 +28,18 @@ export class ExerciseResponse {
 
   @ApiProperty({ type: Number, nullable: true, example: 10, description: 'お試しの前回値の回数。一覧の種目だけ。自分で追加した種目は null' })
   trialReps!: number | null;
+
+  @ApiProperty({ type: [String], nullable: true, example: ['大胸筋', '上腕三頭筋'], description: '鍛える筋肉（主に使う筋肉の名前）。一覧の種目だけ。自分で追加した種目は null' })
+  muscles!: string[] | null;
+
+  @ApiProperty({ type: Number, nullable: true, minimum: 1, maximum: 3, example: 2, description: '難しさ（1=やさしい〜3=むずかしい）。一覧の種目だけ。自分で追加した種目は null' })
+  difficulty!: number | null;
+
+  @ApiProperty({ type: [String], nullable: true, description: 'やり方の手順（2〜3行）。一覧の種目だけ。自分で追加した種目は null' })
+  steps!: string[] | null;
+
+  @ApiProperty({ type: String, nullable: true, example: 'バーを胸から押し上げる。胸の基本', description: '一言説明。一覧の種目だけ。自分で追加した種目は null' })
+  cue!: string | null;
 }
 
 export class PreviousSetResponse {

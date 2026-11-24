@@ -16,6 +16,10 @@ type Exercise = {
   isCustom: boolean;
   trialWeightKg: number | null;
   trialReps: number | null;
+  muscles: string[] | null;
+  difficulty: number | null;
+  steps: string[] | null;
+  cue: string | null;
 };
 
 // 一覧の種目の総数（docs/database-design.md「一覧の種目」の30件）。種目を足す・減らすマイグレーションを入れたら、ここも直す。
@@ -83,7 +87,24 @@ describe('種目の一覧と追加（結合: 本物の PostgreSQL・better-auth�
         isCustom: false,
         trialWeightKg: expect.any(Number),
         trialReps: expect.any(Number),
+        muscles: expect.any(Array),
+        difficulty: expect.any(Number),
+        steps: expect.any(Array),
+        cue: expect.any(String),
       });
+    });
+
+    it('一覧の種目30件すべてに、説明の4項目（筋肉・難しさ1〜3・手順2〜3行・ひとこと）が入っている', async () => {
+      const cookie = await signUpAs('たろう');
+      const items = (await list(cookie)).filter((e) => !e.isCustom);
+      expect(items).toHaveLength(COMMON_TOTAL);
+      for (const e of items) {
+        expect(e.muscles?.length, `${e.id} muscles`).toBeGreaterThanOrEqual(1);
+        expect([1, 2, 3], `${e.id} difficulty`).toContain(e.difficulty);
+        expect(e.steps?.length, `${e.id} steps`).toBeGreaterThanOrEqual(2);
+        expect(e.steps?.length, `${e.id} steps`).toBeLessThanOrEqual(3);
+        expect(e.cue, `${e.id} cue`).toBeTruthy();
+      }
     });
 
     it('並びは部位の順（body_part の宣言順）。同じ部位の一覧の種目どうしは、固定の ID の順（＝一覧の並び）', async () => {
@@ -117,6 +138,10 @@ describe('種目の一覧と追加（結合: 本物の PostgreSQL・better-auth�
         isCustom: true,
         trialWeightKg: null,
         trialReps: null,
+        muscles: null,
+        difficulty: null,
+        steps: null,
+        cue: null,
       });
       const items = await list(cookie);
       expect(items).toHaveLength(COMMON_TOTAL + 1);

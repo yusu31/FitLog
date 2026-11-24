@@ -255,6 +255,21 @@ body {
       animation: none;
     }
   }
+  /* 種目の写真2枚の交互表示（D3-2）。2枚目を1.8秒ごとに重ねて、また消す。動きを減らす設定では、並べて見せる（種目の画面側で切り替える） */
+  .fl-flip {
+    animation: fl-flip 1.8s steps(1, end) infinite;
+  }
+  @keyframes fl-flip {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fl-flip {
+      animation: none;
+      opacity: 1;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .fl-thick {
       transition: none;

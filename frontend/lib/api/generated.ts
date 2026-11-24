@@ -134,6 +134,28 @@ export interface ExerciseResponse {
      * @nullable
      */
   trialReps: number | null;
+  /**
+     * 鍛える筋肉（主に使う筋肉の名前）。一覧の種目だけ。自分で追加した種目は null
+     * @nullable
+     */
+  muscles: string[] | null;
+  /**
+     * 難しさ（1=やさしい〜3=むずかしい）。一覧の種目だけ。自分で追加した種目は null
+     * @minimum 1
+     * @maximum 3
+     * @nullable
+     */
+  difficulty: number | null;
+  /**
+     * やり方の手順（2〜3行）。一覧の種目だけ。自分で追加した種目は null
+     * @nullable
+     */
+  steps: string[] | null;
+  /**
+     * 一言説明。一覧の種目だけ。自分で追加した種目は null
+     * @nullable
+     */
+  cue: string | null;
 }
 
 export interface PreviousSetResponse {

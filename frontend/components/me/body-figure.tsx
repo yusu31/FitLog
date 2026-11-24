@@ -6,18 +6,29 @@ import { HEAT_COLORS, type PartLevels } from '@/lib/heatmap';
 const SKIN = '#F5CFA6';
 
 // onPick を渡すと、部位の形を押して選べる（種目選び）。見た目だけの手段で、キーボード・読み上げの経路は別（部位のチップ）にあるので、フォーカスは持たせない
-export function BodyFigure({ view, levels, size = 118, onPick }: { view: 'front' | 'back'; levels: PartLevels; size?: number; onPick?: (part: BodyPart) => void }) {
+// decorative を付けると、読み上げからは外す（種目の行の部位アイコンなど、横に文字がある小さな図。D3-4）
+export function BodyFigure({
+  view,
+  levels,
+  size = 118,
+  onPick,
+  decorative = false,
+}: {
+  view: 'front' | 'back';
+  levels: PartLevels;
+  size?: number;
+  onPick?: (part: BodyPart) => void;
+  decorative?: boolean;
+}) {
   const pick = (part: BodyPart) => (onPick ? { onClick: () => onPick(part), className: 'cursor-pointer' } : {});
   const c = (part: BodyPart) => HEAT_COLORS[levels[part]];
   const front = view === 'front';
   return (
     <svg
-      data-testid={`body-${view}`}
+      {...(decorative ? { 'aria-hidden': true } : { 'data-testid': `body-${view}`, role: 'img', 'aria-label': front ? '前から見た体' : '後ろから見た体' })}
       width={size}
       height={Math.round((size * 262) / 132)}
       viewBox="0 0 132 262"
-      role="img"
-      aria-label={front ? '前から見た体' : '後ろから見た体'}
     >
       <circle cx="66" cy="24" r="17" fill={SKIN} />
       <rect x="58" y="38" width="16" height="14" rx="6" fill={SKIN} />

@@ -139,6 +139,11 @@ export const exercises = pgTable(
     // お試しの前回値（一覧の種目だけ。2つは同時に入れる）。記録としては保存しない
     trialWeightKg: numeric('trial_weight_kg', { precision: 4, scale: 1 }),
     trialReps: smallint('trial_reps'),
+    // 種目の説明（D3-2。一覧の種目だけ。自分で追加した種目は NULL）。鍛える筋肉・難しさ（1〜3）・手順（2〜3行）・ひとこと
+    muscles: text('muscles').array(),
+    difficulty: smallint('difficulty'),
+    steps: text('steps').array(),
+    cue: text('cue'),
   },
   (t) => [
     index('exercises_created_by_idx').on(t.createdBy),
