@@ -9,7 +9,7 @@ export type SetValue = { weightKg: number; reps: number };
 export type MenuItem = {
   exerciseId: string;
   name: string;
-  /** 前回の1セット目。前回の記録に無い種目（今日だけやった種目）は null */
+  /** 前回の、今日これから入れるセットと同じ番号のセット（無ければ最後のセット）。前回の記録に無い種目（今日だけやった種目）は null */
   previous: SetValue | null;
   /** 今日の目標（F-23）。前回の最後のセットから決める。前回が無ければ null */
   suggestion: SetValue | null;
@@ -51,21 +51,25 @@ export function buildMenu(workouts: readonly RecordDetailResponse[], today: stri
   // 前回からのあいた日数（休み明けは前回と同じ値を目標にする。A02-5）
   const daysSince = previous ? daysBetween(previous.localDate, today) : null;
 
-  const toItem = (exerciseId: string, name: string, first: SetValue | null, last: SetValue | null): MenuItem => {
+  const toItem = (exerciseId: string, name: string, same: SetValue | null, last: SetValue | null): MenuItem => {
     const sets = todaySets.get(exerciseId)?.sets ?? [];
     return {
       exerciseId,
       name,
-      previous: first,
+      previous: same,
       suggestion: last ? suggestNext(last, daysSince) : null,
       done: sets.length > 0,
       todayLast: sets.length > 0 ? valueOf(sets[sets.length - 1]) : null,
     };
   };
 
-  const items = (previous?.exercises ?? []).map((ex) =>
-    toItem(ex.exerciseId, ex.name, ex.sets[0] ? valueOf(ex.sets[0]) : null, ex.sets.length > 0 ? valueOf(ex.sets[ex.sets.length - 1]) : null),
-  );
+  // 「前回」は、今日これから入れるセットと同じ番号の前回のセット（記録画面の初期値と同じ基準。D3 L12）。
+  // 今日まだ1つも入れていなければ1セット目。同じ番号が無ければ前回の最後のセット
+  const items = (previous?.exercises ?? []).map((ex) => {
+    const nextNo = (todaySets.get(ex.exerciseId)?.sets.length ?? 0) + 1;
+    const same = ex.sets.find((s) => s.setNo === nextNo) ?? ex.sets[ex.sets.length - 1];
+    return toItem(ex.exerciseId, ex.name, same ? valueOf(same) : null, ex.sets.length > 0 ? valueOf(ex.sets[ex.sets.length - 1]) : null);
+  });
   // 前回に無い種目を今日やったときは、末尾に足す
   for (const [exerciseId, { name }] of todaySets) {
     if (!items.some((i) => i.exerciseId === exerciseId)) items.push(toItem(exerciseId, name, null, null));

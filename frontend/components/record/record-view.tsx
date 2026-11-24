@@ -1,16 +1,17 @@
 'use client';
 
-import { Moon, Timer, Video, X } from 'lucide-react';
+import { Ellipsis, Moon, Timer, Video, X } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
+import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { MyChara } from '@/components/fitlog/my-chara';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
 import { ListRecordsKind, getCalories, getStats, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
-import { formatSetProgress, formatSetWithReps } from '@/lib/format';
+import { formatResumeProgress, formatSetProgress, formatSetWithReps } from '@/lib/format';
 import { activeRecordId, noteBest, recordForNextSet } from '@/lib/current-workout';
 import { getCopyPlan, markCopyPlanUsed, planGhostLabel, planHeading, planSetsFor } from '@/lib/copy-plan';
 import { dayDateOf, parseDayMode, recordedAtFor, withDay } from '@/lib/day-mode';
@@ -47,6 +48,8 @@ import { VideoRecorder, canRecordVideo } from './video-recorder';
 import { hasFilmFirst, setFilmFirst } from '@/lib/film-first';
 
 const noSubscribe = () => () => {};
+// 押したときの時刻（イベントの中だけで使う）
+const nowMs = () => Date.now();
 
 // 「できた」の下に並べる副ボタンの形（D3-7）。主ボタンとの区別を付けるため、色を塗らず細い枠だけにする
 const SUB_BUTTON =
@@ -147,6 +150,10 @@ export function RecordView() {
   const [filming, setFilming] = useState(false);
   // 左上の ✕ で閉じる前の確認（A03-5）。1セットもできていなければ確認なしで閉じる
   const [closing, setClosing] = useState(false);
+  // この画面で「できた」を押した回数（もとから入っていたセットと分ける）
+  const [addedHere, setAddedHere] = useState(0);
+  // 「…」のシート（休憩する・2秒動画。D3-7）
+  const [more, setMore] = useState(false);
 
   if (!signedIn || exercisesPending) return <Skeleton />;
   if (!exercise) {
@@ -170,12 +177,16 @@ export function RecordView() {
   })();
 
   const done = sets.length;
+  // 続きの記録（3時間以内）を開いたとき、もとから入っていたセット。始めたばかりの「できた」と言い分ける（D3 L12）
+  const carried = Math.max(0, done - addedHere);
+  const previousCount = previous?.previous?.sets.length ?? 0;
+  const progressText = carried > 0 ? formatResumeProgress(carried, addedHere, previousCount) : formatSetProgress(done, previousCount);
   const total = Math.max(previous?.previous?.sets.length ?? 0, done, 1);
   const pct = Math.round((done / total) * 100);
 
   function onDone() {
     if (!exercise) return;
-    const now = Date.now();
+    const now = nowMs();
     const value = { weightKg: clampWeight(draft.weightKg), reps: clampReps(draft.reps) };
     const { recordId: rid, isNew } = recordForNextSet(now, day, serverActiveId);
     if (isNew) {
@@ -200,13 +211,14 @@ export function RecordView() {
     }
 
     const setId = crypto.randomUUID();
+    setAddedHere((n) => n + 1);
     const number = isNew ? 1 : setNo;
     const provisional = provisionalResult(ghost, value, pastMax);
     const summaryOf = `${exercise.name} ${formatSetWithReps(value)}`;
     const diff = ghost ? ghostDiff(ghost, value) : 0;
     setNotice(null);
     // 休憩は「できた」で自動で始める（D3 PR-4・本人の選択。A03-2 を上書き）。きのうの分（あとから記録）では始めない。次の「できた」では作り直す
-    setRest(day === 'today' ? { startedAt: Date.now(), seconds: readRestSeconds() } : null);
+    setRest(day === 'today' ? { startedAt: nowMs(), seconds: readRestSeconds() } : null);
     setOutcomes((o) => ({ ...o, [setId]: provisional }));
     // 今日の記録で使った部位（F-19）。この記録に入っている種目と、いまの種目の部位
     const bodyPartOf = (id: string) => (exerciseData?.status === 200 ? exerciseData.data.find((e) => e.id === id)?.bodyPart : undefined);
@@ -260,10 +272,12 @@ export function RecordView() {
   }
 
   const closeHref = withDay('/today', day);
+  const canFilm = videoCapable && online && day === 'today' && !!recordId;
   const bestIds = new Set(Object.entries(outcomes).filter(([, o]) => o.isPersonalBest).map(([id]) => id));
 
   return (
     <FullScreen>
+      <SyncBanner />
       <header className="flex items-center gap-3 px-2 pt-4 pr-4">
         {sets.length > 0 ? (
           <button
@@ -289,7 +303,7 @@ export function RecordView() {
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuetext={formatSetProgress(done, previous?.previous?.sets.length ?? 0)}
+          aria-valuetext={progressText}
           className="h-4 flex-1 -skew-x-[14deg] overflow-hidden rounded-[5px] bg-line"
         >
           <i
@@ -300,7 +314,7 @@ export function RecordView() {
         <MyChara pose="train" size={64} />
       </header>
       <p data-testid="set-progress" className="px-4 pt-1 text-note font-bold text-fg-muted">
-        {formatSetProgress(done, previous?.previous?.sets.length ?? 0)}
+        {progressText}
       </p>
       {rest && <RestTimerBar key={rest.startedAt} startedAt={rest.startedAt} initialSeconds={rest.seconds} onClose={() => setRest(null)} />}
 
@@ -327,7 +341,7 @@ export function RecordView() {
           </ul>
         </nav>
       )}
-      <div className={`flex flex-1 flex-col items-center gap-4 px-4 pt-4 ${rest ? 'pb-32' : 'pb-6'}`}>
+      <div className={`flex flex-1 flex-col items-center gap-4 px-4 pt-4 ${rest ? 'pb-24' : 'pb-6'}`}>
         <p className="text-sm font-extrabold tracking-widest text-fg-muted">{RECORD_MESSAGES.setNow(setNo)}</p>
         <h1 className="text-center text-page-title leading-tight font-extrabold">{exercise.name}</h1>
 
@@ -370,6 +384,11 @@ export function RecordView() {
           />
         </div>
 
+        {initial.target && (
+          <p data-testid="target-hint" className="text-center text-note font-bold text-fg-muted">
+            {RECORD_MESSAGES.target(initial.target.weightKg === 0 ? '自重' : `${initial.target.weightKg}kg`, initial.target.reps)}
+          </p>
+        )}
         <p className="text-center text-note font-bold text-fg-muted">{RECORD_MESSAGES.typeHint}</p>
         {initial.restReturn && (
           <p data-testid="rest-return-note" className="w-full rounded-fl bg-teal-light px-4 py-2 text-center text-sm font-bold text-fg">
@@ -412,38 +431,24 @@ export function RecordView() {
         {/* D3-10: できたセット（ベストの札つき）は「できた」のすぐ下＝画面の上のほうに置く */}
         <DoneSets sets={sets} bestIds={bestIds} online={online} onDelete={onDelete} />
 
-        {/* D3-7: 主は「できた」1つ。ほかは同じ小さい形で2列に並べる（5つ・4種類のスタイル・縦に長い、を直す）。
+        {/* D3-7: 主は「できた」1つ。副は「次の種目へ」「今日はここまで」の2つだけにし、休憩・2秒動画は「…」のシートへ。
             1セットで終えたいときの出口（A03-2）は今日の画面の「今日はここまで」 */}
         {sets.length > 0 && (
-          <div className="w-full space-y-1">
-            <div className="grid w-full grid-cols-2 gap-2">
-              <Link
-                href={nextExerciseId ? withDay(`/record?exercise=${encodeURIComponent(nextExerciseId)}`, day) : withDay('/exercises', day)}
-                className={`${SUB_BUTTON} text-brand`}
-              >
-                次の種目へ
-              </Link>
-              <Link href={closeHref} className={`${SUB_BUTTON} text-fg`}>
-                <Moon aria-hidden className="size-5" />
-                {RECORD_MESSAGES.stop}
-              </Link>
-              {day === 'today' && (
-                <button type="button" className={`${SUB_BUTTON} text-fg`} onClick={() => setRest({ startedAt: Date.now(), seconds: readRestSeconds() })}>
-                  <Timer aria-hidden className="size-5" />
-                  {RECORD_MESSAGES.restStart}
-                </button>
-              )}
-              {videoCapable && online && day === 'today' && recordId && (
-                <button type="button" aria-describedby="video-hint" className={`${SUB_BUTTON} text-fg`} onClick={() => setFilming(true)}>
-                  <Video aria-hidden className="size-5" />
-                  {RECORD_MESSAGES.video}
-                </button>
-              )}
-            </div>
-            {videoCapable && online && day === 'today' && recordId && (
-              <p id="video-hint" className="text-center text-note font-bold text-fg-muted">
-                {RECORD_MESSAGES.videoHint}
-              </p>
+          <div className="flex w-full gap-2">
+            <Link
+              href={nextExerciseId ? withDay(`/record?exercise=${encodeURIComponent(nextExerciseId)}`, day) : withDay('/exercises', day)}
+              className={`${SUB_BUTTON} flex-1 text-brand`}
+            >
+              次の種目へ
+            </Link>
+            <Link href={closeHref} className={`${SUB_BUTTON} flex-1 text-fg`}>
+              <Moon aria-hidden className="size-5" />
+              {RECORD_MESSAGES.stop}
+            </Link>
+            {(day === 'today' || canFilm) && (
+              <button type="button" aria-label="ほかの操作" aria-haspopup="dialog" className={`${SUB_BUTTON} w-14 shrink-0 text-fg`} onClick={() => setMore(true)}>
+                <Ellipsis aria-hidden className="size-6" />
+              </button>
             )}
           </div>
         )}
@@ -453,6 +458,48 @@ export function RecordView() {
       </div>
 
       <ResultSheet sheet={sheet} onDismiss={dismissSheet} />
+      {more && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-night/50 p-4 sm:items-center" onClick={() => setMore(false)}>
+          <div role="dialog" aria-modal="true" aria-label="ほかの操作" className="w-full max-w-sm space-y-2 rounded-2xl bg-surface p-4" onClick={(e) => e.stopPropagation()}>
+            {day === 'today' && (
+              <button
+                type="button"
+                autoFocus
+                className={`${SUB_BUTTON} w-full text-fg`}
+                onClick={() => {
+                  setRest({ startedAt: Date.now(), seconds: readRestSeconds() });
+                  setMore(false);
+                }}
+              >
+                <Timer aria-hidden className="size-5" />
+                {RECORD_MESSAGES.restStart}
+              </button>
+            )}
+            {canFilm && (
+              <>
+                <button
+                  type="button"
+                  aria-describedby="video-hint"
+                  className={`${SUB_BUTTON} w-full text-fg`}
+                  onClick={() => {
+                    setFilming(true);
+                    setMore(false);
+                  }}
+                >
+                  <Video aria-hidden className="size-5" />
+                  {RECORD_MESSAGES.video}
+                </button>
+                <p id="video-hint" className="text-center text-note font-bold text-fg-muted">
+                  {RECORD_MESSAGES.videoHint}
+                </p>
+              </>
+            )}
+            <ThickButton tone="white" size="sm" className="w-full" onClick={() => setMore(false)}>
+              {RECORD_MESSAGES.closeMore}
+            </ThickButton>
+          </div>
+        </div>
+      )}
       {closing && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-night/50 p-4 sm:items-center">
           <div role="alertdialog" aria-modal="true" aria-labelledby="close-title" aria-describedby="close-desc" className="w-full max-w-sm rounded-2xl bg-surface p-5">

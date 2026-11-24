@@ -269,9 +269,19 @@ function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse;
       {showTrial && trialWeightKg !== null && trialReps !== null && (
         <span className="flex shrink-0 flex-col items-end leading-tight">
           <span className="text-note font-bold text-fg-muted">目安</span>
+          {/* 0kg は「0kg × 10」ではなく「自重 × 10」（L5） */}
           <span className="fl-num text-lg text-fg">
-            {trialWeightKg}
-            <small className="mx-0.5 font-sans text-note font-bold not-italic text-fg-subtle">kg ×</small>
+            {trialWeightKg === 0 ? (
+              <>
+                自重
+                <small className="mx-0.5 font-sans text-note font-bold not-italic text-fg-subtle">×</small>
+              </>
+            ) : (
+              <>
+                {trialWeightKg}
+                <small className="mx-0.5 font-sans text-note font-bold not-italic text-fg-subtle">kg ×</small>
+              </>
+            )}
             {trialReps}
           </span>
         </span>

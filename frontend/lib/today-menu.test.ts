@@ -105,4 +105,17 @@ describe('buildMenu（今日のメニューを組み立てる）', () => {
       expect(buildMenu([yesterdayLate, prev], TODAY).session).toBeNull();
     });
   });
+
+  // D3 L12: 「前回」は記録画面の初期値と同じ基準（今日これから入れるセットと同じ番号の前回のセット）
+  it('前回の値は、今日これから入れるセットと同じ番号の前回のセット（今日1セット入れた種目は2セット目）', () => {
+    const today = workout('r2', TODAY, [squat([[62.5, 10]])]);
+    const prev = workout('r1', '2026-11-02', [squat([[60, 10], [60, 8], [60, 6]])]);
+    const m = buildMenu([today, prev], TODAY);
+    expect(m.items[0].previous).toEqual({ weightKg: 60, reps: 8 });
+  });
+  it('同じ番号が無ければ、前回の最後のセット', () => {
+    const today = workout('r2', TODAY, [squat([[62.5, 10], [62.5, 10], [62.5, 9]])]);
+    const prev = workout('r1', '2026-11-02', [squat([[60, 10], [60, 8]])]);
+    expect(buildMenu([today, prev], TODAY).items[0].previous).toEqual({ weightKg: 60, reps: 8 });
+  });
 });
