@@ -3,9 +3,14 @@
 import { Lock, Pause, Play } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Avatar } from '@/components/fitlog/avatar';
+import { BodyFigure } from '@/components/me/body-figure';
 import { VIDEO_GRID_MESSAGES } from '@/components/video-grid/messages';
-import { useGetCurrentGroup, useGetVideosThisWeek, useGetVideoUrl, type FeedItem, type FeedStamp } from '@/lib/api/generated';
-import { usePreferences } from '@/lib/use-preferences';
+import { useGetCurrentGroup, useGetVideosThisWeek, useGetVideoUrl, type BodyPart, type FeedItem, type FeedStamp, type FeedTopSet } from '@/lib/api/generated';
+import { BODY_PART_LABEL } from '@/lib/body-parts';
+import { formatSet } from '@/lib/format';
+import { levelsOf } from '@/lib/heatmap';
+import type { WeightUnit } from '@/lib/unit';
+import { usePreferences, useWeightUnit } from '@/lib/use-preferences';
 
 // 足跡カードの「写真の面」（BeReal 風。D7-6 PR-2・判断ログ 65）。
 // 動画があるときは縦 3:4 の枠を幅いっぱいに出し、角に記録の数字の札、右下に押した人の顔と数を重ねる。動画が無いときは数字の札と反応の行だけ（MediaBadges を単独で使う）。
@@ -43,11 +48,32 @@ export function FeedMedia({ item, isOwn, title, detail }: { item: FeedItem; isOw
 
 // 動画が無いカードの「数字の札」＋反応の顔（同じ部品。写真の面が無いだけ）
 export function MediaBadges({ item, title, detail }: { item: FeedItem; title: string; detail: string }) {
+  const unit = useWeightUnit();
   const hasFaces = item.stamps.some((s) => s.by.length > 0);
   return (
-    <div className="flex items-center justify-between gap-2">
-      <NumberBadge title={title} detail={detail} flat />
-      {hasFaces ? <Faces stamps={item.stamps} flat /> : null}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <NumberBadge title={title} detail={detail} flat />
+        {hasFaces ? <Faces stamps={item.stamps} flat /> : null}
+      </div>
+      {item.topSet && <TopSet set={item.topSet} parts={item.bodyParts ?? []} unit={unit} />}
+    </div>
+  );
+}
+
+// 動画の無い筋トレのカードの面（D7-6）。一番重いセットを大きな数字で、使った部位を体の図で見せる（文字だけのカードにしない）
+function TopSet({ set, parts, unit }: { set: FeedTopSet; parts: readonly BodyPart[]; unit: WeightUnit }) {
+  const levels = levelsOf(parts.map((bodyPart) => ({ bodyPart, sets: 4 })));
+  return (
+    <div data-testid="feed-top-set" className="flex items-center justify-between gap-3 rounded-fl bg-teal-light px-4 py-3">
+      <p className="min-w-0">
+        <span className="block truncate text-note font-bold text-fg-muted">{set.exerciseName}</span>
+        <span className="fl-num block text-4xl leading-tight text-fg">{formatSet(set, unit)}</span>
+      </p>
+      <span role="img" aria-label={`使った部位: ${parts.map((p) => BODY_PART_LABEL[p]).join('・')}`} className="flex shrink-0 gap-1 rounded-lg bg-surface px-2 py-1.5">
+        <BodyFigure view="front" levels={levels} size={32} decorative />
+        <BodyFigure view="back" levels={levels} size={32} decorative />
+      </span>
     </div>
   );
 }

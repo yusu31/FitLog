@@ -4038,6 +4038,30 @@
           }
         }
       },
+      "FeedTopSet": {
+        "type": "object",
+        "properties": {
+          "exerciseName": {
+            "type": "string",
+            "example": "ベンチプレス",
+            "description": "そのセットの種目名"
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 42.5,
+            "description": "重量（kg）。自重は 0"
+          },
+          "reps": {
+            "type": "number",
+            "example": 8
+          }
+        },
+        "required": [
+          "exerciseName",
+          "weightKg",
+          "reps"
+        ]
+      },
       "StampUser": {
         "type": "object",
         "properties": {
@@ -4141,6 +4165,21 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "topSet": {
+            "description": "筋トレの記録で一番重いセット（同じ重さなら回数が多い方、それも同じなら先に足した方）。セットが無ければ省く。D7-6",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeedTopSet"
+              }
+            ]
+          },
+          "bodyParts": {
+            "type": "array",
+            "description": "筋トレの記録で使った部位（重複なし）。セットが無ければ省く。D7-6",
+            "items": {
+              "$ref": "#/components/schemas/BodyPart"
             }
           },
           "run": {

@@ -718,6 +718,14 @@ describe('足跡カードの動画（BeReal 風。D7-6 PR-2）', () => {
     expect(calls.some((c) => c.url.includes('/url'))).toBe(false);
   });
 
+  it('動画が無い筋トレの足跡は、一番重いセットと使った部位の体の図を出す（D7-6）', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ topSet: { exerciseName: 'ベンチプレス', weightKg: 42.5, reps: 8 }, bodyParts: ['chest', 'legs'] })] }) }];
+    renderFeed();
+    const face = await screen.findByTestId('feed-top-set');
+    expect(face).toHaveTextContent('ベンチプレス42.5kg × 8');
+    expect(within(face).getByRole('img', { name: '使った部位: 胸・脚' })).toBeInTheDocument();
+  });
+
   it('動画が無い足跡には縦の枠を出さず、数字の札だけ', async () => {
     replies['GET /api/feed'] = [{ status: 200, body: feed() }];
     renderFeed();
