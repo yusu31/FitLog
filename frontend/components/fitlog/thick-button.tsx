@@ -22,12 +22,14 @@ const variants = {
   secondary: { tone: 'white', link: false },
   link: { tone: 'teal', link: true },
   icon: { tone: 'white', link: false },
+  // 取り消せない操作（削除・やめる）。濃いコーラルの厚みボタン
+  danger: { tone: 'coral', link: false },
 } as const;
 
 // 立体にするのは主ボタン（teal・gold・coral）だけ。副ボタン（white）は薄い色の面
 const FLAT_TONES: readonly string[] = ['white'];
 // アイコンだけのボタン（ベル・もどる・とじる）。枠なし・44px。aria-label が必須
-const iconClass = 'size-11 shrink-0 rounded-full text-fg-muted hover:bg-teal-light';
+const iconClass = 'fl-tap size-11 shrink-0 rounded-full text-fg-muted hover:bg-teal-light';
 
 const linkClass = 'min-h-11 px-2 text-sm font-bold text-brand underline underline-offset-4 decoration-2 hover:text-brand';
 
@@ -53,7 +55,7 @@ export function ThickButton({ variant, tone = 'teal', size = 'lg', className, ty
           ? iconClass
           : isLink
             ? linkClass
-            : [FLAT_TONES.includes(resolvedTone) ? 'rounded-fl font-extrabold' : 'fl-thick rounded-fl font-extrabold', tones[resolvedTone], sizes[size]],
+            : [FLAT_TONES.includes(resolvedTone) ? 'fl-tap rounded-fl font-extrabold' : 'fl-thick rounded-fl font-extrabold', tones[resolvedTone], sizes[size]],
         className,
       )}
       {...props}

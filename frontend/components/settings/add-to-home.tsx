@@ -60,14 +60,12 @@ export function AddToHome() {
           <RowIcon />
           ホーム画面に追加
         </h2>
-        <button
-          type="button"
+        <ThickButton variant="icon"
           aria-label="ホーム画面に追加の説明を閉じる"
           onClick={onDismiss}
-          className="flex size-11 shrink-0 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           <X aria-hidden className="size-5" />
-        </button>
+        </ThickButton>
       </div>
       <p className="text-sm text-fg-muted">アプリのように、ホーム画面のアイコンからすぐ開けます。仲間の反応の通知を受け取るにも、この追加が前提です。</p>
       {/* 追加の案内を受け取れた端末（Android の Chrome など）だけ。受け取れない端末は下の文章の案内のまま */}

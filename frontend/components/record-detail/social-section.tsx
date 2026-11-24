@@ -186,15 +186,14 @@ function Comments({ recordId, online, mine }: { recordId: string; online: boolea
                 <p className="text-[15px] font-bold break-words">{c.body}</p>
               </div>
               {me !== undefined && c.author.id === me && (
-                <button
-                  type="button"
+                <ThickButton
+                  variant="secondary" size="sm" className="shrink-0"
                   aria-label={`${FEED_MESSAGES.commentDelete}: ${c.body}`}
                   disabled={!online || deleteComment.isPending}
                   onClick={() => void remove(c.id)}
-                  className="min-h-11 shrink-0 rounded-full border-2 border-line bg-surface px-3 text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
                 >
                   {FEED_MESSAGES.commentDelete}
-                </button>
+                </ThickButton>
               )}
             </li>
           ))}

@@ -28,6 +28,7 @@ import { useRequireSession } from '@/lib/use-require-session';
 import { ProfileForm } from './profile-form';
 import { WeightChart } from './weight-chart';
 import { WeightRuler } from './weight-ruler';
+import { InfoTip } from '@/components/fitlog/info-tip';
 
 type Notice = { ok: boolean; text: string } | null;
 
@@ -71,7 +72,7 @@ export function BodyPage() {
                 <h2 id="body-profile" className="text-sm font-extrabold text-fg-muted">
                   {BODY_MESSAGES.profileSection}
                 </h2>
-                <p className="text-note text-fg-muted">{BODY_MESSAGES.profileHint}</p>
+                <InfoTip label="プロフィールの説明">{BODY_MESSAGES.profileHint}</InfoTip>
                 <ProfileForm initial={mine} />
               </section>
             )}

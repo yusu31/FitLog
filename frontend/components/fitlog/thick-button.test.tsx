@@ -30,6 +30,19 @@ describe('ThickButton の型（variant）', () => {
   });
 });
 
+describe('ThickButton 危険（danger）', () => {
+  it('濃いコーラルの厚みボタンで、取り消せない操作に使う', () => {
+    render(<ThickButton variant="danger">削除する</ThickButton>);
+    const b = screen.getByRole('button', { name: '削除する' });
+    expect(b).toHaveClass('bg-coral-strong', 'text-white', 'fl-thick');
+  });
+
+  it('副（secondary）に className を足しても、押せる大きさ（min-h-11）は残る', () => {
+    render(<ThickButton variant="secondary" size="sm" className="w-full">続ける</ThickButton>);
+    expect(screen.getByRole('button', { name: '続ける' })).toHaveClass('min-h-11', 'w-full');
+  });
+});
+
 describe('ThickButton アイコン（icon）', () => {
   it('枠なしの 44px の丸で、aria-label で名前が付く', () => {
     render(<ThickButton variant="icon" aria-label="とじる">×</ThickButton>);

@@ -52,8 +52,7 @@ export function DoneSets({
               </span>
             </span>
             {bestIds.has(s.id) && <span className="fl-tag bg-gold !py-0 !text-note !leading-4 text-fg">{RECORD_MESSAGES.best}</span>}
-            <button
-              type="button"
+            <ThickButton variant="icon"
               aria-label={`セット${s.setNo}の メニュー`}
               aria-haspopup="menu"
               aria-expanded={menuFor === s.id}
@@ -61,7 +60,7 @@ export function DoneSets({
               className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
             >
               <Ellipsis aria-hidden className="size-6" />
-            </button>
+            </ThickButton>
             {menuFor === s.id && (
               <div role="menu" className="absolute top-full right-1 z-10 mt-1 w-56 rounded-fl border-2 border-line bg-surface p-1 shadow-lg">
                 <button
@@ -98,7 +97,7 @@ export function DoneSets({
                 やめる
               </ThickButton>
               <ThickButton
-                tone="coral"
+                variant="danger"
                 size="sm"
                 className="flex-1"
                 onClick={() => {

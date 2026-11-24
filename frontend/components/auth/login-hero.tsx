@@ -1,5 +1,6 @@
 'use client';
 
+import { Logo } from '@/components/fitlog/logo';
 import { Sprite } from '@/components/fitlog/sprite';
 import { useLastKind } from '@/lib/last-kind';
 
@@ -16,7 +17,7 @@ export function LoginHero() {
   const v = VIEW[kind];
   return (
     <div data-testid="login-hero" data-kind={kind}>
-      <span className="fl-tag bg-gold text-fg">フィットログ</span>
+      <Logo size={36} withName className="text-lg" />
       <h1 className="mt-2 text-page-title leading-tight font-extrabold">{v.lead}</h1>
       <div className="mt-3 flex h-24 items-end gap-2">
         <div className="relative -mr-1.5 -mb-4 -ml-2 size-24 shrink-0">

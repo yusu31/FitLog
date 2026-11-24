@@ -8,6 +8,7 @@ import { canWatchLocation, isNativeApp, startLocationWatch, type StopWatch } fro
 import { addFix, breakSegment, emptyTrack, finishTrack, movingMs, type FinishError, type TrackState } from '@/lib/gps/track';
 import { GPS_MESSAGES } from '@/lib/messages';
 import { formatPace, paceSecPerKm } from '@/lib/run';
+import { ThickButton } from '@/components/fitlog/thick-button';
 
 const BEFORE_START: Record<GpsDevice, string> = {
   'ios-web': GPS_MESSAGES.beforeStartIosWeb,
@@ -269,9 +270,9 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
         <ActionButton onClick={onStop} icon={<Square aria-hidden className="size-5" />} label="終了" primary />
       </div>
       {phase === 'paused' && (
-        <button type="button" onClick={onDiscard} className="min-h-11 self-center rounded-fl px-3 text-sm font-extrabold text-fg-muted underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+        <ThickButton variant="link" className="self-center" onClick={onDiscard}>
           記録をやめる
-        </button>
+        </ThickButton>
       )}
     </section>
   );
@@ -288,13 +289,12 @@ function RunNotice({ device, onClose }: { device: GpsDevice; onClose: () => void
     <section aria-label="走る前に" className="rounded-fl bg-gold-light px-4 py-3 text-fg">
       <p className="text-sm font-extrabold">{GPS_MESSAGES.noticeTitle}</p>
       <p className="mt-1 text-sm font-bold">{device === 'ios-web' ? GPS_MESSAGES.noticeIosWeb : GPS_MESSAGES.noticeAndroidWeb}</p>
-      <button
-        type="button"
+      <ThickButton
+        variant="primary" size="sm" className="mt-2"
         onClick={onClose}
-        className="mt-2 min-h-11 rounded-fl bg-fg px-5 text-sm font-extrabold text-white outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
       >
         {GPS_MESSAGES.noticeOk}
-      </button>
+      </ThickButton>
     </section>
   );
 }
@@ -345,17 +345,9 @@ function Stat({ label, value, unit, big = false, testId }: { label: string; valu
 
 function ActionButton({ onClick, icon, label, primary = false }: { onClick: () => void; icon: ReactNode; label: string; primary?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        primary
-          ? 'flex min-h-14 flex-1 items-center justify-center gap-2 rounded-fl bg-teal-dark text-lg font-extrabold text-white shadow-[0_4px_0_var(--color-teal-deep)] outline-none focus-visible:ring-4 focus-visible:ring-teal/40'
-          : 'fl-slab flex min-h-14 flex-1 items-center justify-center gap-2 text-lg font-extrabold text-fg outline-none focus-visible:border-teal'
-      }
-    >
+    <ThickButton variant={primary ? 'primary' : 'secondary'} className="min-h-14 flex-1 w-auto text-lg" onClick={onClick}>
       {icon}
       {label}
-    </button>
+    </ThickButton>
   );
 }

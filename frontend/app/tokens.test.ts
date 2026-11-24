@@ -52,3 +52,24 @@ describe.each([
 describe('short: バリアント（高さが低い画面）', () => {
   it('max-height: 500px の画面だけに効く', () => expect(css).toMatch(/@custom-variant short \(@media \(max-height: 500px\)\);/));
 });
+
+// 02-9 D0: ボタンの役割の色（docs/design.md「共通の部品とトークン」の表）。白い字を載せる面は 4.5 以上
+describe.each([
+  ['ライト', (n: string) => pick(themeBlock, n)],
+  ['ダーク', (n: string) => pick(darkBlock, n, pick(themeBlock, n))],
+])('ボタンの役割の色（%s）', (_name, get) => {
+  it('主（濃ティール）・危険（コーラル）は白い字が 4.5 以上', () => {
+    expect(ratio('#ffffff', get('--color-teal-dark'))).toBeGreaterThanOrEqual(4.5);
+    expect(ratio('#ffffff', get('--color-coral-strong'))).toBeGreaterThanOrEqual(4.5);
+  });
+  it('副（薄ティールの面）の上の字（brand）は 4.5 以上', () => {
+    expect(ratio(get('--color-brand'), get('--color-teal-light'))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe('小さな動きは「動きを減らす」設定で止まる（D0-4）', () => {
+  it.each(['fl-pop-in', 'fl-done-pop', 'fl-tap'])('%s は prefers-reduced-motion: reduce の中でも指定がある', (cls) => {
+    const blocks = [...lf.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n  \}/g)].map((m) => m[1]).join('\n');
+    expect(blocks).toContain(`.${cls}`);
+  });
+});

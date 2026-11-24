@@ -36,6 +36,7 @@ import { BODY_CONNECT_MESSAGES, formatKcal } from '@/lib/body/body';
 import { useOnline } from '@/lib/use-browser-state';
 import { useRequireSession } from '@/lib/use-require-session';
 import { useWeightUnit } from '@/lib/use-preferences';
+import { InfoTip } from '@/components/fitlog/info-tip';
 
 // S-21 記録の詳細（docs/screen-design.md 1章。v8 の部品の組み合わせ）。02-2 では記録の種類・日時・セット・ラン・取り消しまで。
 // スタンプ・コメント・動画・ルートは 02-4 で足す（枠は置かない）。
@@ -159,7 +160,7 @@ export function RecordDetailView() {
         <SocialSection recordId={record.id} kind={record.kind} mine={mine} />
         {mine && (
           <section aria-label={DETAIL_MESSAGES.deleteRegion} className="mt-10 border-t-2 border-line pt-6">
-            <ThickButton tone="coral" size="sm" className="mx-auto flex" disabled={!online} onClick={() => setConfirming(true)}>
+            <ThickButton variant="danger" size="sm" className="mx-auto flex" disabled={!online} onClick={() => setConfirming(true)}>
               <Trash2 aria-hidden />
               {DETAIL_MESSAGES.deleteButton}
             </ThickButton>
@@ -255,7 +256,7 @@ function CopyButton({ record, fromUserId }: { record: RecordDetailResponse; from
       <ThickButton size="sm" className="w-full" disabled={!online || busy} onClick={() => void onCopy()}>
         {busy ? FRIEND_MESSAGES.copying : FRIEND_MESSAGES.copyButton}
       </ThickButton>
-      <p className="mt-2 text-center text-note font-bold text-fg-muted">{DETAIL_MESSAGES.copyExplain}</p>
+      <InfoTip label="この内容で始めるの説明" className="text-center">{DETAIL_MESSAGES.copyExplain}</InfoTip>
       {!online && <p className="mt-2 text-center text-note text-fg-muted">{FRIEND_MESSAGES.copyOffline}</p>}
       {error && (
         <p role="alert" className="mt-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">

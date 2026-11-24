@@ -1,0 +1,30 @@
+'use client';
+
+import { useId, useState, type ReactNode } from 'react';
+import { CircleHelp } from 'lucide-react';
+import { cn } from 'cn';
+
+// 「?」を押すと開く説明。2行以上の説明文で画面が文字だらけになるのを防ぐ（最初の1回だけ見せる説明には使わない）。
+// ボタンは本物の <button>（Tab で届き、Enter・Space で開閉）。開いているかは aria-expanded で読み上げられる。
+// Esc で閉じる。ボタンは 44px 以上
+export function InfoTip({ label, children, className, panelClassName }: { label: string; children: ReactNode; className?: string; panelClassName?: string }) {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  return (
+    <div className={cn('text-note', className)} onKeyDown={(e) => e.key === 'Escape' && open && setOpen(false)}>
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex size-11 items-center justify-center rounded-full text-brand outline-none hover:bg-teal-light focus-visible:ring-4 focus-visible:ring-teal/40"
+      >
+        <CircleHelp aria-hidden className="size-5" />
+      </button>
+      <div id={panelId} hidden={!open} className={cn('mt-1 text-note leading-relaxed font-bold text-fg-muted', panelClassName)}>
+        {children}
+      </div>
+    </div>
+  );
+}

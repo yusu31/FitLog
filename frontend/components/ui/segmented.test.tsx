@@ -18,3 +18,10 @@ describe('Segmented', () => {
     expect(onChange).toHaveBeenCalledWith('b');
   });
 });
+
+describe('Segmented の disabled', () => {
+  it('disabled のときは全部の選択肢を押せない', () => {
+    render(<Segmented legend="誘う時刻" options={[{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }]} value="a" onChange={() => {}} disabled />);
+    for (const r of screen.getAllByRole('radio')) expect(r).toBeDisabled();
+  });
+});

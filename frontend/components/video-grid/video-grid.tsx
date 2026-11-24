@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { cn } from 'cn';
 import { useGetVideoUrl } from '@/lib/api/generated';
 import { VIDEO_GRID_MESSAGES } from './messages';
+import { EmptyState } from '@/components/fitlog/empty-state';
 
 // 2秒動画のサムネの並び（台帳 A14-2）。2つの使い方を1つの部品で持つ。
 //  - strip: 仲間タブの「今週のサムネ列」（横に並ぶ）
@@ -30,7 +31,7 @@ export type VideoGridProps = {
 
 export function VideoGrid({ items, layout, locked = false, onSelect }: VideoGridProps) {
   if (items.length === 0) {
-    return <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{VIDEO_GRID_MESSAGES[layout === 'strip' ? 'emptyStrip' : 'emptyGrid']}</p>;
+    return <EmptyState title={VIDEO_GRID_MESSAGES[layout === 'strip' ? 'emptyStrip' : 'emptyGrid']} pose="relax" />;
   }
   return (
     <ul

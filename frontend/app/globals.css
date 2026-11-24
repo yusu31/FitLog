@@ -277,4 +277,39 @@ body {
       transition: none;
     }
   }
+  /* 小さな動き（D0-4）。どれも「動きを減らす」設定では止める。
+     fl-pop-in: 空の画面・カードが出るとき小さくはねる／fl-done-pop: 「できた」を押したとき／fl-tap: 押したとき少しへこむ */
+  .fl-pop-in {
+    animation: fl-pop-in 0.35s ease-out both;
+  }
+  @keyframes fl-pop-in {
+    0% { transform: scale(0.94); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .fl-done-pop {
+    animation: fl-done-pop 0.45s ease-out both;
+  }
+  @keyframes fl-done-pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+  .fl-tap {
+    transition: transform 80ms;
+  }
+  .fl-tap:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fl-pop-in,
+    .fl-done-pop {
+      animation: none;
+    }
+    .fl-tap {
+      transition: none;
+    }
+    .fl-tap:active:not(:disabled) {
+      transform: none;
+    }
+  }
 }

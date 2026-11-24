@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth-client';
 import { withNext } from '@/lib/next-path';
 import { useNextParam } from '@/lib/use-next-param';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // better-auth の既定: パスワードは8文字以上（API 側でも検査される。ここは入力中に気づかせるため）
 const MIN_PASSWORD_LENGTH = 8;
@@ -72,7 +73,7 @@ export function SignupForm() {
         <PasswordField label={`パスワード（${MIN_PASSWORD_LENGTH}文字以上）`} autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} />
         {/* D1: 規約とプライバシーへの同意は必須（チェックしないと登録できない）。ページは別タブで開き、入力中の内容を失わない */}
         <label className="flex min-h-11 items-start gap-3 text-sm leading-relaxed">
-          <input type="checkbox" name="terms" className="mt-0.5 size-6 shrink-0 accent-teal-dark" />
+          <Checkbox name="terms" className="mt-0.5" />
           <span>
             <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-brand underline">
               利用規約

@@ -1,5 +1,6 @@
 'use client';
 
+import { ThickButton } from '@/components/fitlog/thick-button';
 import { cn } from 'cn';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -33,6 +34,7 @@ import {
 } from '@/lib/stats';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useRequireSession } from '@/lib/use-require-session';
+import { InfoTip } from '@/components/fitlog/info-tip';
 
 const STATUS_CLASS = { rec: 'bg-gold', rest: 'bg-grape', none: 'bg-canvas' } as const;
 // 月曜始まり（マスの並びと同じ。A08-4）
@@ -214,15 +216,9 @@ function Period({ data }: { data: StatsResponse }) {
 function NavButton({ label, disabled, onClick, dir }: { label: string; disabled: boolean; onClick: () => void; dir: 'prev' | 'next' }) {
   const Icon = dir === 'prev' ? ChevronLeft : ChevronRight;
   return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="flex size-11 items-center justify-center rounded-full border-2 border-teal-light text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-35"
-    >
+    <ThickButton variant="icon" className="border-2 border-teal-light text-brand disabled:opacity-35" aria-label={label} disabled={disabled} onClick={onClick}>
       <Icon aria-hidden className="size-5" />
-    </button>
+    </ThickButton>
   );
 }
 
@@ -319,7 +315,7 @@ function JapanTrek({ totalMeters }: { totalMeters: number }) {
       <h2 id="stats-trek" className="text-sm font-extrabold text-fg-muted">
         日本縦断
       </h2>
-      <p className="mt-1 text-sm font-bold text-fg-muted">走った距離で、日本を南の鹿児島から北の稚内へ進みます</p>
+      <InfoTip label="日本縦断の説明">走った距離で、日本を南の鹿児島から北の稚内へ進みます</InfoTip>
       <p className="mt-1 text-center" data-testid="trek-total">
         <span className="text-note text-fg-muted">これまでの合計</span> <span className="fl-num text-3xl">{(totalMeters / 1000).toFixed(1)}</span> <span className="text-sm font-bold">km</span>
       </p>

@@ -9,6 +9,7 @@ import { MyChara } from '@/components/fitlog/my-chara';
 import { getListNotificationsQueryKey, markNotificationsSeen, useListNotifications } from '@/lib/api/generated';
 import { describeNotification, formatNotificationTime, notificationHref } from '@/lib/notifications';
 import { usePreferences } from '@/lib/use-preferences';
+import { EmptyState } from '@/components/fitlog/empty-state';
 
 // S-37 通知（D7-3）。スタンプ／コメントをもらった・仲間が記録した・仲間が加わった を新しい順に。
 // 開いて一覧が読めたら「見た」を送る。ベルの数字は0にするが、この画面では「どれが新しかったか」の点を残す
@@ -31,10 +32,7 @@ export function NotificationsView() {
             通知を読み込めませんでした。電波の良い所でもう一度ためしてください
           </p>
         ) : items.length === 0 ? (
-          <section className="flex flex-col items-center gap-1 pt-6">
-            <MyChara pose="idle" size={96} />
-            <p className="text-base font-extrabold">まだ おしらせは ありません</p>
-          </section>
+          <EmptyState as="section" title="まだ おしらせは ありません" hint="仲間がスタンプやコメントをくれると、ここに届きます" character={<MyChara pose="idle" size={96} />} />
         ) : (
           <ul aria-label="通知の一覧" className="space-y-2">
             {items.map((n) => (
