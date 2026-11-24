@@ -1,0 +1,66 @@
+# 監査（Playwright）を CI の別マシンで手動実行する（P6 PR-7）。
+# ローカルで動かすとメモリが 90% 近くまで上がるため、重い処理を PC から外す。
+# 実行: gh workflow run audit.yml → 成果物（写真・ui-result.json）を artifact から取る。
+# DB は毎回新しい使い捨てなので、シードの再作成は要らない。localhost 以外には接続しない（frontend/e2e/guard.ts）。
+name: 監査（手動）
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: 監査（Playwright・画面の写真と機械検査）
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: frontend
+    services:
+      postgres:
+        image: postgres:17@sha256:31ba9c94a03ada9988f2bb493a22a75eef3a185884533e5cdbcd498ea835b08f
+        env:
+          POSTGRES_USER: fitlog
+          POSTGRES_PASSWORD: fitlog
+          POSTGRES_DB: fitlog
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fitlog -d fitlog"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      E2E_DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
+      E2E_MIGRATION_DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+
+      - name: 依存を入れる（画面・API。lock どおり）
+        run: |
+          npm ci
+          npm ci --prefix ../backend
+
+      - name: ブラウザ（Chromium）を入れる
+        run: npx playwright install --with-deps chromium
+
+      - name: 監査
+        run: npx playwright test -c playwright.audit.config.ts
+
+      # 失敗しても写真は残す（どこで落ちたかを見るため）
+      - name: 成果物を上げる
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: audit-out
+          path: frontend/e2e/audit/out
+          retention-days: 7
+          if-no-files-found: warn
