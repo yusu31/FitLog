@@ -97,6 +97,39 @@ describe('LoginForm（S-01）', () => {
   });
 });
 
+describe('LoginForm（セッションが取れず戻されたとき。L16）', () => {
+  afterEach(() => sessionStorage.removeItem('fitlog-just-signed-in'));
+
+  it('?failed=1 で開くと、「ログインできませんでした（Cookie が保存されない）」を出す', () => {
+    window.history.replaceState(null, '', '/login?next=%2Ftoday&failed=1');
+    render(<LoginForm />);
+    expect(screen.getByRole('alert')).toHaveTextContent('ログインできませんでした（Cookie が保存されない）');
+  });
+
+  it('?failed が無いふつうの開き方では、何も出さない', () => {
+    render(<LoginForm />);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('ログインに成功したら、移る前にログイン直後の印を付ける（次の画面でセッションが取れなかったとき理由を出すため）', async () => {
+    signInEmail.mockResolvedValue({ data: {}, error: null });
+    const user = userEvent.setup();
+    render(<LoginForm />);
+    await fillLogin(user);
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/today'));
+    expect(sessionStorage.getItem('fitlog-just-signed-in')).toBe('1');
+  });
+
+  it('パスワードが違うときは印を付けない', async () => {
+    signInEmail.mockResolvedValue({ data: null, error: { message: 'x' } });
+    const user = userEvent.setup();
+    render(<LoginForm />);
+    await fillLogin(user);
+    expect(await screen.findByRole('alert')).toHaveTextContent('メールアドレスかパスワードが違います');
+    expect(sessionStorage.getItem('fitlog-just-signed-in')).toBeNull();
+  });
+});
+
 describe('SignupForm（S-02）', () => {
   async function fillSignup(user: ReturnType<typeof userEvent.setup>) {
     await user.type(screen.getByLabelText('表示名'), 'ゆうす');

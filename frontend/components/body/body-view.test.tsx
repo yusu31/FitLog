@@ -162,3 +162,42 @@ describe('BodyPage（からだ）', () => {
     expect(await screen.findByText(/読み込めませんでした/)).toBeInTheDocument();
   });
 });
+
+describe('BodyPage（ルーラーの始まりと単位。L11・D6-5）', () => {
+  afterEach(() => localStorage.removeItem('fitlog-prefs'));
+
+  it('体重の記録が無く、身長があるときは、身長から目安（BMI 22）で始める（170cm → 63.6kg）', async () => {
+    installFakeApi(routes({ ...EMPTY, heightCm: 170 }, { items: [] }));
+    renderWithQuery(<BodyPage />);
+    const ruler = await screen.findByRole('slider', { name: '体重（kg）' });
+    expect(ruler).toHaveAttribute('aria-valuenow', '63.6');
+    expect(screen.getByText(/身長 170cm からの目安（BMI 22）/)).toBeInTheDocument();
+  });
+
+  it('記録があるときは前回の値のまま（身長から出さない）', async () => {
+    installFakeApi(routes());
+    renderWithQuery(<BodyPage />);
+    expect(await screen.findByRole('slider', { name: '体重（kg）' })).toHaveAttribute('aria-valuenow', '70.2');
+    expect(screen.queryByText(/BMI 22/)).not.toBeInTheDocument();
+  });
+
+  it('身長の目安のまま動かさずに保存しても、体重は送らない', async () => {
+    installFakeApi(routes({ ...EMPTY, heightCm: 170 }, { items: [] }));
+    const user = userEvent.setup();
+    renderWithQuery(<BodyPage />);
+    await screen.findByRole('slider', { name: '体重（kg）' });
+    await user.click(screen.getAllByRole('button', { name: '保存する' })[0]);
+    expect(await screen.findByText('保存しました')).toBeInTheDocument();
+    expect(calls.some((c) => c.startsWith('PUT'))).toBe(false);
+  });
+
+  it('単位が lb のとき、大きな数字・前回・ルーラーが lb になる（70.2kg → 154.8lb）', async () => {
+    localStorage.setItem('fitlog-prefs', JSON.stringify({ unit: 'lb' }));
+    installFakeApi(routes());
+    renderWithQuery(<BodyPage />);
+    const ruler = await screen.findByRole('slider', { name: '体重（lb）' });
+    expect(ruler).toHaveAttribute('aria-valuenow', '154.8');
+    expect(screen.getByText('154.8')).toBeInTheDocument();
+    expect(screen.getByText(/前回 154.8lb/)).toBeInTheDocument();
+  });
+});

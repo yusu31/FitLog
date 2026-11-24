@@ -30,13 +30,15 @@ beforeEach(() => {
 });
 
 describe('AccountSettingsView（アカウントの設定）', () => {
-  it('B14b: 身長・プロフィールの編集（からだ）の区画がある', async () => {
+  it('B14b: 身長の表示と「からだ」へのリンク・プロフィールの編集（からだ）の区画がある', async () => {
     installFakeApi({
       'GET /api/body': { status: 200, body: { heightCm: 170, latest: null, bmi: null, avg7: null, deltaFromPrevious: null, weights: [] } },
       'GET /api/body/profile': { status: 200, body: { userId: 'u1', name: 'たろう', bio: null, favoriteKind: null, activeTime: null } },
     });
     renderWithQuery(<AccountSettingsView />);
-    expect(await screen.findByLabelText('身長（cm）')).toHaveValue('170');
+    expect(await screen.findByText('170cm')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '「からだ」で変える' })).toHaveAttribute('href', '/me/body');
+    expect(screen.queryByLabelText('身長（cm）')).not.toBeInTheDocument();
     expect(screen.getByLabelText('ひとこと')).toBeInTheDocument();
   });
 

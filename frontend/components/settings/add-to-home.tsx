@@ -5,8 +5,8 @@ import { useSyncExternalStore } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { useInstallPrompt } from '@/lib/pwa/use-install-prompt';
 
-const DISMISSED_KEY = 'fitlog:add-to-home-dismissed';
-const DISMISS_EVENT = 'fitlog:add-to-home-changed';
+export const DISMISSED_KEY = 'fitlog:add-to-home-dismissed';
+export const DISMISS_EVENT = 'fitlog:add-to-home-changed';
 
 // 追加済み（ホーム画面から開いている）か、自分で閉じたなら出さない（A10-5）。
 // 端末の状態を読むので useSyncExternalStore を使う（最初の描画はサーバーと同じ「出さない」で、そのあと切り替わる）

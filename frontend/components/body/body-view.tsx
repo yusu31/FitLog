@@ -19,8 +19,10 @@ import {
   type OneRepMaxItem,
 } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
-import { BMI_SCALE, BODY_MESSAGES, bmiBarLabel, bmiPercent, clampWeight, formatDelta, heightFrom, parseHeightText, rulerPrev } from '@/lib/body/body';
+import { BMI_SCALE, BODY_MESSAGES, bmiBarLabel, bmiPercent, clampWeight, formatDelta, guessWeight, heightFrom, parseHeightText, rulerPrev } from '@/lib/body/body';
 import { formatMonthDay } from '@/lib/format';
+import { toUnit } from '@/lib/unit';
+import { useWeightUnit } from '@/lib/use-preferences';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useRequireSession } from '@/lib/use-require-session';
 import { ProfileForm } from './profile-form';
@@ -93,7 +95,10 @@ function Inputs({ data }: { data: BodyResponse }) {
   const todayKg = data.weights.find((w) => w.date === today)?.kg;
   const last = data.latest;
   // ルーラーは、今日の体重 → 前回の体重 → 60kg の順で始める。動かさず前回の値のまま保存してもよい
-  const [weight, setWeightValue] = useState(todayKg ?? last?.kg ?? 60);
+  // 記録が無い人は、身長があれば身長から目安（BMI 22）、無ければ 60kg
+  const guessed = todayKg === undefined && !last && data.heightCm !== null;
+  const [weight, setWeightValue] = useState(todayKg ?? last?.kg ?? guessWeight(data.heightCm));
+  const unit = useWeightUnit();
   const [touched, setTouched] = useState(false);
   const [heightText, setHeightText] = useState(data.heightCm === null ? '' : String(data.heightCm));
   const [notice, setNotice] = useState<Notice>(null);
@@ -126,14 +131,15 @@ function Inputs({ data }: { data: BodyResponse }) {
         {BODY_MESSAGES.weightSection}
       </h2>
       <p aria-live="polite" className="text-center font-extrabold">
-        <span className="fl-num text-6xl leading-none">{weight.toFixed(1)}</span>
-        <span className="ml-1 text-xl text-fg-muted">kg</span>
+        <span className="fl-num text-6xl leading-none">{toUnit(weight, unit).toFixed(1)}</span>
+        <span className="ml-1 text-xl text-fg-muted">{unit}</span>
       </p>
       <p className="text-center text-note font-bold text-fg-muted">
-        {last ? rulerPrev(last.kg, formatMonthDay(last.date)) : BODY_MESSAGES.rulerFirst}
+        {last ? rulerPrev(toUnit(last.kg, unit), formatMonthDay(last.date), unit) : guessed && data.heightCm !== null ? BODY_MESSAGES.rulerGuess(data.heightCm) : BODY_MESSAGES.rulerFirst}
       </p>
       <WeightRuler
         value={weight}
+        unit={unit}
         onChange={(kg) => {
           setTouched(true);
           setWeightValue(clampWeight(kg));

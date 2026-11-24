@@ -1,16 +1,11 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { ProfileForm } from '@/components/body/profile-form';
-import { ThickButton } from '@/components/fitlog/thick-button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { getGetBodyQueryKey, useGetBody, useGetMyProfile, useSetHeight } from '@/lib/api/generated';
-import { messageOf } from '@/lib/api/message';
-import { BODY_CONNECT_MESSAGES as M, BODY_MESSAGES, parseHeightText } from '@/lib/body/body';
+import { useGetBody, useGetMyProfile } from '@/lib/api/generated';
+import { BODY_CONNECT_MESSAGES as M, BODY_MESSAGES } from '@/lib/body/body';
 
-// 設定の身長とプロフィール3欄（B14b）。血液型・MBTI・基礎代謝の欄は作らない（3章の判断）。
+// 設定の身長（表示と「からだ」へのリンクだけ。入力は「からだ」の画面）とプロフィールのひとこと（B14b）。血液型・MBTI・基礎代謝の欄は作らない（3章の判断）。
 // 読み込めないときは何も出さない（名前・パスワードの変更を邪魔しない）
 export function BodySettings() {
   const body = useGetBody();
@@ -25,48 +20,17 @@ export function BodySettings() {
         {M.settingsTitle}
       </h2>
       <p className="text-note text-fg-muted">{M.settingsNote}</p>
-      {data && <HeightForm heightCm={data.heightCm} />}
+      {data && (
+        <div className="space-y-1">
+          <p className="font-extrabold">{BODY_MESSAGES.heightLabel}</p>
+          <p className="fl-num text-lg">{data.heightCm === null ? '未入力' : `${data.heightCm}cm`}</p>
+          {/* 身長の入力は「からだ」の画面だけ（体重と並べて入れる） */}
+          <Link href="/me/body" className="inline-flex min-h-11 items-center font-bold text-brand underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+            {M.heightLink}
+          </Link>
+        </div>
+      )}
       {mine && <ProfileForm initial={mine} />}
     </section>
-  );
-}
-
-function HeightForm({ heightCm }: { heightCm: number | null }) {
-  const queryClient = useQueryClient();
-  const setHeight = useSetHeight();
-  const [text, setText] = useState(heightCm === null ? '' : String(heightCm));
-  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setNotice(null);
-    const height = text.trim() === '' ? null : parseHeightText(text);
-    if (text.trim() !== '' && height === null) return setNotice({ ok: false, text: BODY_MESSAGES.heightInvalid });
-    try {
-      const res = await setHeight.mutateAsync({ data: { heightCm: height } });
-      if (res.status !== 200) return setNotice({ ok: false, text: messageOf(res.data, BODY_MESSAGES.saveFailed) });
-      await queryClient.invalidateQueries({ queryKey: getGetBodyQueryKey() });
-      setNotice({ ok: true, text: BODY_MESSAGES.saved });
-    } catch {
-      setNotice({ ok: false, text: BODY_MESSAGES.saveFailed });
-    }
-  }
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-2">
-      <Label htmlFor="settings-height" className="font-extrabold">
-        {BODY_MESSAGES.heightLabel}
-      </Label>
-      <Input id="settings-height" inputMode="decimal" value={text} onChange={(e) => setText(e.target.value)} className="h-11 bg-surface" />
-      <p className="text-note text-fg-muted">{BODY_MESSAGES.heightHint}</p>
-      <ThickButton type="submit" size="sm" className="w-full" disabled={setHeight.isPending}>
-        {setHeight.isPending ? BODY_MESSAGES.saving : M.heightSave}
-      </ThickButton>
-      {notice && (
-        <p role={notice.ok ? 'status' : 'alert'} className="text-sm font-bold text-fg">
-          {notice.text}
-        </p>
-      )}
-    </form>
   );
 }

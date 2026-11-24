@@ -39,18 +39,18 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <>
     <nav aria-label="メイン" className="fixed bottom-0 left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 border-t-2 border-line bg-surface lg:sticky lg:top-0 lg:bottom-auto lg:left-auto lg:order-first lg:h-dvh lg:w-56 lg:shrink-0 lg:translate-x-0 lg:self-start lg:border-t-0 lg:bg-transparent">
-      <ul className="flex justify-around px-3 pt-1.5 pb-[max(10px,env(safe-area-inset-bottom))] lg:flex-col lg:justify-start lg:gap-2 lg:px-2 lg:pt-6">
+      <ul className="flex justify-around px-3 pt-1.5 max-[239px]:px-1 pb-[max(10px,env(safe-area-inset-bottom))] lg:flex-col lg:justify-start lg:gap-2 lg:px-2 lg:pt-6">
         {TABS.map(({ href, label, Icon }, index) => {
           const active = isActive(pathname, href);
           const dot = href === '/friends' && hasNew && !active;
           return (
             <Fragment key={href}>
-            <li>
+            <li className="min-w-0 max-w-16 flex-1 lg:max-w-none lg:flex-none">
               <Link
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex h-13 w-16 flex-col items-center justify-center gap-0.5 rounded-fl text-note font-bold outline-none',
+                  'flex h-13 w-full flex-col items-center justify-center gap-0.5 rounded-fl text-note font-bold outline-none',
                   'lg:h-12 lg:w-full lg:flex-row lg:justify-start lg:gap-3 lg:px-4 lg:text-sm',
                   'focus-visible:ring-4 focus-visible:ring-teal/40',
                   // 選択中の文字は濃いティール（ティール10%の背景の上で 4.5 以上）
@@ -70,18 +70,19 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
                     </span>
                   )}
                 </span>
-                {label}
+                {/* 195px 幅など狭い画面では文字を消してアイコンだけにする（読み上げ用の名前は残す） */}
+                <span className="max-[239px]:sr-only">{label}</span>
                 {dot && <span className="sr-only">{newCount === undefined ? '（新着あり）' : `（新着${newCount}件）`}</span>}
               </Link>
             </li>
             {index === 1 && (
-              <li className="flex items-center lg:order-first lg:mb-2 lg:block">
+              <li className="flex min-w-0 max-w-14 flex-1 items-center lg:order-first lg:mb-2 lg:block lg:max-w-none lg:flex-none">
                 <button
                   type="button"
                   aria-label="START 記録を始める"
                   aria-haspopup="dialog"
                   onClick={() => setStarting(true)}
-                  className="fl-thick flex size-14 items-center justify-center gap-2 rounded-full bg-teal-dark text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40 lg:h-12 lg:w-full lg:rounded-fl lg:text-lg lg:font-extrabold lg:tracking-wider"
+                  className="fl-thick flex aspect-square w-full max-w-14 items-center justify-center gap-2 rounded-full bg-teal-dark text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40 lg:aspect-auto lg:h-12 lg:max-w-none lg:w-full lg:rounded-fl lg:text-lg lg:font-extrabold lg:tracking-wider"
                 >
                   <Plus aria-hidden className="size-7 lg:size-5" strokeWidth={3} />
                   <span aria-hidden className="hidden lg:inline">START</span>

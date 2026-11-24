@@ -2,17 +2,47 @@
 
 import Link from 'next/link';
 import { withBack } from '@/lib/back-target';
+import { Segmented } from '@/components/ui/segmented';
 import { Switch } from '@/components/ui/switch';
-import { NOTIFY_OPTIONS, REMINDER_HOURS, savePrefs } from '@/lib/preferences';
+import { FIRST_TAB_OPTIONS, NOTIFY_OPTIONS, REMINDER_HOURS, savePrefs } from '@/lib/preferences';
+import { WEIGHT_UNITS } from '@/lib/unit';
 import { usePreferences } from '@/lib/use-preferences';
 
 const REVISION = process.env.NEXT_PUBLIC_APP_REVISION ?? 'dev';
 
-// 設定の「通知」「動画」「規約・版」。端末に保存する（サーバーには送らない）
+// 設定の「表示」（最初のタブ・単位）「通知」「動画」「規約・版」。端末に保存する（サーバーには送らない）
 export function PreferencesSection() {
   const prefs = usePreferences();
   return (
     <>
+      <section aria-labelledby="prefs-display" className="space-y-3">
+        <h2 id="prefs-display" className="text-note font-bold tracking-widest text-fg-subtle">
+          表示
+        </h2>
+        <div className="fl-slab space-y-3 px-4 py-3">
+          <div className="space-y-2">
+            <p className="font-bold">最初に開くタブ</p>
+            <Segmented
+              legend="最初に開くタブ"
+              options={FIRST_TAB_OPTIONS}
+              value={prefs.firstTab}
+              onChange={(firstTab) => savePrefs({ ...prefs, firstTab })}
+            />
+            <p className="text-note text-fg-muted">アプリを開いたときに、最初に出る画面です</p>
+          </div>
+          <div className="space-y-2">
+            <p className="font-bold">重さの単位</p>
+            <Segmented
+              legend="重さの単位"
+              options={WEIGHT_UNITS.map((u) => ({ value: u, label: u }))}
+              value={prefs.unit}
+              onChange={(unit) => savePrefs({ ...prefs, unit })}
+            />
+            <p className="text-note text-fg-muted">表示だけが変わります。記録は kg のまま保存します（lb は 5lb 刻みで入れます）</p>
+          </div>
+        </div>
+      </section>
+
       <section aria-labelledby="prefs-notify" className="space-y-2">
         <h2 id="prefs-notify" className="text-note font-bold tracking-widest text-fg-subtle">
           通知

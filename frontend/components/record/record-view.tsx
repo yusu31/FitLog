@@ -43,6 +43,8 @@ import { FriendPicker } from './friend-picker';
 import { GhostBar } from './ghost-bar';
 import { RestTimerBar } from './rest-timer-bar';
 import { ResultSheet, type SheetData } from './result-sheet';
+import { fromUnit, stepLb, toUnit } from '@/lib/unit';
+import { useWeightUnit } from '@/lib/use-preferences';
 import { StepperField } from './stepper-field';
 import { VideoRecorder, canRecordVideo } from './video-recorder';
 import { hasFilmFirst, setFilmFirst } from '@/lib/film-first';
@@ -64,6 +66,7 @@ const errorText = (e: unknown) => (e instanceof ApiError ? messageOf(e.body, SEN
 // 種目・重量×回数・＋/−・前回のバー・「できた」（セットごと）・結果シート・「…」から削除。
 // 最初の「できた」で記録（kind=workout）を作り、以降は同じ記録にセットを足す（3時間以上あいたら別の記録）
 export function RecordView() {
+  const unit = useWeightUnit();
   const { signedIn } = useRequireSession();
   const params = useSearchParams();
   const exerciseId = params.get('exercise') ?? '';
@@ -214,7 +217,7 @@ export function RecordView() {
     setAddedHere((n) => n + 1);
     const number = isNew ? 1 : setNo;
     const provisional = provisionalResult(ghost, value, pastMax);
-    const summaryOf = `${exercise.name} ${formatSetWithReps(value)}`;
+    const summaryOf = `${exercise.name} ${formatSetWithReps(value, unit)}`;
     const diff = ghost ? ghostDiff(ghost, value) : 0;
     setNotice(null);
     // 休憩は「できた」で自動で始める（D3 PR-4・本人の選択。A03-2 を上書き）。きのうの分（あとから記録）では始めない。次の「できた」では作り直す
@@ -355,18 +358,19 @@ export function RecordView() {
             </div>
           ) : (
           <StepperField
-            label="重量（kg）"
-            unit="kg"
-            value={draft.weightKg}
-            step={0.5}
+            label={`重量（${unit}）`}
+            unit={unit}
+            value={toUnit(draft.weightKg, unit)}
+            step={unit === 'kg' ? 0.5 : 5}
             min={0}
-            max={500}
-            stepLabel="2.5kg"
-            clamp={clampWeight}
-            onChange={(n) => setEdited({ ...draft, weightKg: n })}
-            onStep={(dir) => setEdited({ ...draft, weightKg: stepWeight(draft.weightKg, dir) })}
-            bigStepLabel="10kg"
-            onBigStep={(dir) => setEdited({ ...draft, weightKg: stepWeightBig(draft.weightKg, dir) })}
+            max={toUnit(500, unit)}
+            stepLabel={unit === 'kg' ? '2.5kg' : '5lb'}
+            // lb は 5lb 刻みで動かし、kg（0.5 刻み）に直して保存する
+            clamp={unit === 'kg' ? clampWeight : (n) => n}
+            onChange={(n) => setEdited({ ...draft, weightKg: clampWeight(fromUnit(n, unit)) })}
+            onStep={(dir) => setEdited({ ...draft, weightKg: unit === 'kg' ? stepWeight(draft.weightKg, dir) : clampWeight(fromUnit(stepLb(draft.weightKg, dir), 'lb')) })}
+            bigStepLabel={unit === 'kg' ? '10kg' : '25lb'}
+            onBigStep={(dir) => setEdited({ ...draft, weightKg: unit === 'kg' ? stepWeightBig(draft.weightKg, dir) : clampWeight(fromUnit(stepLb(draft.weightKg, dir, 25), 'lb')) })}
           />
           )}
           <StepperField
@@ -386,7 +390,7 @@ export function RecordView() {
 
         {initial.target && (
           <p data-testid="target-hint" className="text-center text-note font-bold text-fg-muted">
-            {RECORD_MESSAGES.target(initial.target.weightKg === 0 ? '自重' : `${initial.target.weightKg}kg`, initial.target.reps)}
+            {RECORD_MESSAGES.target(initial.target.weightKg === 0 ? '自重' : `${toUnit(initial.target.weightKg, unit)}${unit}`, initial.target.reps)}
           </p>
         )}
         <p className="text-center text-note font-bold text-fg-muted">{RECORD_MESSAGES.typeHint}</p>

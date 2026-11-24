@@ -30,6 +30,7 @@ import { shouldWelcomeBack } from '@/lib/welcome-back';
 import { RoutineStarter } from '@/components/routine/routine-starter';
 import { FriendsToday } from './friends-today';
 import { WeekStrip } from './week-strip';
+import { useWeightUnit } from '@/lib/use-preferences';
 
 const LOAD_ERROR = '読み込めませんでした。電波の良い所で開き直してください';
 
@@ -243,6 +244,7 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
 // 終了のまとめ（N1）。大きい祝福はここだけに置き、セットごとの結果シートは小さいままにする（U1）。
 // 自己ベストの回数は、この画面を開いている間に数えた分だけ（読み直したあとは 0 に戻り、出さない）
 function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: () => void }) {
+  const unit = useWeightUnit();
   // セットの一覧が取れなかったとき（電波・サーバー）は、その場で取り直せる。取れるまで「1種目2セット」だけで終わらせない
   const [exercises, setExercises] = useState(finished.exercises);
   const [failed, setFailed] = useState(finished.detailFailed);
@@ -281,7 +283,7 @@ function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: ()
         {/* 総重量・自己ベスト・仲間へは、セットの一覧より上（先に目に入る場所）に置く */}
         {total > 0 && (
           <p data-testid="total-weight" className="text-base font-extrabold">
-            {WORKOUT_END_MESSAGES.total(formatWeight(total))}
+            {WORKOUT_END_MESSAGES.total(formatWeight(total, unit), unit)}
           </p>
         )}
         {finished.bestCount > 0 && <p className="text-base font-extrabold text-brand">{WORKOUT_END_MESSAGES.best(finished.bestCount, finished.bestNames)}</p>}
@@ -304,7 +306,7 @@ function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: ()
             {exercises.map((e) => (
               <li key={e.exerciseId}>
                 <p className="text-sm font-extrabold">{e.name}</p>
-                <p className="fl-num text-note text-fg-muted">{e.sets.map((s) => formatSet(s)).join('　')}</p>
+                <p className="fl-num text-note text-fg-muted">{e.sets.map((s) => formatSet(s, unit)).join('　')}</p>
               </li>
             ))}
           </ul>
@@ -346,19 +348,20 @@ function NextCard({ menu, todayStatus }: { menu: TodayMenu; todayStatus: string 
 }
 
 function NextExercise({ item }: { item: MenuItem }) {
+  const unit = useWeightUnit();
   return (
     <CardFrame label="つぎにやること" tone="teal" tag="つぎ">
       <h2 className="mt-2.5 text-[30px] leading-[1.15] font-extrabold short:mt-1 short:text-xl">{item.name}</h2>
       {item.previous && (
         <p className="mt-2 flex items-baseline gap-2">
           <span className="text-note font-extrabold">前回</span>
-          <span className="fl-num text-5xl leading-none short:text-3xl">{formatSet(item.previous)}</span>
+          <span className="fl-num text-5xl leading-none short:text-3xl">{formatSet(item.previous, unit)}</span>
         </p>
       )}
       {item.suggestion && (
         <p className="mt-2 flex items-baseline gap-2">
           <span className="text-note font-extrabold">今日の目標</span>
-          <span className="fl-num text-2xl leading-none">{formatSet(item.suggestion)}</span>
+          <span className="fl-num text-2xl leading-none">{formatSet(item.suggestion, unit)}</span>
         </p>
       )}
       <LinkButton href={recordHref(item.exerciseId)}>{item.previous ? '前回と同じで始める' : 'はじめる'}</LinkButton>
@@ -368,6 +371,7 @@ function NextExercise({ item }: { item: MenuItem }) {
 
 // 初回（前回の筋トレなし）: 種目を選ぶ。お試しの前回値を灰色の札つきで見せる
 function FirstCard() {
+  const unit = useWeightUnit();
   const exercises = useListExercises();
   const trial = exercises.data?.data.find((e) => e.trialWeightKg !== null && e.trialReps !== null);
   return (
@@ -379,7 +383,7 @@ function FirstCard() {
             <span className="fl-tag bg-line text-fg-muted">お試し</span>
             <span className="text-sm font-extrabold">{trial.name}</span>
           </p>
-          <p className="fl-num mt-1 text-3xl">{formatSet({ weightKg: trial.trialWeightKg, reps: trial.trialReps })}</p>
+          <p className="fl-num mt-1 text-3xl">{formatSet({ weightKg: trial.trialWeightKg, reps: trial.trialReps }, unit)}</p>
           <p className="mt-0.5 text-note font-bold">お試しの値です。1回やると、次から前回の値が出ます。</p>
         </div>
       )}
@@ -423,6 +427,7 @@ function LinkButton({ href, children }: { href: string; children: ReactNode }) {
 // 今日のメニュー: 前回と同じ種目が同じ順で並ぶ。できた種目は黄のチェック。
 // 下の「種目を足す」から一覧（S-11）で選んだ種目は、記録すると末尾に並ぶ（buildMenu）。外す・並べ替えは未実装
 function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
+  const unit = useWeightUnit();
   return (
     <section>
       <h2 className="mb-2 text-sm font-extrabold text-fg-muted">今日のメニュー</h2>
@@ -453,10 +458,10 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
                   {item.name}
                   {item.done && <small className="block text-note font-bold text-fg-muted">できた</small>}
                   {!item.done && item.suggestion && (
-                    <small className="block text-note font-bold text-fg-muted">目標 {formatSet(item.suggestion)}</small>
+                    <small className="block text-note font-bold text-fg-muted">目標 {formatSet(item.suggestion, unit)}</small>
                   )}
                 </span>
-                {value && <span className="fl-num shrink-0 text-xl text-fg">{formatSet(value)}</span>}
+                {value && <span className="fl-num shrink-0 text-xl text-fg">{formatSet(value, unit)}</span>}
                 <ChevronRight data-testid="row-arrow" aria-hidden className="size-5 shrink-0 text-fg-muted" />
               </Link>
             </li>

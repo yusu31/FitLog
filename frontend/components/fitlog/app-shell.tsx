@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { cn } from 'cn';
+import { clearJustSignedIn, loginRedirectPath } from '@/lib/login-failure';
 import { useAppSession } from '@/lib/use-app-session';
 import { NotificationBell } from './notification-bell';
 import { SideFriends } from './side-friends';
@@ -19,8 +20,13 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
   const signedOut = !isPending && !session;
 
   useEffect(() => {
-    if (signedOut) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    if (signedOut) router.replace(loginRedirectPath(pathname));
   }, [signedOut, router, pathname]);
+
+  // セッションが取れたら、ログイン直後の印はもう要らない
+  useEffect(() => {
+    if (session && !isPending) clearJustSignedIn();
+  }, [session, isPending]);
 
   return (
     <div className="min-h-dvh bg-line">

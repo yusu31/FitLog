@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PREFS_KEY, readPrefs } from '@/lib/preferences';
 import { PreferencesSection } from './preferences-section';
@@ -41,5 +41,28 @@ describe('PreferencesSection（設定の端末ごとの項目）', () => {
     expect(screen.getByRole('link', { name: '利用規約' })).toHaveAttribute('href', '/terms?back=settings');
     expect(screen.getByRole('link', { name: 'プライバシー' })).toHaveAttribute('href', '/privacy?back=settings');
     expect(screen.getByText('版')).toBeInTheDocument();
+  });
+});
+
+describe('PreferencesSection（表示: 最初のタブ・単位。D6-5）', () => {
+  it('最初に開くタブは「今日」から始まり、「仲間」に変えると端末に保存される', async () => {
+    const user = userEvent.setup();
+    render(<PreferencesSection />);
+    const group = screen.getByRole('radiogroup', { name: '最初に開くタブ' });
+    expect(within(group).getByRole('radio', { name: '今日' })).toHaveAttribute('aria-checked', 'true');
+    await user.click(within(group).getByRole('radio', { name: '仲間' }));
+    expect(within(group).getByRole('radio', { name: '仲間' })).toHaveAttribute('aria-checked', 'true');
+    expect(readPrefs().firstTab).toBe('friends');
+  });
+
+  it('重さの単位は kg から始まり、lb に変えると端末に保存される（ほかの設定は消えない）', async () => {
+    const user = userEvent.setup();
+    render(<PreferencesSection />);
+    await user.click(screen.getByRole('switch', { name: '動画を自動で再生する' }));
+    const group = screen.getByRole('radiogroup', { name: '重さの単位' });
+    expect(within(group).getByRole('radio', { name: 'kg' })).toHaveAttribute('aria-checked', 'true');
+    await user.click(within(group).getByRole('radio', { name: 'lb' }));
+    expect(readPrefs().unit).toBe('lb');
+    expect(readPrefs().autoplayVideo).toBe(true);
   });
 });

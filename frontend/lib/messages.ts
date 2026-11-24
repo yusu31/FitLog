@@ -164,7 +164,7 @@ export const WORKOUT_END_MESSAGES = {
   shareWithFriends: '仲間に見せる',
   detailFailed: 'セットの一覧を読み込めませんでした。総重量もここに出ます',
   reload: 'もう一度読み込む',
-  total: (kg: string) => `総重量 ${kg}kg`,
+  total: (kg: string, unit = 'kg') => `総重量 ${kg}${unit}`,
   close: 'とじる',
 } as const;
 

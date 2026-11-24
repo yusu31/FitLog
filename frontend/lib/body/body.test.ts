@@ -1,5 +1,5 @@
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
-import { ACTIVE_OPTIONS, BODY_MESSAGES, chartShape, FAVORITE_OPTIONS, formatDelta, parseHeightText, parseWeightText } from './body';
+import { ACTIVE_OPTIONS, BODY_MESSAGES, chartShape, FAVORITE_OPTIONS, formatDelta, guessWeight, parseHeightText, parseWeightText } from './body';
 
 describe('parseWeightText（体重 20〜300・小数1桁まで）', () => {
   it.each([
@@ -73,11 +73,33 @@ describe('chartShape', () => {
 });
 
 describe('文言', () => {
-  const texts = [...Object.values(BODY_MESSAGES), ...FAVORITE_OPTIONS.map((o) => o.label), ...ACTIVE_OPTIONS.map((o) => o.label)];
+  // 文を作る関数（身長を入れて文にするもの）は、例の値で文にして調べる
+  const texts = [...Object.values(BODY_MESSAGES).map((v) => (typeof v === 'function' ? v(170) : v)), ...FAVORITE_OPTIONS.map((o) => o.label), ...ACTIVE_OPTIONS.map((o) => o.label)];
   it.each(texts)('「%s」は使ってはいけない語を含まない', (text) => {
     for (const word of FORBIDDEN_WORDS) expect(text).not.toContain(word);
   });
   it('判定の言葉（肥満・標準・やせ・普通体重）を含まない', () => {
     for (const text of texts) expect(text).not.toMatch(/肥満|標準|やせ|痩せ|普通体重|太り/);
+  });
+});
+
+describe('guessWeight（身長からの体重の目安。BMI 22。L11）', () => {
+  it.each([
+    [170, 63.6], // 22 × 1.7² = 63.58
+    [160, 56.3], // 22 × 1.6² = 56.32
+    [180, 71.3], // 22 × 1.8² = 71.28
+  ])('%icm → %skg', (cm, kg) => {
+    expect(guessWeight(cm)).toBe(kg);
+  });
+
+  it('身長が無い・範囲（100〜250）の外なら 60kg', () => {
+    expect(guessWeight(null)).toBe(60);
+    expect(guessWeight(99)).toBe(60);
+    expect(guessWeight(251)).toBe(60);
+  });
+
+  it('範囲の端（100cm・250cm）でも体重の範囲（20〜300）に収まる', () => {
+    expect(guessWeight(100)).toBe(22);
+    expect(guessWeight(250)).toBe(137.5);
   });
 });
