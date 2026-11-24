@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Plus, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Search, Star, X } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
@@ -17,12 +17,13 @@ import {
   useCreateExercise,
   useListExercises,
   useListRecords,
+  BodyPart as BodyPartValue,
   type BodyPart,
   type ExerciseResponse,
 } from '@/lib/api/generated';
 import { BodyFigure } from '@/components/me/body-figure';
 import { BODY_PART_LABEL, BODY_PART_ORDER } from '@/lib/body-parts';
-import { exerciseHint, exerciseImages } from '@/lib/exercise-info';
+import { exerciseGuide, exerciseHint, exerciseImages } from '@/lib/exercise-info';
 import { levelsOf } from '@/lib/heatmap';
 import { parseDayMode, withDay, type DayMode } from '@/lib/day-mode';
 import { useRequireSession } from '@/lib/use-require-session';
@@ -47,12 +48,21 @@ export function ExercisesView() {
   const [part, setPart] = useState<BodyPart | null>(null);
   // 最近やった種目（E2）。今日の画面と同じ条件の一覧なので、キャッシュを共有する
   const workouts = useListRecords({ kind: ListRecordsKind.workout, limit: '5' }, { query: { enabled: signedIn } });
+  // 部位の見出しの開け閉め（L10）。最初はすべて閉じる。検索中と部位を選んだときは、見出しを押さなくても開く
+  const [openParts, setOpenParts] = useState<ReadonlySet<BodyPart>>(new Set());
+  const togglePart = (p: BodyPart) =>
+    setOpenParts((cur) => {
+      const next = new Set(cur);
+      if (!next.delete(p)) next.add(p);
+      return next;
+    });
   const [adding, setAdding] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [added, setAdded] = useState<string | null>(null);
 
   const exercises = data?.status === 200 ? data.data : undefined;
   const q = normalize(query);
+  const forceOpen = q !== '' || part !== null;
   const groups = useMemo(() => {
     const matched = (exercises ?? []).filter((e) => normalize(e.name).includes(q) && (part === null || e.bodyPart === part));
     return BODY_PART_ORDER.map((part) => ({ part, items: matched.filter((e) => e.bodyPart === part) })).filter((g) => g.items.length > 0);
@@ -221,20 +231,38 @@ export function ExercisesView() {
               </ul>
             </section>
           )}
-          {groups.map(({ part, items }) => (
-            <section key={part} aria-labelledby={`part-${part}`}>
-              <h2 id={`part-${part}`} className="px-4 pt-4 pb-2 text-note font-bold tracking-widest text-fg-subtle">
-                {BODY_PART_LABEL[part]}
-              </h2>
-              <ul className="flex flex-col gap-2 px-4">
-                {items.map((e) => (
-                  <li key={e.id}>
-                    <ExerciseRow exercise={e} day={day} showTrial={hasRecords} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          {groups.map(({ part: p, items }) => {
+            const expanded = forceOpen || openParts.has(p);
+            return (
+              <section key={p} aria-labelledby={`part-${p}`}>
+                <h2 id={`part-${p}`} className="pt-1">
+                  <button
+                    type="button"
+                    aria-expanded={expanded}
+                    aria-controls={`part-list-${p}`}
+                    onClick={() => togglePart(p)}
+                    className="flex min-h-11 w-full items-center gap-2 px-4 text-left text-note font-bold tracking-widest text-fg-subtle outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+                  >
+                    <PartIcon part={p} />
+                    <span>{BODY_PART_LABEL[p]}</span>
+                    <span aria-hidden className="font-sans tracking-normal">
+                      {items.length}
+                    </span>
+                    <ChevronDown aria-hidden className={cn('ml-auto size-5 transition-transform motion-reduce:transition-none', expanded && 'rotate-180')} />
+                  </button>
+                </h2>
+                {expanded && (
+                  <ul id={`part-list-${p}`} className="flex flex-col gap-2 px-4 pb-2">
+                    {items.map((e) => (
+                      <li key={e.id}>
+                        <ExerciseRow exercise={e} day={day} showTrial={hasRecords} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            );
+          })}
           {/* 下に固定の「種目を追加」が最後の行に重ならないよう、固定ボタンの高さ分の余白 */}
           <div aria-hidden data-testid="footer-spacer" className="h-24" />
         </div>
@@ -247,6 +275,7 @@ function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse;
   const { id, name, bodyPart, isCustom, trialWeightKg, trialReps } = exercise;
   const hint = exerciseHint(exercise);
   const images = exerciseImages(exercise);
+  const guide = exerciseGuide(exercise);
   const [open, setOpen] = useState(false);
   return (
     <div>
@@ -258,8 +287,8 @@ function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse;
         'transition-transform active:translate-y-0.5 focus-visible:ring-4 focus-visible:ring-teal/40 motion-reduce:transition-none',
       )}
     >
-      <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-teal-light text-note leading-none font-extrabold tracking-tighter text-brand">
-        {BODY_PART_LABEL[bodyPart]}
+      <span aria-hidden className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-teal-light">
+        <PartIcon part={bodyPart} />
       </span>
       <span className="min-w-0 flex-1 leading-tight">
         <span className="block truncate font-extrabold">{name}</span>
@@ -288,28 +317,85 @@ function ExerciseRow({ exercise, day, showTrial }: { exercise: ExerciseResponse;
       )}
       <ChevronRight aria-hidden className="size-5 shrink-0 text-fg-subtle" />
     </Link>
-    {images && (
+    {(images || guide) && (
       <button
         type="button"
         aria-expanded={open}
-        aria-label={`${name}のやり方の写真を${open ? '閉じる' : '見る'}`}
+        aria-label={`${name}のやり方を${open ? '閉じる' : '見る'}`}
         onClick={() => setOpen((v) => !v)}
         className="fl-slab flex w-12 shrink-0 items-center justify-center text-note font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
       >
-        {open ? '閉じる' : '写真'}
+        {open ? '閉じる' : 'やり方'}
       </button>
     )}
     </div>
-    {images && open && (
-      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-        {images.map((src, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={src} src={src} alt={`${name} ${i === 0 ? '開始' : '終了'}の姿勢`} loading="lazy" className="aspect-[4/3] w-full rounded-xl bg-teal-light object-cover" />
-        ))}
+    {open && (images || guide) && (
+      <div className="mt-1.5 space-y-2.5 rounded-fl bg-surface p-3 shadow-soft">
+        {images && <ExercisePhotos name={name} images={images} />}
+        {guide && (
+          <>
+            {(guide.muscles.length > 0 || guide.difficulty !== null) && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                {guide.muscles.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-note font-bold text-fg-subtle">鍛える筋肉</span>
+                    {guide.muscles.map((m) => (
+                      <span key={m} className="rounded-full bg-teal-light px-2.5 py-0.5 text-note font-extrabold text-brand">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {guide.difficulty !== null && (
+                  <div className="flex items-center gap-1" role="img" aria-label={`むずかしさ ${guide.difficulty} / 3`}>
+                    <span aria-hidden className="text-note font-bold text-fg-subtle">
+                      むずかしさ
+                    </span>
+                    {[1, 2, 3].map((n) => (
+                      <Star key={n} aria-hidden className={cn('size-4', n <= guide.difficulty! ? 'fill-gold text-gold' : 'text-line')} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {guide.steps.length > 0 && (
+              <ol className="list-decimal space-y-1 pl-5 text-sm font-bold text-fg">
+                {guide.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            )}
+          </>
+        )}
       </div>
     )}
     </div>
   );
+}
+
+// 開始と終了の姿勢を、1.8秒ごとに入れ替えて見せる（動きの確認）。動きを減らす設定では、2枚を横に並べる
+function ExercisePhotos({ name, images }: { name: string; images: [string, string] }) {
+  const cls = 'aspect-[4/3] w-full rounded-xl bg-teal-light object-cover';
+  return (
+    <div className="relative aspect-[4/3] motion-reduce:grid motion-reduce:aspect-auto motion-reduce:grid-cols-2 motion-reduce:gap-1.5">
+      {images.map((src, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={src}
+          src={src}
+          alt={`${name} ${i === 0 ? '開始' : '終了'}の姿勢`}
+          loading="lazy"
+          className={cn(cls, i === 1 && 'fl-flip absolute inset-0 motion-reduce:static')}
+        />
+      ))}
+    </div>
+  );
+}
+
+// 部位の小さな体の図（D3-4）。前から見える部位は前、背中とお尻は後ろ。文字は横に別にあるので、読み上げからは外す
+const BACK_VIEW_PARTS: ReadonlySet<BodyPart> = new Set([BodyPartValue.back, BodyPartValue.glutes]);
+function PartIcon({ part }: { part: BodyPart }) {
+  return <BodyFigure decorative view={BACK_VIEW_PARTS.has(part) ? 'back' : 'front'} size={15} levels={levelsOf([{ bodyPart: part, sets: 99 }])} />;
 }
 
 function AddExerciseForm({

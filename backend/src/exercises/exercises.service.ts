@@ -22,6 +22,10 @@ const toResponse = (row: Row): ExerciseResponse => ({
   isCustom: row.createdBy !== null,
   trialWeightKg: row.trialWeightKg === null ? null : Number(row.trialWeightKg),
   trialReps: row.trialReps,
+  muscles: row.muscles,
+  difficulty: row.difficulty,
+  steps: row.steps,
+  cue: row.cue,
 });
 
 @Injectable()

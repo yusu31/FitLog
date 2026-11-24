@@ -134,6 +134,20 @@
       "when": 1795215095199,
       "tag": "0018_notifications_seen",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795526735448,
+      "tag": "0019_exercise_guide",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795526744619,
+      "tag": "0020_seed_exercise_guide",
+      "breakpoints": true
     }
   ]
 }

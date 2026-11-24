@@ -1,8 +1,8 @@
 import type { ExerciseResponse } from '@/lib/api/generated';
 
-// 一覧の種目30件（backend/drizzle/0003_seed_exercises.sql の固定 ID）の一言説明。
-// 初心者が「何の運動で、どこに効くか」を名前だけで分かるようにする（D3-2・本人が案2を選択）。
-// 「じぶんの」種目（isCustom）には無い。静止画2枚は次の PR で足す（free-exercise-db・Unlicense）
+// 一覧の種目30件（backend/drizzle/0003_seed_exercises.sql の固定 ID）の一言説明（D3-2）。
+// 説明の正本は DB（exercises.cue。マイグレーション 0020）で、ここは API が値を返さないとき（古い応答・オフラインの古いキャッシュ）の予備。
+// 「じぶんの」種目（isCustom）には無い。静止画2枚は free-exercise-db（Unlicense）
 const HINTS: Record<number, string> = {
   1: 'ベンチに寝て、バーを胸から押し上げる。胸の基本',
   2: '背もたれを起こして押す。胸の上のほうに効く',
@@ -38,11 +38,27 @@ const HINTS: Record<number, string> = {
 
 const SEED_ID = /^00000000-0000-4000-8000-0000000000(\d{2})$/;
 
-// 一言説明。じぶんの種目と、一覧に無い ID は undefined
-export function exerciseHint(exercise: Pick<ExerciseResponse, 'id' | 'isCustom'>): string | undefined {
+type Info = Pick<ExerciseResponse, 'id' | 'isCustom'> & Partial<Pick<ExerciseResponse, 'cue' | 'muscles' | 'difficulty' | 'steps'>>;
+
+// 一言説明。DB の値（cue）を優先し、無ければ予備の文言。じぶんの種目と、一覧に無い ID は undefined
+export function exerciseHint(exercise: Info): string | undefined {
   if (exercise.isCustom) return undefined;
+  if (exercise.cue) return exercise.cue;
   const m = SEED_ID.exec(exercise.id);
   return m ? HINTS[Number(m[1])] : undefined;
+}
+
+export type ExerciseGuide = { muscles: string[]; difficulty: 1 | 2 | 3 | null; steps: string[] };
+
+// 開いたときに出す説明（鍛える筋肉・難しさ・手順）。DB に値が無い種目（じぶんの種目など）は、項目ごとに出さない。1つも無ければ undefined
+export function exerciseGuide(exercise: Info): ExerciseGuide | undefined {
+  if (exercise.isCustom) return undefined;
+  const muscles = exercise.muscles ?? [];
+  const steps = exercise.steps ?? [];
+  const d = exercise.difficulty;
+  const difficulty = d === 1 || d === 2 || d === 3 ? d : null;
+  if (muscles.length === 0 && steps.length === 0 && difficulty === null) return undefined;
+  return { muscles, difficulty, steps };
 }
 
 // 静止画2枚（開始・終了の姿勢）。出典 yuhonas/free-exercise-db（Unlicense）。対応表は public/exercises/SOURCES.json
