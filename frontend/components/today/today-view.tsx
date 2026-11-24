@@ -168,13 +168,11 @@ function DayHeading({ date, day }: { date: string; day: DayMode }) {
 function YesterdayOutsideWeek({ day, onChange }: { day: DayMode; onChange: (next: DayMode) => void }) {
   const toYesterday = day === 'today';
   return (
-    <button
-      type="button"
+    <ThickButton variant="link"
       onClick={() => onChange(toYesterday ? 'yesterday' : 'today')}
-      className="flex min-h-11 items-center px-1 text-sm font-extrabold text-brand underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
     >
       {toYesterday ? LATE_MESSAGES.toYesterday : LATE_MESSAGES.toToday}
-    </button>
+    </ThickButton>
   );
 }
 
@@ -522,15 +520,14 @@ function RestButton() {
   return (
     <div>
       {/* 休むは目立たせない文字リンクの見た目（A02-4）。押せば休みの記録を作り、/rest で「やっぱり記録する」を選べる */}
-      <button
-        type="button"
+      <ThickButton
+        variant="link" className="mx-auto"
         disabled={sending}
         onClick={onRest}
-        className="mx-auto flex min-h-11 items-center gap-1.5 px-3 text-sm font-extrabold text-fg-muted underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
       >
         <Moon aria-hidden className="size-4" />
         今日は休む
-      </button>
+      </ThickButton>
       {error && (
         <p role="alert" className="mt-2 rounded-lg bg-coral-light px-3 py-2 text-sm font-bold text-fg">
           {error}

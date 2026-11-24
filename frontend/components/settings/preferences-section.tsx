@@ -60,23 +60,15 @@ export function PreferencesSection() {
             <span className="font-bold">記録していない日に誘う</span>
             <Switch label="記録していない日に誘う" checked={prefs.reminderOn} onChange={(on) => savePrefs({ ...prefs, reminderOn: on })} />
           </div>
-          <div className="flex min-h-11 items-center justify-between gap-3">
-            <label htmlFor="prefs-reminder-hour" className="font-bold">
-              誘う時刻
-            </label>
-            <select
-              id="prefs-reminder-hour"
-              value={prefs.reminderHour}
+          <div className="space-y-2">
+            <p className="font-bold">誘う時刻</p>
+            <Segmented
+              legend="誘う時刻"
+              options={REMINDER_HOURS.map((h) => ({ value: String(h), label: `${h}時` }))}
+              value={String(prefs.reminderHour)}
               disabled={!prefs.reminderOn}
-              onChange={(e) => savePrefs({ ...prefs, reminderHour: Number(e.target.value) })}
-              className="h-11 rounded-fl border-2 border-line bg-surface px-3 font-bold disabled:opacity-50"
-            >
-              {REMINDER_HOURS.map((h) => (
-                <option key={h} value={h}>
-                  {h}時
-                </option>
-              ))}
-            </select>
+              onChange={(h) => savePrefs({ ...prefs, reminderHour: Number(h) })}
+            />
           </div>
           <p className="text-note text-fg-muted">スマホへの通知はこれから作ります。届くようになったとき、1日1回・この時刻に（その日に記録が無いときだけ）お誘いします</p>
         </div>

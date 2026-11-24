@@ -76,7 +76,7 @@ export function ConfirmDialog({ open, title, description, confirmLabel, pendingL
           <ThickButton ref={cancelRef} tone="white" size="sm" onClick={onCancel} className="min-h-12 flex-1">
             やめる
           </ThickButton>
-          <ThickButton ref={confirmRef} tone="coral" size="sm" onClick={onConfirm} disabled={pending} className="min-h-12 flex-1">
+          <ThickButton ref={confirmRef} variant="danger" size="sm" onClick={onConfirm} disabled={pending} className="min-h-12 flex-1">
             {pending ? (pendingLabel ?? confirmLabel) : confirmLabel}
           </ThickButton>
         </div>

@@ -151,15 +151,14 @@ export function FeedCard({ item }: { item: FeedItem }) {
           </li>
         )}
         <li>
-          <button
-            type="button"
+          <ThickButton
+            variant="secondary" size="sm"
             aria-expanded={openComments}
             onClick={() => setOpenComments((v) => !v)}
-            className="flex min-h-11 items-center gap-1.5 rounded-full border-2 border-line bg-surface px-3 text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             <MessageCircle aria-hidden className="size-4" />
             {FEED_MESSAGES.commentsOpen(item.commentCount)}
-          </button>
+          </ThickButton>
         </li>
       </ul>
 
@@ -232,14 +231,13 @@ function CommentPanel({ item, online, onSent }: { item: FeedItem; online: boolea
       <ul aria-label="定型コメント" className="flex flex-wrap gap-1.5">
         {LIGHT_QUICK_COMMENTS[item.kind].map((body) => (
           <li key={body}>
-            <button
-              type="button"
+            <ThickButton
+              variant="secondary" size="sm"
               disabled={disabled}
               onClick={() => void send(body)}
-              className="min-h-11 rounded-full border-2 border-teal-light bg-surface px-3 text-sm font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60"
             >
               {body}
-            </button>
+            </ThickButton>
           </li>
         ))}
       </ul>

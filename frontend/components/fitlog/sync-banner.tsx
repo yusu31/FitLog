@@ -8,6 +8,7 @@ import { SYNC_MESSAGES } from '@/lib/messages';
 import { useSentNotice } from '@/lib/offline/sent-notice';
 import { isWaiting, useQueueSummary } from '@/lib/offline/sync-status';
 import { useOnline } from '@/lib/use-browser-state';
+import { ThickButton } from '@/components/fitlog/thick-button';
 
 // ログイン後に戻る先（いま開いている画面）。帯が出るのは画面を開いたあとなので、ブラウザの位置をそのまま読む
 const currentPath = (): string => (typeof window === 'undefined' ? '/today' : window.location.pathname + window.location.search);
@@ -52,13 +53,12 @@ export function SyncBanner() {
       ) : null}
       {showRejected && (
         <Bar tone="coral" title={SYNC_MESSAGES.rejected} note={SYNC_MESSAGES.rejectedNote}>
-          <button
-            type="button"
+          <ThickButton
+            variant="secondary" size="sm"
             onClick={() => setDismissed(rejectedCount)}
-            className="inline-flex min-h-11 items-center rounded-fl bg-surface px-4 text-sm font-extrabold text-fg outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             {SYNC_MESSAGES.dismiss}
-          </button>
+          </ThickButton>
         </Bar>
       )}
     </div>

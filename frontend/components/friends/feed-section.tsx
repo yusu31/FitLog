@@ -8,6 +8,7 @@ import { describeTotals, weekDividerLabel } from '@/lib/feed';
 import { FEED_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { FeedCard } from './feed-card';
+import { EmptyState } from '@/components/fitlog/empty-state';
 
 // 仲間の足跡（S-20。docs/screen-design.md 4章）。週の区切りはやめ、同じグループの全期間を新しい順に流す（D7-6・判断ログ 50）。
 // 20件ずつ。下までスクロールすると、前の応答の nextCursor を渡して自動で続きを読む（自分タブの記録の一覧と同じ作り）。
@@ -40,7 +41,7 @@ function FeedPage({ cursor, isFirst = false, hideEmptyTotals = false, prevDate }
     <>
       {isFirst && !(hideEmptyTotals && describeTotals(totals).empty) && <WeekTotals totals={totals} />}
       {isFirst && items.length === 0 && (
-        <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{FEED_MESSAGES.empty}</p>
+        <EmptyState title={FEED_MESSAGES.empty} pose="cheer" />
       )}
       {items.length > 0 && (
         <ul aria-label="仲間の足跡" className="space-y-2">

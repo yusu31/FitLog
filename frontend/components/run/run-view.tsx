@@ -29,6 +29,7 @@ import {
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useOnline } from '@/lib/use-browser-state';
 import { useRequireSession } from '@/lib/use-require-session';
+import { InfoTip } from '@/components/fitlog/info-tip';
 
 // 端末の時計は少しずれるので、未来は5分先まで受け付ける（API と同じ。backend の FUTURE_LIMIT_MS）
 const FUTURE_LIMIT_MS = 5 * 60 * 1000;
@@ -362,23 +363,23 @@ function GpxPicker({
     <div className="flex flex-col gap-2">
       <div className="flex justify-center gap-5">
         {!manualOpen && (
-          <button type="button" onClick={onOpenManual} className={linkClass}>
+          <ThickButton variant="link" onClick={onOpenManual} className={linkClass}>
             手入力で記録
-          </button>
+          </ThickButton>
         )}
         <label className={cn(linkClass, 'focus-within:ring-4 focus-within:ring-teal/40', online ? 'cursor-pointer' : 'opacity-60')}>
           <span>ほかのアプリの記録を取り込む</span>
           <input type="file" accept=".gpx,application/gpx+xml" disabled={!online} onChange={onPick} className="sr-only" />
         </label>
       </div>
-      <p className="text-center text-note text-fg-muted">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）で書き出した記録のファイル（GPX 形式）を選んでください。</p>
+      <InfoTip label="取り込むファイルの説明" className="text-center">ふだん使っているラン用のアプリ（Strava・Garmin Connect など）で書き出した記録のファイル（GPX 形式）を選んでください。</InfoTip>
       {!online && <p className="text-sm font-bold text-fg-muted">{GPX_MESSAGES.offline}</p>}
       {gpx && (
         <p className="flex items-center justify-between gap-2 text-sm font-bold text-fg">
           <span>{gpx.name} を読み取りました</span>
-          <button type="button" onClick={onClear} className="min-h-11 shrink-0 rounded-fl px-3 text-sm font-extrabold text-fg-muted underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+          <ThickButton variant="link" className="shrink-0" onClick={onClear}>
             取り込みをはずす
-          </button>
+          </ThickButton>
         </p>
       )}
       {message && (

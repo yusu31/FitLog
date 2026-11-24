@@ -13,6 +13,7 @@ import { setFilmFirst } from "@/lib/film-first";
 import { canRecordVideo } from "@/components/record/video-recorder";
 import { ThickButton } from "./thick-button";
 import { MyChara } from "./my-chara";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const noSubscribe = () => () => {};
 
@@ -99,12 +100,7 @@ export function StartSheet({
         </div>
         {videoCapable && (
           <label className="flex min-h-11 items-center gap-3 text-sm font-bold">
-            <input
-              type="checkbox"
-              checked={film}
-              onChange={(e) => setFilm(e.target.checked)}
-              className="size-5 accent-[var(--color-teal-dark)]"
-            />
+            <Checkbox checked={film} onChange={(e) => setFilm(e.target.checked)} />
             2秒動画を撮る（最初の1セットのあと）
           </label>
         )}

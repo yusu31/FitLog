@@ -56,7 +56,7 @@ export function DeleteAccount() {
               {error}
             </p>
           )}
-          <ThickButton type="submit" tone="coral" disabled={pending}>
+          <ThickButton type="submit" variant="danger" disabled={pending}>
             {pending ? '退会中…' : M.confirm}
           </ThickButton>
           <ThickButton
@@ -70,13 +70,11 @@ export function DeleteAccount() {
           </ThickButton>
         </form>
       ) : (
-        <button
-          type="button"
+        <ThickButton variant="link"
           onClick={() => setOpen(true)}
-          className="flex min-h-11 items-center rounded-fl px-1 text-sm font-bold text-fg-muted underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
           {M.start}
-        </button>
+        </ThickButton>
       )}
     </section>
   );

@@ -10,6 +10,8 @@ export const MANIFEST_ICONS: NonNullable<MetadataRoute.Manifest['icons']> = [
   { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
   { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
   { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+  // ロゴの SVG（public/logo.svg）。どの大きさでもくっきり出る。png が使えない場面の予備
+  { src: '/logo.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
 ];
 
 export function buildManifest(): MetadataRoute.Manifest {

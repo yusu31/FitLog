@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { getGetRecordQueryKey, useUpdateRecordMemo } from '@/lib/api/generated';
 import { MEMO_MESSAGES as M } from '@/lib/messages';
 import { useOnline } from '@/lib/use-browser-state';
+import { Textarea } from '@/components/ui/textarea';
 
 // API の上限（records_note_ck・records_rpe_ck）と同じ
 export const NOTE_MAX = 200;
@@ -83,14 +84,13 @@ export function RecordMemo({ recordId, note, rpe }: { recordId: string; note?: s
           <Label htmlFor="record-note" className="font-extrabold">
             {M.noteLabel}
           </Label>
-          <textarea
+          <Textarea
             id="record-note"
             value={text}
             maxLength={NOTE_MAX}
             rows={3}
             placeholder={M.notePlaceholder}
             onChange={(e) => setText(e.target.value)}
-            className="w-full rounded-fl border-2 border-line bg-surface px-3 py-2 text-base outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           />
         </div>
         {message &&

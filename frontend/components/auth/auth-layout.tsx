@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { cn } from 'cn';
+import { Logo } from '@/components/fitlog/logo';
 
 // 入口の「塗りのボタン」に見えるリンク（A01-2・N-06）。厚みボタンと同じく押すと沈み、高さは 44px 以上
 export const AUTH_LINK_BUTTON =
@@ -18,7 +19,7 @@ export function AuthLinkButton({ href, children }: { href: string; children: Rea
 export function SignupHero() {
   return (
     <>
-      <span className="fl-tag bg-gold text-fg">フィットログ</span>
+      <Logo size={36} withName className="text-lg" />
       <h1 className="mt-2 text-page-title leading-tight font-extrabold">前回の自分と並べて記録</h1>
     </>
   );

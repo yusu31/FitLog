@@ -283,14 +283,13 @@ export function RecordView() {
       <SyncBanner />
       <header className="flex items-center gap-3 px-2 pt-4 pr-4">
         {sets.length > 0 ? (
-          <button
-            type="button"
+          <ThickButton variant="icon"
             aria-label="とじる"
             onClick={() => setClosing(true)}
             className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
           >
             <X aria-hidden className="size-6" />
-          </button>
+          </ThickButton>
         ) : (
           <Link
             href={closeHref}

@@ -320,6 +320,22 @@ testing-design.md が「書かれていない」と洗い出した振る舞い�
 | キャラの位置（A13-4） | `Sprite` の `placement="corner"` で右上の角（72px・`pointer-events-none`）に固定。見出し側は `PageTitle` の `reserveCorner` で右を空ける |
 | 文字のトークン（A13-5・V-08） | `globals.css` に `--text-page-title: 28px`（h1）・`--text-section-title: 18px`・`--text-note: 13px`・`--color-note: #4b5563`。使うときは `text-page-title` などのクラス。16・18・32px の h1 と 11・12px の注記は B13 でトークンへ置き換える |
 
+**ボタンと部品の役割（束 D0・02-9）**。色を直書きした独自ボタンはやめ、画面は `components/fitlog/thick-button.tsx`（`ThickButton`）に任せる。
+
+| 役割 | `variant` | 見た目（色） | 使いどころ |
+|---|---|---|---|
+| 主 | `primary` | 濃ティール（`teal-dark`）の面・白い字・厚みあり | その画面でいちばん大事な1つ（できた・保存） |
+| 副 | `secondary` | 薄ティール（`teal-light`）の面・濃いティールの字（`brand`）・厚みなし | ほかの選択肢（やめる・あとで・短くする） |
+| 文字・リンク | `link` | 面なし・`brand` の字に下線 | 戻る・休む・取り込みなど軽い操作 |
+| アイコン | `icon` | 面なしの丸（44px）・`fg-muted` の字。`aria-label` 必須 | とじる（×）・メニュー（…）・前へ/次へ |
+| 危険 | `danger` | 濃いコーラル（`coral-strong`）の面・白い字・厚みあり | 取り消せない操作（削除・アカウント削除） |
+
+- 押せる大きさは 44px 以上。副・アイコンは押すと少しへこむ（`fl-tap`）。
+- 例外（部品にしない）: 選ぶと色が変わる**切り替え**（`aria-pressed` のチップ・タブ・日付マス）、動画やカード全体を押せるタイル、数字を直接入れる大きな数字欄。これらは「選択状態」が主役で、ボタンの型ではない。
+- 選択は `Segmented`（1つ選ぶ）・`Switch`（オン/オフ）・`Checkbox`（同意など）を使い、ブラウザ標準の部品（青いラジオ・四角・select）は出さない。入力欄は `Input`・`Textarea`（`fieldClass` 共通）。
+- 2行以上の説明は `InfoTip`（「?」を押すと開く）に入れる。最初の1回だけ見せる案内はそのまま出す。
+- ロゴは `Logo`（`public/logo.svg` と同じ絵）。空の画面は `EmptyState`（キャラ＋一文＋次の一手）。小さな動き（`fl-pop-in`・`fl-done-pop`・`fl-tap`）は「動きを減らす」設定で止まる。
+
 ### 表記ルールと言い換え表（束 B13・A13-2・N-05・V-08）
 
 | 項目 | 決めたこと |

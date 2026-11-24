@@ -16,7 +16,7 @@ describe('buildManifest（ホーム画面に追加するための情報）', () 
     const sizes = (m.icons ?? []).map((i) => i.sizes);
     expect(sizes).toContain('192x192');
     expect(sizes).toContain('512x512');
-    expect((m.icons ?? []).every((i) => i.type === 'image/png')).toBe(true);
+    expect((m.icons ?? []).filter((i) => i.src.startsWith('/icons/')).every((i) => i.type === 'image/png')).toBe(true);
   });
 
   it('端末の丸や角丸に切り取られても欠けない maskable のアイコンが別にある（any と同じ画像を兼ねない）', () => {
@@ -24,11 +24,16 @@ describe('buildManifest（ホーム画面に追加するための情報）', () 
     const any = (m.icons ?? []).filter((i) => i.purpose === 'any');
     expect(maskable.length).toBeGreaterThanOrEqual(1);
     expect(any.length).toBeGreaterThanOrEqual(2);
+    expect(maskable.every((i) => i.type === 'image/png')).toBe(true);
     expect(maskable.every((i) => !any.some((a) => a.src === i.src))).toBe(true);
   });
 
   it('アイコンの置き場所は public/icons/ の中（公開 URL と一致）', () => {
-    expect(MANIFEST_ICONS.every((i) => i.src.startsWith('/icons/'))).toBe(true);
+    expect(MANIFEST_ICONS.filter((i) => i.type === 'image/png').every((i) => i.src.startsWith('/icons/'))).toBe(true);
+  });
+
+  it('ロゴの SVG（/logo.svg）も any のアイコンとして載っている', () => {
+    expect(MANIFEST_ICONS).toContainEqual(expect.objectContaining({ src: '/logo.svg', type: 'image/svg+xml', purpose: 'any' }));
   });
 
   it('色は 16 進の色コード（テーマ色・背景色）', () => {

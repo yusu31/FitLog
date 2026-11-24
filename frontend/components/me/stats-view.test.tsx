@@ -203,7 +203,11 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
     await screen.findByTestId('stats-title');
-    expect(screen.getByText('走った距離で、日本を南の鹿児島から北の稚内へ進みます')).toBeInTheDocument();
+    // 説明は「?」を押すと開く（InfoTip）
+    const tip = screen.getByRole('button', { name: '日本縦断の説明' });
+    expect(screen.getByText('走った距離で、日本を南の鹿児島から北の稚内へ進みます')).not.toBeVisible();
+    await userEvent.click(tip);
+    expect(screen.getByText('走った距離で、日本を南の鹿児島から北の稚内へ進みます')).toBeVisible();
   });
 
   it('A08-6・V-04: まだのスタンプは灰色のメダルで、文字は面の上で 4.5:1 以上の濃さ。とったものは色つき', async () => {

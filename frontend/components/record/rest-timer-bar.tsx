@@ -3,6 +3,7 @@
 import { Minimize2, Minus, Plus, Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { REST_MAX_S, REST_MIN_S, addRestSeconds, formatRest, remainingSeconds, stepRestSeconds, writeRestSeconds } from '@/lib/rest-timer';
+import { ThickButton } from '@/components/fitlog/thick-button';
 
 // 休憩タイマー（F-34）。「できた」のあと自動で始まる。
 // ふだんは下に固定の1行の帯（残り時間・＋30秒・スキップ）。帯の時間を押すと、大きな数字と進捗バーと ±15秒の全画面になる（D3 L8）。
@@ -37,7 +38,6 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
     </p>
   );
   const ring = 'outline-none focus-visible:ring-4 focus-visible:ring-teal/40';
-  const small = `flex size-11 shrink-0 items-center justify-center rounded-fl bg-surface text-brand disabled:opacity-40 ${ring}`;
   const skipLabel = done ? '休憩をとじる' : '休憩をスキップ';
   const skipText = done ? 'とじる' : 'スキップ';
 
@@ -62,21 +62,21 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
         <div className="flex flex-wrap items-center justify-center gap-3">
           {done ? null : (
             <>
-              <button type="button" aria-label="休憩を15秒短くする" disabled={total <= REST_MIN_S} onClick={() => change(-1)} className={small}>
+              <ThickButton variant="icon" className="bg-surface text-brand" aria-label="休憩を15秒短くする" disabled={total <= REST_MIN_S} onClick={() => change(-1)}>
                 <Minus aria-hidden className="size-5" />
-              </button>
-              <button type="button" aria-label="休憩を15秒長くする" disabled={total >= REST_MAX_S} onClick={() => change(1)} className={small}>
+              </ThickButton>
+              <ThickButton variant="icon" className="bg-surface text-brand" aria-label="休憩を15秒長くする" disabled={total >= REST_MAX_S} onClick={() => change(1)}>
                 <Plus aria-hidden className="size-5" />
-              </button>
+              </ThickButton>
             </>
           )}
-          <button type="button" aria-label="小さくして下の帯にもどす" aria-expanded onClick={() => setBig(false)} className={small}>
+          <ThickButton variant="icon" className="bg-surface text-brand" aria-label="小さくして下の帯にもどす" aria-expanded onClick={() => setBig(false)}>
             <Minimize2 aria-hidden className="size-5" />
-          </button>
+          </ThickButton>
         </div>
-        <button type="button" aria-label={skipLabel} onClick={onClose} className={`min-h-11 w-full rounded-fl bg-surface text-sm font-extrabold text-brand ${ring}`}>
+        <ThickButton variant="secondary" size="sm" className="w-full" aria-label={skipLabel} onClick={onClose}>
           {skipText}
-        </button>
+        </ThickButton>
       </section>
     );
   }
@@ -106,19 +106,13 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
         </span>
       </button>
       {done ? null : (
-        <button
-          type="button"
-          aria-label="休憩を30秒長くする"
-          disabled={total >= REST_MAX_S}
-          onClick={() => save(addRestSeconds(total))}
-          className={`min-h-11 shrink-0 rounded-fl bg-surface px-3 text-sm font-extrabold text-brand disabled:opacity-40 ${ring}`}
-        >
+        <ThickButton variant="secondary" size="sm" className="shrink-0" aria-label="休憩を30秒長くする" disabled={total >= REST_MAX_S} onClick={() => save(addRestSeconds(total))}>
           ＋30秒
-        </button>
+        </ThickButton>
       )}
-      <button type="button" aria-label={skipLabel} onClick={onClose} className={`min-h-11 shrink-0 rounded-fl bg-surface px-3 text-sm font-extrabold text-brand ${ring}`}>
+      <ThickButton variant="secondary" size="sm" className="shrink-0" aria-label={skipLabel} onClick={onClose}>
         {skipText}
-      </button>
+      </ThickButton>
     </section>
   );
 }

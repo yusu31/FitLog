@@ -762,7 +762,10 @@ describe('RecordDetailView（B06）', () => {
     install({ [REC]: ok(workout('r1', '2026-10-22', [squat])), '/api/exercises': ok([]) });
     renderWithQuery(<RecordDetailView />);
     await screen.findByRole('button', { name: 'コピーして始める' });
-    expect(screen.getByText(/この内容で今日を始めます/)).toBeInTheDocument();
+    // 説明は「?」を押すと開く（InfoTip）。閉じている間は見えない
+    expect(screen.getByText(/この内容で今日を始めます/)).not.toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'この内容で始めるの説明' }));
+    expect(screen.getByText(/この内容で今日を始めます/)).toBeVisible();
   });
 
   it('A05-6: 「この記録を 消す」は、スタンプ・コメントより下の「記録の削除」の枠に置く', async () => {

@@ -8,6 +8,7 @@ const noSubscribe = () => () => {};
 import { useGetCurrentGroup, useGetFeed, type FeedItem } from '@/lib/api/generated';
 import { TODAY_FRIENDS_MESSAGES } from '@/lib/messages';
 import { useAppSession } from '@/lib/use-app-session';
+import { ThickButton } from '@/components/fitlog/thick-button';
 
 const FOCUS = 'outline-none focus-visible:ring-4 focus-visible:ring-teal/40';
 const NAMES_MAX = 3;
@@ -94,14 +95,13 @@ function InviteCard({ noGroup }: { noGroup: boolean }) {
   };
   return (
     <section aria-label="仲間" className="fl-slab relative px-4 py-3">
-      <button
-        type="button"
+      <ThickButton
+        variant="icon" className="absolute top-1 right-1"
         aria-label={TODAY_FRIENDS_MESSAGES.close}
         onClick={onClose}
-        className={`absolute top-1 right-1 flex size-11 items-center justify-center rounded-full text-fg-muted ${FOCUS}`}
       >
         <X aria-hidden className="size-5" />
-      </button>
+      </ThickButton>
       <p className="pr-10 text-sm font-extrabold">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupTitle : TODAY_FRIENDS_MESSAGES.aloneTitle}</p>
       <p className="mt-1 text-note leading-relaxed font-bold text-fg-muted">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupSteps : TODAY_FRIENDS_MESSAGES.aloneSteps}</p>
       <Link

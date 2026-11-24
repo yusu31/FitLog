@@ -28,12 +28,12 @@ describe('PreferencesSection（設定の端末ごとの項目）', () => {
   it('誘う時刻は19時から始まり、選べる。誘いをオフにすると選べない', async () => {
     const user = userEvent.setup();
     render(<PreferencesSection />);
-    const select = screen.getByLabelText('誘う時刻');
-    expect(select).toHaveValue('19');
-    await user.selectOptions(select, '8');
+    const group = screen.getByRole('radiogroup', { name: '誘う時刻' });
+    expect(within(group).getByRole('radio', { name: '19時' })).toHaveAttribute('aria-checked', 'true');
+    await user.click(within(group).getByRole('radio', { name: '8時' }));
     expect(readPrefs().reminderHour).toBe(8);
     await user.click(screen.getByRole('switch', { name: '記録していない日に誘う' }));
-    expect(select).toBeDisabled();
+    expect(within(group).getByRole('radio', { name: '8時' })).toBeDisabled();
   });
 
   it('規約・プライバシーへのリンクと版を出す', () => {

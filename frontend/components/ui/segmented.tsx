@@ -12,12 +12,14 @@ export function Segmented<T extends string>({
   value,
   onChange,
   className,
+  disabled = false,
 }: {
   legend: string;
   options: readonly SegmentedOption<T>[];
   value: T | null;
   onChange: (value: T) => void;
   className?: string;
+  disabled?: boolean;
 }) {
   return (
     <div role="radiogroup" aria-label={legend} className={cn('flex flex-wrap gap-2', className)}>
@@ -29,9 +31,10 @@ export function Segmented<T extends string>({
             type="button"
             role="radio"
             aria-checked={checked}
+            disabled={disabled}
             onClick={() => onChange(o.value)}
             className={cn(
-              'min-h-11 rounded-fl px-3 text-sm font-bold outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+              'min-h-11 rounded-fl px-3 text-sm font-bold outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:cursor-not-allowed disabled:opacity-50',
               checked ? 'bg-teal-dark text-white' : 'bg-teal-light text-fg',
             )}
           >

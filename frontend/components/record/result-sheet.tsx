@@ -83,7 +83,7 @@ function Body({ sheet, reduced, onDismiss }: { sheet: SheetData; reduced: boolea
         'relative flex w-full items-start gap-2 rounded-fl px-4 py-4 text-left text-fg outline-none',
         'focus-visible:ring-4 focus-visible:ring-teal/40',
         gold ? 'bg-gold' : 'bg-teal-light',
-        !reduced && 'animate-in fade-in duration-300',
+        !reduced && 'animate-in fade-in duration-300 fl-done-pop',
       )}
     >
       <span className="min-w-0 flex-1">

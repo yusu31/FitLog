@@ -13,6 +13,7 @@ import { formatDistance, formatDuration, formatMonthDay, WEEKDAYS, weekdayIndex 
 import { ME_MESSAGES } from '@/lib/messages';
 import { useRecordMutations } from '@/lib/mutations';
 import { useOnline } from '@/lib/use-browser-state';
+import { EmptyState } from '@/components/fitlog/empty-state';
 
 export const PAGE_SIZE = '20';
 const LOAD_ERROR = '読み込めませんでした。電波の良い所で開き直してください';
@@ -110,7 +111,7 @@ function RecordsPage({ cursor, isFirst = false, actions }: { cursor: string | un
   return (
     <>
       {isFirst && shown.length === 0 && (
-        <li className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">まだ記録がありません</li>
+        <EmptyState as="li" title="まだ記録がありません" hint="「今日」タブから1つ記録すると、ここに並びます" pose="ready" />
       )}
       {shown.map((record) => (
         <RecordRow key={record.id} record={record} actions={actions} />
@@ -160,8 +161,7 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
         {detail && <p className="mt-0.5 text-note font-bold text-fg-subtle">{detail}</p>}
       </div>
       </Link>
-      <button
-        type="button"
+      <ThickButton variant="icon"
         aria-label={`${formatMonthDay(record.localDate)} ${title}の メニュー`}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -169,7 +169,7 @@ function RecordRow({ record, actions }: { record: RecordDetailResponse; actions:
         className="flex size-11 shrink-0 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
       >
         <Ellipsis aria-hidden className="size-6" />
-      </button>
+      </ThickButton>
       {open && (
         <div
           role="menu"
@@ -211,7 +211,7 @@ function ConfirmDelete({ record, onCancel, onConfirm }: { record: RecordDetailRe
           <ThickButton autoFocus tone="white" size="sm" className="flex-1" onClick={onCancel}>
             やめる
           </ThickButton>
-          <ThickButton tone="coral" size="sm" className="flex-1" onClick={onConfirm}>
+          <ThickButton variant="danger" size="sm" className="flex-1" onClick={onConfirm}>
             削除する
           </ThickButton>
         </div>
