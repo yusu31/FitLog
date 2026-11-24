@@ -145,8 +145,8 @@ test('A04-7 コメントの時刻と運動の時刻', async ({ page }) => {
   note('A04-7', out.join('\n'));
 });
 
-test('A09-5 グループを作った直後の足跡（solo が作る）', async ({ page }) => {
-  await loginAs(page, 'solo');
+test('A09-5 グループを作った直後の足跡（グループなしの人が作る）', async ({ page }) => {
+  await loginAs(page, 'back6');
   await page.goto('/friends/');
   await settle(page);
   await shot(page, 'A09-5_before-create');
@@ -162,16 +162,16 @@ test('A09-5 グループを作った直後の足跡（solo が作る）', async 
 
 test('A10-3 名前を変えて保存した後の表示', async ({ page }) => {
   await loginAs(page, 'back6');
-  await page.goto('/settings/account/');
+  await page.goto('/settings/');
   await settle(page);
   await shot(page, 'A10-3_1-before');
   await page.getByLabel('表示名').fill('ケンタさん');
-  await page.getByRole('button', { name: '名前を保存する' }).click();
+  await page.getByRole('button', { name: '名前を保存' }).click();
   await page.waitForTimeout(1500);
   await settle(page);
   await shot(page, 'A10-3_2-after-save-same-page');
   const afterSame = await page.evaluate(() => (document.querySelector('main') as HTMLElement).innerText);
-  await page.getByRole('link', { name: '設定へ戻る' }).or(page.getByRole('button', { name: '設定へ戻る' })).click();
+  await page.goto('/settings/');
   await settle(page);
   await page.waitForTimeout(800);
   await shot(page, 'A10-3_3-settings');
@@ -270,7 +270,8 @@ test('A06-3 カメラ許可に失敗したときの画面', async ({ page }) => 
   await settle(page);
   await page.getByRole('button', { name: 'できた' }).click();
   await settle(page);
-  await page.getByRole('button', { name: /2秒ラストレップを撮る/ }).click();
+  await page.getByRole('button', { name: 'ほかの操作' }).click();
+  await page.getByRole('button', { name: /2秒動画を撮る/ }).click();
   await page.waitForTimeout(2500);
   await shot(page, 'A06-3_camera-denied');
   note('A06-3', await page.evaluate(() => document.body.innerText));
@@ -290,13 +291,11 @@ test('A10-3b 保存後に設定画面へ（画面内の移動）で名前が変�
   await page.goto('/settings/');
   await settle(page);
   const before = await page.locator('main p.text-lg').first().innerText().catch(() => 'n/a');
-  await page.getByRole('link', { name: /アカウントの設定/ }).click();
   await page.getByLabel('表示名').waitFor();
   await page.getByLabel('表示名').fill('ヨシコさん2');
-  await page.getByRole('button', { name: '名前を保存する' }).click();
+  await page.getByRole('button', { name: '名前を保存' }).click();
   await page.getByText('保存しました').waitFor();
-  await page.getByRole('link', { name: '設定へ戻る' }).click();
-  await page.waitForURL(/\/settings\/?$/);
+  await page.reload();
   await settle(page);
   await page.waitForTimeout(1000);
   await shot(page, 'A10-3b_settings-after-save');
