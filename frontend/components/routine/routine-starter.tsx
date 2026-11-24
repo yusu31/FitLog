@@ -65,7 +65,7 @@ export function RoutineStarter({ day }: { day: DayMode }) {
               onClick={() => onStart(r)}
               className="flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-fl px-3 text-left outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
             >
-              <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-full bg-teal-light text-brand">
+              <span aria-hidden className="hidden size-11 shrink-0 items-center justify-center rounded-full bg-teal-light text-brand min-[260px]:flex">
                 <ListChecks className="size-6" />
               </span>
               <span className="min-w-0 flex-1 text-[15px] leading-tight font-extrabold">
