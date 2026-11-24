@@ -173,8 +173,12 @@ describe('GroupSettingsView（S-32 グループの設定）', () => {
     it('グループ名・人数（今の人数／5人まで）・メンバーを出し、自分には「あなた」を付ける', async () => {
       renderView();
       expect(await screen.findByRole('heading', { name: '朝トレ部' })).toBeInTheDocument();
-      expect(screen.getByText('／ 5人まで')).toBeInTheDocument();
       expect(screen.getByLabelText('いまの人数')).toHaveTextContent('2');
+      // D7-4: 仲間タブと同じ1行の帯（赤い大きなカードではない）。招待の入口は、招待の場所の中なので出さない
+      const band = screen.getByRole('region', { name: 'グループ' });
+      expect(band).toHaveTextContent('2人／5人まで');
+      expect(band).not.toHaveTextContent('なかま');
+      expect(within(band).queryByRole('link', { name: '招待' })).not.toBeInTheDocument();
       const items = within(screen.getByRole('list', { name: 'メンバー' })).getAllByRole('listitem');
       expect(items).toHaveLength(2);
       expect(items[0]).toHaveTextContent('たろう');

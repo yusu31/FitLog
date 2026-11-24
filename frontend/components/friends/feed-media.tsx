@@ -132,11 +132,16 @@ function OpenVideo({ videoId, label }: { videoId: string; label: string }) {
         onError={() => setFailed(true)}
         className="size-full bg-black object-cover"
       />
-      {playing ? (
-        <Pause aria-hidden className="absolute right-2 top-2 size-5 fill-white text-white drop-shadow" />
-      ) : (
-        <Play aria-hidden className="absolute right-2 top-2 size-5 fill-white text-white drop-shadow" />
+      {/* 動画だと一目で分かるように、止まっているときはカードの真ん中に大きな再生マーク。左下に「2秒動画」の札（L9） */}
+      {!playing && (
+        <span data-testid="play-mark" aria-hidden className="absolute top-1/2 left-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white">
+          <Play className="ml-1 size-8 fill-white" />
+        </span>
       )}
+      {playing && <Pause aria-hidden className="absolute right-2 top-2 size-5 fill-white text-white drop-shadow" />}
+      <span data-testid="video-tag" className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2.5 py-1 text-note font-extrabold text-white">
+        2秒動画
+      </span>
     </button>
   );
 }

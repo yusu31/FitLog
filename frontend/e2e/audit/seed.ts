@@ -74,6 +74,15 @@ async function addRun(ctx: APIRequestContext, when: string, distanceM: number, d
   return id;
 }
 
+// 動画つきの記録にする（F-13）。置く先（S3）には何も置かず、動画の行（POST /records/{id}/video）だけ作る。
+// 画面に出る動画の本体は、ui.audit.ts が見本の動画（sample-2s.mp4）に差し替えて返す。
+// 署名は手元の計算だけで作られるので、API を VIDEO_BUCKET（ダミーの名前）と AWS_ACCESS_KEY_ID／AWS_SECRET_ACCESS_KEY（ダミー）つきで起動しておく。
+// 無い環境では 503 になり動画つきの記録は作れない（ほかの検査は止めずに進める）
+async function attachVideo(ctx: APIRequestContext, recordId: string): Promise<void> {
+  const res = await ctx.post(`/api/records/${recordId}/video`, { data: { contentType: 'video/mp4', sizeBytes: 6664 } });
+  if (!res.ok()) console.warn(`動画の行を作れませんでした（${res.status()}）。API に VIDEO_BUCKET を設定すると動画つきで撮れます`);
+}
+
 const BENCH: SetSpec = { exercise: 'ベンチプレス', sets: [[40, 10], [40, 10], [42.5, 8]] };
 
 export async function seedAll(baseURL: string): Promise<SeedResult> {
@@ -110,6 +119,8 @@ export async function seedAll(baseURL: string): Promise<SeedResult> {
   // 本人役（active）: 2週間分。昨日まで。今日はまだ記録なし
   const squat: SetSpec = { exercise: 'スクワット', sets: [[60, 10], [60, 10], [65, 8]] };
   const activeLast = await addWorkout(ctxs.active, exList, at(1, 19, 0), [BENCH, squat]);
+  // 今週、本人も動画を撮っている（仲間の動画が見られる状態＝再生マークが出る状態を作る）
+  await attachVideo(ctxs.active, activeLast);
   for (const days of [3, 4, 6, 8, 10, 13]) await addWorkout(ctxs.active, exList, at(days, 19, 0), [BENCH]);
   await addRun(ctxs.active, at(2, 7, 0), 5200, 1740, true);
   await addRun(ctxs.active, at(9, 7, 0), 3000, 1080);
@@ -119,6 +130,7 @@ export async function seedAll(baseURL: string): Promise<SeedResult> {
   // 仲間: 今週（月曜 11/16〜今日 11/18）の足跡
   const wRecords: string[] = [];
   wRecords.push(await addWorkout(ctxs.yusuke, exList, at(0, 7, 30), [BENCH, squat]));
+  await attachVideo(ctxs.yusuke, wRecords[0]!);
   wRecords.push(await addWorkout(ctxs.yusuke, exList, at(2, 19, 0), [BENCH]));
   const ayaRun = await addRun(ctxs.aya, at(0, 6, 30), 8000, 2700, true);
   await addRun(ctxs.aya, at(1, 6, 30), 5000, 1700);

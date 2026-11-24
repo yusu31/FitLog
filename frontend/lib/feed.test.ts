@@ -1,4 +1,4 @@
-import { COMMENT_MAX, QUICK_COMMENTS, STAMP_KEYS, STAMP_LABELS, describeItem, describeTotals, formatVolumeKg, normalizeComment, stampState, stampWhoLines } from './feed';
+import { COMMENT_MAX, QUICK_COMMENTS, STAMP_KEYS, STAMP_LABELS, describeItem, describeTotals, formatVolumeKg, weekDividerLabel, normalizeComment, stampState, stampWhoLines } from './feed';
 
 describe('スタンプと定型コメントの決まり（F-10）', () => {
   it('筋トレ・ランは4種、休みは2種。休みに筋トレ用のスタンプは付かない', () => {
@@ -106,5 +106,25 @@ describe('stampWhoLines（だれが押したか。A04-2）', () => {
   it('自分の足跡（もらった分）でも同じ。付いていなければ空', () => {
     expect(stampWhoLines(stamps, 'u-owner')).toEqual(['ナイス はなこ・わたし', 'すごい たろう']);
     expect(stampWhoLines([], 'me')).toEqual([]);
+  });
+});
+
+// 週の区切り（D7-6）。今日は 2026-11-18（水）＝今週は 11/16〜11/22、先週は 11/9〜11/15
+describe('weekDividerLabel（足跡の流れの週の区切り）', () => {
+  const TODAY = '2026-11-18';
+  it('同じ週の中では出さない（先頭の足跡が今週のときも出さない）', () => {
+    expect(weekDividerLabel(undefined, '2026-11-18', TODAY)).toBeNull();
+    expect(weekDividerLabel('2026-11-18', '2026-11-16', TODAY)).toBeNull();
+  });
+  it('今週から先週に変わるところで「先週」。境目は月曜（日曜は先週・月曜は今週）', () => {
+    expect(weekDividerLabel('2026-11-16', '2026-11-15', TODAY)).toBe('先週');
+    expect(weekDividerLabel('2026-11-16', '2026-11-09', TODAY)).toBe('先週');
+  });
+  it('先頭の足跡が先週なら、先頭にも「先週」（今週の足跡が無いとき）', () => {
+    expect(weekDividerLabel(undefined, '2026-11-12', TODAY)).toBe('先週');
+  });
+  it('先週より前に変わるところは、その週の月曜で「11/2の週」。同じ週の中では出さない', () => {
+    expect(weekDividerLabel('2026-11-12', '2026-11-05', TODAY)).toBe('11/2の週');
+    expect(weekDividerLabel('2026-11-05', '2026-11-03', TODAY)).toBeNull();
   });
 });

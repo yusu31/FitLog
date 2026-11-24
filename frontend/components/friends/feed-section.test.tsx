@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
 import { DEFAULT_PREFS, PREFS_KEY, savePrefs } from '@/lib/preferences';
@@ -577,6 +577,47 @@ describe('B05 仲間タブの改善', () => {
     expect(calls[0].url).not.toContain('weekStart');
   });
 
+  it('D7-6: 週が変わるところにだけ小さな区切りを入れる（今週→先週→もっと前）', async () => {
+    const lastWeek = toLocalDate(new Date(Date.now() - 8 * 86400_000));
+    const older = toLocalDate(new Date(Date.now() - 22 * 86400_000));
+    replies['GET /api/feed'] = [
+      {
+        status: 200,
+        body: feed({ items: [item({ id: 't1' }), item({ id: 'l1', localDate: lastWeek, exerciseNames: ['デッドリフト'] }), item({ id: 'o1', localDate: older, exerciseNames: ['ベンチプレス'] })] }),
+      },
+    ];
+    renderFeed();
+    await screen.findByText('スクワット');
+    const seps = screen.getAllByRole('separator');
+    expect(seps).toHaveLength(2);
+    expect(seps[0]).toHaveAccessibleName('先週');
+    expect(seps[1]).toHaveAccessibleName(/\d+\/\d+の週/);
+    // 区切りは足跡どうしの間（今週の足跡の後ろ・先週の足跡の前）に入る
+    const list = screen.getByRole('list', { name: '仲間の足跡' });
+    expect(list.children[1]).toBe(seps[0]);
+    expect(list.children).toHaveLength(5);
+  });
+
+  it('D7-6: 今週の足跡だけなら区切りは出ない', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ id: 't1' }), item({ id: 't2', exerciseNames: ['デッドリフト'] })] }) }];
+    renderFeed();
+    await screen.findByText('スクワット');
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument();
+  });
+
+  it('D7-6: 区切りは続きのページをまたいでも入る（前のページの最後の足跡と比べる）', async () => {
+    const lastWeek = toLocalDate(new Date(Date.now() - 8 * 86400_000));
+    replies['GET /api/feed'] = [
+      { status: 200, body: feed({ nextCursor: 'CUR2' }) },
+      { status: 200, body: feed({ items: [item({ id: 'p2', localDate: lastWeek, exerciseNames: ['デッドリフト'] })], nextCursor: null }) },
+    ];
+    renderFeed();
+    await screen.findByText('スクワット');
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'もっと見る' }));
+    expect(await screen.findByRole('separator')).toHaveAccessibleName('先週');
+  });
+
   it('D7-6: 下までスクロールすると（印が画面に入ると）自動で続きを読む', async () => {
     let fire: ((entries: { isIntersecting: boolean }[]) => void) | undefined;
     vi.stubGlobal(
@@ -616,6 +657,32 @@ describe('足跡カードの動画（BeReal 風。D7-6 PR-2）', () => {
     const media = await screen.findByTestId('feed-media');
     expect(within(media).getByTestId('number-badge')).toHaveTextContent('スクワット');
     expect(await within(media).findByRole('button', { name: 'はなこのスクワットの動画を再生する' })).toBeInTheDocument();
+  });
+
+  // L9: 動画だと一目で分かるように、止まっているときはカードの真ん中に大きな再生マークと「2秒動画」の札
+  it('L9: 見られる動画は、真ん中に大きな再生マークと「2秒動画」の札が出る。再生中はマークが消える（札は残る）', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [videoItem()] }) }];
+    replies['GET /api/videos/week'] = [week(true)];
+    replies['GET /api/videos/v1/url'] = [{ status: 200, body: { url: 'https://s3.example/videos/v1?sig=x', expiresInSeconds: 300 } }];
+    renderFeed();
+    const media = await screen.findByTestId('feed-media');
+    await within(media).findByRole('button', { name: 'はなこのスクワットの動画を再生する' });
+    const mark = within(media).getByTestId('play-mark');
+    expect(mark).toHaveClass('top-1/2', 'left-1/2', 'size-16');
+    expect(within(media).getByTestId('video-tag')).toHaveTextContent('2秒動画');
+    fireEvent.play(media.querySelector('video')!);
+    expect(within(media).queryByTestId('play-mark')).not.toBeInTheDocument();
+    expect(within(media).getByTestId('video-tag')).toBeInTheDocument();
+  });
+
+  it('L9: 見られない動画（鍵）には再生マークも「2秒動画」の札も出さない', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [videoItem()] }) }];
+    replies['GET /api/videos/week'] = [week(false)];
+    renderFeed();
+    const media = await screen.findByTestId('feed-media');
+    await within(media).findByRole('img');
+    expect(within(media).queryByTestId('play-mark')).not.toBeInTheDocument();
+    expect(within(media).queryByTestId('video-tag')).not.toBeInTheDocument();
   });
 
   it('設定で自動再生をオンにすると、動画に autoplay が付く（はじめは付かない）', async () => {

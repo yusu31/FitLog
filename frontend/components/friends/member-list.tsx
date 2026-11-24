@@ -12,25 +12,9 @@ export const GROUP_MEMBER_MAX = 5;
 // 丸の色の表は fitlog/avatar.tsx に移した（顔の丸 Avatar と同じ表を使う）。既存の import を壊さないため、ここからも出す
 export { AVATAR_BG };
 
-// グループの名前と、いまの人数（大きな数字）。仲間タブ（S-20）とグループの設定（S-32）で同じ見た目を使う
-export function GroupSummary({ group }: { group: GroupDetailResponse }) {
-  return (
-    <section className="fl-stripes relative overflow-hidden rounded-fl bg-coral px-[18px] pt-3.5 pb-4 text-fg shadow-[0_4px_0_var(--color-coral-dark)]">
-      <span className="fl-tag bg-gold text-fg">なかま</span>
-      <p className="mt-3 flex items-baseline gap-1.5 leading-none">
-        <span aria-label="いまの人数" className="fl-num text-7xl">
-          {group.members.length}
-        </span>
-        <span className="text-xl font-extrabold">人</span>
-        <span className="ml-1 text-sm font-bold">／ {GROUP_MEMBER_MAX}人まで</span>
-      </p>
-      <h2 className="mt-2 text-lg font-extrabold break-all">{group.name}</h2>
-    </section>
-  );
-}
-
-// 仲間タブ（S-20）の上の1行の帯（D7-4）。グループ名・人数・招待への入口だけ。大きな赤いカードは、人数しか載せないのに場所をとっていた
-export function GroupBand({ group }: { group: GroupDetailResponse }) {
+// 仲間タブ（S-20）とグループの設定（S-32）の上の1行の帯（D7-4）。グループ名・人数・招待への入口だけ。大きな赤いカードは、人数しか載せないのに場所をとっていた。
+// 招待への入口は、招待の場所（S-32）の中では要らないので withInvite=false で隠す
+export function GroupBand({ group, withInvite = true }: { group: GroupDetailResponse; withInvite?: boolean }) {
   const full = group.members.length >= GROUP_MEMBER_MAX;
   return (
     <section aria-label="グループ" className="fl-slab flex min-h-14 items-center gap-2.5 py-1.5 pr-1.5 pl-4">
@@ -42,7 +26,7 @@ export function GroupBand({ group }: { group: GroupDetailResponse }) {
         </span>
         人／{GROUP_MEMBER_MAX}人まで
       </p>
-      {!full && (
+      {withInvite && !full && (
         <Link
           href={withBack('/settings/group', 'friends')}
           className="flex min-h-11 shrink-0 items-center rounded-fl px-3 text-sm font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"

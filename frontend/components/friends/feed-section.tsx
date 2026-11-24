@@ -1,11 +1,12 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { getGetFeedUnreadQueryKey, markFeedSeen, useGetFeed, type FeedTotals } from '@/lib/api/generated';
-import { describeTotals } from '@/lib/feed';
+import { describeTotals, weekDividerLabel } from '@/lib/feed';
 import { FEED_MESSAGES } from '@/lib/messages';
+import { toLocalDate } from '@/lib/shared/local-date';
 import { FeedCard } from './feed-card';
 
 // 仲間の足跡（S-20。docs/screen-design.md 4章）。週の区切りはやめ、同じグループの全期間を新しい順に流す（D7-6・判断ログ 50）。
@@ -17,7 +18,8 @@ export function FeedSection({ hideEmptyTotals = false }: { hideEmptyTotals?: boo
   return <FeedPage cursor={undefined} isFirst hideEmptyTotals={hideEmptyTotals} />;
 }
 
-function FeedPage({ cursor, isFirst = false, hideEmptyTotals = false }: { cursor: string | undefined; isFirst?: boolean; hideEmptyTotals?: boolean }) {
+// prevDate: 前のページの最後の足跡の日付（週の区切りを、ページをまたいで入れるため）
+function FeedPage({ cursor, isFirst = false, hideEmptyTotals = false, prevDate }: { cursor: string | undefined; isFirst?: boolean; hideEmptyTotals?: boolean; prevDate?: string }) {
   const { data, isPending, isError } = useGetFeed(cursor ? { cursor } : {});
   const [more, setMore] = useState(false);
   useMarkSeen(isFirst && !isPending && !isError && data?.status === 200);
@@ -33,6 +35,7 @@ function FeedPage({ cursor, isFirst = false, hideEmptyTotals = false }: { cursor
     );
   }
   const { items, nextCursor, totals } = data.data;
+  const today = toLocalDate(new Date());
   return (
     <>
       {isFirst && !(hideEmptyTotals && describeTotals(totals).empty) && <WeekTotals totals={totals} />}
@@ -41,14 +44,20 @@ function FeedPage({ cursor, isFirst = false, hideEmptyTotals = false }: { cursor
       )}
       {items.length > 0 && (
         <ul aria-label="仲間の足跡" className="space-y-2">
-          {items.map((item) => (
-            <FeedCard key={item.id} item={item} />
-          ))}
+          {items.map((item, i) => {
+            const label = weekDividerLabel(i === 0 ? prevDate : items[i - 1]!.localDate, item.localDate, today);
+            return (
+              <Fragment key={item.id}>
+                {label && <WeekDivider label={label} />}
+                <FeedCard item={item} />
+              </Fragment>
+            );
+          })}
         </ul>
       )}
       {nextCursor &&
         (more ? (
-          <FeedPage cursor={nextCursor} />
+          <FeedPage cursor={nextCursor} prevDate={items.at(-1)?.localDate ?? prevDate} />
         ) : (
           <>
             <ThickButton tone="white" size="sm" className="w-full" onClick={() => setMore(true)}>
@@ -58,6 +67,17 @@ function FeedPage({ cursor, isFirst = false, hideEmptyTotals = false }: { cursor
           </>
         ))}
     </>
+  );
+}
+
+// 週が変わるところの小さな区切り（「先週」など）。リストの中の見出しとして読み上げる
+function WeekDivider({ label }: { label: string }) {
+  return (
+    <li role="separator" aria-label={label} className="flex items-center gap-2 pt-2 text-note font-extrabold text-fg-muted">
+      <span aria-hidden className="h-0.5 flex-1 rounded-full bg-line" />
+      <span aria-hidden>{label}</span>
+      <span aria-hidden className="h-0.5 flex-1 rounded-full bg-line" />
+    </li>
   );
 }
 
