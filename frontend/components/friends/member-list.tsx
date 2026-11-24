@@ -25,7 +25,7 @@ export function GroupBand({ group, withInvite = true }: { group: GroupDetailResp
         <span aria-label="いまの人数" className="fl-num text-xl text-fg">
           {group.members.length}
         </span>
-        人／{GROUP_MEMBER_MAX}人まで
+        人<span className="hidden min-[260px]:inline">／{GROUP_MEMBER_MAX}人まで</span>
       </p>
       {withInvite && !full && (
         <Link
