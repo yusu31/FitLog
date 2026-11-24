@@ -1,6 +1,8 @@
 // 仲間タブ（S-20）の足跡・スタンプ・コメントの決まりごと（docs/screen-design.md「スタンプと定型コメント（F-10）」）。
 // 画面の部品から切り離した純粋な関数・定数。順位・数を競う言い方は入れない。
 import { formatDistance, formatDuration, formatPace } from '@/lib/format';
+import { FEED_MESSAGES } from '@/lib/messages';
+import { addDays, weekStartOf } from '@/lib/shared/week';
 import type { FeedItem, FeedItemKind, FeedStamp, FeedTotals } from '@/lib/api/generated';
 
 export type StampKey = FeedStamp['stampKey'];
@@ -92,4 +94,13 @@ export function stampStateWithPending(stamps: readonly FeedStamp[], key: StampKe
   const actual = stampState(stamps, key);
   if (!pending || pending.key !== key || pending.base !== stamps) return actual;
   return pending.add ? { count: actual.count + 1, mine: 'pending' } : { count: Math.max(0, actual.count - 1), mine: null };
+}
+
+// 足跡の流れに入れる週の区切り（D7-5・D7-6）。新しい順に並んだ足跡で、前の足跡（prevDate。先頭は今日）と週（月曜始まり）が変わるところだけ、区切りの文字を返す。
+// 先週ならそのまま「先週」、それより前は「11/2の週」（その週の月曜）。同じ週の中・API のデータは変えない（今日の日付だけで決める）
+export function weekDividerLabel(prevDate: string | undefined, date: string, today: string): string | null {
+  const week = weekStartOf(date);
+  if (week === weekStartOf(prevDate ?? today)) return null;
+  if (week === weekStartOf(addDays(today, -7))) return FEED_MESSAGES.lastWeek;
+  return `${Number(week.slice(5, 7))}/${Number(week.slice(8, 10))}の週`;
 }

@@ -6,6 +6,9 @@ import { AUDIT_NOW, PASSWORD, type SeedResult } from './seed';
 // 1b UI 一貫性の機械検査（実施要領 7章 P1-1b）。全画面×画面条件×状態を撮り、見えている要素の computed style と位置・大きさを JSON に残す。
 // 判定は analyze-ui.py が行う（基準は実施前に固定済み: 要領 7章 P1-1b「判定」）。P5 で同じスクリプトをそのまま再実行して前後を比べる。
 const OUT = join(__dirname, 'out', 'ui');
+// 動画の置き場（S3）は結合テスト環境に無いので、動画の URL を聞かれたら見本の 2 秒動画を返す（実行はしない。シードで動画の行だけ作ってある）
+const SAMPLE_VIDEO = join(__dirname, 'sample-2s.mp4');
+const SAMPLE_PATH = '/audit-sample-2s.mp4';
 const seed = (): SeedResult => JSON.parse(readFileSync(join(__dirname, '.seed.json'), 'utf-8'));
 
 const VIEWPORTS = [
@@ -123,6 +126,13 @@ for (const state of ['active', 'new'] as const) {
       const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dsf, reducedMotion: 'reduce' });
       const page = await ctx.newPage();
       await page.clock.setFixedTime(AUDIT_NOW);
+      await page.route('**/api/videos/*/url', async (route) => {
+        const res = await route.fetch();
+        // 見られない（期限切れ 403・無い 404）はサーバーの答えのまま。見られるとき（200）と、置き場が無くて署名を作れなかったとき（503。見られる条件は通過済み）は見本の動画にする
+        if (res.status() === 403 || res.status() === 404) return route.fulfill({ response: res });
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ url: SAMPLE_PATH, expiresInSeconds: 300 }) });
+      });
+      await page.route(`**${SAMPLE_PATH}`, (route) => route.fulfill({ status: 200, contentType: 'video/mp4', body: readFileSync(SAMPLE_VIDEO) }));
       const dir = join(OUT, state, vp.id);
       mkdirSync(dir, { recursive: true });
 

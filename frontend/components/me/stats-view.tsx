@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { PageTitle } from '@/components/fitlog/app-shell';
 import { JapanMap } from '@/components/me/japan-map';
 import { StampMedal } from '@/components/me/stamp-medal';
-import { useGetStats, type StatsCalendarDay, type StatsResponse } from '@/lib/api/generated';
+import { useGetStats, type StatsResponse } from '@/lib/api/generated';
 import { formatMonthDay } from '@/lib/format';
 import { locateOnRoute, nextText, trekText } from '@/lib/japan-route';
 import {
@@ -18,13 +18,15 @@ import {
   formatMetric,
   minMonthOffset,
   minWeekOffset,
+  minYearOffset,
   monthGrid,
   monthRange,
   sumRange,
   tileWindowStart,
+  weekGrid,
   weekRange,
   weightEquivalent,
-  yearHeat,
+  yearMonths,
   type GridCell,
   type Metric,
   type StatsView,
@@ -70,7 +72,7 @@ export function StatsPage() {
 
 type Tile = { off: number; label: string; value: number; selected: boolean };
 
-// 期間の切替・◀▶・合計・タイル。年は1年分（calendar の365日）で◀▶は無い。年のタイルを押すと、その月へ移る
+// 期間の切替・◀▶・合計・タイル。週は7マスの帯・月はカレンダー・年は月ごとの小さなカレンダー12個（どれも同じマス部品 DayCell。D5-2）。◀▶は週・月・年とも（年は1か月ずつ）。年のタイルを押すと、その月へ移る
 function Period({ data }: { data: StatsResponse }) {
   const { today, calendar } = data;
   const [view, setView] = useState<StatsView>('week');
@@ -79,16 +81,18 @@ function Period({ data }: { data: StatsResponse }) {
   const requested = useSearchParams()?.get('metric');
   const [metric, setMetric] = useState<Metric>(METRICS.some((m) => m.key === requested) ? (requested as Metric) : 'days');
   const first = calendar[0].date;
-  const min = view === 'week' ? minWeekOffset(today, first) : view === 'month' ? minMonthOffset(today, first) : 0;
+  const min = view === 'week' ? minWeekOffset(today, first) : view === 'month' ? minMonthOffset(today, first) : minYearOffset(today, first);
 
-  const range = view === 'week' ? weekRange(today, off) : view === 'month' ? monthRange(today, off) : { from: first, to: today };
+  const yearFrom = monthRange(today, off - 11);
+  const yearTo = monthRange(today, off);
+  const range = view === 'week' ? weekRange(today, off) : view === 'month' ? monthRange(today, off) : { from: yearFrom.from, to: yearTo.to };
   const totals = sumRange(calendar, range.from, range.to > today ? today : range.to);
   const title =
     view === 'week'
       ? `${formatMonthDay(range.from)}〜${formatMonthDay(range.to)}`
       : view === 'month'
         ? `${Number(range.from.slice(0, 4))}年${Number(range.from.slice(5, 7))}月`
-        : `この1年（${formatMonthDay(first)}〜${formatMonthDay(today)}）`;
+        : `${Number(yearFrom.ym.slice(0, 4))}年${Number(yearFrom.ym.slice(5))}月〜${Number(yearTo.ym.slice(0, 4))}年${Number(yearTo.ym.slice(5))}月`;
 
   // 横に並べる数字のタイル（週は6週・月は6か月・年は12か月）
   let tiles: Tile[];
@@ -101,7 +105,7 @@ function Period({ data }: { data: StatsResponse }) {
     });
   } else {
     const count = view === 'month' ? 6 : 12;
-    const start = view === 'month' ? tileWindowStart(off, min) : -11;
+    const start = view === 'month' ? tileWindowStart(off, min) : off - 11;
     tiles = Array.from({ length: count }, (_, i) => {
       const o = start + i;
       const r = monthRange(today, o);
@@ -134,11 +138,11 @@ function Period({ data }: { data: StatsResponse }) {
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between">
-          {view === 'year' ? <span className="size-11" /> : <NavButton label="前へ" disabled={off <= min} onClick={() => setOff(off - 1)} dir="prev" />}
+          <NavButton label="前へ" disabled={off <= min} onClick={() => setOff(off - 1)} dir="prev" />
           <p data-testid="stats-title" className="text-center font-extrabold">
             {title}
           </p>
-          {view === 'year' ? <span className="size-11" /> : <NavButton label="次へ" disabled={off >= 0} onClick={() => setOff(off + 1)} dir="next" />}
+          <NavButton label="次へ" disabled={off >= 0} onClick={() => setOff(off + 1)} dir="next" />
         </div>
         <dl data-testid="stats-totals" className="mt-2 grid grid-cols-4 gap-1 text-center">
           <Stat label="動いた日" value={String(totals.days)} unit="日" />
@@ -147,8 +151,9 @@ function Period({ data }: { data: StatsResponse }) {
           <Stat label="ラン" {...formatMetric('m', totals.m)} />
         </dl>
         {equivalent && <p className="mt-2 text-center text-sm font-bold">{equivalent}</p>}
+        {view === 'week' && <WeekBand cells={weekGrid(calendar, today, off)} today={today} />}
         {view === 'month' && <MonthCalendar cells={monthGrid(calendar, today, off)} today={today} />}
-        {view === 'year' && <YearHeat calendar={calendar} today={today} />}
+        {view === 'year' && <YearCalendars months={yearMonths(calendar, today, off)} today={today} />}
       </section>
 
       <section aria-labelledby="stats-tiles" className="fl-slab px-4 py-3">
@@ -233,69 +238,76 @@ function Stat({ label, value, unit }: { label: string; value: string; unit: stri
   );
 }
 
-// 月のカレンダー（日付つき・月曜始まり）。休みは全期間で同じ紫
-function MonthCalendar({ cells, today }: { cells: GridCell[]; today: string }) {
+// 1日のマス。週・月・年で同じ部品（D5-2）。休みは全期間で同じ紫。年は日付の数字なし（色だけ）
+function DayCell({ cell, today, small = false }: { cell: GridCell; today: string; small?: boolean }) {
+  const date = cell.date!;
+  return (
+    <li
+      data-status={cell.status}
+      aria-label={[formatMonthDay(date), date === today ? '今日' : '', STATUS_TEXT[cell.status]].filter(Boolean).join(' ')}
+      className={cn(
+        'flex aspect-square items-center justify-center rounded-full',
+        small ? 'min-w-0' : 'fl-num text-sm',
+        STATUS_CLASS[cell.status],
+        !small && cell.status === 'none' && 'text-fg-muted',
+        date === today && (small ? 'ring-1 ring-fg' : 'ring-2 ring-fg'),
+      )}
+    >
+      {small ? null : Number(date.slice(8))}
+    </li>
+  );
+}
+
+// 月曜始まりの曜日の見出し
+function WeekdayHead() {
+  return (
+    <p aria-hidden data-testid="stats-weekdays" className="grid grid-cols-7 gap-1 text-center text-note font-bold text-fg-muted">
+      {WEEKDAY_HEAD.map((w) => (
+        <span key={w}>{w}</span>
+      ))}
+    </p>
+  );
+}
+
+// 週の帯（7マス）
+function WeekBand({ cells, today }: { cells: GridCell[]; today: string }) {
   return (
     <div className="mt-3">
-      <p aria-hidden data-testid="stats-weekdays" className="grid grid-cols-7 gap-1 text-center text-note font-bold text-fg-muted">
-        {WEEKDAY_HEAD.map((w) => (
-          <span key={w}>{w}</span>
+      <WeekdayHead />
+      <ol aria-label="週のマス" data-testid="stats-grid" className="mt-1 grid grid-cols-7 gap-1">
+        {cells.map((c) => (
+          <DayCell key={c.date} cell={c} today={today} />
         ))}
-      </p>
-      <ol aria-label="月のマス" data-testid="stats-grid" className="mt-1 grid grid-cols-7 gap-1">
-        {cells.map((c, i) =>
-          c.date === null ? (
-            <li key={`blank-${i}`} aria-hidden />
-          ) : (
-            <li
-              key={c.date}
-              data-status={c.status}
-              aria-label={[formatMonthDay(c.date), c.date === today ? '今日' : '', STATUS_TEXT[c.status]].filter(Boolean).join(' ')}
-              className={cn('fl-num flex aspect-square items-center justify-center rounded-full text-sm', STATUS_CLASS[c.status], c.status === 'none' && 'text-fg-muted', c.date === today && 'ring-2 ring-fg')}
-            >
-              {Number(c.date.slice(8))}
-            </li>
-          ),
-        )}
       </ol>
     </div>
   );
 }
 
-// 年の色のマス。半年ずつ2段・月の見出し。たては上から月〜日、よこは左から右へ週が進む
-function YearHeat({ calendar, today }: { calendar: readonly StatsCalendarDay[]; today: string }) {
-  const halves = yearHeat(calendar);
+// 月のカレンダー（日付つき・月曜始まり）
+function MonthCalendar({ cells, today }: { cells: GridCell[]; today: string }) {
   return (
-    <div className="mt-3 space-y-1">
-      <p data-testid="stats-weekdays" className="text-note font-bold text-fg-muted">
-        たては上から月〜日、よこは左から右へ週が進みます
-      </p>
-      {halves.map((h, hi) => (
-        <div key={hi}>
-          <div aria-hidden className="grid h-3 text-[0.58rem] font-extrabold text-fg-muted" style={{ gridTemplateColumns: `repeat(${h.cols}, 1fr)` }}>
-            {h.labels.map((l) => (
-              <span key={l.col} className="whitespace-nowrap" style={{ gridColumn: l.col }}>
-                {l.text}
-              </span>
-            ))}
-          </div>
-          <ol aria-label={hi === 0 ? '年のマス（前半）' : '年のマス（後半）'} data-testid="stats-grid" className="mt-0.5 grid grid-flow-col grid-rows-7 gap-0.5" style={{ gridTemplateColumns: `repeat(${h.cols}, 1fr)` }}>
-            {h.cells.map((c, i) =>
-              c === null || c.date === null ? (
-                <li key={`b${i}`} aria-hidden />
-              ) : (
-                <li
-                  key={c.date}
-                  data-status={c.status}
-                  aria-label={[formatMonthDay(c.date), c.date === today ? '今日' : '', STATUS_TEXT[c.status]].filter(Boolean).join(' ')}
-                  className={cn('aspect-square min-w-0 rounded-sm', c.status === 'none' ? 'bg-line' : STATUS_CLASS[c.status], c.date === today && 'ring-2 ring-fg')}
-                />
-              ),
-            )}
-          </ol>
-        </div>
-      ))}
+    <div className="mt-3">
+      <WeekdayHead />
+      <ol aria-label="月のマス" data-testid="stats-grid" className="mt-1 grid grid-cols-7 gap-1">
+        {cells.map((c, i) => (c.date === null ? <li key={`blank-${i}`} aria-hidden /> : <DayCell key={c.date} cell={c} today={today} />))}
+      </ol>
     </div>
+  );
+}
+
+// 年: 月ごとの小さなカレンダー12個（3列×4段。日付の数字なし・色だけ）。見出しは月
+function YearCalendars({ months, today }: { months: ReturnType<typeof yearMonths>; today: string }) {
+  return (
+    <ul aria-label="年のカレンダー" data-testid="stats-year" className="mt-3 grid grid-cols-3 gap-x-3 gap-y-3">
+      {months.map((m) => (
+        <li key={m.ym} data-testid="stats-year-month">
+          <p className="mb-1 text-note font-extrabold text-fg-muted">{m.label}</p>
+          <ol aria-label={`${m.label}のマス`} data-testid="stats-grid" className="grid grid-cols-7 gap-0.5">
+            {m.cells.map((c, i) => (c.date === null ? <li key={`blank-${i}`} aria-hidden /> : <DayCell key={c.date} cell={c} today={today} small />))}
+          </ol>
+        </li>
+      ))}
+    </ul>
   );
 }
 

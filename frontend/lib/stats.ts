@@ -81,25 +81,24 @@ export function monthGrid(calendar: readonly StatsCalendarDay[], today: string, 
   return [...lead, ...days];
 }
 
-// 年の色のマス。calendar を月曜始まりの週（縦7）に並べ、半分ずつ2段にする。月の1日がある列に月の見出しを付ける
-export type HeatHalf = { cells: (GridCell | null)[]; labels: { col: number; text: string }[]; cols: number };
-export function yearHeat(calendar: readonly StatsCalendarDay[]): HeatHalf[] {
-  const first = calendar[0].date;
-  const lastDate = calendar[calendar.length - 1].date;
+// 週の帯（月〜日の7マス）。今日より後の日は none。月・年と同じマス（GridCell）で並べる（D5-2）
+export function weekGrid(calendar: readonly StatsCalendarDay[], today: string, off: number): GridCell[] {
   const statusOf = new Map(calendar.map((c) => [c.date, c.status]));
-  const weeks: (GridCell | null)[][] = [];
-  for (let w = weekStartOf(first); w <= lastDate; w = addDays(w, 7)) {
-    weeks.push(weekDates(w).map((d) => (d < first || d > lastDate ? null : { date: d, status: statusOf.get(d) ?? 'none' })));
-  }
-  const half = Math.ceil(weeks.length / 2);
-  return [weeks.slice(0, half), weeks.slice(half)].map((ws) => ({
-    cols: ws.length,
-    cells: ws.flat(),
-    labels: ws.flatMap((col, i) => {
-      const one = col.find((c) => c?.date?.endsWith('-01'));
-      return one?.date ? [{ col: i + 1, text: `${Number(one.date.slice(5, 7))}月` }] : [];
-    }),
-  }));
+  return weekDates(weekRange(today, off).from).map((d) => ({ date: d, status: d > today ? 'none' : (statusOf.get(d) ?? 'none') }));
+}
+
+// 年（D5-2）: 月ごとの小さなカレンダー12個。off は「いちばん新しい月」のずれ（0＝今月が右下。◀で1か月ずつ前へ）。古い順に並べる
+export type YearMonth = { ym: string; label: string; cells: GridCell[] };
+export function yearMonths(calendar: readonly StatsCalendarDay[], today: string, off: number): YearMonth[] {
+  return Array.from({ length: 12 }, (_, i) => {
+    const o = off - 11 + i;
+    const { ym } = monthRange(today, o);
+    return { ym, label: `${Number(ym.slice(5))}月`, cells: monthGrid(calendar, today, o) };
+  });
+}
+// 年の◀で戻れる限界。12か月の左端が calendar の最初の月になるところまで（0 を超えて先へは進めない）
+export function minYearOffset(today: string, firstDate: string): number {
+  return Math.min(0, minMonthOffset(today, firstDate) + 11);
 }
 
 // 祝福に重ねる「今月◯日目」（F-20）。今月動いた日数に、今日がまだ数えられていなければ今日の分を足す。

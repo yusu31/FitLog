@@ -1,5 +1,5 @@
 import type { StatsCalendarDay } from '@/lib/api/generated';
-import { formatMetric, minMonthOffset, minWeekOffset, monthGrid, monthRange, monthDayCount, sumRange, tileWindowStart, weekRange, weightEquivalent, yearHeat } from './stats';
+import { formatMetric, minMonthOffset, minWeekOffset, monthGrid, monthRange, monthDayCount, sumRange, tileWindowStart, weekRange, weightEquivalent, weekGrid, yearMonths, minYearOffset } from './stats';
 
 // 記録のまとめ（F-22・F-26・F-27。D5）の画面側の関数（docs/testing-design.md 3-14）。今日は 2026-11-12（木曜）。
 
@@ -83,22 +83,30 @@ describe('monthGrid（月のカレンダー）', () => {
   });
 });
 
-describe('yearHeat（年の色のマス）', () => {
+describe('weekGrid（週の帯。D5-2）', () => {
+  const cal = calendarEnding('2026-11-12', { '2026-11-10': { status: 'rest' }, '2026-11-11': { status: 'rec' } });
+  it('月〜日の7マス。今日より後は none、記録・休みはそのまま', () => {
+    const g = weekGrid(cal, '2026-11-12', 0);
+    expect(g.map((c) => c.date)).toEqual(['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15']);
+    expect(g.map((c) => c.status)).toEqual(['none', 'rest', 'rec', 'none', 'none', 'none', 'none']);
+  });
+  it('先週（-1）は先週の月〜日', () => {
+    expect(weekGrid(cal, '2026-11-12', -1)[0]!.date).toBe('2026-11-02');
+  });
+});
+
+describe('yearMonths（年の12か月。D5-2）', () => {
   const cal = calendarEnding('2026-11-12', { '2026-11-10': { status: 'rest' } });
-  const halves = yearHeat(cal);
-  it('365日を半年ずつ2段に分ける（空きを除いて合計365）', () => {
-    expect(halves).toHaveLength(2);
-    expect(halves.flatMap((h) => h.cells).filter(Boolean)).toHaveLength(365);
-    expect(halves[0].cells).toHaveLength(halves[0].cols * 7);
+  it('古い順に12個。右端が今月（0）、左端は11か月前。休みは rest のまま入る', () => {
+    const ms = yearMonths(cal, '2026-11-12', 0);
+    expect(ms.map((m) => m.ym)).toEqual(['2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11']);
+    expect(ms[11]!.label).toBe('11月');
+    expect(ms[11]!.cells.find((c) => c.date === '2026-11-10')!.status).toBe('rest');
   });
-  it('最初の日の曜日に合わせて先頭に空き（2025-11-13 は木曜＝3つ）、休みは rest', () => {
-    expect(halves[0].cells.slice(0, 3).every((c) => c === null)).toBe(true);
-    expect(halves[0].cells[3]!.date).toBe('2025-11-13');
-    expect(halves[1].cells.find((c) => c?.date === '2026-11-10')!.status).toBe('rest');
-  });
-  it('月の1日がある列に月の見出しが付く', () => {
-    const all = halves.flatMap((h) => h.labels.map((l) => l.text));
-    expect(all).toEqual(['12月', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月']);
+  it('◀（-1）で1か月前にずれる。戻れる限界は左端が最初の月になるところ（calendar の最初の日 2025-11-13 → -1）', () => {
+    expect(yearMonths(cal, '2026-11-12', -1)[11]!.ym).toBe('2026-10');
+    expect(minYearOffset('2026-11-12', '2025-11-13')).toBe(-1);
+    expect(minYearOffset('2026-11-12', '2026-11-01')).toBe(0); // 0 を超えて先へは進めない
   });
 });
 

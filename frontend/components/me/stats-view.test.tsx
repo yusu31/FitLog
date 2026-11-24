@@ -100,21 +100,65 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     expect(within(screen.getByTestId('stats-tiles')).getAllByRole('button')).toHaveLength(6);
   });
 
-  it('年は1年分（365マス・半年2段）と12か月のタイル。◀▶は無く、タイルを押すとその月へ移る', async () => {
+  // D5-2: 週・月・年を同じマス部品にそろえる。週は7マスの帯（日付つき）
+  it('週は月〜日の7マスの帯。日付つきで、休みは紫・記録は金・先の日は none', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    await screen.findByTestId('stats-title');
+    const grid = screen.getByTestId('stats-grid');
+    const cells = within(grid).getAllByRole('listitem');
+    expect(cells).toHaveLength(7);
+    expect(cells.map((c) => c.textContent)).toEqual(['9', '10', '11', '12', '13', '14', '15']);
+    expect(within(grid).getByLabelText('11/10 おやすみ')).toHaveAttribute('data-status', 'rest');
+    expect(within(grid).getByLabelText('11/11 記録あり')).toHaveAttribute('data-status', 'rec');
+    expect(within(grid).getByLabelText('11/13')).toHaveAttribute('data-status', 'none');
+    expect(screen.getByTestId('stats-weekdays').textContent).toBe('月火水木金土日');
+  });
+
+  it('週の◀で先週の帯に変わる（マスも先週の日付）', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const user = userEvent.setup();
+    await screen.findByTestId('stats-title');
+    await user.click(screen.getByRole('button', { name: '前へ' }));
+    const cells = within(screen.getByTestId('stats-grid')).getAllByRole('listitem');
+    expect(cells.map((c) => c.textContent)).toEqual(['2', '3', '4', '5', '6', '7', '8']);
+    expect(within(screen.getByTestId('stats-grid')).getByLabelText('11/3 記録あり')).toBeInTheDocument();
+  });
+
+  it('年は月ごとの小さなカレンダー12個（日付の数字なし・色だけ）。◀▶があり、タイルを押すとその月へ移る', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: '年' }));
-    expect(screen.getByTestId('stats-title')).toHaveTextContent('11/13〜11/12');
-    expect(screen.queryByRole('button', { name: '前へ' })).not.toBeInTheDocument();
-    const cells = screen.getAllByTestId('stats-grid').flatMap((g) => within(g).getAllByRole('listitem').filter((li) => li.hasAttribute('data-status')));
-    expect(cells).toHaveLength(365);
-    expect(screen.getByLabelText('11/10 おやすみ')).toHaveAttribute('data-status', 'rest');
-    expect(screen.getByTestId('stats-weekdays')).toHaveTextContent('上から月〜日');
+    expect(screen.getByTestId('stats-title')).toHaveTextContent('2025年12月〜2026年11月');
+    const months = screen.getAllByTestId('stats-year-month');
+    expect(months).toHaveLength(12);
+    expect(months[0]).toHaveTextContent('12月');
+    expect(months[11]).toHaveTextContent('11月');
+    // 日付の数字は出さない（マスは色だけ）。休みは月と同じ紫
+    const nov = within(months[11]!);
+    expect(nov.getByLabelText('11/10 おやすみ')).toHaveAttribute('data-status', 'rest');
+    expect(nov.getByLabelText('11/10 おやすみ').textContent).toBe('');
+    expect(nov.getByLabelText('11/12 今日')).toHaveClass('ring-1');
+    expect(screen.getByRole('button', { name: '次へ' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '前へ' })).toBeEnabled();
     expect(within(screen.getByTestId('stats-tiles')).getAllByRole('button')).toHaveLength(12);
     await user.click(screen.getByRole('button', { name: /^10月 / }));
     expect(screen.getByTestId('stats-title')).toHaveTextContent('2026年10月');
     expect(screen.getByRole('button', { name: '月' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('年の◀▶は1か月ずつ。戻れるのは最初の記録の月まで（今の calendar なら1か月前まで）', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: '年' }));
+    await user.click(screen.getByRole('button', { name: '前へ' }));
+    expect(screen.getByTestId('stats-title')).toHaveTextContent('2025年11月〜2026年10月');
+    expect(screen.getByRole('button', { name: '前へ' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '次へ' }));
+    expect(screen.getByTestId('stats-title')).toHaveTextContent('2025年12月〜2026年11月');
   });
 
   it('見る数字を切り替えるとタイルの数字が変わる。日本縦断はラン（距離）のときだけ出る', async () => {

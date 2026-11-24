@@ -275,6 +275,8 @@ export const FEED_MESSAGES = {
   // 新着の札（F4）。最後に仲間タブを見たあとに来た足跡・反応が付いた自分の記録
   newTag: '新着',
   weekHeading: '今週のグループ',
+  // 足跡の流れで、週が変わるところに入れる小さな区切り（D7-6）
+  lastWeek: '先週',
   totalsEmpty: '今週は まだ だれも記録していないよ',
   volumeLabel: '総重量',
   distanceLabel: '走った',

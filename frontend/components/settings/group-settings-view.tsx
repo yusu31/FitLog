@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { CreateGroupForm } from '@/components/friends/create-group-form';
-import { GROUP_MEMBER_MAX, GroupSummary, MemberList } from '@/components/friends/member-list';
+import { GROUP_MEMBER_MAX, GroupBand, MemberList } from '@/components/friends/member-list';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { backTarget } from '@/lib/back-target';
@@ -61,7 +61,7 @@ export function GroupSettingsView() {
                 グループを作りました。つぎは、招待リンクを作って仲間に送ろう
               </p>
             )}
-            <GroupSummary group={group} />
+            <GroupBand group={group} withInvite={false} />
             <MemberList group={group} />
             <p className="text-note text-fg-muted [word-break:auto-phrase]">{LIMIT_REASON}</p>
             <InvitePanel full={group.members.length >= GROUP_MEMBER_MAX} />
