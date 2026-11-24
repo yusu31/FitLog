@@ -102,7 +102,7 @@ export function TodayView() {
         {!short && day === 'today' && <FriendsToday today={today} part="summary" />}
         {!short && yesterdayEntry}
         {/* ランの入口は上部に（A07-1）。休みの日でも出す（記録すると、その日の休みは消える。D2-6）。低い画面では見出しと同じ行 */}
-        <div className="space-y-4 short:flex short:items-center short:justify-between short:gap-2 short:space-y-0">
+        <div className="space-y-4 short:flex short:flex-wrap short:items-center short:justify-between short:gap-2 short:space-y-0">
           <DayHeading date={selected} day={day} />
           <RunLink day={day} />
         </div>

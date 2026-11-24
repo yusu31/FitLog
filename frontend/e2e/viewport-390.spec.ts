@@ -123,3 +123,20 @@ test('L11 体重のものさしで、今の値の目盛りの数字が針の位�
   const l = (await label.boundingBox())!;
   expect(Math.abs(l.x + l.width / 2 - (s.x + s.width / 2))).toBeLessThanOrEqual(3);
 });
+
+// 200% 拡大相当（195×422）で今日の画面が横にはみ出さない。高さが低いので、横向き用の詰め方（short:）も効く幅
+test('195×422 で、今日の画面が横にはみ出さない', async ({ page }) => {
+  await signUp(page);
+  await page.setViewportSize({ width: 195, height: 422 });
+  await page.goto('/today/');
+  await expect(page.getByRole('link', { name: 'ランを記録' })).toBeVisible();
+  const box = (await page.getByRole('link', { name: 'ランを記録' }).boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(195);
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
+});
+
+// 色の面の上の注記は、面の字の色（白）のまま（text-note が色まで付けて灰色になっていた）
+test('今日のカードの注記は、ティールの面の上で白い字', async ({ page }) => {
+  await signUp(page);
+  await expect(page.getByText(/お試しの値です/)).toHaveCSS('color', 'rgb(255, 255, 255)');
+});
