@@ -3,11 +3,11 @@ import { and, asc, between, count, desc, eq, gt, inArray, lt, ne, or, sql } from
 import { toLocalDate } from '../common/local-date.js';
 import { weekDates, weekStartOf } from '../common/week.js';
 import { DB, type Db } from '../db/db.module.js';
-import { comments, exercises, reactions, records, runDetails, users, videos, workoutSets } from '../db/schema.js';
+import { type BodyPart, comments, exercises, reactions, records, runDetails, users, videos, workoutSets } from '../db/schema.js';
 import { encodeCursor } from '../records/list-input.js';
 import { ownerInMyGroup } from '../records/record-access.js';
 import { FEED_PAGE_SIZE, parseFeedQuery } from './feed-input.js';
-import type { FeedItem, FeedResponse, FeedStamp, FeedTotals, FeedUnreadResponse } from './feed.response.js';
+import type { FeedItem, FeedResponse, FeedStamp, FeedTopSet, FeedTotals, FeedUnreadResponse } from './feed.response.js';
 import { summarizeStamps } from './stamps.js';
 
 // 仲間の足跡と週の合計（F-09。docs/design.md 3章 GET /feed・6章）。
@@ -51,8 +51,8 @@ export class FeedService {
     const ids = page.map((r) => r.record.id);
 
     const seenAt = await this.watermark(userId);
-    const [exerciseNames, runs, stamps, commentCounts, totals, reactedMine, withVideo] = await Promise.all([
-      this.exerciseNamesOf(ids),
+    const [workouts, runs, stamps, commentCounts, totals, reactedMine, withVideo] = await Promise.all([
+      this.workoutsOf(ids),
       this.runsOf(ids),
       this.stampsOf(ids, userId),
       this.commentCountsOf(ids),
@@ -70,7 +70,8 @@ export class FeedService {
       localDate: record.localDate,
       ...(record.late ? { late: true } : {}),
       author: { id: authorId, name: authorName, avatar: authorAvatar as FeedItem['author']['avatar'] },
-      exerciseNames: exerciseNames.get(record.id) ?? [],
+      exerciseNames: workouts.get(record.id)?.names ?? [],
+      ...(workouts.has(record.id) ? { topSet: workouts.get(record.id)!.top, bodyParts: workouts.get(record.id)!.parts } : {}),
       ...(runs.has(record.id) ? { run: runs.get(record.id) } : {}),
       stamps: stamps.get(record.id) ?? [],
       commentCount: commentCounts.get(record.id) ?? 0,
@@ -138,20 +139,27 @@ export class FeedService {
     return new Map(rows.map((r) => [r.recordId, { id: r.id, visibleUntil: r.visibleUntil.toISOString() }]));
   }
 
-  // 種目名の要約。重複なし・最初にセットを足した順（記録の詳細と同じ並び）
-  private async exerciseNamesOf(ids: string[]): Promise<Map<string, string[]>> {
-    const result = new Map<string, string[]>();
+  // 筋トレの要約（D7-6）。種目名と部位は重複なし・最初にセットを足した順（記録の詳細と同じ並び）。
+  // top は一番重いセット（同じ重さなら回数が多い方、それも同じなら先に足した方）。セットの無い記録は入らない
+  private async workoutsOf(ids: string[]): Promise<Map<string, { names: string[]; parts: BodyPart[]; top: FeedTopSet }>> {
+    const result = new Map<string, { names: string[]; parts: BodyPart[]; top: FeedTopSet }>();
     if (ids.length === 0) return result;
     const rows = await this.db
-      .select({ recordId: workoutSets.recordId, name: exercises.name })
+      .select({ recordId: workoutSets.recordId, name: exercises.name, part: exercises.bodyPart, weightKg: workoutSets.weightKg, reps: workoutSets.reps })
       .from(workoutSets)
       .innerJoin(exercises, eq(exercises.id, workoutSets.exerciseId))
       .where(inArray(workoutSets.recordId, ids))
       .orderBy(asc(workoutSets.createdAt), asc(workoutSets.setNo), asc(workoutSets.id));
     for (const row of rows) {
-      const names = result.get(row.recordId) ?? [];
-      if (!names.includes(row.name)) names.push(row.name);
-      result.set(row.recordId, names);
+      const set: FeedTopSet = { exerciseName: row.name, weightKg: Number(row.weightKg), reps: row.reps };
+      const entry = result.get(row.recordId);
+      if (!entry) {
+        result.set(row.recordId, { names: [row.name], parts: [row.part], top: set });
+        continue;
+      }
+      if (!entry.names.includes(row.name)) entry.names.push(row.name);
+      if (!entry.parts.includes(row.part)) entry.parts.push(row.part);
+      if (set.weightKg > entry.top.weightKg || (set.weightKg === entry.top.weightKg && set.reps > entry.top.reps)) entry.top = set;
     }
     return result;
   }

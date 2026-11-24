@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { MemberResponse } from '../groups/groups.response.js';
-import { RECORD_KINDS, type RecordKind } from '../db/schema.js';
+import { BODY_PARTS, RECORD_KINDS, type BodyPart, type RecordKind } from '../db/schema.js';
 import { RunDetail } from '../records/records.response.js';
 import { STAMP_KEYS, type StampKey } from './stamps.js';
 import { COMMENT_BODY_MAX, FEED_PAGE_SIZE } from './feed-input.js';
@@ -27,6 +27,17 @@ export class FeedStamp {
   by!: StampUser[];
 }
 
+export class FeedTopSet {
+  @ApiProperty({ example: 'ベンチプレス', description: 'そのセットの種目名' })
+  exerciseName!: string;
+
+  @ApiProperty({ example: 42.5, description: '重量（kg）。自重は 0' })
+  weightKg!: number;
+
+  @ApiProperty({ example: 8 })
+  reps!: number;
+}
+
 export class FeedItem {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -48,6 +59,12 @@ export class FeedItem {
 
   @ApiProperty({ type: [String], example: ['ベンチプレス', 'スクワット'], description: '筋トレの種目名（重複なし・最初にセットを足した順）。筋トレ以外は空の配列。セットの中身は記録の詳細で見る' })
   exerciseNames!: string[];
+
+  @ApiProperty({ type: FeedTopSet, required: false, description: '筋トレの記録で一番重いセット（同じ重さなら回数が多い方、それも同じなら先に足した方）。セットが無ければ省く。D7-6' })
+  topSet?: FeedTopSet;
+
+  @ApiProperty({ enum: BODY_PARTS, enumName: 'BodyPart', isArray: true, required: false, description: '筋トレの記録で使った部位（重複なし）。セットが無ければ省く。D7-6' })
+  bodyParts?: BodyPart[];
 
   @ApiProperty({ type: RunDetail, required: false, description: 'ランの記録だけ。距離と時間' })
   run?: RunDetail;

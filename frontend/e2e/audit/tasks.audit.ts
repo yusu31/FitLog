@@ -176,6 +176,8 @@ test('T7 今週・今月どれだけ動いたかを振り返る', async ({ page 
   await t.click(page.getByRole('link', { name: /記録のまとめ/ }).first(), '記録のまとめ', { settle: true });
   await page.waitForURL(/\/me\/stats/);
   await t.click(page.getByRole('group', { name: '期間' }).getByRole('button', { name: '月' }), '月に切替');
+  // P6（D5-2）: 年の形も比べられるように撮る
+  await t.click(page.getByRole('group', { name: '期間' }).getByRole('button', { name: '年' }), '年に切替', { settle: true });
   t.finish();
 });
 
@@ -328,6 +330,22 @@ test('T11 電波の無いジムで1セット記録し、電波が戻ったら送
   await context.setOffline(false);
   await page.waitForTimeout(3000);
   await t.snap('電波が戻った後', null);
+  t.finish();
+});
+
+// P6（D3-9）: 終了のまとめ（総重量・仲間へ）。セットごとの結果シートとは別の画面なので、終える所まで通して撮る
+test('T14 筋トレを終えて、まとめを見る', async ({ page }) => {
+  const s = seed();
+  await page.goto('/login/');
+  await loginAs(page, 'solo', s);
+  await page.goto('/today/');
+  const t = new Tracker(page, 'T14');
+  await t.start();
+  await t.click(page.getByRole('link', { name: /前回と同じで始める|続ける/ }).first(), '始める', { settle: true });
+  await t.click(page.getByRole('button', { name: 'できた' }), 'できた', { settle: true });
+  await page.goto('/today/');
+  await t.click(page.getByRole('button', { name: '今日はここまで' }), '今日はここまで', { settle: true });
+  await page.getByRole('dialog').waitFor();
   t.finish();
 });
 
