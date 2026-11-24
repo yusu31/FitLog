@@ -189,7 +189,7 @@ function Problem({ title, children, paste = true }: { title: string; children: R
         <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-coral-light text-coral-strong">
           <Link2 aria-hidden className="size-5" />
         </span>
-        <div>
+        <div className="min-w-0 [overflow-wrap:anywhere]">
           <h1 className="text-page-title font-extrabold">{title}</h1>
           <p className="mt-1 text-sm text-fg-subtle">{children}</p>
         </div>
