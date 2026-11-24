@@ -1,5 +1,6 @@
 "use client";
 
+import { buttonClass } from '@/components/fitlog/thick-button';
 import Link from "next/link";
 import {
   useEffect,
@@ -114,7 +115,7 @@ export function StartSheet({
                   setFilmFirst(usesFilm && videoCapable && film);
                   onClose();
                 }}
-                className="fl-thick inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-fl bg-teal-dark text-lg font-extrabold tracking-wider text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40"
+                className={buttonClass({ variant: 'primary' })}
               >
                 <Icon aria-hidden className="size-5" />
                 {word}

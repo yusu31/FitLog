@@ -8,7 +8,7 @@ import { SYNC_MESSAGES } from '@/lib/messages';
 import { useSentNotice } from '@/lib/offline/sent-notice';
 import { isWaiting, useQueueSummary } from '@/lib/offline/sync-status';
 import { useOnline } from '@/lib/use-browser-state';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 
 // ログイン後に戻る先（いま開いている画面）。帯が出るのは画面を開いたあとなので、ブラウザの位置をそのまま読む
 const currentPath = (): string => (typeof window === 'undefined' ? '/today' : window.location.pathname + window.location.search);
@@ -36,7 +36,7 @@ export function SyncBanner() {
         <Bar tone="coral" icon={<KeyRound aria-hidden className="size-5" />} title={SYNC_MESSAGES.pending(summary.count)} note={SYNC_MESSAGES.authNote}>
           <Link
             href={`/login?next=${encodeURIComponent(currentPath())}`}
-            className="inline-flex min-h-11 items-center rounded-fl bg-night px-4 text-sm font-extrabold text-white outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            className={buttonClass({ variant: 'primary', size: 'sm' })}
           >
             {SYNC_MESSAGES.login}
           </Link>

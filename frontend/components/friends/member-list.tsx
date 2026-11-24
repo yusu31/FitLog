@@ -1,5 +1,6 @@
 'use client';
 
+import { buttonClass } from '@/components/fitlog/thick-button';
 import { Users } from 'lucide-react';
 import Link from 'next/link';
 import { withBack } from '@/lib/back-target';
@@ -29,7 +30,7 @@ export function GroupBand({ group, withInvite = true }: { group: GroupDetailResp
       {withInvite && !full && (
         <Link
           href={withBack('/settings/group', 'friends')}
-          className="flex min-h-11 shrink-0 items-center rounded-fl px-3 text-sm font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className={buttonClass({ variant: 'link' }, 'shrink-0')}
         >
           招待
         </Link>

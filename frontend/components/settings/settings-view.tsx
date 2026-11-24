@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useSyncExternalStore, type ReactNode } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { Segmented } from '@/components/ui/segmented';
 import { AddToHome } from './add-to-home';
 import { DeleteAccount } from './delete-account';
@@ -52,7 +52,7 @@ export function SettingsView() {
         <Link
           href="/me"
           aria-label="自分へ戻る"
-          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>

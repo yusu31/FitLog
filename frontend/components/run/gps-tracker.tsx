@@ -250,14 +250,10 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
       )}
       {notice && <RunNotice device={currentDevice()} onClose={closeNotice} />}
       {!notice && currentDevice() !== 'app' && (
-        <button
-          type="button"
-          onClick={() => setNotice(true)}
-          className="flex min-h-11 items-center gap-1 self-start rounded-fl px-2 text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
-        >
+        <ThickButton variant="link" className="self-start" onClick={() => setNotice(true)}>
           <CircleHelp aria-hidden className="size-4" />
           {GPS_MESSAGES.noticeHelp}
-        </button>
+        </ThickButton>
       )}
       {problem && <ProblemNote problem={problem} />}
 

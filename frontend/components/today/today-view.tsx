@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from 'cn';
 import { MyChara } from '@/components/fitlog/my-chara';
 import { SyncBanner } from '@/components/fitlog/sync-banner';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
 import { getRecord, type RecordedExercise } from '@/lib/api/generated';
 import { bestCountOf, bestNamesOf, endCurrentWorkout } from '@/lib/current-workout';
@@ -297,7 +297,7 @@ function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: ()
         {finished.bestCount > 0 && <p className="text-base font-extrabold text-brand">{WORKOUT_END_MESSAGES.best(finished.bestCount, finished.bestNames)}</p>}
         <Link
           href="/friends"
-          className="inline-flex min-h-11 items-center justify-center text-sm font-extrabold text-brand underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className={buttonClass({ variant: 'link' })}
         >
           {WORKOUT_END_MESSAGES.shareWithFriends}
         </Link>
@@ -425,7 +425,7 @@ function LinkButton({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="fl-thick relative mt-4 short:mt-2 inline-flex min-h-14 short:min-h-12 w-full items-center justify-center rounded-fl bg-gold px-5 text-lg font-extrabold tracking-wider text-fg outline-none [--thick:var(--color-gold-dark)] focus-visible:ring-4 focus-visible:ring-surface/60"
+      className={buttonClass({ variant: 'accent' }, 'relative mt-4 short:mt-2 short:min-h-12 focus-visible:ring-surface/60')}
     >
       {children}
     </Link>
@@ -478,7 +478,7 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
       </ul>
       <Link
         href={withDay('/exercises', day)}
-        className="mt-2 flex min-h-12 items-center justify-center gap-1.5 rounded-fl border-2 border-dashed border-line-dark text-[15px] font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        className={buttonClass({ variant: 'secondary' }, 'mt-2 min-h-12 text-base')}
       >
         <Plus aria-hidden className="size-5" strokeWidth={3} />
         種目を足す
@@ -552,7 +552,7 @@ function RunLink({ day }: { day: DayMode }) {
   return (
     <Link
       href={withDay('/run', day)}
-      className="fl-slab flex min-h-12 items-center justify-center gap-2 px-4 text-base font-extrabold text-brand short:min-h-11 short:shrink-0 short:text-sm outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+      className={buttonClass({ variant: 'secondary' }, 'min-h-12 text-base short:min-h-11 short:w-auto short:shrink-0 short:text-sm')}
     >
       <Footprints aria-hidden className="size-5" />
       ランを記録

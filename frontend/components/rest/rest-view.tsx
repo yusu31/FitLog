@@ -1,5 +1,6 @@
 'use client';
 
+import { buttonClass } from '@/components/fitlog/thick-button';
 import Link from 'next/link';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { MyChara } from '@/components/fitlog/my-chara';
@@ -19,13 +20,13 @@ export function RestView() {
         <div className="flex flex-col gap-2">
           <Link
             href="/today"
-            className="fl-thick inline-flex min-h-14 w-full items-center justify-center rounded-fl bg-grape-dark text-lg font-extrabold tracking-wider text-white outline-none [--thick:#4b3ba8] focus-visible:ring-4 focus-visible:ring-grape/50"
+            className={buttonClass({ variant: 'primary' })}
           >
             {REST_MESSAGES.back}
           </Link>
           <Link
             href="/exercises"
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-fl text-sm font-extrabold text-grape-dark underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-grape/50"
+            className={buttonClass({ variant: 'link' }, 'w-full')}
           >
             {CHANGE_MIND}
           </Link>

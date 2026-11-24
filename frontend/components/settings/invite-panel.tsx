@@ -2,7 +2,7 @@
 
 import { Check, Copy, Send, Share2, X } from 'lucide-react';
 import { useState } from 'react';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { useCreateInvitation, useRevokeInvitation } from '@/lib/api/generated';
 import { GROUP_MESSAGES, groupErrorMessage } from '@/lib/messages';
 
@@ -123,7 +123,7 @@ export function InvitePanel({ full }: { full: boolean }) {
               href={lineShareUrl(invitation.url)}
               target="_blank"
               rel="noopener noreferrer"
-              className="fl-thick inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-fl bg-teal-dark text-lg font-extrabold tracking-wider text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40 [&_svg]:size-5"
+              className={buttonClass({ variant: 'primary' })}
             >
               <Send aria-hidden />
               LINEで送る
