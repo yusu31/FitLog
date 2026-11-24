@@ -30,6 +30,9 @@ export const RECORD_MESSAGES = {
   // A03-2: 「できた」のあとの選択肢
   stop: '今日はここまで',
   restStart: '休憩する',
+  closeMore: 'とじる',
+  // D3 L12: 入力欄の横に小さく出す今日の目標。例「目標 62.5kg × 8回」
+  target: (weight: string, reps: number) => `目標 ${weight} × ${reps}回`,
   // A06-1・A06-2: 動画の入口（専門語を使わない）
   video: '2秒動画を撮る',
   videoHint: '最後の1回を 2秒だけ 動画に',

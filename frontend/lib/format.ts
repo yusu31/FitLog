@@ -53,3 +53,13 @@ export function formatJstTime(iso: string): string {
   const d = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);
   return `${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
 }
+
+// 続きの記録（3時間以内の記録にセットが残っている）を開いたときの表示・読み上げ（D3 L12）。
+// 始めたばかりの「2セット できた」と取り違えないよう「続きから（2セット済み）」と言い分ける。
+// carried=開いたときに入っていたセット数、added=この画面で足したセット数
+export function formatResumeProgress(carried: number, added: number, previousCount: number): string {
+  const head = `続きから（${carried}セット済み）`;
+  const now = added > 0 ? `・いま${added}セット できた` : '';
+  const prev = previousCount > 0 ? `（前回は${previousCount}セット）` : '';
+  return `${head}${now}${prev}`;
+}

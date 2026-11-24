@@ -1,5 +1,6 @@
 import {
   REST_DEFAULT_S,
+  addRestSeconds,
   REST_MAX_S,
   REST_MIN_S,
   clampRestSeconds,
@@ -66,5 +67,11 @@ describe('休憩タイマーの決まり（F-34）', () => {
     expect(formatRest(9)).toBe('0:09');
     expect(formatRest(0)).toBe('0:00');
     expect(formatRest(600)).toBe('10:00');
+  });
+
+  // D3 L8: 帯の「＋30秒」
+  it('addRestSeconds は30秒足し、上限（600秒）で止まる', () => {
+    expect(addRestSeconds(90)).toBe(120);
+    expect(addRestSeconds(585)).toBe(REST_MAX_S);
   });
 });

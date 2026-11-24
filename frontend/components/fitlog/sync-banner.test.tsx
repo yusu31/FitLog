@@ -47,14 +47,18 @@ describe('A11-2: 電波なしの帯', () => {
     expect(screen.getByTestId('sync-banner')).toBeEmptyDOMElement();
   });
 
-  it('帯を持たない画面（記録）でも、QueueOwner が「電波なし」を重ねる。帯を持つ画面（今日）では二重に出さない', () => {
+  it('帯を持たない画面（種目を選ぶ）でも、QueueOwner が「電波なし」を重ねる。帯を持つ画面（今日・記録）では二重に出さない', () => {
     onlineManager.setOnline(false);
+    path = '/exercises';
     const { unmount } = render(wrap(<QueueOwner />));
     expect(screen.getByTestId('sync-banner')).toHaveTextContent('電波なし');
     unmount();
-    path = '/today';
-    render(wrap(<QueueOwner />));
-    expect(screen.queryByTestId('sync-banner')).not.toBeInTheDocument();
+    for (const own of ['/today', '/record']) {
+      path = own;
+      const r = render(wrap(<QueueOwner />));
+      expect(screen.queryByTestId('sync-banner')).not.toBeInTheDocument();
+      r.unmount();
+    }
   });
 });
 

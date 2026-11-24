@@ -36,27 +36,28 @@ export const stepReps = (r: number, dir: 1 | -1): number => clampReps(r + dir);
 
 // --- 最初に入る値 ---
 export type DraftSource = 'previous' | 'trial' | 'none';
-// restReturn: 休み明けで、目標を前回と同じ値にしたとき（理由を1行出す印。A02-5）
-export type InitialDraft = { draft: SetValue; ghost: SetValue | null; source: DraftSource; restReturn?: true };
+// target: 今日の目標（前回の最後のセットから決める）。入力欄の横に小さく出す。前回があるときだけ
+// restReturn: 休み明けで、目標が前回と同じ値のとき（理由を1行出す印。A02-5）
+export type InitialDraft = { draft: SetValue; ghost: SetValue | null; source: DraftSource; target?: SetValue; restReturn?: true };
 
 // 前回の同じセット番号 → 無ければ前回の最後のセット → 前回が無ければ種目のお試し値 → どれも無ければ空（0kg × 10回）。
+// 入力の初期値は「前回の値」そのもの（前回のバー・今日の画面の「前回」と一致させる。D3 L12）。
+// 目標（二重漸進法）は初期値にせず target に分けて返し、画面が入力欄の横に出す。
 // ghost は「前回のバー」に出す比べる相手。お試しのときは「お試し」の札つきで出し、結果の比べには使わない（source で見分ける）
 export function initialDraft(
   previousSets: readonly PreviousSetResponse[] | undefined,
   setNo: number,
   trial: SetValue | null,
-  // 渡すと、入力の初期値を今日の画面の「目標」（前回の最後のセットから決める）にそろえる。daysSince は前回からのあいた日数
+  // 渡すと、目標（target）も返す。daysSince は前回からのあいた日数
   goal?: { daysSince: number | null },
 ): InitialDraft {
   if (previousSets && previousSets.length > 0) {
-    if (goal) {
-      const last = previousSets[previousSets.length - 1];
-      const same = previousSets.find((s) => s.setNo === setNo) ?? last;
-      const target = suggestNext({ weightKg: last.weightKg, reps: last.reps }, goal.daysSince);
-      return { draft: target, ghost: same, source: 'previous', ...(isRestReturn(goal.daysSince) ? { restReturn: true as const } : {}) };
-    }
-    const same = previousSets.find((s) => s.setNo === setNo) ?? previousSets[previousSets.length - 1];
-    return { draft: { weightKg: same.weightKg, reps: same.reps }, ghost: same, source: 'previous' };
+    const last = previousSets[previousSets.length - 1];
+    const same = previousSets.find((s) => s.setNo === setNo) ?? last;
+    const base = { draft: { weightKg: same.weightKg, reps: same.reps }, ghost: same, source: 'previous' as const };
+    if (!goal) return base;
+    const target = suggestNext({ weightKg: last.weightKg, reps: last.reps }, goal.daysSince);
+    return { ...base, target, ...(isRestReturn(goal.daysSince) ? { restReturn: true as const } : {}) };
   }
   if (trial) return { draft: { ...trial }, ghost: { ...trial }, source: 'trial' };
   return { draft: { weightKg: 0, reps: 10 }, ghost: null, source: 'none' };

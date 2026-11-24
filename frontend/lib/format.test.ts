@@ -1,4 +1,4 @@
-import { formatJstTime, formatDistance, formatPace, formatSetProgress, formatSetWithReps } from './format';
+import { formatJstTime, formatDistance, formatPace, formatResumeProgress, formatSetProgress, formatSetWithReps } from './format';
 
 describe('formatPace（1kmあたりのペース）', () => {
   it.each([
@@ -50,6 +50,16 @@ describe('formatSetProgress（U2・A4: 上のバーの読み上げ）', () => {
   });
   it('前回が無いときは、できた数だけ', () => {
     expect(formatSetProgress(1, 0)).toBe('1セット できた');
+  });
+});
+
+describe('formatResumeProgress（D3 L12: 続きの記録は「続きから」と言い分ける）', () => {
+  it('開いたときに入っていたセット数を「続きから（N セット済み）」と言い、「できた」とは言わない', () => {
+    expect(formatResumeProgress(2, 0, 0)).toBe('続きから（2セット済み）');
+    expect(formatResumeProgress(2, 0, 3)).not.toMatch(/できた/);
+  });
+  it('この画面で足した分と前回のセット数も添える', () => {
+    expect(formatResumeProgress(2, 1, 3)).toBe('続きから（2セット済み）・いま1セット できた（前回は3セット）');
   });
 });
 

@@ -363,6 +363,17 @@ describe('ExercisesView（S-11 種目を選ぶ）', () => {
       expect(within(bench[0]).getByText(/40/)).toBeInTheDocument();
       expect(within(screen.getByRole('link', { name: /ケトルベルスイング/ })).queryByText('目安')).not.toBeInTheDocument();
     });
+
+    // D3 L5: 0kg は「0kg × 10」と出さず「自重 × 10」
+    it('目安の重さが 0kg の種目（腕立て伏せ）は「自重 × 10」と出す（0kg と出さない）', async () => {
+      replies['GET /api/records?kind=workout&limit=5'] = [{ status: 200, body: { items: done, nextCursor: null } }];
+      renderView();
+      const pushup = await screen.findAllByRole('link', { name: /腕立て伏せ/ });
+      await waitFor(() => expect(within(pushup[pushup.length - 1]).getByText('目安')).toBeInTheDocument());
+      const row = pushup[pushup.length - 1];
+      expect(row).toHaveTextContent('自重×10');
+      expect(row).not.toHaveTextContent('0kg');
+    });
   });
 
   it('責める言葉（禁止語）を画面に出さない（T-DATE-13）', async () => {

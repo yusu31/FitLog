@@ -4,6 +4,8 @@ export const REST_DEFAULT_S = 90;
 export const REST_MIN_S = 15;
 export const REST_MAX_S = 600;
 export const REST_STEP_S = 15;
+// 帯の「＋30秒」（L8）。15 の倍数なので刻みにそろう
+export const REST_ADD_S = 30;
 
 const KEY = 'fitlog:rest-seconds';
 
@@ -15,6 +17,9 @@ export function clampRestSeconds(seconds: number): number {
 }
 
 export const stepRestSeconds = (seconds: number, direction: 1 | -1): number => clampRestSeconds(seconds + direction * REST_STEP_S);
+
+// 「＋30秒」。上限（600秒）で止まる
+export const addRestSeconds = (seconds: number): number => clampRestSeconds(seconds + REST_ADD_S);
 
 // 終了時刻（ms）といま（ms）から残り秒を出す。端数は切り上げ（0.5秒残りなら1秒）。画面が裏に回って止まっていても狂わない
 export const remainingSeconds = (endAtMs: number, nowMs: number): number => Math.max(0, Math.ceil((endAtMs - nowMs) / 1000));
