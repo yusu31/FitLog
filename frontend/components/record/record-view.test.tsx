@@ -163,11 +163,11 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       expect(within(bar).queryByText('前回のじぶん')).not.toBeInTheDocument();
     });
 
-    it('D3 L12 入力欄は前回の同じ番号のセット（40×10）。目標（最後の 40×9 から 40×10）は入力欄の横に小さく出す', async () => {
+    it('D3 L12 入力欄は前回の同じ番号のセット（40×10）。目標（同じ1セット目から 40×11）は入力欄の横に小さく出す', async () => {
       renderView();
       await ready();
       expect(reps()).toHaveValue(10);
-      expect(screen.getByTestId('target-hint')).toHaveTextContent('目標 40kg × 10回');
+      expect(screen.getByTestId('target-hint')).toHaveTextContent('目標 40kg × 11回');
     });
 
     it('GET /api/exercises/{id}/previous に、画面を開いた時刻を before として渡す（今の記録を前回にしない）', async () => {
@@ -1050,20 +1050,20 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       handlers['GET /api/exercises/e-bench/previous'] = () => ({ status: 200, body: TWO_SETS });
     });
 
-    it('A02-5・D3 L12 入力の初期値は前回の1セット目（40×10）。目標（最後の 40×8 → 40×9）は横に出す。休み明けでなければ理由の1行は出さない', async () => {
+    it('A02-5・D3 L12 入力の初期値は前回の1セット目（40×10）。目標（同じ1セット目から 40×11）は横に出す。休み明けでなければ理由の1行は出さない', async () => {
       renderView();
       await ready();
       expect(weight()).toHaveValue(40);
       expect(reps()).toHaveValue(10);
-      expect(screen.getByTestId('target-hint')).toHaveTextContent('目標 40kg × 9回');
+      expect(screen.getByTestId('target-hint')).toHaveTextContent('目標 40kg × 11回');
       expect(screen.queryByTestId('rest-return-note')).not.toBeInTheDocument();
     });
 
-    it('A02-5 前回から3日以上あいたら、目標は前回の最後と同じ値（40×8）にして、責めずに理由を1行出す', async () => {
+    it('A02-5 前回から3日以上あいたら、目標は前回の同じセットと同じ値（40×10）にして、責めずに理由を1行出す', async () => {
       vi.setSystemTime(new Date('2026-10-30T03:00:00Z'));
       renderView();
       await ready();
-      expect(screen.getByTestId('target-hint')).toHaveTextContent('目標 40kg × 8回');
+      expect(screen.getByTestId('target-hint')).toHaveTextContent('目標 40kg × 10回');
       expect(screen.getByTestId('rest-return-note')).toHaveTextContent('しばらく あいたので');
     });
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type KeyboardEvent } from 'react';
-import { BODY_MESSAGES, RULER_PX, WEIGHT_MAX, WEIGHT_MIN, clampWeight } from '@/lib/body/body';
+import { RULER_PX, WEIGHT_MAX, WEIGHT_MIN, clampWeight } from '@/lib/body/body';
 import { fromUnit, toUnit, type WeightUnit } from '@/lib/unit';
 
 // ものさしの範囲は表示の単位で決める（kg は 20〜300、lb は 45〜661）。目盛りの数字は 1 ごと（kg なら 1kg ごと）に出す
@@ -71,7 +71,8 @@ export function WeightRuler({ value, onChange, unit = 'kg' }: { value: number; o
         >
           {/* 幅は「画面の幅＋目盛りの長さ」。目盛りは画面の真ん中から始まり、いちばん端の値でも針の位置に来られる */}
           <div aria-hidden className="relative h-full" style={{ width: `calc(100% + ${steps * RULER_PX}px)` }}>
-            <div className="absolute inset-y-0 left-1/2" style={{ width: steps * RULER_PX + 2, background: TICKS }}>
+            {/* left に 50% を使わない。50% は「中身全体（約28,000px）」の半分になり、目盛りが画面の外へずれる（L11）。画面の幅の半分＝(中身 − 目盛りの長さ) ÷ 2 */}
+            <div className="absolute inset-y-0" style={{ left: `calc((100% - ${steps * RULER_PX}px) / 2)`, width: steps * RULER_PX + 2, background: TICKS }}>
               {labels.map((n) => (
                 <span key={n} data-testid="ruler-label" className="absolute top-16 -translate-x-1/2 text-note font-bold text-fg-muted" style={{ left: (n - min) * 10 * RULER_PX }}>
                   {n}
@@ -82,7 +83,6 @@ export function WeightRuler({ value, onChange, unit = 'kg' }: { value: number; o
         </div>
         <span aria-hidden className="pointer-events-none absolute inset-y-1.5 left-1/2 -ml-[1.5px] w-[3px] rounded-sm bg-coral" />
       </div>
-      <p className="mt-1 text-center text-note text-fg-muted">{BODY_MESSAGES.rulerHint}</p>
     </div>
   );
 }

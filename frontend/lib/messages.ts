@@ -90,7 +90,7 @@ export const ACCOUNT_MESSAGES = {
 export const EXPORT_MESSAGES = {
   button: '記録を書き出す（CSV）',
   busy: '書き出しています…',
-  hint: 'CSV は、表計算ソフトで開けるファイルです。自分の記録だけが入ります',
+  hint: '表計算ソフトで開けます（自分の記録だけ）',
   failed: '書き出せませんでした。少し待って、もう一度お試しください',
   network: '通信できませんでした。電波の良い所でもう一度お試しください',
 } as const;

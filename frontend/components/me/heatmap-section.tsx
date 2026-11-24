@@ -49,7 +49,7 @@ export function HeatmapSection() {
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-center text-note text-fg-muted">体の図は、色が濃いほど今週そこをよくきたえています</p>
+          <p className="mt-2 text-center text-note text-fg-muted">色が濃いほど多い</p>
           <p className="mt-1 flex flex-wrap justify-center gap-3 text-note text-fg-muted">
             {HEAT_LEGEND.map((l) => (
               <span key={l.level} className="flex items-center gap-1">

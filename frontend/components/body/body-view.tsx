@@ -69,10 +69,16 @@ export function BodyPage() {
             <OneRepMaxSection items={items} />
             {mine && (
               <section aria-labelledby="body-profile" className="fl-slab space-y-3 px-4 py-3">
-                <h2 id="body-profile" className="text-sm font-extrabold text-fg-muted">
-                  {BODY_MESSAGES.profileSection}
-                </h2>
-                <InfoTip label="プロフィールの説明">{BODY_MESSAGES.profileHint}</InfoTip>
+                <InfoTip
+                  label="プロフィールの説明"
+                  heading={
+                    <h2 id="body-profile" className="text-sm font-extrabold text-fg-muted">
+                      {BODY_MESSAGES.profileSection}
+                    </h2>
+                  }
+                >
+                  {BODY_MESSAGES.profileHint}
+                </InfoTip>
                 <ProfileForm initial={mine} />
               </section>
             )}
@@ -128,9 +134,17 @@ function Inputs({ data }: { data: BodyResponse }) {
   const pending = setWeight.isPending || setHeight.isPending;
   return (
     <form onSubmit={onSubmit} aria-labelledby="body-inputs" className="fl-slab space-y-3 px-4 py-3">
-      <h2 id="body-inputs" className="text-sm font-extrabold text-fg-muted">
-        {BODY_MESSAGES.weightSection}
-      </h2>
+      {/* 使い方は「?」にまとめ、画面には1行だけ（D0-2） */}
+      <InfoTip
+        label="体重の入れ方"
+        heading={
+          <h2 id="body-inputs" className="text-sm font-extrabold text-fg-muted">
+            {BODY_MESSAGES.weightSection}
+          </h2>
+        }
+      >
+        {BODY_MESSAGES.rulerHint}。{BODY_MESSAGES.weightHint}
+      </InfoTip>
       <p aria-live="polite" className="text-center font-extrabold">
         <span className="fl-num text-6xl leading-none">{toUnit(weight, unit).toFixed(1)}</span>
         <span className="ml-1 text-xl text-fg-muted">{unit}</span>
@@ -146,7 +160,6 @@ function Inputs({ data }: { data: BodyResponse }) {
           setWeightValue(clampWeight(kg));
         }}
       />
-      <p className="text-note text-fg-muted">{BODY_MESSAGES.weightHint}</p>
       <div className="space-y-2">
         <Label htmlFor="body-height" className="font-extrabold">
           {BODY_MESSAGES.heightLabel}

@@ -77,6 +77,14 @@ export function TodayView() {
   // 月曜は、きのう（日曜）が前の週で7マスに無い。そのときだけ帯の下に小さい入口を置く
   const yesterdayInStrip = days.some((d) => d.date === yesterday);
 
+  const yesterdayEntry = !yesterdayInStrip && days.length === 7 && <YesterdayOutsideWeek day={day} onChange={setDay} />;
+  const welcome = day === 'today' && welcomeBack && (
+    <p className="flex items-center gap-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-fg">
+      <Sparkles aria-hidden className="size-5 shrink-0 text-brand" />
+      {HOME_MESSAGES.welcomeBack}
+    </p>
+  );
+
   return (
     <>
       <h1 className="sr-only">きょう</h1>
@@ -91,17 +99,14 @@ export function TodayView() {
 
       <div className="space-y-4 px-4 pt-4 pb-6 short:space-y-2 short:pt-2">
         {/* 仲間の今日の足跡（A02-1）。グループが無いときは招待の入口（A01-8）。きのうの画面では出さない */}
-        {day === 'today' && <FriendsToday today={today} part="summary" />}
-        {!yesterdayInStrip && days.length === 7 && <YesterdayOutsideWeek day={day} onChange={setDay} />}
-        <DayHeading date={selected} day={day} />
-        {/* ランの入口は上部に（A07-1）。休みの日でも出す（記録すると、その日の休みは消える。D2-6） */}
-        <RunLink day={day} />
-        {day === 'today' && welcomeBack && (
-          <p className="flex items-center gap-2 rounded-fl bg-teal-light px-4 py-3 text-sm font-extrabold text-fg">
-            <Sparkles aria-hidden className="size-5 shrink-0 text-brand" />
-            {HOME_MESSAGES.welcomeBack}
-          </p>
-        )}
+        {!short && day === 'today' && <FriendsToday today={today} part="summary" />}
+        {!short && yesterdayEntry}
+        {/* ランの入口は上部に（A07-1）。休みの日でも出す（記録すると、その日の休みは消える。D2-6）。低い画面では見出しと同じ行 */}
+        <div className="space-y-4 short:flex short:items-center short:justify-between short:gap-2 short:space-y-0">
+          <DayHeading date={selected} day={day} />
+          <RunLink day={day} />
+        </div>
+        {!short && welcome}
 
         {menu === null ? (
           <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
@@ -123,7 +128,8 @@ export function TodayView() {
         ) : (
           <>
             {/* キャラはつぎにやることの右上に立つ（足が少しカードに重なる）。飾りなので読み上げない */}
-            <div className="relative z-10 -mb-7 flex justify-end pr-3 short:-mb-3">
+            {/* 低い画面（横向き。L3）では、高さを取らずにカードの右上の角に重ねる */}
+            <div className="relative z-10 -mb-7 flex justify-end pr-3 short:mb-0 short:h-0">
               <MyChara
                 pose={todayPose({ restToday: todayStatus === 'rest', allDone: menu.allDone, welcomeBack, now: new Date() })}
                 size={short ? 56 : 112}
@@ -134,12 +140,16 @@ export function TodayView() {
             ) : (
               <NextCard menu={menu} todayStatus={todayStatus} />
             )}
+            {/* 低い画面では、仲間の足跡・おかえり・きのうの入口を主ボタンの下に回す（L3） */}
+            {short && welcome}
+            {short && <FriendsToday today={today} part="summary" />}
             {/* 入口は上から「前回と同じで始める」→ ほかの始めかた（いつものメニュー）の順（A02-2） */}
             {todayStatus !== 'rest' && <RoutineStarter day={day} />}
             {menu.items.length > 0 && <Menu items={menu.items} day={day} />}
           </>
         )}
 
+        {short && yesterdayEntry}
         {/* 休みの日はおやすみの札、記録した日は「休む」と矛盾するので、どちらも出さない（N5） */}
         {day === 'today' && todayStatus === 'none' && <RestButton />}
         {/* 招待の入口は主ボタンより下（P5 N1。上に置くと、6日ぶりの日に主ボタンが最初の画面の外に出る） */}
@@ -216,7 +226,7 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
 
   return (
     <CardFrame label={WORKOUT_END_MESSAGES.active} tone="teal" tag={WORKOUT_END_MESSAGES.tag}>
-      <h2 className="mt-3 text-2xl leading-snug font-extrabold">{WORKOUT_END_MESSAGES.active}</h2>
+      <h2 className="mt-3 text-2xl leading-snug font-extrabold short:mt-0 short:text-lg">{WORKOUT_END_MESSAGES.active}</h2>
       <p className="fl-num mt-1 text-lg">{WORKOUT_END_MESSAGES.count(session.exerciseCount, session.setCount)}</p>
       {next && <p className="mt-1 text-sm font-bold">次は {next.name}</p>}
       {/* まだの種目が無ければ、最後に記録した種目のセット入力へ（種目の一覧へ戻さない。D2-4） */}
@@ -374,15 +384,15 @@ function FirstCard() {
   const trial = exercises.data?.data.find((e) => e.trialWeightKg !== null && e.trialReps !== null);
   return (
     <CardFrame label="つぎにやること" tone="teal" tag="つぎ">
-      <h2 className="mt-3 text-2xl leading-snug font-extrabold">最初の種目を選ぼう</h2>
+      <h2 className="mt-3 text-2xl leading-snug font-extrabold short:mt-0 short:text-lg">最初の種目を選ぼう</h2>
       {trial && trial.trialWeightKg !== null && trial.trialReps !== null && (
-        <div className="mt-3 rounded-lg bg-black/15 px-3 py-2">
+        <div className="mt-3 rounded-lg bg-black/15 px-3 py-2 short:mt-1 short:py-1">
           <p className="flex items-center gap-2">
             <span className="fl-tag bg-line text-fg-muted">お試し</span>
             <span className="text-sm font-extrabold">{trial.name}</span>
           </p>
           <p className="fl-num mt-1 text-3xl">{formatSet({ weightKg: trial.trialWeightKg, reps: trial.trialReps }, unit)}</p>
-          <p className="mt-0.5 text-note font-bold">お試しの値です。1回やると、次から前回の値が出ます。</p>
+          <p className="mt-0.5 text-note font-bold short:hidden">お試しの値です。1回やると、次から前回の値が出ます。</p>
         </div>
       )}
       <LinkButton href="/exercises">種目を選ぶ</LinkButton>
@@ -404,7 +414,7 @@ function CardFrame({ label, tone, tag, children }: { label: string; tone: keyof 
         cardTones[tone],
       )}
     >
-      <span className="fl-tag bg-gold text-fg">{tag}</span>
+      <span className="fl-tag bg-gold text-fg short:hidden">{tag}</span>
       {children}
     </section>
   );
@@ -542,7 +552,7 @@ function RunLink({ day }: { day: DayMode }) {
   return (
     <Link
       href={withDay('/run', day)}
-      className="fl-slab flex min-h-12 items-center justify-center gap-2 px-4 text-base font-extrabold text-brand outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+      className="fl-slab flex min-h-12 items-center justify-center gap-2 px-4 text-base font-extrabold text-brand short:min-h-11 short:shrink-0 short:text-sm outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
     >
       <Footprints aria-hidden className="size-5" />
       ランを記録

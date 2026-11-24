@@ -11,7 +11,7 @@ export type MenuItem = {
   name: string;
   /** 前回の、今日これから入れるセットと同じ番号のセット（無ければ最後のセット）。前回の記録に無い種目（今日だけやった種目）は null */
   previous: SetValue | null;
-  /** 今日の目標（F-23）。前回の最後のセットから決める。前回が無ければ null */
+  /** 今日の目標（F-23）。previous と同じセットから決める（前回と目標が別のセットの話にならないように。L12）。前回が無ければ null */
   suggestion: SetValue | null;
   /** 今日、その種目にセットが1つでも入っていれば true */
   done: boolean;
@@ -51,13 +51,13 @@ export function buildMenu(workouts: readonly RecordDetailResponse[], today: stri
   // 前回からのあいた日数（休み明けは前回と同じ値を目標にする。A02-5）
   const daysSince = previous ? daysBetween(previous.localDate, today) : null;
 
-  const toItem = (exerciseId: string, name: string, same: SetValue | null, last: SetValue | null): MenuItem => {
+  const toItem = (exerciseId: string, name: string, same: SetValue | null): MenuItem => {
     const sets = todaySets.get(exerciseId)?.sets ?? [];
     return {
       exerciseId,
       name,
       previous: same,
-      suggestion: last ? suggestNext(last, daysSince) : null,
+      suggestion: same ? suggestNext(same, daysSince) : null,
       done: sets.length > 0,
       todayLast: sets.length > 0 ? valueOf(sets[sets.length - 1]) : null,
     };
@@ -68,11 +68,11 @@ export function buildMenu(workouts: readonly RecordDetailResponse[], today: stri
   const items = (previous?.exercises ?? []).map((ex) => {
     const nextNo = (todaySets.get(ex.exerciseId)?.sets.length ?? 0) + 1;
     const same = ex.sets.find((s) => s.setNo === nextNo) ?? ex.sets[ex.sets.length - 1];
-    return toItem(ex.exerciseId, ex.name, same ? valueOf(same) : null, ex.sets.length > 0 ? valueOf(ex.sets[ex.sets.length - 1]) : null);
+    return toItem(ex.exerciseId, ex.name, same ? valueOf(same) : null);
   });
   // 前回に無い種目を今日やったときは、末尾に足す
   for (const [exerciseId, { name }] of todaySets) {
-    if (!items.some((i) => i.exerciseId === exerciseId)) items.push(toItem(exerciseId, name, null, null));
+    if (!items.some((i) => i.exerciseId === exerciseId)) items.push(toItem(exerciseId, name, null));
   }
 
   // 記録中の筋トレ（今日の日付だけ。同じ日に複数あれば、新しい順の先頭）

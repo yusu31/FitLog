@@ -3,6 +3,7 @@
 import { Link2, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { MyChara } from '@/components/fitlog/my-chara';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { extractInviteToken } from '@/lib/invite-token';
 import { GROUP_MESSAGES } from '@/lib/messages';
@@ -29,14 +30,12 @@ export function NoGroupGuide() {
   }
   return (
     <div className="space-y-4 px-4 pt-3">
-      <section className="fl-stripes relative overflow-hidden rounded-fl bg-teal-dark [--stripe:rgb(0_0_0/0.14)] px-[18px] pt-3.5 pb-4 text-white shadow-[0_4px_0_var(--color-teal-deep)]">
-        <span className="fl-tag bg-gold text-fg">なかま</span>
-        <h2 className="mt-3 text-2xl leading-snug font-extrabold">仲間と、見せ合おう</h2>
-        <p className="mt-1 text-sm leading-relaxed font-bold [word-break:auto-phrase]">
-          グループは1つ・<span className="fl-num text-base">{GROUP_MEMBER_MAX}</span>人まで。記録した日やスタンプを、仲間どうしで見せ合えます。
-        </p>
+      {/* 自分1人のとき（friends-view の alone）と同じ形: キャラ＋1行＋次の一手。大きな色のカードは置かない（D7-4） */}
+      <section className="flex flex-col items-center gap-1 pt-2 text-center">
+        <MyChara pose="welcome" size={96} />
+        <h2 className="text-base font-extrabold">仲間と、見せ合おう（{GROUP_MEMBER_MAX}人まで）</h2>
         {!open && (
-          <ThickButton tone="gold" className="mt-4" onClick={() => setOpen(true)}>
+          <ThickButton className="mt-2" onClick={() => setOpen(true)}>
             <Plus aria-hidden />
             グループを作る
           </ThickButton>

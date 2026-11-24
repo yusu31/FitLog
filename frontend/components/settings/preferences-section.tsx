@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { withBack } from '@/lib/back-target';
+import { InfoTip } from '@/components/fitlog/info-tip';
 import { Segmented } from '@/components/ui/segmented';
 import { Switch } from '@/components/ui/switch';
 import { FIRST_TAB_OPTIONS, NOTIFY_OPTIONS, REMINDER_HOURS, savePrefs } from '@/lib/preferences';
@@ -28,17 +29,17 @@ export function PreferencesSection() {
               value={prefs.firstTab}
               onChange={(firstTab) => savePrefs({ ...prefs, firstTab })}
             />
-            <p className="text-note text-fg-muted">アプリを開いたときに、最初に出る画面です</p>
           </div>
           <div className="space-y-2">
-            <p className="font-bold">重さの単位</p>
+            <InfoTip label="重さの単位の説明" heading={<p className="text-base font-bold text-fg">重さの単位</p>}>
+              表示だけが変わります。記録は kg のまま保存します（lb は 5lb 刻みで入れます）
+            </InfoTip>
             <Segmented
               legend="重さの単位"
               options={WEIGHT_UNITS.map((u) => ({ value: u, label: u }))}
               value={prefs.unit}
               onChange={(unit) => savePrefs({ ...prefs, unit })}
             />
-            <p className="text-note text-fg-muted">表示だけが変わります。記録は kg のまま保存します（lb は 5lb 刻みで入れます）</p>
           </div>
         </div>
       </section>
@@ -70,7 +71,9 @@ export function PreferencesSection() {
               onChange={(h) => savePrefs({ ...prefs, reminderHour: Number(h) })}
             />
           </div>
-          <p className="text-note text-fg-muted">スマホへの通知はこれから作ります。届くようになったとき、1日1回・この時刻に（その日に記録が無いときだけ）お誘いします</p>
+          <InfoTip label="お誘いの説明" heading={<p className="text-fg-muted">スマホへの通知はこれから作ります</p>}>
+            届くようになったとき、1日1回・この時刻に（その日に記録が無いときだけ）お誘いします
+          </InfoTip>
         </div>
       </section>
 
@@ -83,7 +86,7 @@ export function PreferencesSection() {
             <span className="font-bold">動画を自動で再生する</span>
             <Switch label="動画を自動で再生する" checked={prefs.autoplayVideo} onChange={(on) => savePrefs({ ...prefs, autoplayVideo: on })} />
           </div>
-          <p className="mt-1 text-note text-fg-muted">オンにすると、仲間タブの動画が音なしで流れます。通信量が増えるので、はじめはオフです</p>
+          <p className="mt-1 text-note text-fg-muted">音なしで流れます。通信量が増えます</p>
         </div>
       </section>
 

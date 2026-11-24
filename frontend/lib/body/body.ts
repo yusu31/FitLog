@@ -15,7 +15,7 @@ export const BODY_MESSAGES = {
   weightLabel: '体重（kg）',
   weightHint: '同じ日にもう一度保存すると上書きします',
   heightLabel: '身長（cm）',
-  heightHint: `${HEIGHT_MIN}〜${HEIGHT_MAX} の範囲。自分だけに見えます`,
+  heightHint: `${HEIGHT_MIN}〜${HEIGHT_MAX} の範囲`,
   save: '保存する',
   saving: '保存しています',
   saved: '保存しました',
@@ -34,9 +34,9 @@ export const BODY_MESSAGES = {
   chartEmpty: '体重を入れると、ここにグラフが出ます',
   chartEmptyPeriod: 'この期間の体重はまだありません。期間を広げてみてください',
   periodLabel: '期間',
-  rulerHint: '左右に動かす・矢印キーでも動きます',
+  rulerHint: 'ものさしは左右に動かします。矢印キーでも動きます',
   rulerFirst: '動かして今日の体重に合わせます',
-  rulerGuess: (cm: number) => `身長 ${cm}cm からの目安（BMI 22）から始まります。動かして今日の体重に合わせます`,
+  rulerGuess: (cm: number) => `身長 ${cm}cm からの目安（BMI 22）です`,
   oneRmSection: '種目ごとの推定1RM',
   oneRmHint: '1回だけ持ち上げられる重さの目安です',
   oneRmApprox: '目安',
@@ -51,7 +51,7 @@ export const BODY_MESSAGES = {
   none: '決めない',
 } as const;
 
-export const rulerPrev = (value: number, date: string, unit = 'kg') => `前回 ${value}${unit}（${date}）· この値から始まります`;
+export const rulerPrev = (value: number, date: string, unit = 'kg') => `前回 ${value}${unit}（${date}）`;
 export const bmiBarLabel = (bmi: number) => `BMI ${bmi} の位置`;
 export const heightFrom = (cm: number) => `身長 ${cm}cm で計算しています`;
 
@@ -142,7 +142,7 @@ export const BODY_CONNECT_MESSAGES = {
   summaryBmi: 'BMI',
   summaryOpen: 'からだを見る',
   invite: '体重を入れてみる',
-  inviteNote: '入れると、7日の平均と BMI が出ます。自分だけに見えます',
+  inviteNote: '平均と BMI が出ます。自分だけに見えます',
   settingsTitle: 'からだ',
   settingsNote: '身長は自分だけに見えます。プロフィールは同じグループの仲間に見えます',
   heightLink: '「からだ」で変える',

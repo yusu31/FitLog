@@ -19,6 +19,7 @@ export function LoginHero() {
     <div data-testid="login-hero" data-kind={kind}>
       <Logo size={36} withName className="text-lg" />
       <h1 className="mt-2 text-page-title leading-tight font-extrabold">{v.lead}</h1>
+      <p className="mt-0.5 text-sm font-bold">仲間と見せ合える</p>
       <div className="mt-3 flex h-24 items-end gap-2">
         <div className="relative -mr-1.5 -mb-4 -ml-2 size-24 shrink-0">
           {kind === 'run' ? (

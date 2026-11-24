@@ -36,7 +36,7 @@ export const stepReps = (r: number, dir: 1 | -1): number => clampReps(r + dir);
 
 // --- 最初に入る値 ---
 export type DraftSource = 'previous' | 'trial' | 'none';
-// target: 今日の目標（前回の最後のセットから決める）。入力欄の横に小さく出す。前回があるときだけ
+// target: 今日の目標（前回の同じ番号のセットから決める。前回の値と同じセットの話にする。L12）。入力欄の横に小さく出す。前回があるときだけ
 // restReturn: 休み明けで、目標が前回と同じ値のとき（理由を1行出す印。A02-5）
 export type InitialDraft = { draft: SetValue; ghost: SetValue | null; source: DraftSource; target?: SetValue; restReturn?: true };
 
@@ -56,7 +56,7 @@ export function initialDraft(
     const same = previousSets.find((s) => s.setNo === setNo) ?? last;
     const base = { draft: { weightKg: same.weightKg, reps: same.reps }, ghost: same, source: 'previous' as const };
     if (!goal) return base;
-    const target = suggestNext({ weightKg: last.weightKg, reps: last.reps }, goal.daysSince);
+    const target = suggestNext({ weightKg: same.weightKg, reps: same.reps }, goal.daysSince);
     return { ...base, target, ...(isRestReturn(goal.daysSince) ? { restReturn: true as const } : {}) };
   }
   if (trial) return { draft: { ...trial }, ghost: { ...trial }, source: 'trial' };
