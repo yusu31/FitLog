@@ -28,7 +28,7 @@ export function HeatmapSection() {
           <p className="mt-1 text-sm font-bold">
             <span className="fl-num text-3xl">{total}</span> セット
           </p>
-          <div className="mt-2 flex justify-center gap-6 rounded-lg bg-surface py-3 text-center text-note text-fg-muted">
+          <div className="mt-2 flex flex-wrap justify-center gap-x-6 gap-y-2 rounded-lg bg-surface py-3 text-center text-note text-fg-muted">
             <figure className="m-0">
               <BodyFigure view="front" levels={levelsOf(parts)} />
               前

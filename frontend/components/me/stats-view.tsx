@@ -146,7 +146,7 @@ function Period({ data }: { data: StatsResponse }) {
           </p>
           <NavButton label="次へ" disabled={off >= 0} onClick={() => setOff(off + 1)} dir="next" />
         </div>
-        <dl data-testid="stats-totals" className="mt-2 grid grid-cols-4 gap-1 text-center">
+        <dl data-testid="stats-totals" className="mt-2 grid grid-cols-2 gap-1 text-center min-[260px]:grid-cols-4">
           <Stat label="動いた日" value={String(totals.days)} unit="日" />
           <Stat label="おやすみ" value={String(totals.rest)} unit="日" />
           <Stat label="総重量" {...formatMetric('kg', totals.kg)} />
