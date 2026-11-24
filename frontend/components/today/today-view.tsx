@@ -447,7 +447,7 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
               <Link
                 href={withDay(recordHref(item.exerciseId), day)}
                 className={cn(
-                  'fl-slab flex min-h-16 items-center gap-3 px-3 outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+                  'fl-slab flex min-h-16 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1 outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
                   item.done && 'bg-canvas',
                 )}
               >
@@ -462,15 +462,17 @@ function Menu({ items, day }: { items: MenuItem[]; day: DayMode }) {
                 >
                   {item.done ? <Check className="size-6" strokeWidth={3.2} /> : i + 1}
                 </span>
-                <span className="min-w-0 flex-1 text-[15px] leading-tight font-extrabold">
+                <span className="min-w-[6.5rem] flex-1 text-[15px] leading-tight font-extrabold">
                   {item.name}
                   {item.done && <small className="block text-note font-bold text-fg-muted">できた</small>}
                   {!item.done && item.suggestion && (
                     <small className="block text-note font-bold text-fg-muted">目標 {formatSet(item.suggestion, unit)}</small>
                   )}
                 </span>
-                {value && <span className="fl-num shrink-0 text-xl text-fg">{formatSet(value, unit)}</span>}
-                <ChevronRight data-testid="row-arrow" aria-hidden className="size-5 shrink-0 text-fg-muted" />
+                <span className="ml-auto flex items-center gap-3">
+                  {value && <span className="fl-num shrink-0 text-xl text-fg">{formatSet(value, unit)}</span>}
+                  <ChevronRight data-testid="row-arrow" aria-hidden className="size-5 shrink-0 text-fg-muted" />
+                </span>
               </Link>
             </li>
           );
