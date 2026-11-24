@@ -1014,6 +1014,14 @@ export interface ProfileRequest {
   activeTime?: ProfileRequestActiveTime;
 }
 
+export interface FeedTopSet {
+  /** そのセットの種目名 */
+  exerciseName: string;
+  /** 重量（kg）。自重は 0 */
+  weightKg: number;
+  reps: number;
+}
+
 export interface StampUser {
   id: string;
   name: string;
@@ -1066,6 +1074,10 @@ export interface FeedItem {
   author: MemberResponse;
   /** 筋トレの種目名（重複なし・最初にセットを足した順）。筋トレ以外は空の配列。セットの中身は記録の詳細で見る */
   exerciseNames: string[];
+  /** 筋トレの記録で一番重いセット（同じ重さなら回数が多い方、それも同じなら先に足した方）。セットが無ければ省く。D7-6 */
+  topSet?: FeedTopSet;
+  /** 筋トレの記録で使った部位（重複なし）。セットが無ければ省く。D7-6 */
+  bodyParts?: BodyPart[];
   /** ランの記録だけ。距離と時間 */
   run?: RunDetail;
   /** 付いているスタンプ（付いたものだけ。スタンプの一覧の順） */
