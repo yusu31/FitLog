@@ -115,7 +115,8 @@ test('T1 初めて開いて登録し、今日の筋トレを1セット記録す�
   await page.getByRole('checkbox', { name: /同意/ }).check();
   await t.click(page.getByRole('button', { name: '登録する' }), '登録する');
   await t.click(page.getByRole('link', { name: '種目を選ぶ' }), '種目を選ぶ');
-  await t.click(page.getByRole('link', { name: /ベンチプレス/ }).first(), '種目（ベンチプレス）');
+  // P6: 種目選びは「はじめての人向け」が先頭に出る。ベンチプレスは部位の見出しを開かないと出ないので、最初に見える腕立て伏せを選ぶ
+  await t.click(page.getByRole('link', { name: /腕立て伏せ/ }).first(), '種目（腕立て伏せ）');
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
   t.finish();
 });
@@ -269,6 +270,8 @@ test('T5 2秒動画を撮って、仲間の動画を見る（入口まで）', a
   await t.start();
   await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'いつものメニューを始める');
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた');
+  // P6（D3-7）: 2秒動画の入口は「ほかの操作」のシートの中
+  await t.click(page.getByRole('button', { name: 'ほかの操作' }), 'ほかの操作');
   await t.click(page.getByRole('button', { name: /2秒動画を撮る/ }), '2秒動画を撮る');
   t.finish();
 });
