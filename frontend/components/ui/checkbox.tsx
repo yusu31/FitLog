@@ -13,7 +13,7 @@ export function Checkbox({ className, ...props }: Omit<ComponentProps<'input'>, 
       <span
         aria-hidden
         className={cn(
-          'flex size-6 items-center justify-center rounded-md border-2 border-line-dark bg-surface text-white transition-colors',
+          'pointer-events-none flex size-6 items-center justify-center rounded-md border-2 border-line-dark bg-surface text-white transition-colors',
           'peer-checked:border-teal-dark peer-checked:bg-teal-dark',
           'peer-focus-visible:ring-4 peer-focus-visible:ring-teal/40 peer-disabled:opacity-50',
           '[&>svg]:opacity-0 peer-checked:[&>svg]:opacity-100',
