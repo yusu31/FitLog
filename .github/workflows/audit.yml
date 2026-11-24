@@ -35,6 +35,11 @@ jobs:
     env:
       E2E_DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
       E2E_MIGRATION_DATABASE_URL: postgres://fitlog:fitlog@localhost:5432/fitlog
+      # 動画付きの記録を写すためのダミー。署名は手元の計算だけで作られ、AWS には接続しない（動画の本体は見本に差し替える）
+      VIDEO_BUCKET: audit-dummy-bucket
+      AWS_REGION: ap-northeast-1
+      AWS_ACCESS_KEY_ID: audit-dummy-not-a-real-key
+      AWS_SECRET_ACCESS_KEY: audit-dummy-not-a-real-secret
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:

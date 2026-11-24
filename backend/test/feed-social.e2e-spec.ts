@@ -87,6 +87,8 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       recordedAt: string;
       author: { id: string; name: string };
       exerciseNames: string[];
+      topSet?: { exerciseName: string; weightKg: number; reps: number };
+      bodyParts?: string[];
       run?: { distanceM: number; durationS: number };
       stamps: Array<{ stampKey: string; count: number; mine: string | null; by: Array<{ id: string; name: string }> }>;
       commentCount: number;
@@ -146,6 +148,22 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       expect(feed.items[0].exerciseNames).toEqual([]);
       expect(feed.items[0].recordedAt).toBe(WED_NOON);
       expect(feed.nextCursor).toBeNull();
+      expect(feed.items[2].bodyParts).toEqual(['chest', 'legs']);
+      for (const i of [0, 1]) {
+        expect(feed.items[i].topSet).toBeUndefined();
+        expect(feed.items[i].bodyParts).toBeUndefined();
+      }
+    });
+
+    // D7-6: 一番重いセット。重さ→回数の順で比べる（60.5 と 100 を文字として比べると 60.5 が大きくなるので、数で比べることも守る）
+    it('筋トレの足跡に、一番重いセット（同じ重さなら回数の多い方）が付く', async () => {
+      const { a1 } = await world();
+      const id = await createRecord(a1);
+      await addSet(a1, id, BENCH_PRESS_ID, 1, 60.5, 12);
+      await addSet(a1, id, SQUAT_ID, 1, 100, 5);
+      await addSet(a1, id, SQUAT_ID, 2, 100, 8);
+      const feed = await getFeed(a1);
+      expect(feed.items[0].topSet).toEqual({ exerciseName: 'スクワット', weightKg: 100, reps: 8 });
     });
 
     // T-GRP/3-7: 最重要。別グループの記録が1件も出ない
