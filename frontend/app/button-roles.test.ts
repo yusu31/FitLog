@@ -61,7 +61,7 @@ describe('ボタンの役割（D0-1）', () => {
 
   it('リンクに、主ボタンの色の面を手書きしない（buttonClass を使う）', () => {
     const bad = files.flatMap((f) =>
-      [...code(f).matchAll(/<(?:Link|a)\b[^>]*?className="([^"]*)"/g)].filter((m) => /\bbg-(?:teal-dark|grape-dark|coral-strong|gold|night)\b/.test(m[1]!) && /\bmin-h-1[1-4]\b/.test(m[1]!)).map(() => f),
+      [...code(f).matchAll(/<(?:Link|a)\b(?:=>|[^>])*?className="([^"]*)"/g)].filter((m) => /\bbg-(?:teal-dark|grape-dark|coral-strong|gold|night)\b/.test(m[1]!) && /\bmin-h-1[1-4]\b/.test(m[1]!)).map(() => f),
     );
     expect(bad).toEqual([]);
   });
