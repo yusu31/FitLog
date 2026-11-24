@@ -32,7 +32,6 @@
   --color-line: #e5e7eb;
   --color-line-dark: #c9cdd3;
   --color-night: #1e2a3a; /* 常に濃い色（暗幕・濃い札）。ダークでも変えない。白文字を載せる */
-  --color-note: var(--color-fg-muted); /* 注記の色 */
   /* 文字サイズの段階（V-08・A13-5）。text-page-title などで使う。各画面の置き換えは B13 でまとめて行う */
   --text-page-title: 28px; /* 画面の見出し h1 */
   --text-section-title: 18px; /* 節の見出し */
