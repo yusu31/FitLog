@@ -236,7 +236,7 @@ export function RecordView() {
       .mutateAsync({ id: rid, data: { id: setId, exerciseId: exercise.id, setNo: number, weightKg: value.weightKg, reps: value.reps } })
       .then((res) => {
         const outcome: Outcome = { result: res.data.result, isPersonalBest: res.data.isPersonalBest };
-        if (outcome.isPersonalBest) noteBest(rid); // 終了のまとめの「自己ベスト◯回」用
+        if (outcome.isPersonalBest) noteBest(rid, exercise.name); // 終了のまとめの「自己ベスト◯回」用
         setOutcomes((o) => ({ ...o, [setId]: outcome }));
         setSheet((s) => (s && s.setId === setId ? { ...s, ...outcome, diff: ghost && outcome.result ? ghostDiff(ghost, value) : 0 } : s));
         // 推定消費カロリー（B14b）。体重が無い・時間が測れない（1セットだけ）ときは null で、板には出さない。届かなくても板は変えない

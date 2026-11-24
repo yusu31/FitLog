@@ -1,13 +1,19 @@
 'use client';
 
 import { CircleHelp, Navigation, Pause, Play, Square } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { GpxRun } from '@/lib/gpx/parse-gpx';
 import { gpsDeviceOf, markNoticeSeen, readNoticeSeen, type GpsDevice } from '@/lib/gps/device';
 import { canWatchLocation, isNativeApp, startLocationWatch, type StopWatch } from '@/lib/gps/source';
 import { addFix, breakSegment, emptyTrack, finishTrack, movingMs, type FinishError, type TrackState } from '@/lib/gps/track';
 import { GPS_MESSAGES } from '@/lib/messages';
 import { formatPace, paceSecPerKm } from '@/lib/run';
+
+const BEFORE_START: Record<GpsDevice, string> = {
+  'ios-web': GPS_MESSAGES.beforeStartIosWeb,
+  'android-web': GPS_MESSAGES.beforeStartAndroidWeb,
+  app: GPS_MESSAGES.beforeStartApp,
+};
 
 type Phase = 'idle' | 'running' | 'paused';
 type Problem = 'unsupported' | 'denied' | 'unavailable' | FinishError;
@@ -29,6 +35,12 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
   const [wakeLockMissing, setWakeLockMissing] = useState(false);
   const [notice, setNotice] = useState(false); // START 直後の案内（端末ごと・はじめの1回）。「？」でも開く
   const [now, setNow] = useState(() => Date.now());
+  // START を押す前の案内に使う端末の種類。静的書き出しの段階では端末が分からないので、画面が出てから決める
+  const device = useSyncExternalStore(
+    () => () => {},
+    (): GpsDevice | null => currentDevice(),
+    () => null,
+  );
 
   // 開始時刻・一時停止の合計・今の一時停止の始まり（ms）。画面に出す時間の計算に使うので state で持つ
   const [timing, setTiming] = useState<{ startedAt: number; pausedMs: number; pausedAt: number | null }>({ startedAt: 0, pausedMs: 0, pausedAt: null });
@@ -198,6 +210,12 @@ export function GpsTracker({ onFinish, onActiveChange }: { onFinish: (run: GpxRu
             <Navigation aria-hidden className="absolute bottom-5 size-4 text-fg/70" />
           </button>
         </div>
+        {/* 端末ごとの案内を、START の前に1行で（D4-2）。走り出してからでは遅い（画面を消すと止まる）ため */}
+        {device && (
+          <p data-testid="gps-before-start" className="text-center text-sm font-bold text-fg-muted">
+            {BEFORE_START[device]}
+          </p>
+        )}
         {problem && <ProblemNote problem={problem} />}
       </div>
     );

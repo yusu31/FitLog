@@ -146,7 +146,7 @@ export function RecordDetailView() {
         {record.kind === 'workout' && mine && (record.exercises?.length ?? 0) > 0 && <SaveRoutine recordId={record.id} />}
         {record.videoId && <VideoPlayer videoId={record.videoId} />}
         {record.kind === 'run' && record.run && <Run distanceM={record.run.distanceM} durationS={record.run.durationS} />}
-        {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} ghost={record.previousRun?.route} />}
+        {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} ghost={record.previousRun?.route} distanceM={record.run.distanceM} durationS={record.run.durationS} />}
         {record.kind === 'run' && record.run?.route && record.previousRun && (
           <p className="text-center text-note font-bold text-fg-muted">{ghostLegend(record.previousRun)}</p>
         )}

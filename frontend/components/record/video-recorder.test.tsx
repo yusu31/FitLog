@@ -78,4 +78,56 @@ describe('VideoRecorder', () => {
     await act(async () => unmount());
     expect(stopTrack).toHaveBeenCalled();
   });
+
+  // L4: 準備中は進みと「やめる」を出し、8秒来なければ直し方へ移る
+  describe('カメラの準備が終わらないとき', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it('準備中は進み表示と「やめる」を出し、押すと閉じられる', async () => {
+      (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+      const onClose = vi.fn();
+      render(<VideoRecorder recordId="r1" onClose={onClose} />);
+      expect(screen.getByRole('status')).toHaveTextContent('カメラを準備しています（0秒）');
+      expect(screen.getByRole('progressbar', { name: 'カメラの準備' })).toHaveAttribute('aria-valuenow', '0');
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000);
+      });
+      expect(screen.getByRole('status')).toHaveTextContent('（3秒）');
+      await userEvent.click(screen.getByRole('button', { name: 'やめる' }));
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it('8秒たってもカメラが来なければ、直し方（3つの手順）に移り、あとで来たカメラは止める', async () => {
+      let resolve!: (s: unknown) => void;
+      (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockReturnValue(new Promise((r) => (resolve = r)));
+      render(<VideoRecorder recordId="r1" onClose={() => {}} />);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(7900);
+      });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      expect(screen.getByRole('alert')).toHaveTextContent('カメラを使えませんでした');
+      expect(screen.getAllByRole('listitem')).toHaveLength(3);
+      expect(screen.getByRole('button', { name: 'あとで撮る' })).toBeInTheDocument();
+      await act(async () => {
+        resolve({ getTracks: () => [{ stop: stopTrack }] });
+      });
+      expect(stopTrack).toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: '撮る' })).not.toBeInTheDocument();
+    });
+
+    it('カメラが来れば、8秒を過ぎても直し方に移らない', async () => {
+      render(<VideoRecorder recordId="r1" onClose={() => {}} />);
+      await screen.findByRole('button', { name: '撮る' });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(9000);
+      });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
 });

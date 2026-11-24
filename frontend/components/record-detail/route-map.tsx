@@ -3,7 +3,11 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@/lib/map/map-controls.css';
 import { useEffect, useRef, useState } from 'react';
+import { RouteSketch } from '@/components/map/route-sketch';
+import { formatDistance, formatDuration } from '@/lib/format';
 import { loadMapLibre } from '@/lib/map/load-maplibre';
+import { mapGestureOptions } from '@/lib/map/map-gestures';
+import { watchMapFailure } from '@/lib/map/map-failure';
 import { MAP_LOCALE_JA } from '@/lib/map/locale-ja';
 import { MAP_STYLE_URL } from '@/lib/map/map-config';
 import { mergeBounds, routeBounds, routeEnds, routeLine, type RouteLike } from '@/lib/map/route-geo';
@@ -19,7 +23,7 @@ const WHITE = '#ffffff';
 // S-21 のランに出すルートの地図（F-15・docs/features.md 2.10）。ルートの線とスタート・ゴールの点を描き、全体が入るよう範囲を合わせる。
 // MapLibre は大きく、WebGL が要るので、画面に出るときに読み込む（動的 import。静的書き出しの最初の読み込みを重くしない）。
 // 地図を出せない環境では、地図の代わりに理由を一言出す（距離・ペースの数字は上に出ている。削る順④の形）
-export function RouteMap({ route, ghost }: { route: RouteLike; ghost?: RouteLike }) {
+export function RouteMap({ route, ghost, distanceM, durationS }: { route: RouteLike; ghost?: RouteLike; distanceM?: number; durationS?: number }) {
   const container = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
 
@@ -34,12 +38,18 @@ export function RouteMap({ route, ghost }: { route: RouteLike; ghost?: RouteLike
         const m = new Map({
           container: container.current,
           style: MAP_STYLE_URL,
-          // 縦に長いページの中の地図が、指のスクロールを奪わないよう、二本指で動かす
-          cooperativeGestures: true,
+          // 縦に長いページの中の地図が、指のスクロールを奪わない（PC は Ctrl+ホイール、触る端末は1本指がページのスクロール。L7）
+          ...mapGestureOptions(),
           locale: MAP_LOCALE_JA, // 操作案内を日本語に（A07-9）
           attributionControl: { compact: true },
         });
         map = m;
+        // スタイルやタイルが取れないとき（L13）は、代替表示（距離・時間とルートの線）に切り替える
+        watchMapFailure(m, () => {
+          map?.remove();
+          map = undefined;
+          if (!cancelled) setFailed(true);
+        });
         m.addControl(new NavigationControl({ showCompass: false }), 'top-right');
         m.on('load', () => {
           // 前回のルート（F-17）は今回の線より先に足す＝下に描く。点線の灰色で、スタート・ゴールの点は付けない
@@ -89,9 +99,22 @@ export function RouteMap({ route, ghost }: { route: RouteLike; ghost?: RouteLike
 
   if (failed) {
     return (
-      <p role="status" className="fl-slab px-4 py-3 text-sm font-bold text-fg-muted">
-        {DETAIL_MESSAGES.mapUnavailable}
-      </p>
+      <div role="status" className="fl-slab space-y-2 px-4 py-3">
+        <p className="text-sm font-bold text-fg-muted">{DETAIL_MESSAGES.mapUnavailable}</p>
+        {distanceM !== undefined && durationS !== undefined && (
+          <p data-testid="map-fallback-stats" className="fl-num text-lg">
+            {formatDistance(distanceM)} ・ {formatDuration(durationS)}
+          </p>
+        )}
+        <RouteSketch
+          label={DETAIL_MESSAGES.sketchLabel}
+          lines={[...(ghost ? [{ coords: ghost.coordinates, color: GHOST_GRAY, width: 3, dashed: true }] : []), { coords: route.coordinates, color: TEAL_DARK, width: 5 }]}
+          dots={[
+            { coord: route.coordinates[0], color: TEAL },
+            { coord: route.coordinates[route.coordinates.length - 1], color: CORAL },
+          ]}
+        />
+      </div>
     );
   }
   return <div ref={container} role="img" aria-label={ghost ? DETAIL_MESSAGES.mapLabelWithGhost : DETAIL_MESSAGES.mapLabel} className="fl-slab h-56 overflow-hidden" />;

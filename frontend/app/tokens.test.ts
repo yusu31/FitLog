@@ -47,3 +47,8 @@ describe.each([
     expect(ratio(get(fg), get(bg))).toBeGreaterThanOrEqual(min);
   });
 });
+
+// L3: 高さが低い画面（スマホの横向き）用の short: は、CSS のこの1行で決まる。500px を超えて広げると、普通の画面まで詰まってしまう
+describe('short: バリアント（高さが低い画面）', () => {
+  it('max-height: 500px の画面だけに効く', () => expect(css).toMatch(/@custom-variant short \(@media \(max-height: 500px\)\);/));
+});

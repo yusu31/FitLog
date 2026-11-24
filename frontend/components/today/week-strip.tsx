@@ -26,10 +26,10 @@ export function WeekStrip({
 }) {
   return (
     <section aria-label="今週" className="bg-teal-dark pb-2 text-white">
-      <p className="fl-num h-11 px-4 pt-2.5 text-[26px] leading-none" aria-hidden>
+      <p className="fl-num h-11 px-4 pt-2.5 text-[26px] leading-none short:h-7 short:pt-1 short:text-lg" aria-hidden>
         {Number(today.slice(5, 7))}月
       </p>
-      <ol aria-label="今週の7日" className="flex h-[88px] px-1">
+      <ol aria-label="今週の7日" className="flex h-[88px] px-1 short:h-[52px]">
         {days.map((day) => {
           const isToday = day.date === today;
           const isSelected = day.date === selected;
@@ -80,18 +80,18 @@ export function WeekStrip({
 function DayCell({ label, date, status, isToday }: { label: string; date: string; status: 'rec' | 'rest' | 'none'; isToday: boolean }) {
   return (
     <>
-      <span aria-hidden className="mt-1 block text-note font-bold text-white">
+      <span aria-hidden className="mt-1 block text-note font-bold text-white short:mt-0">
         {label}
       </span>
-      <span aria-hidden data-testid="week-num" className="fl-num block text-[22px] leading-8 min-[360px]:text-[30px]">
+      <span aria-hidden data-testid="week-num" className="fl-num block text-[22px] leading-8 min-[360px]:text-[30px] short:text-lg short:leading-5 short:min-[360px]:text-lg">
         {Number(date.slice(8, 10))}
       </span>
-      <span aria-hidden className="mt-0.5 flex h-[26px] items-center justify-center">
+      <span aria-hidden className="mt-0.5 flex h-[26px] items-center justify-center short:mt-0 short:h-4">
         <span
           data-testid="week-dot"
           data-status={status}
           className={cn(
-            'flex size-[24px] items-center justify-center rounded-full',
+            'flex size-[24px] items-center justify-center rounded-full short:size-4',
             status === 'rec' && 'bg-gold text-fg',
             status === 'rest' && 'bg-grape text-white',
             status === 'none' && 'bg-surface/15',
