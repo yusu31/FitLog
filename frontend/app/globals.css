@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/* 高さが低い画面（スマホを横向きにしたとき。L3）。今日の画面を詰めて、「はじめる」を最初の画面に入れる */
+@custom-variant short (@media (max-height: 500px));
 
 /* FitLog の色（docs/screen-design.md 6章。元は prototype/v8）。
    白文字を載せる背景は、コントラスト比 4.5 以上になる濃い色を使う（6章の「実装での扱い」） */

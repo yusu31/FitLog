@@ -216,7 +216,7 @@ export function RunView() {
               <p className="text-note font-extrabold tracking-widest text-fg-subtle">日本縦断</p>
               {trek.arrived && <p className="text-lg font-extrabold">{trek.arrived}に着きました！</p>}
               <p className="text-sm font-bold text-fg-muted">{trek.next}</p>
-              <Link href="/me/stats#japan-trek" className="inline-block py-2 text-sm font-extrabold text-brand underline">
+              <Link href="/me/stats?metric=m#japan-trek" className="inline-block py-2 text-sm font-extrabold text-brand underline">
                 日本地図で見る
               </Link>
             </section>
@@ -316,7 +316,7 @@ function TrekStrip({ totalRunM }: { totalRunM: number | undefined }) {
   const pos = totalRunM === undefined ? null : locateOnRoute(totalRunM);
   return (
     <Link
-      href="/me/stats#japan-trek"
+      href="/me/stats?metric=m#japan-trek"
       data-testid="trek-strip"
       className="fl-slab block space-y-1.5 px-4 py-3 outline-none focus-visible:border-teal"
     >

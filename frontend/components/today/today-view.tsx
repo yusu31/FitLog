@@ -10,9 +10,9 @@ import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
 import { getRecord, type RecordedExercise } from '@/lib/api/generated';
-import { bestCountOf, endCurrentWorkout } from '@/lib/current-workout';
+import { bestCountOf, bestNamesOf, endCurrentWorkout } from '@/lib/current-workout';
 import { useRecordMutations } from '@/lib/mutations';
-import { useOnline } from '@/lib/use-browser-state';
+import { useOnline, useShortScreen } from '@/lib/use-browser-state';
 import {
   ListRecordsKind,
   useGetWeek,
@@ -44,6 +44,8 @@ export function TodayView() {
   const [day, setDay] = useState<DayMode>('today');
   // 「今日はここまで」を押したあとのまとめ（N1）。記録中の札が消えても、閉じるまで出し続ける
   const [finished, setFinished] = useState<Finished | null>(null);
+  // 高さが低い画面（横向き。L3）は、キャラを小さくして「はじめる」を最初の画面に入れる
+  const short = useShortScreen();
   const week = useGetWeek({ date: today });
   // 今日の分（今日の日付の記録）と前回（それより前の一番新しい記録）の両方を取るため、少し多めに読む
   const workouts = useListRecords({ kind: ListRecordsKind.workout, limit: '5' });
@@ -86,7 +88,7 @@ export function TodayView() {
       )}
       <SyncBanner />
 
-      <div className="space-y-4 px-4 pt-4 pb-6">
+      <div className="space-y-4 px-4 pt-4 pb-6 short:space-y-2 short:pt-2">
         {/* 仲間の今日の足跡（A02-1）。グループが無いときは招待の入口（A01-8）。きのうの画面では出さない */}
         {day === 'today' && <FriendsToday today={today} part="summary" />}
         {!yesterdayInStrip && days.length === 7 && <YesterdayOutsideWeek day={day} onChange={setDay} />}
@@ -120,10 +122,10 @@ export function TodayView() {
         ) : (
           <>
             {/* キャラはつぎにやることの右上に立つ（足が少しカードに重なる）。飾りなので読み上げない */}
-            <div className="relative z-10 -mb-7 flex justify-end pr-3">
+            <div className="relative z-10 -mb-7 flex justify-end pr-3 short:-mb-3">
               <MyChara
                 pose={todayPose({ restToday: todayStatus === 'rest', allDone: menu.allDone, welcomeBack, now: new Date() })}
-                size={112}
+                size={short ? 56 : 112}
               />
             </div>
             {menu.session && todayStatus !== 'rest' ? (
@@ -153,7 +155,7 @@ function DayHeading({ date, day }: { date: string; day: DayMode }) {
   const label = `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日（${WEEKDAYS[weekdayIndex(date)]}）`;
   return (
     <div className="flex items-center gap-2">
-      <h2 className="text-lg font-extrabold">
+      <h2 className="text-lg font-extrabold short:text-base">
         {day === 'today' ? LATE_MESSAGES.today : LATE_MESSAGES.yesterday} <span className="text-fg-muted">{label}</span>
       </h2>
       {day === 'yesterday' && <span className="fl-tag bg-gold-light text-fg">{LATE_MESSAGES.tag}</span>}
@@ -176,7 +178,7 @@ function YesterdayOutsideWeek({ day, onChange }: { day: DayMode; onChange: (next
 }
 
 type Session = NonNullable<TodayMenu['session']>;
-type Finished = { exerciseCount: number; setCount: number; bestCount: number; exercises: RecordedExercise[] };
+type Finished = { recordId: string; exerciseCount: number; setCount: number; bestCount: number; bestNames: string[]; exercises: RecordedExercise[]; detailFailed: boolean };
 
 // 記録中のカード（N1）。開始は自動（最初の「できた」）なので、ここで出すのは「続ける」と「今日はここまで」だけ。
 // 終了は電波があるときだけ（サーバーに終了時刻を残すため）。送れなかったときは記録中のまま、やさしい文言を出す
@@ -193,9 +195,18 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
     try {
       // まとめの「セット一覧」用に、終える前の記録を取る。取れなくても、まとめ（種目数・セット数）は出す
       const detail = await getRecord(session.recordId).catch(() => null);
+      const detailFailed = !detail || detail.status !== 200;
       const exercises = detail && detail.status === 200 ? (detail.data.exercises ?? []) : [];
       await endWorkout.mutateAsync({ id: session.recordId });
-      onEnded({ exerciseCount: session.exerciseCount, setCount: session.setCount, bestCount: bestCountOf(session.recordId), exercises });
+      onEnded({
+        recordId: session.recordId,
+        exerciseCount: session.exerciseCount,
+        setCount: session.setCount,
+        bestCount: bestCountOf(session.recordId),
+        bestNames: bestNamesOf(session.recordId),
+        exercises,
+        detailFailed,
+      });
       endCurrentWorkout();
     } catch (e) {
       setError(sendErrorText(e, WORKOUT_END_MESSAGES.sendError));
@@ -232,8 +243,27 @@ function ActiveCard({ session, next, onEnded }: { session: Session; next: MenuIt
 // 終了のまとめ（N1）。大きい祝福はここだけに置き、セットごとの結果シートは小さいままにする（U1）。
 // 自己ベストの回数は、この画面を開いている間に数えた分だけ（読み直したあとは 0 に戻り、出さない）
 function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: () => void }) {
+  // セットの一覧が取れなかったとき（電波・サーバー）は、その場で取り直せる。取れるまで「1種目2セット」だけで終わらせない
+  const [exercises, setExercises] = useState(finished.exercises);
+  const [failed, setFailed] = useState(finished.detailFailed);
+  const [loading, setLoading] = useState(false);
+  async function reload() {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await getRecord(finished.recordId);
+      if (res.status === 200) {
+        setExercises(res.data.exercises ?? []);
+        setFailed(false);
+      } else setFailed(true);
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }
   // 総重量（kg）。自重（0kg）のセットは足さない
-  const total = finished.exercises.reduce((sum, e) => sum + e.sets.reduce((a, s) => a + s.weightKg * s.reps, 0), 0);
+  const total = exercises.reduce((sum, e) => sum + e.sets.reduce((a, s) => a + s.weightKg * s.reps, 0), 0);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div aria-hidden onClick={onClose} className="absolute inset-0 bg-night/50" />
@@ -241,22 +271,37 @@ function WorkoutSummary({ finished, onClose }: { finished: Finished; onClose: ()
         role="dialog"
         aria-modal="true"
         aria-label={WORKOUT_END_MESSAGES.summaryTitle}
-        className="fl-slab relative m-4 w-full max-w-[398px] space-y-3 px-5 pt-6 pb-5 text-center shadow-lg"
+        className="fl-slab relative m-4 max-h-[calc(100dvh-2rem)] w-full max-w-[398px] space-y-3 overflow-y-auto px-5 pt-6 pb-5 text-center shadow-lg"
       >
         <div className="flex justify-center">
           <MyChara pose={finished.bestCount > 0 ? 'pb' : 'cheer'} size={144} />
         </div>
         <h2 className="text-2xl font-extrabold">{WORKOUT_END_MESSAGES.thanks}</h2>
         <p className="fl-num text-3xl">{WORKOUT_END_MESSAGES.count(finished.exerciseCount, finished.setCount)}</p>
-        {finished.bestCount > 0 && <p className="text-base font-extrabold text-brand">{WORKOUT_END_MESSAGES.best(finished.bestCount)}</p>}
+        {/* 総重量・自己ベスト・仲間へは、セットの一覧より上（先に目に入る場所）に置く */}
         {total > 0 && (
-          <p data-testid="total-weight" className="text-sm font-extrabold text-fg-muted">
+          <p data-testid="total-weight" className="text-base font-extrabold">
             {WORKOUT_END_MESSAGES.total(formatWeight(total))}
           </p>
         )}
-        {finished.exercises.length > 0 && (
+        {finished.bestCount > 0 && <p className="text-base font-extrabold text-brand">{WORKOUT_END_MESSAGES.best(finished.bestCount, finished.bestNames)}</p>}
+        <Link
+          href="/friends"
+          className="inline-flex min-h-11 items-center justify-center text-sm font-extrabold text-brand underline underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        >
+          {WORKOUT_END_MESSAGES.shareWithFriends}
+        </Link>
+        {failed && (
+          <div role="alert" className="space-y-2 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
+            <p>{WORKOUT_END_MESSAGES.detailFailed}</p>
+            <ThickButton tone="white" size="sm" className="w-full" onClick={reload} disabled={loading}>
+              {loading ? '…' : WORKOUT_END_MESSAGES.reload}
+            </ThickButton>
+          </div>
+        )}
+        {exercises.length > 0 && (
           <ul aria-label="やったセット" className="max-h-48 space-y-2 overflow-y-auto rounded-fl bg-canvas px-4 py-3 text-left">
-            {finished.exercises.map((e) => (
+            {exercises.map((e) => (
               <li key={e.exerciseId}>
                 <p className="text-sm font-extrabold">{e.name}</p>
                 <p className="fl-num text-note text-fg-muted">{e.sets.map((s) => formatSet(s)).join('　')}</p>
@@ -303,11 +348,11 @@ function NextCard({ menu, todayStatus }: { menu: TodayMenu; todayStatus: string 
 function NextExercise({ item }: { item: MenuItem }) {
   return (
     <CardFrame label="つぎにやること" tone="teal" tag="つぎ">
-      <h2 className="mt-2.5 text-[30px] leading-[1.15] font-extrabold">{item.name}</h2>
+      <h2 className="mt-2.5 text-[30px] leading-[1.15] font-extrabold short:mt-1 short:text-xl">{item.name}</h2>
       {item.previous && (
         <p className="mt-2 flex items-baseline gap-2">
           <span className="text-note font-extrabold">前回</span>
-          <span className="fl-num text-5xl leading-none">{formatSet(item.previous)}</span>
+          <span className="fl-num text-5xl leading-none short:text-3xl">{formatSet(item.previous)}</span>
         </p>
       )}
       {item.suggestion && (
@@ -353,7 +398,7 @@ function CardFrame({ label, tone, tag, children }: { label: string; tone: keyof 
     <section
       aria-label={label}
       className={cn(
-        'fl-stripes relative overflow-hidden rounded-fl px-[18px] pt-3.5 pb-4 text-white [--stripe:rgb(0_0_0/0.14)]',
+        'fl-stripes relative overflow-hidden rounded-fl px-[18px] pt-3.5 pb-4 text-white [--stripe:rgb(0_0_0/0.14)] short:pt-2 short:pb-2.5',
         cardTones[tone],
       )}
     >
@@ -368,7 +413,7 @@ function LinkButton({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="fl-thick relative mt-4 inline-flex min-h-14 w-full items-center justify-center rounded-fl bg-gold px-5 text-lg font-extrabold tracking-wider text-fg outline-none [--thick:var(--color-gold-dark)] focus-visible:ring-4 focus-visible:ring-surface/60"
+      className="fl-thick relative mt-4 short:mt-2 inline-flex min-h-14 short:min-h-12 w-full items-center justify-center rounded-fl bg-gold px-5 text-lg font-extrabold tracking-wider text-fg outline-none [--thick:var(--color-gold-dark)] focus-visible:ring-4 focus-visible:ring-surface/60"
     >
       {children}
     </Link>

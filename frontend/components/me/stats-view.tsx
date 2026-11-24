@@ -2,6 +2,7 @@
 
 import { cn } from 'cn';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { PageTitle } from '@/components/fitlog/app-shell';
 import { JapanMap } from '@/components/me/japan-map';
@@ -74,7 +75,9 @@ function Period({ data }: { data: StatsResponse }) {
   const { today, calendar } = data;
   const [view, setView] = useState<StatsView>('week');
   const [off, setOff] = useState(0);
-  const [metric, setMetric] = useState<Metric>('days');
+  // 「日本地図で見る」から来たとき（?metric=m）は、最初からランを選んで地図を描く（L6・D4-4）。指定が無い・不正なら「動いた日」
+  const requested = useSearchParams()?.get('metric');
+  const [metric, setMetric] = useState<Metric>(METRICS.some((m) => m.key === requested) ? (requested as Metric) : 'days');
   const first = calendar[0].date;
   const min = view === 'week' ? minWeekOffset(today, first) : view === 'month' ? minMonthOffset(today, first) : 0;
 
@@ -304,6 +307,7 @@ function JapanTrek({ totalMeters }: { totalMeters: number }) {
       <h2 id="stats-trek" className="text-sm font-extrabold text-fg-muted">
         日本縦断
       </h2>
+      <p className="mt-1 text-sm font-bold text-fg-muted">走った距離で、日本を南の鹿児島から北の稚内へ進みます</p>
       <p className="mt-1 text-center" data-testid="trek-total">
         <span className="text-note text-fg-muted">これまでの合計</span> <span className="fl-num text-3xl">{(totalMeters / 1000).toFixed(1)}</span> <span className="text-sm font-bold">km</span>
       </p>

@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { DETAIL_MESSAGES } from '@/lib/messages';
 import { OPENFREEMAP_STYLE_URL } from '@/lib/map/map-config';
+import { TILE_ERROR_LIMIT } from '@/lib/map/map-failure';
 import { MAP_LOCALE_JA } from '@/lib/map/locale-ja';
 import { RouteMap } from './route-map';
 
@@ -11,7 +12,7 @@ const h = vi.hoisted(() => {
   class FakeMap {
     static instances: FakeMap[] = [];
     static failWith: Error | null = null;
-    handlers: Record<string, () => void> = {};
+    handlers: Record<string, (e?: unknown) => void> = {};
     sources: Record<string, unknown> = {};
     layers: { id: string; source: string; type: string; paint?: Record<string, unknown> }[] = [];
     controls: unknown[] = [];
@@ -21,7 +22,7 @@ const h = vi.hoisted(() => {
       if (FakeMap.failWith) throw FakeMap.failWith;
       FakeMap.instances.push(this);
     }
-    on(event: string, cb: () => void) {
+    on(event: string, cb: (e?: unknown) => void) {
       this.handlers[event] = cb;
       return this;
     }
@@ -59,7 +60,52 @@ describe('RouteMap（ランのルートの地図）', () => {
     render(<RouteMap route={ROUTE} />);
     await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
     expect(lastMap().opts.style).toBe(OPENFREEMAP_STYLE_URL);
-    expect(lastMap().opts.cooperativeGestures).toBe(true);
+    expect(lastMap().opts.cooperativeGestures).toBe(true); // PC は今のまま（matchMedia が無い・マウス）
+  });
+
+  // L7: 触る端末は1本指がページのスクロール。「Ctrl を押しながら」の案内（cooperativeGestures）を出さない
+  it('L7: 触る端末（pointer: coarse）では cooperativeGestures を使わず、1本指のドラッグ（dragPan）を切る', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(pointer: coarse)' }));
+    render(<RouteMap route={ROUTE} />);
+    await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
+    expect(lastMap().opts).toMatchObject({ cooperativeGestures: false, dragPan: false });
+    vi.unstubAllGlobals();
+  });
+
+  // L13: スタイルやタイルが取れないとき、代替表示（距離・時間とルートの線）
+  it('L13: スタイルが取れなかった（error）ら、距離・時間とルートの線の代替表示にして、地図を片付ける', async () => {
+    render(<RouteMap route={ROUTE} distanceM={5200} durationS={1930} />);
+    await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
+    const map = lastMap();
+    map.handlers.error({ error: new Error('style 503') });
+    expect(await screen.findByRole('status')).toHaveTextContent(DETAIL_MESSAGES.mapUnavailable);
+    expect(screen.getByTestId('map-fallback-stats')).toHaveTextContent('5.2km ・ 32:10');
+    const sketch = screen.getByTestId('route-sketch');
+    expect(sketch.querySelectorAll('polyline')).toHaveLength(1);
+    expect(sketch.querySelectorAll('circle')).toHaveLength(2);
+    expect(map.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('L13: 前回のルートがあれば、代替の線画にも点線で出す。距離・時間が無ければ数字は出さない', async () => {
+    render(<RouteMap route={ROUTE} ghost={{ type: 'LineString', coordinates: [[139.7, 35.6], [139.8, 35.8]] }} />);
+    await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
+    lastMap().handlers.error({ error: new Error('x') });
+    const sketch = await screen.findByTestId('route-sketch');
+    expect(sketch.querySelectorAll('polyline')).toHaveLength(2);
+    expect(sketch.querySelector('polyline[stroke-dasharray]')).not.toBeNull();
+    expect(screen.queryByTestId('map-fallback-stats')).not.toBeInTheDocument();
+  });
+
+  it('L13: タイルのエラーが続けて上限に達したら代替表示。1〜2回や、描き終えたあとの数え直しでは地図のまま', async () => {
+    render(<RouteMap route={ROUTE} />);
+    await waitFor(() => expect(h.FakeMap.instances).toHaveLength(1));
+    const map = lastMap();
+    for (let i = 0; i < TILE_ERROR_LIMIT - 1; i++) map.handlers.error({ tile: {}, sourceId: 'openmaptiles' });
+    map.handlers.idle();
+    map.handlers.error({ tile: {}, sourceId: 'openmaptiles' });
+    expect(screen.queryByTestId('route-sketch')).not.toBeInTheDocument();
+    for (let i = 0; i < TILE_ERROR_LIMIT; i++) map.handlers.error({ tile: {}, sourceId: 'openmaptiles' });
+    expect(await screen.findByTestId('route-sketch')).toBeInTheDocument();
   });
 
   // A07-9: 操作案内（Use Ctrl + scroll to zoom the map など）を日本語にする

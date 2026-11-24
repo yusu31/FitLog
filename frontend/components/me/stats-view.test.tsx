@@ -8,7 +8,12 @@ import { StatsPage } from './stats-view';
 vi.mock('@/lib/use-require-session', () => ({ useRequireSession: () => ({ signedIn: true }) }));
 // 本物の地図は WebGL が要り jsdom では動かない。部品を差し替える（描画は実ブラウザで確かめる）
 vi.mock('@/components/me/japan-map', () => ({ JapanMap: ({ pos }: { pos: { name: string } }) => <div role="img" aria-label={`いまは${pos.name}のあたり`} /> }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }), usePathname: () => '/me/stats/' }));
+// ?metric=m のような、画面の URL のクエリ（各テストで入れ替える）
+let query = '';
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }), usePathname: () => '/me/stats/', useSearchParams: () => new URLSearchParams(query) }));
+beforeEach(() => {
+  query = '';
+});
 
 // 記録のまとめ（S-35・F-22・F-26・F-27・F-29。docs/testing-design.md 3-14）。今日は API が決めた today を使う（画面の時計に依存しない）
 const STAMP_KEYS = Object.keys(STAMP_LABEL) as StatsResponse['stamps'][number]['key'][];
@@ -123,6 +128,38 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     await user.click(screen.getByRole('button', { name: 'ラン' }));
     expect(screen.getByRole('button', { name: '11/9〜 5.0km' })).toBeInTheDocument();
     expect(screen.getByText('日本縦断')).toBeInTheDocument();
+  });
+
+  // L6・D4-4: 「日本地図で見る」は ?metric=m で来る。最初からランを選び、日本縦断の地図を出す
+  it('?metric=m で開くと、最初からランが選ばれ、日本縦断の地図が出る（クリック不要）', async () => {
+    query = 'metric=m';
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    await screen.findByTestId('stats-title');
+    expect(screen.getByRole('button', { name: 'ラン' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '動いた日' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText('日本縦断')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /のあたり/ })).toBeInTheDocument();
+  });
+
+  it('?metric が無い・知らない値のときは、今までどおり「動いた日」で、地図は出ない', async () => {
+    for (const q of ['', 'metric=zzz', 'metric=']) {
+      query = q;
+      stubStats(statsOf());
+      const { unmount } = renderWithQuery(<StatsPage />);
+      await screen.findByTestId('stats-title');
+      expect(screen.getByRole('button', { name: '動いた日' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.queryByText('日本縦断')).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it('日本縦断の見出しの下に、進み方を1行で説明する（南の鹿児島から北の稚内へ）', async () => {
+    query = 'metric=m';
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    await screen.findByTestId('stats-title');
+    expect(screen.getByText('走った距離で、日本を南の鹿児島から北の稚内へ進みます')).toBeInTheDocument();
   });
 
   it('A08-6・V-04: まだのスタンプは灰色のメダルで、文字は面の上で 4.5:1 以上の濃さ。とったものは色つき', async () => {

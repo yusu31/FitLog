@@ -3,6 +3,7 @@ import { resetSentNotice } from '@/lib/offline/sent-notice';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
+import { noteBest, resetCurrentWorkout } from '@/lib/current-workout';
 import { HOME_MESSAGES, LATE_MESSAGES } from '@/lib/messages';
 import { calls, installFakeApi, renderWithQuery, restRecord, weekOf, workout } from '@/lib/test/fake-api';
 import { TodayView } from './today-view';
@@ -38,6 +39,7 @@ vi.mock('@/lib/auth-client', () => ({
 }));
 
 beforeEach(() => {
+  resetCurrentWorkout();
   push.mockClear();
   vi.useFakeTimers({ toFake: ['Date'], now: new Date(NOON_WED) });
 });
@@ -233,6 +235,49 @@ describe('TodayView（S-10 今日）', () => {
       expect(within(sets).getAllByRole('listitem')).toHaveLength(2);
       // 60×10 + 60×9 + 25×12 = 600 + 540 + 300
       expect(within(summary).getByTestId('total-weight')).toHaveTextContent('総重量 1440kg');
+    });
+
+    // D3-9: 総重量・自己ベスト（種目名つき）・仲間へのリンクを、セット一覧より上に出す
+    it('まとめの上に、総重量・自己ベスト（種目名つき）・「仲間に見せる」（仲間タブへ）を出す', async () => {
+      noteBest('r2', 'スクワット');
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { [TODAY]: 'rec' })),
+        [WORKOUTS]: [list(activeToday(), PREV), list({ ...activeToday(), active: false }, PREV)],
+        [LATEST]: list(activeToday()),
+        'GET /api/records/r2': ok(activeToday()),
+        [END]: ok({ id: 'r2', kind: 'workout', recordedAt: NOON_WED, localDate: TODAY, endedAt: NOON_WED }),
+      });
+      const user = userEvent.setup();
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '記録中' });
+      await user.click(within(card).getByRole('button', { name: '今日はここまで' }));
+      const summary = await screen.findByRole('dialog', { name: '今日のまとめ' });
+      expect(within(summary).getByText('自己ベスト 1回（スクワット）')).toBeInTheDocument();
+      expect(within(summary).getByRole('link', { name: '仲間に見せる' })).toHaveAttribute('href', '/friends');
+      const total = within(summary).getByTestId('total-weight');
+      const sets = within(summary).getByRole('list', { name: 'やったセット' });
+      expect(total.compareDocumentPosition(sets) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(within(summary).queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('記録の詳細が取れなかったら、「1種目2セット」だけにせず再読み込みを出し、押すと一覧と総重量が出る', async () => {
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { [TODAY]: 'rec' })),
+        [WORKOUTS]: [list(activeToday(), PREV), list({ ...activeToday(), active: false }, PREV)],
+        [LATEST]: list(activeToday()),
+        'GET /api/records/r2': [{ status: 500, body: { code: 'INTERNAL', message: 'x' } }, ok(activeToday())],
+        [END]: ok({ id: 'r2', kind: 'workout', recordedAt: NOON_WED, localDate: TODAY, endedAt: NOON_WED }),
+      });
+      const user = userEvent.setup();
+      renderWithQuery(<TodayView />);
+      const card = await screen.findByRole('region', { name: '記録中' });
+      await user.click(within(card).getByRole('button', { name: '今日はここまで' }));
+      const summary = await screen.findByRole('dialog', { name: '今日のまとめ' });
+      expect(within(summary).getByRole('alert')).toHaveTextContent('読み込めませんでした');
+      expect(within(summary).queryByTestId('total-weight')).not.toBeInTheDocument();
+      await user.click(within(summary).getByRole('button', { name: 'もう一度読み込む' }));
+      expect(await within(summary).findByTestId('total-weight')).toHaveTextContent('総重量 1440kg');
+      expect(within(summary).queryByRole('alert')).not.toBeInTheDocument();
     });
 
     it('電波が無いときは「今日はここまで」を押せず、理由を出す（終了は電波があるときだけ）', async () => {
@@ -846,6 +891,42 @@ describe('TodayView（B03 今日画面の直し）', () => {
       const run = await screen.findByRole('link', { name: /ランを記録/ });
       const next = await screen.findByRole('region', { name: 'つぎにやること' });
       expect(run.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+  });
+
+  // L3: スマホの横向きなど高さが低い画面（max-height: 500px）では、帯・キャラ・見出しを小さくして、「はじめる」を最初の画面に入れる
+  describe('高さが低い画面（L3）', () => {
+    const stubShort = (short: boolean) =>
+      vi.stubGlobal('matchMedia', (q: string) => ({ matches: short && q === '(max-height: 500px)', addEventListener: () => {}, removeEventListener: () => {} }));
+    const install = () =>
+      installFakeApi({
+        [WEEK]: ok(weekOf(TODAY, { '2026-11-02': 'rec' })),
+        [WORKOUTS]: list(PREV),
+        [LATEST]: list(PREV),
+      });
+
+    it('キャラは普通の画面で 112px、低い画面で 56px', async () => {
+      stubShort(false);
+      install();
+      const { unmount } = renderWithQuery(<TodayView />);
+      await findTodayCell();
+      expect(screen.getAllByTestId('sprite')[0]).toHaveStyle({ width: '112px' });
+      unmount();
+      stubShort(true);
+      install();
+      renderWithQuery(<TodayView />);
+      await findTodayCell();
+      expect(screen.getAllByTestId('sprite')[0]).toHaveStyle({ width: '56px' });
+    });
+
+    it('週の帯・見出し・主ボタンに、低い画面用の詰め方（short:）が付いている。主ボタンは出たまま', async () => {
+      install();
+      renderWithQuery(<TodayView />);
+      await findTodayCell();
+      expect(screen.getByRole('list', { name: '今週の7日' }).className).toContain('short:h-[52px]');
+      expect(screen.getByRole('heading', { name: /^今日 11月4日/ }).className).toContain('short:text-base');
+      const next = screen.getByRole('region', { name: 'つぎにやること' });
+      expect(within(next).getByRole('link', { name: '前回と同じで始める' }).className).toContain('short:min-h-12');
     });
   });
 });

@@ -92,6 +92,28 @@ describe('GpsTracker（GPS で記録する・Web 版）', () => {
     expect(screen.queryByText(GPS_MESSAGES.noticeAndroidWeb)).not.toBeInTheDocument();
   });
 
+  // D4-2: START を押す前の画面に、端末ごとの案内を1行で出す（iPhone の Web・Android の Web・アプリ）
+  describe('START の前の1行（端末ごと）', () => {
+    it('iPhone のブラウザ: 画面を点けたままにする案内を1行', () => {
+      stubBrowser({ userAgent: IPHONE_UA });
+      setup();
+      expect(screen.getByTestId('gps-before-start')).toHaveTextContent(GPS_MESSAGES.beforeStartIosWeb);
+    });
+
+    it('Android のブラウザ: 画面を点けたままに、ポケットに入れるならアプリで', () => {
+      stubBrowser({ userAgent: ANDROID_UA });
+      setup();
+      expect(screen.getByTestId('gps-before-start')).toHaveTextContent(GPS_MESSAGES.beforeStartAndroidWeb);
+    });
+
+    it('START を押して記録が始まったら、この1行は消える（記録中の画面は変えない）', async () => {
+      const { user } = setup();
+      expect(screen.getByTestId('gps-before-start')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /GPS で記録する/ }));
+      expect(screen.queryByTestId('gps-before-start')).not.toBeInTheDocument();
+    });
+  });
+
   // D4: START 直後に、はじめの1回だけ案内を出す。次からは出さず、「画面を消すと？」で読み返せる
   describe('START 直後の案内（端末ごと・はじめの1回）', () => {
     const start = (user: ReturnType<typeof setup>['user']) => user.click(screen.getByRole('button', { name: /GPS で記録する/ }));

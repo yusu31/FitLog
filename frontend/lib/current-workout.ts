@@ -10,6 +10,8 @@ const slots: Record<DayMode, Current | null> = { today: null, yesterday: null };
 
 // 記録ごとの自己ベストの回数（終了のまとめ用。メモリだけ。読み直すと 0 に戻り、まとめには出さない）
 const bests = new Map<string, number>();
+// 自己ベストが出た種目名（記録ごと。重複なし・出た順）
+const bestNames = new Map<string, string[]>();
 
 function serverRecordFor(day: DayMode, serverActiveId: string | null | undefined): string | null {
   return day === 'today' ? (serverActiveId ?? null) : null;
@@ -51,8 +53,17 @@ export function endCurrentWorkout(): void {
 }
 
 // 自己ベストが出たセットを数える（記録ごと）
-export function noteBest(recordId: string): void {
+export function noteBest(recordId: string, exerciseName?: string): void {
   bests.set(recordId, (bests.get(recordId) ?? 0) + 1);
+  if (exerciseName) {
+    const names = bestNames.get(recordId) ?? [];
+    if (!names.includes(exerciseName)) bestNames.set(recordId, [...names, exerciseName]);
+  }
+}
+
+// 自己ベストが出た種目の名前（終了のまとめで種目名つきに出す用）
+export function bestNamesOf(recordId: string): string[] {
+  return bestNames.get(recordId) ?? [];
 }
 
 export function bestCountOf(recordId: string): number {
@@ -64,4 +75,5 @@ export function resetCurrentWorkout(): void {
   slots.today = null;
   slots.yesterday = null;
   bests.clear();
+  bestNames.clear();
 }

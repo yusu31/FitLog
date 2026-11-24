@@ -11,6 +11,8 @@ type Phase = 'starting' | 'ready' | 'recording' | 'sending' | 'done' | 'error';
 
 const SEND_ERROR = '送れませんでした。電波の良い所でもう一度ためしてください';
 const CAMERA_ERROR = 'カメラを使えませんでした';
+// 準備のまま止まったとき（許可の画面が出ない・別のアプリがカメラを使っている等）に、直し方へ移るまでの秒数（L4）
+export const CAMERA_START_TIMEOUT_S = 8;
 // 直し方（A06-3）。許可を出しても直らないときは、記録は残っているので「あとで撮る」で閉じてよい
 const CAMERA_FIX_STEPS = ['アドレス欄の鍵（またはカメラ）のマークをタップ', '「カメラ」を「許可」に変える', 'この画面にもどって、もう一度ひらく'] as const;
 
@@ -32,16 +34,27 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
   const streamRef = useRef<MediaStream | null>(null);
   const [phase, setPhase] = useState<Phase>('starting');
   const [error, setError] = useState<string | null>(null);
+  const [waitedS, setWaitedS] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    let settled = false; // カメラが来た・失敗した・待ちきれた、のどれかで決着済み
+    const tick = setInterval(() => setWaitedS((n) => n + 1), 1000);
+    const giveUp = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      setError(CAMERA_ERROR);
+      setPhase('error');
+    }, CAMERA_START_TIMEOUT_S * 1000);
     navigator.mediaDevices
       .getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
       .then((stream) => {
-        if (cancelled) {
+        // 待ちきれて直し方を出したあとにカメラが来たときは、使わずに止める
+        if (cancelled || settled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
+        settled = true;
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -50,12 +63,15 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
         setPhase('ready');
       })
       .catch(() => {
-        if (cancelled) return;
+        if (cancelled || settled) return;
+        settled = true;
         setError(CAMERA_ERROR);
         setPhase('error');
       });
     return () => {
       cancelled = true;
+      clearInterval(tick);
+      clearTimeout(giveUp);
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     };
@@ -99,8 +115,20 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
         </div>
       )}
       <div className="space-y-3 px-4 pt-4 pb-[max(20px,env(safe-area-inset-bottom))]">
+        {phase === 'starting' && (
+          <div
+            role="progressbar"
+            aria-label="カメラの準備"
+            aria-valuemin={0}
+            aria-valuemax={CAMERA_START_TIMEOUT_S}
+            aria-valuenow={Math.min(waitedS, CAMERA_START_TIMEOUT_S)}
+            className="h-2 overflow-hidden rounded-full bg-white/25"
+          >
+            <div className="h-full rounded-full bg-gold transition-[width] duration-1000 ease-linear" style={{ width: `${(Math.min(waitedS + 1, CAMERA_START_TIMEOUT_S) / CAMERA_START_TIMEOUT_S) * 100}%` }} />
+          </div>
+        )}
         <p role="status" aria-live="polite" className="text-center text-sm font-bold">
-          {phase === 'starting' && 'カメラを準備しています'}
+          {phase === 'starting' && `カメラを準備しています（${waitedS}秒）`}
           {phase === 'ready' && !error && '「撮る」を押すと2秒だけ撮ります'}
           {phase === 'recording' && '撮影中…（2秒）'}
           {phase === 'sending' && '送っています…'}

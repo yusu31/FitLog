@@ -30,7 +30,7 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
         {session ? (
           <main className="flex-1 pb-28">
             {/* 右上のベル（D7-3）。右の角にはキャラ（72px）があるので、その左隣に置く */}
-            <div className="absolute top-2.5 right-[92px] z-10">
+            <div className="absolute top-2.5 right-[92px] z-10 short:top-0">
               <NotificationBell />
             </div>
             {syncBanner && <SyncBanner />}

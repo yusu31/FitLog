@@ -1,4 +1,4 @@
-import { activeRecordId, bestCountOf, endCurrentWorkout, noteBest, recordForNextSet, resetCurrentWorkout } from './current-workout';
+import { activeRecordId, bestCountOf, bestNamesOf, endCurrentWorkout, noteBest, recordForNextSet, resetCurrentWorkout } from './current-workout';
 
 const H = 60 * 60 * 1000;
 const t0 = Date.parse('2026-11-02T10:00:00Z');
@@ -88,5 +88,16 @@ describe('「今日はここまで」（N1）', () => {
     expect(bestCountOf('none')).toBe(0);
     resetCurrentWorkout();
     expect(bestCountOf('a')).toBe(0);
+  });
+
+  it('自己ベストが出た種目名を、記録ごとに重複なしで持つ', () => {
+    noteBest('a', 'スクワット');
+    noteBest('a', 'スクワット');
+    noteBest('a', 'ベンチプレス');
+    noteBest('b');
+    expect(bestNamesOf('a')).toEqual(['スクワット', 'ベンチプレス']);
+    expect(bestNamesOf('b')).toEqual([]);
+    resetCurrentWorkout();
+    expect(bestNamesOf('a')).toEqual([]);
   });
 });

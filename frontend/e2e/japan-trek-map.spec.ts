@@ -15,7 +15,7 @@ test('記録のまとめに、日本縦断の地図が出る（canvas があり�
   await expect(page).toHaveURL(/\/today\/?$/);
 
   await page.goto('/me/stats/');
-  // B08: 日本縦断は「ラン」タブの中にある（記録が無い人の初期は筋トレタブ）ので、ランを開いてから確かめる
+  // 日本縦断は「ラン」の数字を選んだときに出る（初期は「動いた日」）ので、ランを選んでから確かめる
   await page.getByRole('button', { name: 'ラン', exact: true }).click();
   const map = page.getByRole('img', { name: /鹿児島から北へ進んだ位置/ });
   await expect(map).toBeVisible();
@@ -36,5 +36,8 @@ test('ラン画面の上に日本縦断への入口があり、押すと記録�
 
   await page.goto('/run/');
   await page.getByRole('link', { name: '日本縦断' }).click();
-  await expect(page).toHaveURL(/\/me\/stats\/?(#japan-trek)?$/);
+  // 「日本縦断」の入口は ?metric=m#japan-trek へ行く。ラン（日本縦断）が選ばれた状態で、地図まで出る（L6・D4-4）
+  await expect(page).toHaveURL(/\/me\/stats\/?\?metric=m#japan-trek$/);
+  await expect(page.getByRole('button', { name: 'ラン', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('img', { name: /鹿児島から北へ進んだ位置/ })).toBeVisible();
 });
