@@ -78,3 +78,48 @@ test('控えのある端末で画面を開き直しても、描画のずれ（hy
   }
   expect(warnings).toEqual([]);
 });
+
+// L3: スマホの横向き（844×390）で、今日の画面の主ボタンが下のタブに隠れずに最初の画面に入る
+test('L3 横向き 844×390 で、今日の主ボタンが最初の画面に入る（始める前・記録中）', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await signUp(page);
+  const check = async (name: string) => {
+    const link = page.getByRole('link', { name });
+    await expect(link).toBeVisible();
+    const box = (await link.boundingBox())!;
+    const nav = (await page.getByRole('navigation', { name: 'メイン' }).boundingBox())!;
+    expect(box.y + box.height, `${name} の下端`).toBeLessThanOrEqual(nav.y);
+  };
+  await check('種目を選ぶ');
+  await page.goto('/exercises/');
+  await page.locator('a[href^="/record?exercise="]').first().click();
+  // 結果シートは保存を待たずに出るので、保存の応答を待ってから移る
+  const saved = page.waitForResponse((r) => r.request().method() === 'POST' && /\/records\/[^/]+\/sets$/.test(new URL(r.url()).pathname) && r.ok());
+  let listed = 0;
+  let afterSave = false;
+  page.on('response', (r) => {
+    if (r.request().method() === 'POST' && /\/sets$/.test(new URL(r.url()).pathname)) afterSave = true;
+    else if (afterSave && r.request().method() === 'GET' && new URL(r.url()).pathname === '/api/records' && r.ok()) listed++;
+  });
+  await page.getByRole('button', { name: 'できた' }).click();
+  await saved;
+  // 一覧は 30 秒キャッシュされる。読み直す前に、保存のあとの取り直しが済んで端末に書かれるのを待つ
+  await expect.poll(() => listed).toBeGreaterThan(0);
+  await page.waitForTimeout(500);
+  await expect(page.getByTestId('result-sheet')).toBeVisible();
+  await page.goto('/today/');
+  await check('続ける');
+});
+
+// L11: 体重のものさしの目盛り。今の値の数字が、真ん中の針の位置に見える（jsdom では位置を測れない）
+test('L11 体重のものさしで、今の値の目盛りの数字が針の位置にある', async ({ page }) => {
+  await signUp(page);
+  await page.goto('/me/body/');
+  const slider = page.getByRole('slider', { name: '体重（kg）' });
+  await expect(slider).toBeVisible();
+  const label = page.getByTestId('ruler-label').filter({ hasText: /^60$/ });
+  await expect(label).toBeInViewport();
+  const s = (await slider.boundingBox())!;
+  const l = (await label.boundingBox())!;
+  expect(Math.abs(l.x + l.width / 2 - (s.x + s.width / 2))).toBeLessThanOrEqual(3);
+});

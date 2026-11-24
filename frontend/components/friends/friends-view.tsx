@@ -22,8 +22,8 @@ export function FriendsView() {
   return (
     <div className="relative">
       <PageTitle>なかま</PageTitle>
-      {/* 自分1人のときは、中央にキャラが出るので右上は隠す（2体並べない） */}
-      {!alone && <MyChara pose="idle" size={72} className="absolute top-0 right-4" />}
+      {/* 自分1人・グループ無しのときは、中央にキャラが出るので右上は隠す（2体並べない） */}
+      {!alone && data?.status !== 404 && <MyChara pose="idle" size={72} className="absolute top-0 right-4" />}
       {isPending ? (
         <div aria-busy="true" aria-label="読み込み中" className="mx-4 mt-3 h-40 animate-pulse rounded-fl bg-canvas" />
       ) : isError || !data || (data.status !== 200 && data.status !== 404) ? (

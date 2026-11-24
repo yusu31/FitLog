@@ -28,7 +28,7 @@ describe('ExportRecords（C-01 記録の書き出し）', () => {
   it('「記録を書き出す（CSV）」ボタンと、表計算ソフトで開けるという補足を出す', () => {
     render(<ExportRecords />);
     expect(screen.getByRole('button', { name: /記録を書き出す（CSV）/ })).toBeEnabled();
-    expect(screen.getByText(/表計算ソフトで開けるファイル/)).toBeInTheDocument();
+    expect(screen.getByText(/表計算ソフトで開けます/)).toBeInTheDocument();
   });
 
   it('押すと API を呼び、CSV をファイルとして保存する（Excel 用に先頭へ BOM を付け直す）', async () => {

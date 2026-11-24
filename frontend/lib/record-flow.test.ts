@@ -81,12 +81,12 @@ describe('最初に入る値（features.md 2.3。前回の同じセット番号 
 
 // D3 L12: 入力の初期値は「前回の同じ番号のセット」（前回の値と表示を一致させる）。目標は target に分けて返す
 describe('最初に入る値と目標（D3 L12）', () => {
-  it('初期値は前回の同じ番号のセット（40×10）。目標（最後の40×8 から 40×9）は target に分かれる', () => {
+  it('初期値は前回の同じ番号のセット（40×10）。目標（同じ1セット目から 40×11。L12）は target に分かれる', () => {
     expect(initialDraft(PREV, 1, null, { daysSince: 1 })).toEqual({
       draft: { weightKg: 40, reps: 10 },
       ghost: PREV[0],
       source: 'previous',
-      target: { weightKg: 40, reps: 9 },
+      target: { weightKg: 40, reps: 11 },
     });
   });
   it('3セット目の初期値は前回の3セット目（40×8）で、前回のバーの値と一致する', () => {
@@ -99,12 +99,12 @@ describe('最初に入る値と目標（D3 L12）', () => {
     expect(initialDraft(prev, 1, null, { daysSince: 2 }).target).toEqual({ weightKg: 42.5, reps: 8 });
     expect(initialDraft(prev, 1, null, { daysSince: 2 }).draft).toEqual({ weightKg: 40, reps: 12 });
   });
-  it('休み明け（3日以上あいた）は目標が前回の最後と同じ値で、restReturn の印が付く', () => {
+  it('休み明け（3日以上あいた）は目標が前回の同じ番号のセットと同じ値で、restReturn の印が付く', () => {
     expect(initialDraft(PREV, 1, null, { daysSince: 3 })).toEqual({
       draft: { weightKg: 40, reps: 10 },
       ghost: PREV[0],
       source: 'previous',
-      target: { weightKg: 40, reps: 8 },
+      target: { weightKg: 40, reps: 10 },
       restReturn: true,
     });
   });

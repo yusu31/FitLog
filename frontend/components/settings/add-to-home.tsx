@@ -2,6 +2,7 @@
 
 import { SquarePlus, X } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
+import { InfoTip } from '@/components/fitlog/info-tip';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { useInstallPrompt } from '@/lib/pwa/use-install-prompt';
 
@@ -67,7 +68,7 @@ export function AddToHome() {
           <X aria-hidden className="size-5" />
         </ThickButton>
       </div>
-      <p className="text-sm text-fg-muted">アプリのように、ホーム画面のアイコンからすぐ開けます。仲間の反応の通知を受け取るにも、この追加が前提です。</p>
+      <p className="text-sm text-fg-muted">ホーム画面のアイコンからすぐ開けます</p>
       {/* 追加の案内を受け取れた端末（Android の Chrome など）だけ。受け取れない端末は下の文章の案内のまま */}
       {canInstall && (
         <ThickButton tone="white" onClick={() => void install()}>
@@ -75,6 +76,7 @@ export function AddToHome() {
           ホーム画面に追加する
         </ThickButton>
       )}
+      <InfoTip label="ホーム画面に追加のしかた" heading={<p className="text-sm font-bold">追加のしかた</p>}>
       <dl className="space-y-1 text-sm">
         <div>
           <dt className="font-bold">Android（Chrome）</dt>
@@ -85,6 +87,8 @@ export function AddToHome() {
           <dd className="text-fg-muted">画面下の共有ボタン（□に↑）を押し、「ホーム画面に追加」を選びます。</dd>
         </div>
       </dl>
+      <p className="mt-1">仲間の反応の通知を受け取るにも、この追加が前提です。</p>
+      </InfoTip>
     </section>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { InfoTip } from '@/components/fitlog/info-tip';
 import { useState } from 'react';
 import { BODY_MESSAGES, PERIODS, chartShape, filterByPeriod, type ChartPoint, type Period } from '@/lib/body/body';
 import { toLocalDate } from '@/lib/shared/local-date';
@@ -53,7 +54,9 @@ function Chart({ points, empty }: { points: ChartPoint[]; empty: string }) {
           {shape.min}kg
         </text>
       </svg>
-      <figcaption className="mt-1 text-note text-fg-muted">{BODY_MESSAGES.chartHint}</figcaption>
+      <figcaption>
+        <InfoTip label="グラフの見方">{BODY_MESSAGES.chartHint}</InfoTip>
+      </figcaption>
     </figure>
   );
 }
