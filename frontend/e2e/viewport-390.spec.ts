@@ -93,7 +93,10 @@ test('L3 横向き 844×390 で、今日の主ボタンが最初の画面に入�
   await check('種目を選ぶ');
   await page.goto('/exercises/');
   await page.locator('a[href^="/record?exercise="]').first().click();
+  // 結果シートは保存を待たずに出るので、保存の応答を待ってから移る
+  const saved = page.waitForResponse((r) => r.request().method() === 'POST' && /\/records\/[^/]+\/sets$/.test(new URL(r.url()).pathname) && r.ok());
   await page.getByRole('button', { name: 'できた' }).click();
+  await saved;
   await expect(page.getByTestId('result-sheet')).toBeVisible();
   await page.goto('/today/');
   await check('続ける');
