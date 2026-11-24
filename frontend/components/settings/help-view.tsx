@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { GPS_NOTICE_SEEN_KEY } from '@/lib/gps/device';
 import { useRequireSession } from '@/lib/use-require-session';
 import { DISMISSED_KEY, DISMISS_EVENT } from './add-to-home';
@@ -46,7 +46,7 @@ export function HelpView() {
         <Link
           href="/settings"
           aria-label="設定へ戻る"
-          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>

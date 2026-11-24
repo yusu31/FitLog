@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useId, useState, type ChangeEvent } from 'react';
 import { cn } from 'cn';
 import { FullScreen } from '@/components/fitlog/full-screen';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
 import { RouteMap } from '@/components/record-detail/route-map';
 import { GpsTracker } from '@/components/run/gps-tracker';
@@ -217,7 +217,7 @@ export function RunView() {
               <p className="text-note font-extrabold tracking-widest text-fg-subtle">日本縦断</p>
               {trek.arrived && <p className="text-lg font-extrabold">{trek.arrived}に着きました！</p>}
               <p className="text-sm font-bold text-fg-muted">{trek.next}</p>
-              <Link href="/me/stats?metric=m#japan-trek" className="inline-block py-2 text-sm font-extrabold text-brand underline">
+              <Link href="/me/stats?metric=m#japan-trek" className={buttonClass({ variant: 'link' })}>
                 日本地図で見る
               </Link>
             </section>
@@ -241,7 +241,7 @@ export function RunView() {
         <Link
           href="/today"
           aria-label="とじる"
-          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
         >
           <X aria-hidden className="size-6" />
         </Link>

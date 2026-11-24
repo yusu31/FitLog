@@ -1,5 +1,6 @@
 'use client';
 
+import { buttonClass } from '@/components/fitlog/thick-button';
 import { ListChecks, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { PageTitle } from '@/components/fitlog/app-shell';
@@ -36,14 +37,14 @@ export function MeView() {
           </Link>
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-extrabold">{session?.user.name}</p>
-            <Link href="/me/chara" className="inline-flex min-h-11 items-center text-sm font-bold text-brand underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+            <Link href="/me/chara" className={buttonClass({ variant: 'link' }, 'px-0')}>
               {CHARA_MESSAGES.entry}
             </Link>
           </div>
           {/* 設定の画面（S-31 /settings）は別の担当が作る。ここはリンクだけ。ThickButton（white・sm）と同じ見た目 */}
           <Link
             href="/settings"
-            className="fl-thick inline-flex min-h-11 items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-surface px-4 text-sm font-extrabold tracking-wide text-brand outline-none [--thick:#b8e3e4] focus-visible:ring-4 focus-visible:ring-teal/40 [&_svg]:size-5 [&_svg]:shrink-0"
+            className={buttonClass({ variant: 'secondary', size: 'sm' })}
           >
             <Settings aria-hidden />
             設定
@@ -53,7 +54,7 @@ export function MeView() {
         {/* S-35 記録のまとめ（A08-1: 見つけにくかったので、名前のすぐ下＝画面の上部に置く）。ThickButton（white・lg）と同じ見た目のリンク */}
         <Link
           href="/me/stats"
-          className="fl-thick inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-surface px-5 text-lg font-extrabold tracking-wider text-brand outline-none [--thick:#b8e3e4] focus-visible:ring-4 focus-visible:ring-teal/40 [&_svg]:size-5 [&_svg]:shrink-0"
+          className={buttonClass({ variant: 'secondary' })}
         >
           <ListChecks aria-hidden />
           記録のまとめ

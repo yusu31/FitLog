@@ -295,17 +295,17 @@ describe('入口の見出し（A01-1）', () => {
 
 // A01-2: 新規登録は塗りの大きなボタン（リンク）としてログインと並ぶ。N-06: 登録画面の「ログイン」も24px以上
 describe('入口のボタン（A01-2・N-06）', () => {
-  it('ログイン画面の「新規登録」は厚みボタンの見た目のリンク', () => {
+  it('ログイン画面の「新規登録」は副ボタンの見た目のリンク', () => {
     render(<LoginForm />);
     const link = screen.getByRole('link', { name: '新規登録' });
-    expect(link.className).toContain('fl-thick');
-    expect(link.className).toContain('min-h-11');
+    expect(link.className).toContain('bg-teal-light');
+    expect(link.className).toContain('min-h-14');
   });
 
   it('登録画面の「ログイン」リンクも44px以上の高さを持つ', () => {
     render(<SignupForm />);
     const link = screen.getByRole('link', { name: 'ログイン' });
-    expect(link.className).toContain('min-h-11');
+    expect(link.className).toContain('min-h-14');
   });
 });
 

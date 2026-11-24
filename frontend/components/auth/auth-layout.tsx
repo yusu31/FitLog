@@ -1,15 +1,13 @@
+import { buttonClass } from '@/components/fitlog/thick-button';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { cn } from 'cn';
 import { Logo } from '@/components/fitlog/logo';
 
-// 入口の「塗りのボタン」に見えるリンク（A01-2・N-06）。厚みボタンと同じく押すと沈み、高さは 44px 以上
-export const AUTH_LINK_BUTTON =
-  'fl-thick inline-flex min-h-11 w-full items-center justify-center rounded-fl border-2 border-teal-light bg-surface px-4 text-base font-extrabold tracking-wide text-brand outline-none [--thick:#b8e3e4] focus-visible:ring-4 focus-visible:ring-teal/40';
+// 入口の「塗りのボタン」に見えるリンク（A01-2・N-06）。副ボタンと同じ見た目
 
 export function AuthLinkButton({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className={cn(AUTH_LINK_BUTTON)}>
+    <Link href={href} className={buttonClass({ variant: 'secondary' })}>
       {children}
     </Link>
   );

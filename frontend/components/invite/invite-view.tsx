@@ -5,7 +5,7 @@ import { Link2, LogIn, UserPlus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { getGetCurrentGroupQueryKey, useAcceptInvitation, useGetInvitation } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import { useAppSession } from '@/lib/use-app-session';
@@ -138,7 +138,7 @@ function JoinActions({ token, encoded }: { token: string; encoded: string }) {
         <Link
           href={withNext('/signup', next)}
           onClick={() => rememberJoinIntent(token)}
-          className="fl-thick flex min-h-14 items-center justify-center gap-2 rounded-fl bg-teal-dark text-lg font-extrabold tracking-wider text-white [--thick:var(--color-teal-deep)] [&_svg]:size-5"
+          className={buttonClass({ variant: 'primary' })}
         >
           <UserPlus aria-hidden />
           登録して参加
@@ -146,7 +146,7 @@ function JoinActions({ token, encoded }: { token: string; encoded: string }) {
         <Link
           href={withNext('/login', next)}
           onClick={() => rememberJoinIntent(token)}
-          className="fl-thick flex min-h-14 items-center justify-center gap-2 rounded-fl border-2 border-teal-light bg-surface text-lg font-extrabold tracking-wider text-brand [--thick:#b8e3e4] [&_svg]:size-5"
+          className={buttonClass({ variant: 'secondary' })}
         >
           <LogIn aria-hidden />
           ログインして参加
@@ -197,7 +197,7 @@ function Problem({ title, children, paste = true }: { title: string; children: R
       {paste && <PasteInvite />}
       <Link
         href="/friends"
-        className="flex min-h-11 items-center justify-center text-sm font-extrabold text-brand underline underline-offset-4"
+        className={buttonClass({ variant: 'link' }, 'w-full')}
       >
         仲間タブへ
       </Link>

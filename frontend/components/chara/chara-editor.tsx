@@ -7,7 +7,7 @@ import { useState, type KeyboardEvent } from 'react';
 import { Chara } from '@/components/fitlog/chara';
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { POSES, type PoseKey } from '@/components/fitlog/sprite';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { getGetMyAvatarQueryKey, useGetMyAvatar, useSetMyAvatar } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import {
@@ -176,7 +176,7 @@ export function CharaPage() {
   return (
     <FullScreen>
       <header className="flex items-center gap-1 px-2 pt-3">
-        <Link href="/me" aria-label={CHARA_MESSAGES.back} className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+        <Link href="/me" aria-label={CHARA_MESSAGES.back} className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}>
           <ChevronLeft aria-hidden className="size-7" />
         </Link>
         <h1 className="text-page-title font-extrabold">{CHARA_MESSAGES.title}</h1>

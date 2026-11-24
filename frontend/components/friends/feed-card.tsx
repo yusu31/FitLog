@@ -5,7 +5,7 @@ import { Dumbbell, Footprints, MessageCircle, Moon } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { cn } from 'cn';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
 import { sendErrorText, unwrap } from '@/lib/api/api-error';
 import {
@@ -144,7 +144,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
                   ? `/record-detail?id=${encodeURIComponent(item.id)}&from=me&back=friends`
                   : `/record-detail?id=${encodeURIComponent(item.id)}&by=${encodeURIComponent(item.author.id)}`
               }
-              className="flex min-h-11 items-center rounded-full border-2 border-line bg-surface px-3 text-sm font-extrabold text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+              className={buttonClass({ variant: 'secondary', size: 'sm' })}
             >
               {FRIEND_MESSAGES.open}
             </Link>

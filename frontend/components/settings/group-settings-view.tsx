@@ -1,5 +1,6 @@
 'use client';
 
+import { buttonClass } from '@/components/fitlog/thick-button';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -37,7 +38,7 @@ export function GroupSettingsView() {
         <Link
           href={back.href}
           aria-label={back.label}
-          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>

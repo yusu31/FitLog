@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { FullScreen } from '@/components/fitlog/full-screen';
 import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { MyChara } from '@/components/fitlog/my-chara';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
 import { ListRecordsKind, getCalories, getStats, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
@@ -53,9 +53,8 @@ const noSubscribe = () => () => {};
 // 押したときの時刻（イベントの中だけで使う）
 const nowMs = () => Date.now();
 
-// 「できた」の下に並べる副ボタンの形（D3-7）。主ボタンとの区別を付けるため、色を塗らず細い枠だけにする
-const SUB_BUTTON =
-  'fl-slab flex min-h-12 items-center justify-center gap-1.5 px-2 text-[15px] font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40';
+// 「できた」の下に並べる副ボタンの形（D3-7）。共通の副ボタンを、横に3つ並ぶ大きさにしたもの
+const SUB_BUTTON = buttonClass({ variant: 'secondary', size: 'sm' }, 'min-h-12 px-2 text-[15px]');
 
 type Outcome = { result: GhostResult | null; isPersonalBest: boolean };
 
@@ -164,7 +163,7 @@ export function RecordView() {
       <FullScreen>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
           <p className="font-bold text-fg-muted">種目が見つかりませんでした</p>
-          <Link href="/exercises" className="inline-flex min-h-11 items-center rounded-fl bg-teal-dark px-5 font-extrabold text-white">
+          <Link href="/exercises" className={buttonClass({ variant: 'primary', size: 'sm' })}>
             種目を選ぶ
           </Link>
         </div>
@@ -286,7 +285,7 @@ export function RecordView() {
           <ThickButton variant="icon"
             aria-label="とじる"
             onClick={() => setClosing(true)}
-            className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
           >
             <X aria-hidden className="size-6" />
           </ThickButton>
@@ -294,7 +293,7 @@ export function RecordView() {
           <Link
             href={closeHref}
             aria-label="とじる"
-            className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
           >
             <X aria-hidden className="size-6" />
           </Link>
@@ -440,16 +439,16 @@ export function RecordView() {
           <div className="flex w-full gap-2">
             <Link
               href={nextExerciseId ? withDay(`/record?exercise=${encodeURIComponent(nextExerciseId)}`, day) : withDay('/exercises', day)}
-              className={`${SUB_BUTTON} flex-1 text-brand`}
+              className={`${SUB_BUTTON} flex-1`}
             >
               次の種目へ
             </Link>
-            <Link href={closeHref} className={`${SUB_BUTTON} flex-1 text-fg`}>
+            <Link href={closeHref} className={`${SUB_BUTTON} flex-1`}>
               <Moon aria-hidden className="size-5" />
               {RECORD_MESSAGES.stop}
             </Link>
             {(day === 'today' || canFilm) && (
-              <button type="button" aria-label="ほかの操作" aria-haspopup="dialog" className={`${SUB_BUTTON} w-14 shrink-0 text-fg`} onClick={() => setMore(true)}>
+              <button type="button" aria-label="ほかの操作" aria-haspopup="dialog" className={`${SUB_BUTTON} w-14 shrink-0`} onClick={() => setMore(true)}>
                 <Ellipsis aria-hidden className="size-6" />
               </button>
             )}
@@ -468,7 +467,7 @@ export function RecordView() {
               <button
                 type="button"
                 autoFocus
-                className={`${SUB_BUTTON} w-full text-fg`}
+                className={`${SUB_BUTTON} w-full`}
                 onClick={() => {
                   setRest({ startedAt: Date.now(), seconds: readRestSeconds() });
                   setMore(false);
@@ -483,7 +482,7 @@ export function RecordView() {
                 <button
                   type="button"
                   aria-describedby="video-hint"
-                  className={`${SUB_BUTTON} w-full text-fg`}
+                  className={`${SUB_BUTTON} w-full`}
                   onClick={() => {
                     setFilming(true);
                     setMore(false);
@@ -516,7 +515,7 @@ export function RecordView() {
               <ThickButton autoFocus tone="white" size="sm" className="flex-1" onClick={() => setClosing(false)}>
                 {RECORD_CLOSE_MESSAGES.keep}
               </ThickButton>
-              <Link href={closeHref} className="fl-thick inline-flex min-h-11 flex-1 items-center justify-center rounded-fl bg-teal-dark px-4 text-sm font-extrabold text-white [--thick:var(--color-teal-deep)]">
+              <Link href={closeHref} className={buttonClass({ variant: 'primary', size: 'sm' }, 'flex-1')}>
                 {RECORD_CLOSE_MESSAGES.close}
               </Link>
             </div>

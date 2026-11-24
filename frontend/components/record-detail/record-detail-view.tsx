@@ -11,7 +11,7 @@ import { SocialSection } from './social-section';
 import { VideoPlayer } from './video-player';
 import { ConfirmDialog } from '@/components/fitlog/confirm-dialog';
 import { FullScreen } from '@/components/fitlog/full-screen';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText } from '@/lib/api/api-error';
 import { useCreateExercise, useGetCalories, useGetCurrentGroup, useGetPrevious, useGetRecord, useListExercises, type RecordDetailResponse, type RecordedExercise } from '@/lib/api/generated';
 import { SaveRoutine } from '@/components/routine/save-routine';
@@ -77,7 +77,7 @@ export function RecordDetailView() {
       <Link
         href={back.href}
         aria-label={back.label}
-        className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
       >
         <ChevronLeft aria-hidden className="size-6" />
       </Link>
@@ -114,7 +114,7 @@ export function RecordDetailView() {
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 pb-16 text-center">
           <h1 className="text-page-title font-extrabold">{DETAIL_MESSAGES.notFoundTitle}</h1>
           <p className="text-sm font-bold text-fg-muted">{DETAIL_MESSAGES.notFoundBody}</p>
-          <Link href={back.href} className="mt-3 inline-flex min-h-11 items-center rounded-fl bg-teal-dark px-5 font-extrabold text-white">
+          <Link href={back.href} className={buttonClass({ variant: 'primary', size: 'sm' }, 'mt-3')}>
             {back.label}
           </Link>
         </div>

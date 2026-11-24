@@ -2,7 +2,7 @@
 
 import { Check, Ellipsis, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { formatSetWithReps } from '@/lib/format';
 import { RECORD_MESSAGES } from '@/lib/messages';
 import { useWeightUnit } from '@/lib/use-preferences';
@@ -57,7 +57,7 @@ export function DoneSets({
               aria-haspopup="menu"
               aria-expanded={menuFor === s.id}
               onClick={() => setMenuFor(menuFor === s.id ? null : s.id)}
-              className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+              className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
             >
               <Ellipsis aria-hidden className="size-6" />
             </ThickButton>

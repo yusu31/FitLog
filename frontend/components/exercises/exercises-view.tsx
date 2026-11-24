@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 import { cn } from 'cn';
 import { FullScreen } from '@/components/fitlog/full-screen';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { messageOf } from '@/lib/api/message';
@@ -102,7 +102,7 @@ export function ExercisesView() {
         <Link
           href={withDay('/today', day)}
           aria-label="とじる"
-          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
         >
           <X aria-hidden className="size-6" />
         </Link>

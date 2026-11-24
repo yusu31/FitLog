@@ -8,7 +8,7 @@ const noSubscribe = () => () => {};
 import { useGetCurrentGroup, useGetFeed, type FeedItem } from '@/lib/api/generated';
 import { TODAY_FRIENDS_MESSAGES } from '@/lib/messages';
 import { useAppSession } from '@/lib/use-app-session';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 
 const FOCUS = 'outline-none focus-visible:ring-4 focus-visible:ring-teal/40';
 const NAMES_MAX = 3;
@@ -106,7 +106,7 @@ function InviteCard({ noGroup }: { noGroup: boolean }) {
       <p className="mt-1 text-note leading-relaxed font-bold text-fg-muted">{noGroup ? TODAY_FRIENDS_MESSAGES.noGroupSteps : TODAY_FRIENDS_MESSAGES.aloneSteps}</p>
       <Link
         href="/friends"
-        className={`fl-thick mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-fl bg-teal-dark px-4 text-base font-extrabold text-white [--thick:var(--color-teal-deep)] ${FOCUS}`}
+        className={buttonClass({ variant: 'primary' }, 'mt-3')}
       >
         <UserPlus aria-hidden className="size-5" />
         {TODAY_FRIENDS_MESSAGES.invite}

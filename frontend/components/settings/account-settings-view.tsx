@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { FullScreen } from '@/components/fitlog/full-screen';
-import { ThickButton } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authClient } from '@/lib/auth-client';
@@ -31,7 +31,7 @@ export function AccountSettingsView() {
         <Link
           href="/settings"
           aria-label="設定へ戻る"
-          className="flex size-11 items-center justify-center rounded-fl text-fg-muted outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
         >
           <ChevronLeft aria-hidden className="size-7" />
         </Link>

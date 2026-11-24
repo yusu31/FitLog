@@ -1,5 +1,6 @@
 'use client';
 
+import { buttonClass } from '@/components/fitlog/thick-button';
 import Link from 'next/link';
 import { ProfileForm } from '@/components/body/profile-form';
 import { useGetBody, useGetMyProfile } from '@/lib/api/generated';
@@ -25,7 +26,7 @@ export function BodySettings() {
           <p className="font-extrabold">{BODY_MESSAGES.heightLabel}</p>
           <p className="fl-num text-lg">{data.heightCm === null ? '未入力' : `${data.heightCm}cm`}</p>
           {/* 身長の入力は「からだ」の画面だけ（体重と並べて入れる） */}
-          <Link href="/me/body" className="inline-flex min-h-11 items-center font-bold text-brand underline outline-none focus-visible:ring-4 focus-visible:ring-teal/40">
+          <Link href="/me/body" className={buttonClass({ variant: 'link' })}>
             {M.heightLink}
           </Link>
         </div>

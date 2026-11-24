@@ -22,6 +22,8 @@ const variants = {
   secondary: { tone: 'white', link: false },
   link: { tone: 'teal', link: true },
   icon: { tone: 'white', link: false },
+  // 色の面（ティールのカード）の上の主ボタン。面と同じ色だと沈むので黄にする
+  accent: { tone: 'gold', link: false },
   // 取り消せない操作（削除・やめる）。濃いコーラルの厚みボタン
   danger: { tone: 'coral', link: false },
 } as const;
@@ -40,25 +42,26 @@ type Props = ComponentProps<'button'> &
     | { variant?: Exclude<keyof typeof variants, 'icon'>; tone?: keyof typeof tones; size?: keyof typeof sizes }
   );
 
-export function ThickButton({ variant, tone = 'teal', size = 'lg', className, type = 'button', ...props }: Props) {
+type Look = { variant?: keyof typeof variants; tone?: keyof typeof tones; size?: keyof typeof sizes };
+
+// ボタンの見た目（クラス）だけ。移動するもの（Link・a）はボタンにできないので、同じ見た目をここから受け取る（D0-1。手書きしない）。
+// 役割の表は docs/design.md「ボタンと部品の役割」。表に無い形は button-roles.test.ts が止める
+export function buttonClass({ variant, tone = 'teal', size = 'lg' }: Look = {}, className?: string): string {
   const v = variant ? variants[variant] : undefined;
-  const isLink = v?.link === true;
   const resolvedTone = v ? v.tone : tone;
-  return (
-    <button
-      type={type}
-      className={cn(
-        'inline-flex items-center justify-center gap-2 outline-none',
-        'focus-visible:ring-4 focus-visible:ring-teal/40 disabled:cursor-not-allowed disabled:opacity-60',
-        '[&_svg]:size-5 [&_svg]:shrink-0',
-        variant === 'icon'
-          ? iconClass
-          : isLink
-            ? linkClass
-            : [FLAT_TONES.includes(resolvedTone) ? 'fl-tap rounded-fl font-extrabold' : 'fl-thick rounded-fl font-extrabold', tones[resolvedTone], sizes[size]],
-        className,
-      )}
-      {...props}
-    />
+  return cn(
+    'inline-flex items-center justify-center gap-2 outline-none',
+    'focus-visible:ring-4 focus-visible:ring-teal/40 disabled:cursor-not-allowed disabled:opacity-60',
+    '[&_svg]:size-5 [&_svg]:shrink-0',
+    variant === 'icon'
+      ? iconClass
+      : v?.link === true
+        ? linkClass
+        : [FLAT_TONES.includes(resolvedTone) ? 'fl-tap rounded-fl font-extrabold' : 'fl-thick rounded-fl font-extrabold', tones[resolvedTone], sizes[size]],
+    className,
   );
+}
+
+export function ThickButton({ variant, tone, size, className, type = 'button', ...props }: Props) {
+  return <button type={type} className={buttonClass({ variant, tone, size }, className)} {...props} />;
 }
