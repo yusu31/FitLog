@@ -162,7 +162,7 @@ function Period({ data }: { data: StatsResponse }) {
         <h2 id="stats-tiles" className="text-sm font-extrabold text-fg-muted">
           {view === 'week' ? '週' : '月'}ごとの{METRICS.find((m) => m.key === metric)!.label}
         </h2>
-        <div role="group" aria-label="見る数字" className="mt-2 flex gap-2">
+        <div role="group" aria-label="見る数字" className="mt-2 flex flex-wrap gap-2">
           {METRICS.map((m) => (
             <button
               key={m.key}
