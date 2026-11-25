@@ -319,12 +319,12 @@ function JapanTrek({ totalMeters, defaultOpen }: { totalMeters: number; defaultO
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex min-h-11 w-full items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+          className="flex min-h-11 w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-lg text-left outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
         >
-          <span className="min-w-0 flex-1">
+          <span className="min-w-[8rem] flex-1">
             <span className="block text-sm font-extrabold text-fg-muted">日本縦断</span>
             <span className="block text-sm font-bold">
-              いま{pos.name}のあたり <span className="text-brand">{nextText(pos)}</span>
+              いま{pos.name}のあたり <span className="inline-block text-brand">{nextText(pos)}</span>
             </span>
           </span>
           <span className="shrink-0 text-note font-extrabold text-brand">{open ? 'とじる' : '地図を見る'}</span>
