@@ -7,6 +7,7 @@ import { PageTitle } from '@/components/fitlog/app-shell';
 import { MyChara } from '@/components/fitlog/my-chara';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { InvitePanel } from '@/components/settings/invite-panel';
+import { WeekVideoStrip } from '@/components/video-grid/week-video-strip';
 import { GROUP_MESSAGES } from '@/lib/messages';
 import { FeedSection } from './feed-section';
 import { FRIENDS_TEXT } from './friends-text';
@@ -46,6 +47,7 @@ export function FriendsView() {
           ) : (
             <GroupBand group={data.data} />
           )}
+          {!alone && <WeekVideoStrip />}
           <FeedSection hideEmptyTotals={alone} />
           <Link
             href={withBack('/settings/group', 'friends')}

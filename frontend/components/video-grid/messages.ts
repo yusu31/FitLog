@@ -10,5 +10,7 @@ export const VIDEO_GRID_MESSAGES = {
   loadFailed: '動画を読み込めませんでした。電波の良い所で開き直してください',
   loadMore: 'もっと見る',
   lockedNote: '今週1本撮ると、仲間の動画が見られます',
+  shoot: '撮りにいく',
+  cannotShoot: 'この端末では撮れません',
   open: (label: string) => `${label}の動画を開く`,
 } as const;
