@@ -7,6 +7,7 @@ import { getGetFeedUnreadQueryKey, markFeedSeen, useGetFeed, type FeedTotals } f
 import { describeTotals, weekDividerLabel } from '@/lib/feed';
 import { FEED_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
+import { weekStartOf } from '@/lib/shared/week';
 import { FeedCard } from './feed-card';
 import { EmptyState } from '@/components/fitlog/empty-state';
 
@@ -37,9 +38,12 @@ function FeedPage({ cursor, isFirst = false, hideEmptyTotals = false, prevDate }
   }
   const { items, nextCursor, totals } = data.data;
   const today = toLocalDate(new Date());
+  // 今週の足跡が並んでいるのに「だれも記録していない」と言わない（おやすみだけの週・端末とサーバーの日付のずれ）
+  const hasThisWeek = items.some((it) => weekStartOf(it.localDate) === weekStartOf(today));
+  const hideTotals = describeTotals(totals).empty && (hideEmptyTotals || hasThisWeek);
   return (
     <>
-      {isFirst && !(hideEmptyTotals && describeTotals(totals).empty) && <WeekTotals totals={totals} />}
+      {isFirst && !hideTotals && <WeekTotals totals={totals} />}
       {isFirst && items.length === 0 && (
         <EmptyState title={FEED_MESSAGES.empty} pose="cheer" />
       )}

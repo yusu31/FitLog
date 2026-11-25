@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Ellipsis, Moon, Timer, Video, X } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -9,7 +10,7 @@ import { SyncBanner } from '@/components/fitlog/sync-banner';
 import { MyChara } from '@/components/fitlog/my-chara';
 import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { ApiError } from '@/lib/api/api-error';
-import { ListRecordsKind, getCalories, getStats, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
+import { getGetVideosThisWeekQueryKey, ListRecordsKind, getCalories, getStats, useGetPrevious, useGetRecord, useGetStats, useListExercises, useListRecords } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
 import { formatResumeProgress, formatSetProgress, formatSetWithReps } from '@/lib/format';
 import { activeRecordId, noteBest, recordForNextSet } from '@/lib/current-workout';
@@ -150,6 +151,12 @@ export function RecordView() {
   // 2秒動画（F-13）。撮れる端末で、電波があり、1セット以上できた後だけ入口を出す（署名付き URL をもらうには API に届く必要がある）
   const videoCapable = useSyncExternalStore(noSubscribe, canRecordVideo, () => false);
   const [filming, setFilming] = useState(false);
+  const queryClient = useQueryClient();
+  // 撮れていれば仲間の動画の鍵がすぐ外れるように、鍵の条件を取り直す（#438）
+  const closeFilming = () => {
+    setFilming(false);
+    void queryClient.invalidateQueries({ queryKey: getGetVideosThisWeekQueryKey() });
+  };
   // 左上の ✕ で閉じる前の確認（A03-5）。1セットもできていなければ確認なしで閉じる
   const [closing, setClosing] = useState(false);
   // この画面で「できた」を押した回数（もとから入っていたセットと分ける）
@@ -522,7 +529,7 @@ export function RecordView() {
           </div>
         </div>
       )}
-      {filming && recordId && <VideoRecorder recordId={recordId} onClose={() => setFilming(false)} />}
+      {filming && recordId && <VideoRecorder recordId={recordId} onClose={closeFilming} />}
     </FullScreen>
   );
 }

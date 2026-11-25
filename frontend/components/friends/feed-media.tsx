@@ -4,6 +4,7 @@ import { Lock, Pause, Play } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Avatar } from '@/components/fitlog/avatar';
 import { BodyFigure } from '@/components/me/body-figure';
+import { ShootButton } from '@/components/video-grid/shoot-button';
 import { VIDEO_GRID_MESSAGES } from '@/components/video-grid/messages';
 import { useGetCurrentGroup, useGetVideosThisWeek, useGetVideoUrl, type BodyPart, type FeedItem, type FeedStamp, type FeedTopSet } from '@/lib/api/generated';
 import { BODY_PART_LABEL } from '@/lib/body-parts';
@@ -172,15 +173,19 @@ function OpenVideo({ videoId, label }: { videoId: string; label: string }) {
   );
 }
 
-// 見られない動画。中身は取りに行かず、ぼかした枠だけ。責めずに「1本撮ると見られます」。期限が過ぎたものは、期間が過ぎたことだけ伝える
+// 見られない動画。中身は取りに行かず、ぼかした枠だけ。責めずに「1本撮ると見られます」。期限が過ぎたものは、期間が過ぎたことだけ伝える。
+// 鍵のときは、その場から撮りにいけるボタンを添える（#438。行き止まりにしない）
 function ClosedVideo({ state, label }: { state: MediaState; label: string }) {
   const expired = state === 'expired';
   return (
-    <div role="img" aria-label={`${label}: ${expired ? '見られる期間が過ぎました' : VIDEO_GRID_MESSAGES.locked}`} className="absolute inset-0">
+    <div className="absolute inset-0">
       <div aria-hidden className="absolute inset-0 bg-line blur-md" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center text-sm font-bold text-fg-muted">
-        <Lock aria-hidden className="size-7" />
-        <span>{expired ? '見られる期間が 過ぎました' : VIDEO_GRID_MESSAGES.locked}</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-sm font-bold text-fg-muted">
+        <div role="img" aria-label={`${label}: ${expired ? '見られる期間が過ぎました' : VIDEO_GRID_MESSAGES.locked}`} className="flex flex-col items-center gap-2">
+          <Lock aria-hidden className="size-7" />
+          <span>{expired ? '見られる期間が 過ぎました' : VIDEO_GRID_MESSAGES.locked}</span>
+        </div>
+        {!expired && <ShootButton />}
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { toLocalDate } from '@/lib/shared/local-date';
 import { mediaState } from './feed-media';
 import { FeedSection } from './feed-section';
 
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/lib/auth-client', () => ({
   authClient: { useSession: () => ({ data: { user: { id: 'u1', name: 'わたし' } }, isPending: false }) },
 }));
@@ -123,6 +124,18 @@ describe('FeedSection（S-20 の足跡・週の合計）', () => {
     expect(await screen.findByText('足跡は まだないよ。最初の1つを どうぞ')).toBeInTheDocument();
     expect(screen.getByText('今週は まだ だれも記録していないよ')).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: '仲間の足跡' })).not.toBeInTheDocument();
+  });
+
+  it('今週の足跡（おやすみだけ）が並ぶときは、合計が0人でも「だれも記録していない」を出さない。先週より前だけなら出す（#438）', async () => {
+    const totals = { recordedUserCount: 0, totalVolumeKg: 0, totalDistanceM: 0 };
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ kind: 'rest', exerciseNames: [] })], totals }) }];
+    const first = renderFeed();
+    await screen.findByText('はなこ');
+    expect(screen.queryByText('今週は まだ だれも記録していないよ')).not.toBeInTheDocument();
+    first.unmount();
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ localDate: '2026-01-05' })], totals }) }];
+    renderFeed();
+    expect(await screen.findByText('今週は まだ だれも記録していないよ')).toBeInTheDocument();
   });
 
   it('読み込みに失敗したら、画面に出せる文言を出す（内部の事情は出さない）', async () => {

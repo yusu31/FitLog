@@ -43,17 +43,16 @@ describe('WeekVideoStrip（仲間タブの今週の2秒動画。A14-2）', () =>
     expect(screen.queryByLabelText(VIDEO_GRID_MESSAGES.open('はなこ'))).not.toBeInTheDocument();
   });
 
-  it('動画が1本もないときは、やさしい空の文言', async () => {
-    installFakeApi(week(true, []));
-    renderWithQuery(<WeekVideoStrip />);
-    expect(await screen.findByText(VIDEO_GRID_MESSAGES.emptyStrip)).toBeInTheDocument();
-  });
-
-  it('読み込み中は待ちの表示、失敗したときは責めない文言を出す', async () => {
-    installFakeApi({ '/api/videos/week': { status: 500, body: { code: 'X', message: 'x' } } });
-    renderWithQuery(<WeekVideoStrip />);
-    expect(screen.getByLabelText(VIDEO_GRID_MESSAGES.loading)).toHaveAttribute('aria-busy', 'true');
-    expect(await screen.findByRole('alert')).toHaveTextContent(VIDEO_GRID_MESSAGES.loadFailed);
+  it('動画が1本もない週・読み込み中・失敗のときは、何も出さない', async () => {
+    for (const reply of [week(true, []), { '/api/videos/week': { status: 500, body: { code: 'X', message: 'x' } } }]) {
+      installFakeApi(reply);
+      const { container, unmount } = renderWithQuery(<WeekVideoStrip />);
+      expect(container).toBeEmptyDOMElement(); // 読み込み中
+      await vi.waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalled());
+      await new Promise((r) => setTimeout(r, 20));
+      expect(container).toBeEmptyDOMElement();
+      unmount();
+    }
   });
 });
 
