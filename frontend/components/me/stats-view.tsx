@@ -2,7 +2,7 @@
 
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { cn } from 'cn';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { PageTitle } from '@/components/fitlog/app-shell';
@@ -208,7 +208,7 @@ function Period({ data }: { data: StatsResponse }) {
           })}
         </ul>
       </section>
-      {metric === 'm' && <JapanTrek totalMeters={data.totalRunDistanceM} />}
+      <JapanTrek totalMeters={data.totalRunDistanceM} defaultOpen={requested === 'm'} />
     </>
   );
 }
@@ -307,23 +307,46 @@ function YearCalendars({ months, today }: { months: ReturnType<typeof yearMonths
   );
 }
 
-// 日本縦断（F-28）。ランの累計距離で、鹿児島から北へ進む本物の地図。今いる場所だけを見せ、「あと◯km」は出さない。形と距離は目安
-function JapanTrek({ totalMeters }: { totalMeters: number }) {
+// 日本縦断（F-28）。ランの累計距離で、鹿児島から北へ進む本物の地図。今いる場所だけを見せ、「あと◯km」は出さない。形と距離は目安。
+// 帯はいつも出し、押すと開く（#439。ランの数字を選んだときだけ出していて見つからなかった）。地図は重いので、開いたときだけ読む
+function JapanTrek({ totalMeters, defaultOpen }: { totalMeters: number; defaultOpen: boolean }) {
   const pos = locateOnRoute(totalMeters);
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <section aria-labelledby="stats-trek" className="fl-slab px-4 py-3">
-      <h2 id="stats-trek" className="text-sm font-extrabold text-fg-muted">
-        日本縦断
+      <h2 id="stats-trek">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-h-11 w-full items-center gap-3 rounded-lg text-left outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-extrabold text-fg-muted">日本縦断</span>
+            <span className="block text-sm font-bold">
+              いま{pos.name}のあたり <span className="text-brand">{nextText(pos)}</span>
+            </span>
+          </span>
+          <span className="shrink-0 text-note font-extrabold text-brand">{open ? 'とじる' : '地図を見る'}</span>
+          <ChevronDown aria-hidden className={cn('size-5 shrink-0 text-brand', open && 'rotate-180')} />
+        </button>
       </h2>
+      {open && <TrekDetail totalMeters={totalMeters} pos={pos} />}
+    </section>
+  );
+}
+
+function TrekDetail({ totalMeters, pos }: { totalMeters: number; pos: ReturnType<typeof locateOnRoute> }) {
+  return (
+    <>
       <InfoTip label="日本縦断の説明">走った距離で、日本を南の鹿児島から北の稚内へ進みます</InfoTip>
       <p className="mt-1 text-center" data-testid="trek-total">
         <span className="text-note text-fg-muted">これまでの合計</span> <span className="fl-num text-3xl">{(totalMeters / 1000).toFixed(1)}</span> <span className="text-sm font-bold">km</span>
       </p>
       <p className="mt-1 text-sm font-bold">{trekText(totalMeters, pos)}</p>
-      <p className="text-sm font-bold text-brand">{nextText(pos)}</p>
       <JapanMap pos={pos} />
       <p className="text-center text-note font-bold text-fg-muted">形と距離は目安です</p>
-    </section>
+    </>
   );
 }
 

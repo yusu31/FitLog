@@ -65,6 +65,7 @@ test('A07-8 日本縦断の地図（待ちを延ばして撮る）', async ({ pa
   await loginAs(page, 'active');
   await page.goto('/me/stats/');
   await settle(page);
+  await page.getByRole('button', { name: /^日本縦断/ }).click();
   await waitMap(page);
   const gl = await webgl(page);
   // 撮り方 A: 隠さずに撮る（本物の見え方）

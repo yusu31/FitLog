@@ -161,17 +161,29 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     expect(screen.getByTestId('stats-title')).toHaveTextContent('2025年12月〜2026年11月');
   });
 
-  it('見る数字を切り替えるとタイルの数字が変わる。日本縦断はラン（距離）のときだけ出る', async () => {
+  it('見る数字を切り替えるとタイルの数字が変わる', async () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
     const user = userEvent.setup();
     await screen.findByTestId('stats-title');
-    expect(screen.queryByText('日本縦断')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '総重量' }));
     expect(screen.getByRole('button', { name: '11/9〜 800kg' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'ラン' }));
     expect(screen.getByRole('button', { name: '11/9〜 5.0km' })).toBeInTheDocument();
-    expect(screen.getByText('日本縦断')).toBeInTheDocument();
+  });
+
+  // #439: ランを選ばなくても見つかるように、帯はいつも出す。地図（重い）は押して開いたときだけ
+  it('日本縦断の帯はいつも出て、押すと地図が開き、もう一度押すと閉じる', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const band = await screen.findByRole('button', { name: /^日本縦断/ });
+    expect(band).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('img', { name: /のあたり/ })).not.toBeInTheDocument();
+    await userEvent.click(band);
+    expect(band).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('img', { name: /のあたり/ })).toBeInTheDocument();
+    await userEvent.click(band);
+    expect(screen.queryByRole('img', { name: /のあたり/ })).not.toBeInTheDocument();
   });
 
   // L6・D4-4: 「日本地図で見る」は ?metric=m で来る。最初からランを選び、日本縦断の地図を出す
@@ -186,14 +198,14 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     expect(screen.getByRole('img', { name: /のあたり/ })).toBeInTheDocument();
   });
 
-  it('?metric が無い・知らない値のときは、今までどおり「動いた日」で、地図は出ない', async () => {
+  it('?metric が無い・知らない値のときは、今までどおり「動いた日」で、地図は開かない', async () => {
     for (const q of ['', 'metric=zzz', 'metric=']) {
       query = q;
       stubStats(statsOf());
       const { unmount } = renderWithQuery(<StatsPage />);
       await screen.findByTestId('stats-title');
       expect(screen.getByRole('button', { name: '動いた日' })).toHaveAttribute('aria-pressed', 'true');
-      expect(screen.queryByText('日本縦断')).not.toBeInTheDocument();
+      expect(screen.queryByRole('img', { name: /のあたり/ })).not.toBeInTheDocument();
       unmount();
     }
   });
@@ -253,7 +265,7 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
   it('日本縦断: 累計距離から今いる場所だけを文で出し、「あと◯km」は出さない（F-28）', async () => {
     stubStats(statsOf({ totalRunDistanceM: 300_000 }));
     renderWithQuery(<StatsPage />);
-    await userEvent.setup().click(await screen.findByRole('button', { name: 'ラン' }));
+    await userEvent.setup().click(await screen.findByRole('button', { name: /^日本縦断/ }));
     const trek = (await screen.findByText('日本縦断')).closest('section')!;
     expect(trek).toHaveTextContent('300km');
     expect(trek).toHaveTextContent('福岡');
@@ -266,12 +278,12 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
   it('日本縦断: まだ走っていなくても出発点（鹿児島）で出す。3000km を超えたら2周目', async () => {
     stubStats(statsOf({ totalRunDistanceM: 0 }));
     const first = renderWithQuery(<StatsPage />);
-    await userEvent.setup().click(await screen.findByRole('button', { name: 'ラン' }));
+    await userEvent.setup().click(await screen.findByRole('button', { name: /^日本縦断/ }));
     expect((await screen.findByText('日本縦断')).closest('section')).toHaveTextContent('次の熊本まで 170.0km');
     first.unmount();
     stubStats(statsOf({ totalRunDistanceM: 3_500_000 }));
     renderWithQuery(<StatsPage />);
-    await userEvent.setup().click(await screen.findByRole('button', { name: 'ラン' }));
+    await userEvent.setup().click(await screen.findByRole('button', { name: /^日本縦断/ }));
     const second = (await screen.findByText('日本縦断')).closest('section')!;
     expect(second).toHaveTextContent('1回達成');
     expect(second).toHaveTextContent('2周目');
