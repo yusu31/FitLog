@@ -15,8 +15,8 @@ test('記録のまとめに、日本縦断の地図が出る（canvas があり�
   await expect(page).toHaveURL(/\/today\/?$/);
 
   await page.goto('/me/stats/');
-  // 日本縦断は「ラン」の数字を選んだときに出る（初期は「動いた日」）ので、ランを選んでから確かめる
-  await page.getByRole('button', { name: 'ラン', exact: true }).click();
+  // 帯はいつも出る。地図は押して開いたときだけ（#439）
+  await page.getByRole('button', { name: /^日本縦断/ }).click();
   const map = page.getByRole('img', { name: /鹿児島から北へ進んだ位置/ });
   await expect(map).toBeVisible();
   await expect(map.locator('canvas.maplibregl-canvas')).toBeVisible({ timeout: 15_000 });
