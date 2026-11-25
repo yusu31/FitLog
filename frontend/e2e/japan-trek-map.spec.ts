@@ -24,6 +24,10 @@ test('記録のまとめに、日本縦断の地図が出る（canvas があり�
   // 195px 幅（拡大表示）でも、帯の文が1文字ずつ縦に並ばない
   await page.setViewportSize({ width: 195, height: 422 });
   expect((await page.getByText('日本縦断', { exact: true }).boundingBox())!.height).toBeLessThan(40);
+  // 同じ幅で、「次へ」の丸が画面の右にはみ出さず、スタンプ帳の名前も縦書きにならない（#445）
+  const next = (await page.getByRole('button', { name: '次へ' }).boundingBox())!;
+  expect(next.x + next.width).toBeLessThanOrEqual(195);
+  expect((await page.getByTestId('all-stamps').locator('li').first().boundingBox())!.height).toBeLessThan(160);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(5000); // タイルの読み込みを待つ（撮影用）
   await map.screenshot({ path: 'test-results/japan-trek-map-390.png' });

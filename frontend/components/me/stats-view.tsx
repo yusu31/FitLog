@@ -141,7 +141,7 @@ function Period({ data }: { data: StatsResponse }) {
         </div>
         <div className="mt-3 flex items-center justify-between">
           <NavButton label="前へ" disabled={off <= min} onClick={() => setOff(off - 1)} dir="prev" />
-          <p data-testid="stats-title" className="text-center font-extrabold">
+          <p data-testid="stats-title" className="min-w-0 flex-1 px-1 text-center font-extrabold">
             {title}
           </p>
           <NavButton label="次へ" disabled={off >= 0} onClick={() => setOff(off + 1)} dir="next" />
@@ -178,7 +178,7 @@ function Period({ data }: { data: StatsResponse }) {
             </button>
           ))}
         </div>
-        <ul data-testid="stats-tiles" className="mt-3 grid grid-cols-6 gap-1.5">
+        <ul data-testid="stats-tiles" className="mt-3 grid grid-cols-3 gap-1.5 min-[260px]:grid-cols-6">
           {tiles.map((t) => {
             const f = formatMetric(metric, t.value);
             return (
@@ -216,7 +216,7 @@ function Period({ data }: { data: StatsResponse }) {
 function NavButton({ label, disabled, onClick, dir }: { label: string; disabled: boolean; onClick: () => void; dir: 'prev' | 'next' }) {
   const Icon = dir === 'prev' ? ChevronLeft : ChevronRight;
   return (
-    <ThickButton variant="icon" className="border-2 border-teal-light text-brand disabled:opacity-35" aria-label={label} disabled={disabled} onClick={onClick}>
+    <ThickButton variant="icon" className="shrink-0 border-2 border-teal-light text-brand disabled:opacity-35" aria-label={label} disabled={disabled} onClick={onClick}>
       <Icon aria-hidden className="size-5" />
     </ThickButton>
   );
@@ -366,9 +366,9 @@ function Stamps({ data }: { data: StatsResponse }) {
       {recent.length > 0 && (
         <div data-testid="recent-stamps" className="mt-2 rounded-lg bg-canvas px-2 py-2">
           <p className="text-note font-extrabold text-fg-muted">最近とった</p>
-          <ul className="mt-1 flex justify-around gap-1">
+          <ul className="mt-1 grid grid-cols-2 gap-1 min-[260px]:grid-cols-4">
             {recent.map((s) => (
-              <li key={s.key} className="flex w-1/4 flex-col items-center text-center text-note font-extrabold">
+              <li key={s.key} className="flex min-w-0 flex-col items-center text-center text-note font-extrabold">
                 <StampMedal stampKey={s.key} earned size={44} />
                 <span>{STAMP_LABEL[s.key]}</span>
               </li>
@@ -376,7 +376,7 @@ function Stamps({ data }: { data: StatsResponse }) {
           </ul>
         </div>
       )}
-      <ul data-testid="all-stamps" className="mt-2 grid grid-cols-3 gap-2">
+      <ul data-testid="all-stamps" className="mt-2 grid grid-cols-2 gap-2 min-[260px]:grid-cols-3">
         {data.stamps.map((s) => (
           <li
             key={s.key}
