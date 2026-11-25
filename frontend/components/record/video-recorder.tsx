@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText, unwrap } from '@/lib/api/api-error';
 import { issueVideoUpload } from '@/lib/api/generated';
+import { isNativeApp } from '@/lib/gps/source';
 import { recordClip } from '@/lib/video/record-video';
 import { baseContentType, pickMimeType, uploadToS3 } from '@/lib/video/video-upload';
 
@@ -14,7 +15,15 @@ const CAMERA_ERROR = 'カメラを使えませんでした';
 // 準備のまま止まったとき（許可の画面が出ない・別のアプリがカメラを使っている等）に、直し方へ移るまでの秒数（L4）
 export const CAMERA_START_TIMEOUT_S = 8;
 // 直し方（A06-3）。許可を出しても直らないときは、記録は残っているので「あとで撮る」で閉じてよい
-const CAMERA_FIX_STEPS = ['アドレス欄の鍵（またはカメラ）のマークをタップ', '「カメラ」を「許可」に変える', 'この画面にもどって、もう一度ひらく'] as const;
+const RETRY_LABEL = 'もう一度ためす';
+const FIX_STEPS_BROWSER = ['アドレス欄の鍵（またはカメラ）のマークをタップ', '「カメラ」を「許可」に変える', `ここで「${RETRY_LABEL}」を押す`] as const;
+// アプリ・ホーム画面から開いたときはアドレス欄が無いので、スマホの設定を案内する
+const FIX_STEPS_APP = ['スマホの「設定」をひらく', '「アプリ」の FitLog（無ければブラウザ）で「カメラ」を許可する', `ここにもどって「${RETRY_LABEL}」を押す`] as const;
+
+function cameraFixSteps(): readonly string[] {
+  const standalone = typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches;
+  return isNativeApp() || standalone ? FIX_STEPS_APP : FIX_STEPS_BROWSER;
+}
 
 // この端末で2秒撮影ができるか（入口を出すかの判定）
 export function canRecordVideo(): boolean {
@@ -35,6 +44,8 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
   const [phase, setPhase] = useState<Phase>('starting');
   const [error, setError] = useState<string | null>(null);
   const [waitedS, setWaitedS] = useState(0);
+  // 「もう一度ためす」を押した回数。変わるとカメラを取り直す
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +86,14 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     };
-  }, []);
+  }, [attempt]);
+
+  function retry() {
+    setError(null);
+    setWaitedS(0);
+    setPhase('starting');
+    setAttempt((n) => n + 1);
+  }
 
   async function onShoot() {
     const stream = streamRef.current;
@@ -98,8 +116,9 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
   }
 
   const busy = phase === 'recording' || phase === 'sending';
+  // 休憩の帯（rest-timer-bar の z-40）より前に出す。後ろだと「撮る」「あとで撮る」が隠れる
   return (
-    <div role="dialog" aria-modal="true" aria-label="2秒ラストレップを撮る" className="fixed inset-0 z-30 flex flex-col bg-night text-white">
+    <div role="dialog" aria-modal="true" aria-label="2秒ラストレップを撮る" className="fixed inset-0 z-50 flex flex-col bg-night text-white">
       <video ref={videoRef} playsInline muted className={`min-h-0 w-full flex-1 bg-black object-cover ${phase === 'error' ? 'hidden' : ''}`} />
       {phase === 'error' && (
         <div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-y-auto px-6 py-4">
@@ -108,7 +127,7 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
           </p>
           <p className="text-sm font-bold">カメラの許可を直すと撮れます。記録はもう残っています。</p>
           <ol className="list-decimal space-y-1 pl-5 text-sm font-bold">
-            {CAMERA_FIX_STEPS.map((t) => (
+            {cameraFixSteps().map((t) => (
               <li key={t}>{t}</li>
             ))}
           </ol>
@@ -142,6 +161,11 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
         {phase !== 'done' && phase !== 'error' && (
           <ThickButton tone="gold" disabled={phase !== 'ready'} onClick={onShoot}>
             {busy ? '…' : error ? 'もう一度撮る' : '撮る'}
+          </ThickButton>
+        )}
+        {phase === 'error' && (
+          <ThickButton tone="gold" onClick={retry}>
+            {RETRY_LABEL}
           </ThickButton>
         )}
         <ThickButton tone="white" size="sm" className="w-full" onClick={onClose} disabled={busy}>
