@@ -72,6 +72,35 @@ describe('VideoRecorder', () => {
     expect(screen.queryByRole('button', { name: 'やめる' })).not.toBeInTheDocument();
   });
 
+  it('「もう一度ためす」でカメラを取り直し、使えれば撮れる', async () => {
+    const get = navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>;
+    get.mockRejectedValueOnce(new Error('denied'));
+    render(<VideoRecorder recordId="r1" onClose={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'もう一度ためす' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '撮る' })).toBeEnabled());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+
+  it('ブラウザではアドレス欄、ホーム画面から開いたときはスマホの設定を案内する', async () => {
+    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('denied'));
+    const first = render(<VideoRecorder recordId="r1" onClose={() => {}} />);
+    await screen.findByRole('alert');
+    expect(screen.getByText(/アドレス欄/)).toBeInTheDocument();
+    first.unmount();
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(display-mode: standalone)' }));
+    render(<VideoRecorder recordId="r1" onClose={() => {}} />);
+    await screen.findByRole('alert');
+    expect(screen.queryByText(/アドレス欄/)).not.toBeInTheDocument();
+    expect(screen.getByText('スマホの「設定」をひらく')).toBeInTheDocument();
+  });
+
+  // 「できた」で休憩の帯（z-40）が自動で出るので、撮影画面はそれより前に無いとボタンが隠れる
+  it('休憩の帯より前に出る（z-50）', async () => {
+    await ready();
+    expect(screen.getByRole('dialog', { name: '2秒ラストレップを撮る' })).toHaveClass('z-50');
+  });
+
   it('閉じるとカメラを止める', async () => {
     const { unmount } = render(<VideoRecorder recordId="r1" onClose={() => {}} />);
     await screen.findByRole('button', { name: '撮る' });
