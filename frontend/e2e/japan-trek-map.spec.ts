@@ -21,6 +21,10 @@ test('記録のまとめに、日本縦断の地図が出る（canvas があり�
   await expect(map).toBeVisible();
   await expect(map.locator('canvas.maplibregl-canvas')).toBeVisible({ timeout: 15_000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  // 195px 幅（拡大表示）でも、帯の文が1文字ずつ縦に並ばない
+  await page.setViewportSize({ width: 195, height: 422 });
+  expect((await page.getByText('日本縦断', { exact: true }).boundingBox())!.height).toBeLessThan(40);
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(5000); // タイルの読み込みを待つ（撮影用）
   await map.screenshot({ path: 'test-results/japan-trek-map-390.png' });
 });
