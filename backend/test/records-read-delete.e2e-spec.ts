@@ -395,6 +395,21 @@ describe('記録の取り消し・一覧・詳細（結合: 本物の PostgreSQL
       }
     });
 
+    it('T-RECORD-DATE-01 date でその日（日本時間）の記録だけに絞れる。別の日・他人の記録は入らない。実在しない日付は 400', async () => {
+      const cookie = await signUpAs('たろう');
+      const other = await signUpAs('はなこ');
+      const a = await createRecord(cookie, 'workout', '2026-10-26T03:00:00.000Z');
+      const b = await createRecord(cookie, 'run', '2026-10-26T14:59:00.000Z'); // 日本時間 23:59（10/26）
+      await createRecord(cookie, 'workout', '2026-10-26T15:00:00.000Z'); // 日本時間 0:00（10/27）
+      await createRecord(other, 'workout', '2026-10-26T03:00:00.000Z');
+      const ids = (res: request.Response) => res.body.items.map((r: { id: string }) => r.id);
+      expect(ids(await list(cookie, '?date=2026-10-26').expect(200))).toEqual([b, a]);
+      expect(ids(await list(cookie, '?date=2026-10-20').expect(200))).toEqual([]);
+      for (const bad of ['2026-02-30', '2026/10/26', 'x']) {
+        expect((await list(cookie, `?date=${bad}`).expect(400)).body.code).toBe('VALIDATION_ERROR');
+      }
+    });
+
     it('kind で絞れる。絞った上でも cursor の続きが正しい', async () => {
       const cookie = await signUpAs('たろう');
       const w1 = await createRecord(cookie, 'workout', '2026-10-24T03:00:00.000Z');

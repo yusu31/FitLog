@@ -6,7 +6,7 @@ describe('parseListQuery', () => {
   const ID = '11111111-1111-4111-8111-111111111111';
 
   it('何も指定しなければ limit は 20・cursor と kind は無し', () => {
-    expect(parseListQuery({})).toEqual({ limit: DEFAULT_LIMIT, cursor: undefined, kind: undefined });
+    expect(parseListQuery({})).toEqual({ limit: DEFAULT_LIMIT, cursor: undefined, kind: undefined, date: undefined });
     expect(DEFAULT_LIMIT).toBe(20);
   });
 
@@ -61,5 +61,15 @@ describe('parseListQuery', () => {
       expect(body.code).toBe('VALIDATION_ERROR');
       expect(body.details).toHaveLength(2);
     }
+  });
+});
+
+describe('parseListQuery の date（日のまとめ用。02-9 PR 2 ⑧）', () => {
+  it('実在する日付は通る', () => {
+    expect(parseListQuery({ date: '2026-11-12' }).date).toBe('2026-11-12');
+    expect(parseListQuery({ date: '2024-02-29' }).date).toBe('2024-02-29');
+  });
+  it.each([['2026-02-30'], ['2026/11/12'], [''], ['11-12'], [['2026-11-12']], [20261112]])('date=%j は 400', (date) => {
+    expect(() => parseListQuery({ date })).toThrow(BadRequestException);
   });
 });

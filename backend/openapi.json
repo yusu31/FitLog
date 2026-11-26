@@ -594,6 +594,16 @@
               ],
               "type": "string"
             }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "その日（日本時間の日付 YYYY-MM-DD）の記録だけに絞る。日のまとめ用",
+            "schema": {
+              "example": "2026-11-12",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -608,7 +618,7 @@
             }
           },
           "400": {
-            "description": "limit が 1〜100 の整数でない・kind が workout/run/rest でない・cursor が壊れている（VALIDATION_ERROR）",
+            "description": "date が実在する日付でない・limit が 1〜100 の整数でない・kind が workout/run/rest でない・cursor が壊れている（VALIDATION_ERROR）",
             "content": {
               "application/json": {
                 "schema": {

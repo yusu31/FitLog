@@ -52,6 +52,31 @@ describe('今週の7マス（結合: 本物の PostgreSQL・better-auth）', () 
   const week = (cookie: string, date?: string) => request(app.getHttpServer()).get('/api/week').set('Cookie', cookie).query(date === undefined ? {} : { date });
   const statuses = (days: Day[]): string[] => days.map((d) => d.status);
 
+  // 記録しなかった過ぎた日は、今週だけ休みとして見せる（DB には作らない。02-9 PR 2 ③）。日付は「今」から決める
+  it('T-WEEK-AUTOREST-01 今週の記録の無い過ぎた日は rest・今日と先の日は none・記録した日は rec。休みの行は DB に増えない', async () => {
+    const cookie = await signUpAs('たろう');
+    const jst = (offsetDays = 0) => new Date(Date.now() + 9 * 3600_000 + offsetDays * 86_400_000).toISOString().slice(0, 10);
+    const today = jst();
+    const dow = new Date(`${today}T00:00:00Z`).getUTCDay();
+    const monday = jst(-((dow + 6) % 7));
+    await record(cookie, 'workout', `${monday}T03:00:00.000Z`); // 今週の月曜の正午（日本時間12:00）
+    const res = await week(cookie, today).expect(200);
+    const days = res.body.days as Day[];
+    for (const d of days) {
+      const expected = d.date === monday ? 'rec' : d.date < today ? 'rest' : 'none';
+      expect(d.status).toBe(expected);
+    }
+    const list = await request(app.getHttpServer()).get('/api/records').set('Cookie', cookie).query({ kind: 'rest' }).expect(200);
+    expect(list.body.items).toEqual([]);
+  });
+
+  it('T-WEEK-AUTOREST-02 記録が1つも無い人は、過ぎた日も休みにしない', async () => {
+    const cookie = await signUpAs('たろう');
+    const today = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+    const res = await week(cookie, today).expect(200);
+    expect(statuses(res.body.days as Day[]).every((s) => s === 'none')).toBe(true);
+  });
+
   it('Cookie なしでは 401', async () => {
     await request(app.getHttpServer()).get('/api/week').query({ date: '2026-10-26' }).expect(401);
   });

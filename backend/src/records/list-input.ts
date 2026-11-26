@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { isUuid } from '../common/uuid.js';
 import { RECORD_KINDS, type RecordKind } from '../db/schema.js';
+import { parseWeekDate } from './week-input.js';
 
 // 設計書に件数の上限が無かったので、既定 20（design.md 4章）・上限 100 とした（docs/design.md 7章）。
 // 上限が無いと、1回の呼び出しで全件を取れてしまい、応答が大きくなる
@@ -8,7 +9,7 @@ export const DEFAULT_LIMIT = 20;
 export const MAX_LIMIT = 100;
 
 export type ListCursor = { recordedAt: Date; id: string };
-export type ListQuery = { limit: number; cursor: ListCursor | undefined; kind: RecordKind | undefined };
+export type ListQuery = { limit: number; cursor: ListCursor | undefined; kind: RecordKind | undefined; date: string | undefined };
 
 // 続きの印。「ここまで読んだ最後の記録」の時刻（ミリ秒）と id を base64url にしたもの。画面は中身を見ずに、そのまま次の呼び出しに渡す。
 // ページ番号（offset）にしないのは、読んでいる間に記録が増えても重複・抜けが出ないようにするため
@@ -30,7 +31,7 @@ export function decodeCursor(raw: string): ListCursor | undefined {
 }
 
 // GET /records のクエリの検査。理由は項目ごとに集めて、1回で直せるようにする
-export function parseListQuery(query: { limit?: unknown; cursor?: unknown; kind?: unknown }): ListQuery {
+export function parseListQuery(query: { limit?: unknown; cursor?: unknown; kind?: unknown; date?: unknown }): ListQuery {
   const details: string[] = [];
 
   let limit = DEFAULT_LIMIT;
@@ -46,6 +47,16 @@ export function parseListQuery(query: { limit?: unknown; cursor?: unknown; kind?
     else details.push(`kind: ${RECORD_KINDS.join('・')} のどれかで指定してください`);
   }
 
+  // その日（日本時間の local_date）の記録だけ。「日のまとめ」用（02-9 PR 2 ⑧）。実在しない日付は 400
+  let date: string | undefined;
+  if (query.date !== undefined) {
+    try {
+      date = parseWeekDate(query.date, 'date');
+    } catch {
+      details.push('date: 実在する日付（YYYY-MM-DD。例: 2026-10-26）で指定してください');
+    }
+  }
+
   let cursor: ListCursor | undefined;
   if (query.cursor !== undefined) {
     cursor = typeof query.cursor === 'string' ? decodeCursor(query.cursor) : undefined;
@@ -55,5 +66,5 @@ export function parseListQuery(query: { limit?: unknown; cursor?: unknown; kind?
   if (details.length > 0) {
     throw new BadRequestException({ code: 'VALIDATION_ERROR', message: '入力が正しくありません', details });
   }
-  return { limit, cursor, kind };
+  return { limit, cursor, kind, date };
 }
