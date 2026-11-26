@@ -100,7 +100,7 @@ export function ExercisesView() {
     >
       <header className="flex items-center gap-1 px-2 pt-3">
         <Link
-          href={withDay('/today', day)}
+          href={withDay('/log', day)}
           aria-label="とじる"
           className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
         >

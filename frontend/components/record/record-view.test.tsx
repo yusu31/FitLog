@@ -1117,7 +1117,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       expect(screen.queryByRole('link', { name: /今日はここまで/ })).not.toBeInTheDocument();
       await user.click(doneButton());
       const stop = await screen.findByRole('link', { name: /今日はここまで/ });
-      expect(stop).toHaveAttribute('href', '/today');
+      expect(stop).toHaveAttribute('href', '/log');
     });
 
     it('D3-6/7/10 前回の数字は1回だけ・できたセットは副ボタンより上・副ボタンは同じ形', async () => {
@@ -1169,7 +1169,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       await user.click(await screen.findByRole('button', { name: 'とじる' }));
       const dialog = screen.getByRole('alertdialog');
       expect(dialog).toHaveTextContent('記録は 残ります');
-      expect(within(dialog).getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today');
+      expect(within(dialog).getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/log');
       await user.click(within(dialog).getByRole('button', { name: 'つづける' }));
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     });
@@ -1177,7 +1177,7 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
     it('A03-5 まだ1セットも無いときは、確認なしで閉じる（リンク）', async () => {
       renderView();
       await ready();
-      expect(screen.getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today');
+      expect(screen.getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/log');
     });
 
     it('N-04 ✕・「今日はここまで」・確認の「とじる」は、きのうの分なら day=yesterday を引き継ぐ', async () => {
@@ -1185,11 +1185,11 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       const user = userEvent.setup();
       renderView();
       await ready();
-      expect(screen.getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today?day=yesterday');
+      expect(screen.getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/log?day=yesterday');
       await user.click(doneButton());
-      expect(await screen.findByRole('link', { name: /今日はここまで/ })).toHaveAttribute('href', '/today?day=yesterday');
+      expect(await screen.findByRole('link', { name: /今日はここまで/ })).toHaveAttribute('href', '/log?day=yesterday');
       await user.click(screen.getByRole('button', { name: 'とじる' }));
-      expect(within(screen.getByRole('alertdialog')).getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today?day=yesterday');
+      expect(within(screen.getByRole('alertdialog')).getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/log?day=yesterday');
     });
 
     it('A03-6 数字は直接打てると文字で伝える', async () => {

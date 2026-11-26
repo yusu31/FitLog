@@ -5,17 +5,16 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { cn } from 'cn';
 import { clearJustSignedIn, loginRedirectPath } from '@/lib/login-failure';
 import { useAppSession } from '@/lib/use-app-session';
-import { NotificationBell } from './notification-bell';
 import { SideFriends } from './side-friends';
 import { SyncBanner } from './sync-banner';
 import { TabBar } from './tab-bar';
 
-// タブのある画面（今日・仲間・自分）の枠。ログインしていなければ、戻り先つきでログイン画面へ移す。
+// タブのある画面（ホーム・記録・仲間・自分）の枠。ログインしていなければ、戻り先つきでログイン画面へ移す。
 // 静的書き出しなのでサーバーでは確かめられない。本当の守りは API 側のログイン必須（design.md 2章）で、ここは画面の案内。
-// syncBanner: 送信待ちの帯を枠の上部に出すか。今日の画面は「週の帯のすぐ下」に自分で置くので false
+// syncBanner: 送信待ちの帯を枠の上部に出すか。記録の画面は「週の帯のすぐ下」に自分で置くので false
 export function AppShell({ children, syncBanner = true }: { children: ReactNode; syncBanner?: boolean }) {
   const router = useRouter();
-  const pathname = usePathname() ?? '/today';
+  const pathname = usePathname() ?? '/home';
   const { data: session, isPending } = useAppSession();
   const signedOut = !isPending && !session;
 
@@ -35,10 +34,6 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
       <div className="relative mx-auto flex min-h-dvh max-w-[430px] flex-col bg-canvas lg:mx-0 lg:w-full lg:max-w-[600px]">
         {session ? (
           <main className="flex-1 pb-28">
-            {/* 右上のベル（D7-3）。右の角にはキャラ（72px）があるので、その左隣に置く */}
-            <div className="absolute top-2.5 right-[92px] z-10 short:top-0">
-              <NotificationBell />
-            </div>
             {syncBanner && <SyncBanner />}
             {children}
           </main>
@@ -61,8 +56,16 @@ export function AppShell({ children, syncBanner = true }: { children: ReactNode;
 
 // 画面の見出し（v8 の .title）
 // reserveCorner: 右上にキャラ（Sprite placement="corner"）を置く画面は、見出しの右を空けて重ならないようにする
-export function PageTitle({ children, reserveCorner = false }: { children: ReactNode; reserveCorner?: boolean }) {
-  return <h1 className={cn('px-4 pt-[18px] text-page-title font-extrabold', reserveCorner && 'pr-24')}>{children}</h1>;
+// action: 見出しと同じ行の右端に置く部品（ホームの通知のベル。①）
+export function PageTitle({ children, reserveCorner = false, action }: { children: ReactNode; reserveCorner?: boolean; action?: ReactNode }) {
+  const h1 = <h1 className={cn('px-4 pt-[18px] text-page-title font-extrabold', reserveCorner && 'pr-24')}>{children}</h1>;
+  if (!action) return h1;
+  return (
+    <div className="flex items-end justify-between gap-2 pr-3">
+      {h1}
+      <div className="shrink-0 pt-2">{action}</div>
+    </div>
+  );
 }
 
 // S1: 少人数のアプリは利用の間隔が空き、API（Lambda）が眠っていて最初の確認に5秒前後かかる。

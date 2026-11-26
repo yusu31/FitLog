@@ -280,7 +280,7 @@ export function RecordView() {
     mutations.deleteSet.mutateAsync({ id: recordId, setId: set.id }).catch((e: unknown) => setNotice(errorText(e)));
   }
 
-  const closeHref = withDay('/today', day);
+  const closeHref = withDay('/log', day);
   const canFilm = videoCapable && online && day === 'today' && !!recordId;
   const bestIds = new Set(Object.entries(outcomes).filter(([, o]) => o.isPersonalBest).map(([id]) => id));
 

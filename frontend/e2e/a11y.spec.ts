@@ -33,10 +33,10 @@ test.describe('アクセシビリティ（ログイン後）', () => {
     await page.getByLabel(/^パスワード/).fill('e2e-password-1234');
     await page.getByRole('checkbox', { name: /同意/ }).check();
     await page.getByRole('button', { name: '登録する' }).click();
-    await expect(page).toHaveURL(/\/today\/?$/);
+    await expect(page).toHaveURL(/\/home\/?$/);
   });
 
-  for (const path of ['/today/', '/friends/', '/me/', '/settings/', '/exercises/', '/rest/']) {
+  for (const path of ['/home/', '/log/', '/friends/', '/me/', '/me/posts/', '/me/profile/', '/settings/', '/exercises/', '/rest/']) {
     test(`${path} に違反がない`, async ({ page }) => {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).first().waitFor({ state: 'attached' });

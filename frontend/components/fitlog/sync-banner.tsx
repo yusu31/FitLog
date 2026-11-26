@@ -11,7 +11,7 @@ import { useOnline } from '@/lib/use-browser-state';
 import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 
 // ログイン後に戻る先（いま開いている画面）。帯が出るのは画面を開いたあとなので、ブラウザの位置をそのまま読む
-const currentPath = (): string => (typeof window === 'undefined' ? '/today' : window.location.pathname + window.location.search);
+const currentPath = (): string => (typeof window === 'undefined' ? '/home' : window.location.pathname + window.location.search);
 
 // 送信待ちの帯（screen-design.md「送信待ちの表示（F-30）」）。ふだんは何も出さない。
 // 送信待ちがあるとき「送信待ち N件」、全部送れたら 3秒だけ「N件 送ったよ」、401 のときは「ログイン」ボタンつき。

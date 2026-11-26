@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-// A13-2・N-05・V-08: 文字の大きさはトークンだけで決める。英字ラベル・通じない言葉を画面に出さない（docs/design.md の表記ルール）
+// A13-2（2026-11-26 改訂: 分かりやすさ中心・英語も可）・N-05・V-08: 文字の大きさはトークンだけで決める。英字ラベル（TEAM など）・通じない言葉を画面に出さない（docs/design.md の表記ルール）
 const root = join(__dirname, '..');
 const walk = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) => {

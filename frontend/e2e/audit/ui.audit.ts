@@ -22,13 +22,15 @@ const VIEWPORTS = [
 type Shot = { name: string; path: string; prepare?: (page: Page) => Promise<void> };
 
 const SCREENS: Shot[] = [
-  { name: 'today', path: '/today/' },
+  { name: 'home', path: '/home/' },
+  { name: 'log', path: '/log/' },
   { name: 'exercises', path: '/exercises/' },
   { name: 'run', path: '/run/' },
   { name: 'rest', path: '/rest/' },
   { name: 'friends', path: '/friends/' },
   { name: 'me', path: '/me/' },
-  { name: 'me-stats', path: '/me/stats/' },
+  { name: 'me-posts', path: '/me/posts/' },
+  { name: 'me-profile', path: '/me/profile/' },
   { name: 'settings', path: '/settings/' },
   { name: 'settings-account', path: '/settings/account/' },
   { name: 'settings-group', path: '/settings/group/' },
@@ -40,7 +42,7 @@ const SCREENS: Shot[] = [
   {
     // 記録中の画面（いつものメニューから始める）
     name: 'record',
-    path: '/today/',
+    path: '/log/',
     prepare: async (page) => {
       await page.getByRole('button', { name: /を始める$/ }).first().click();
       await page.waitForURL(/\/record/);
@@ -49,7 +51,7 @@ const SCREENS: Shot[] = [
   {
     // 記録の詳細（仲間の足跡から）
     name: 'record-detail',
-    path: '/friends/',
+    path: '/home/',
     prepare: async (page) => {
       await page.locator('li').filter({ hasText: 'ユウスケ' }).first().getByRole('link', { name: 'くわしく見る' }).click();
       await page.waitForURL(/\/record-detail/);
@@ -58,7 +60,7 @@ const SCREENS: Shot[] = [
   {
     // 結果シート（「できた」の直後）
     name: 'record-result-sheet',
-    path: '/today/',
+    path: '/log/',
     prepare: async (page) => {
       await page.getByRole('button', { name: /を始める$/ }).first().click();
       await page.waitForURL(/\/record/);

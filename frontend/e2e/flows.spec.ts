@@ -12,7 +12,7 @@ async function signUp(page: Page, email: string): Promise<void> {
   await page.getByLabel(/^パスワード/).fill(PASSWORD);
   await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
-  await expect(page).toHaveURL(/\/today\/?$/);
+  await expect(page).toHaveURL(/\/home\/?$/);
 }
 
 async function logOut(page: Page): Promise<void> {
@@ -96,7 +96,7 @@ test('T-FIRST-01 登録した直後の人が、今日 → 種目を選ぶ → �
   await saved;
 
   // 保存された: 今日の画面に戻ると、その種目が「できた」になる
-  await page.goto('/today/');
+  await page.goto('/log/');
   await expect(page.getByText('できた', { exact: true }).first()).toBeVisible();
 });
 

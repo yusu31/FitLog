@@ -103,7 +103,7 @@ export function JapanMap({ pos }: { pos: RoutePosition }) {
     };
   }, [pos, scrollToTrek]);
 
-  // id は、ラン画面の「日本地図で見る」（/me/stats#japan-trek）の着地先の印（A07-6）
+  // id は、ラン画面の「日本地図で見る」（/me#japan-trek）の着地先の印（A07-6）
   return (
     <div id={TREK_ANCHOR_ID} className="scroll-mt-4">
       {failed ? (

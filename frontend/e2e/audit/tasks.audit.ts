@@ -125,7 +125,7 @@ test('T2 前回と同じメニューで今日の筋トレを始める', async ({
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'active', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T2');
   await t.start();
   await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'いつものメニューを始める');
@@ -137,10 +137,10 @@ test('T4 仲間の今日の運動を見て、スタンプとコメントを送�
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'active', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T4');
   await t.start();
-  await t.click(tab(page, '仲間'), 'タブ「仲間」');
+  await t.click(tab(page, 'ホーム'), 'タブ「ホーム」');
   // 仲間（ユウスケ）の足跡にだけ反応する（先頭は自分の足跡なので使わない）
   const card = page.locator('li').filter({ hasText: 'ユウスケ' }).first();
   await t.click(card.getByRole('button', { name: /ナイス/ }), 'スタンプ（ナイス）');
@@ -153,7 +153,7 @@ test('T6 グループを作って招待リンクを送る', async ({ page }) => 
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'solo', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T6');
   await t.start();
   await t.click(tab(page, '仲間'), 'タブ「仲間」');
@@ -168,13 +168,12 @@ test('T7 今週・今月どれだけ動いたかを振り返る', async ({ page 
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'active', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T7');
   await t.start();
-  await t.click(tab(page, '自分'), 'タブ「自分」');
-  // 2026-11-24（P5）: 画面の移動を待たずに撮っていた（step-3 が /me のまま）ので、移動と描画を待つ。手数は同じ
-  await t.click(page.getByRole('link', { name: /記録のまとめ/ }).first(), '記録のまとめ', { settle: true });
-  await page.waitForURL(/\/me\/stats/);
+  // 2026-11-26（⑫）: レポートは「自分」タブの先頭（/me）になった。タブを押すだけで開く
+  await t.click(tab(page, '自分'), 'タブ「自分」（レポート）', { settle: true });
+  await page.waitForURL(/\/me\/?$/);
   await t.click(page.getByRole('group', { name: '期間' }).getByRole('button', { name: '月' }), '月に切替');
   // P6（D5-2）: 年の形も比べられるように撮る
   await t.click(page.getByRole('group', { name: '期間' }).getByRole('button', { name: '年' }), '年に切替', { settle: true });
@@ -185,7 +184,7 @@ test('T8 6日ぶりに開いて、また始める', async ({ page }) => {
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'back6', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T8');
   await t.start();
   await t.click(page.getByRole('link', { name: /はじめる|始める|種目を選ぶ/ }).first(), 'はじめる');
@@ -219,7 +218,7 @@ test('T13 きのう記録し忘れた筋トレをあとから記録する', asyn
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'back6', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T13');
   await t.start();
   await t.click(page.getByRole('button', { name: /きのう/ }).first(), 'きのう');
@@ -245,7 +244,7 @@ test('T3 GPS で走って保存し、日本縦断がどこまで進んだか見�
   });
   await page.goto('/login/');
   await loginAs(page, 'active', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T3');
   await t.start();
   await t.click(page.getByRole('link', { name: /ランを記録/ }), 'ランを記録');
@@ -267,7 +266,7 @@ test('T5 2秒動画を撮って、仲間の動画を見る（入口まで）', a
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'active', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T5');
   await t.start();
   await t.click(page.getByRole('button', { name: /を始める$/ }).first(), 'いつものメニューを始める');
@@ -282,7 +281,7 @@ test('T5b 仲間の足跡のくわしく見る（動画再生の入口）', asyn
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'active', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T5b');
   await t.start();
   await t.click(tab(page, '仲間'), 'タブ「仲間」');
@@ -296,20 +295,20 @@ test('E1 アプリの中を見て回る（自分と仲間の足跡の詳細を�
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'active', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'E1');
   await t.start();
   const settle = { settle: true };
-  await t.click(tab(page, '仲間'), 'タブ「仲間」', settle);
+  await t.click(tab(page, 'ホーム'), 'タブ「ホーム」', settle);
   const self = page.locator('li').filter({ hasText: s.users.active.name }).filter({ has: page.getByRole('link', { name: 'くわしく見る' }) }).first();
   await t.click(self.getByRole('link', { name: 'くわしく見る' }), '自分の足跡の「くわしく見る」', settle);
-  // 自分の足跡は自分用の詳細（from=me）で開くので、戻る先は「自分」タブ（#329）。仲間の足跡へ行くには仲間タブへ入り直す
+  // 自分の足跡は自分用の詳細（from=me）で開くので、戻る先は「自分」タブ（#329）。仲間の足跡へ行くにはホームへ入り直す
   await t.click(page.getByRole('link', { name: /(にもどる|へ戻る)$/ }).first(), '画面上の「にもどる」（自分タブへ）', settle);
-  await t.click(tab(page, '仲間'), 'タブ「仲間」', settle);
+  await t.click(tab(page, 'ホーム'), 'タブ「ホーム」', settle);
   await t.click(page.locator('li').filter({ hasText: 'ユウスケ' }).first().getByRole('link', { name: 'くわしく見る' }), '仲間（ユウスケ）の足跡の「くわしく見る」', settle);
-  // 詳細画面には下タブが無いので、いったん戻ってから「自分」へ
-  await t.click(page.getByRole('link', { name: /(にもどる|へ戻る)$/ }).first(), '画面上の「仲間にもどる」', settle);
-  await t.click(tab(page, '自分'), 'タブ「自分」', settle);
+  // 詳細画面には下タブが無いので、いったん戻ってから「記録」へ（記録の一覧は記録タブにある）
+  await t.click(page.getByRole('link', { name: /(にもどる|へ戻る)$/ }).first(), '画面上の「にもどる」', settle);
+  await t.click(tab(page, '記録'), 'タブ「記録」', settle);
   await t.click(page.getByRole('link', { name: /ベンチプレス ほか1種目/ }).first(), '自分の記録（11/17）を開く', settle);
   t.finish();
 });
@@ -319,7 +318,7 @@ test('T11 電波の無いジムで1セット記録し、電波が戻ったら送
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'active', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   await page.waitForLoadState('networkidle');
   const t = new Tracker(page, 'T11');
   await t.start();
@@ -338,12 +337,12 @@ test('T14 筋トレを終えて、まとめを見る', async ({ page }) => {
   const s = seed();
   await page.goto('/login/');
   await loginAs(page, 'solo', s);
-  await page.goto('/today/');
+  await page.goto('/log/');
   const t = new Tracker(page, 'T14');
   await t.start();
   await t.click(page.getByRole('link', { name: /前回と同じで始める|続ける/ }).first(), '始める', { settle: true });
   await t.click(page.getByRole('button', { name: 'できた' }), 'できた', { settle: true });
-  await page.goto('/today/');
+  await page.goto('/log/');
   await t.click(page.getByRole('button', { name: '今日はここまで' }), '今日はここまで', { settle: true });
   await page.getByRole('dialog').waitFor();
   t.finish();
@@ -356,7 +355,7 @@ for (const [name, w, h] of [['200%', 195, 422], ['横向き', 844, 390], ['320�
     await page.setViewportSize({ width: w, height: h });
     await page.goto('/login/');
     await loginAs(page, 'active', s);
-    await page.goto('/today/');
+    await page.goto('/log/');
     const t = new Tracker(page, `T12-${w}x${h}`);
     await t.start();
     const over = async () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

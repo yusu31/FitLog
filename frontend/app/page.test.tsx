@@ -12,10 +12,10 @@ describe('Home（最初の画面）', () => {
     expect(screen.queryByAltText('Next.js logo')).not.toBeInTheDocument();
   });
 
-  // T-FE-02: 今日の画面へ移す（ログインしていなければ、今日の枠がログイン画面へ移す）
-  it('今日の画面へ移す', () => {
+  // T-FE-02: ホームへ移す（ログインしていなければ、枠がログイン画面へ移す）
+  it('ホームへ移す', () => {
     render(<Home />);
-    expect(replace).toHaveBeenCalledWith('/today');
+    expect(replace).toHaveBeenCalledWith('/home');
   });
 });
 

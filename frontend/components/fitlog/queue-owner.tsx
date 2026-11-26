@@ -10,7 +10,7 @@ import { useAppSession } from '@/lib/use-app-session';
 import { setQueueOwner } from '@/lib/offline/resume';
 
 // 送信待ちの帯を自分で持っている画面（AppShell の今日・仲間・自分・記録）。それ以外の画面には、ここから帯を重ねて出す（A11-1・A11-2）
-const OWN_BANNER = /^\/(today|friends|me|record)\/?$/;
+const OWN_BANNER = /^\/(home|log|friends|record|me(\/posts|\/profile)?)\/?$/;
 
 // ログインしている人が分かったら、端末に保存した送信待ちの再送を始める（lib/offline/resume.ts）。
 // どの画面から開き直しても再送が始まるよう、画面全体の入れ物（Providers）の中に1つ置く。帯の無い画面だけ、上に帯を重ねる。

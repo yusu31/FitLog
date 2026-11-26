@@ -1,14 +1,9 @@
 import type { Metadata } from 'next';
-import { AppShell } from '@/components/fitlog/app-shell';
-import { TodayView } from '@/components/today/today-view';
+import { LegacyRedirect } from '@/components/fitlog/legacy-redirect';
 
+// 旧「今日」。今日の中身は「記録」（/log）に移した（02-9 ⑫）。古い URL は新しい場所へ転送する
 export const metadata: Metadata = { title: '今日' };
 
-// S-10 今日（docs/screen-design.md 4章）
 export default function TodayPage() {
-  return (
-    <AppShell syncBanner={false}>
-      <TodayView />
-    </AppShell>
-  );
+  return <LegacyRedirect to="/log" />;
 }

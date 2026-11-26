@@ -35,7 +35,7 @@ test('GPS で記録して終了すると、入力画面に戻らずそのまま�
   await page.getByLabel(/^パスワード/).fill('e2e-password-1234');
   await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
-  await expect(page).toHaveURL(/\/today\/?$/);
+  await expect(page).toHaveURL(/\/home\/?$/);
 
   await page.goto('/run/');
   await page.getByRole('button', { name: 'GPS で記録する' }).click();
