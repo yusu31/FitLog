@@ -19,6 +19,8 @@ const RAW_BUTTONS: Record<string, [count: number, role: Role]> = {
   'components/friends/stamp-button.tsx': [1, '切り替え'],
   'components/me/records-list.tsx': [1, 'メニュー'],
   'components/me/stats-view.tsx': [4, '切り替え'],
+  'components/me/report-charts.tsx': [1, '切り替え'],
+  'components/log/weight-band.tsx': [1, '開閉'],
   'components/record-detail/record-memo.tsx': [1, '切り替え'],
   'components/record/done-sets.tsx': [1, 'メニュー'],
   'components/record/friend-picker.tsx': [2, '切り替え'],

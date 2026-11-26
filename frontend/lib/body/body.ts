@@ -186,6 +186,11 @@ export function guessWeight(heightCm: number | null): number {
   return clampWeight(GUESS_BMI * m * m);
 }
 
+// ルーラーの始まりの値。今日の体重 → 前回の体重 → 身長からの目安（無ければ 60kg）の順（からだ画面・記録タブの体重の帯で共通）
+export function startingWeight(todayKg: number | undefined, lastKg: number | null | undefined, heightCm: number | null): number {
+  return todayKg ?? lastKg ?? guessWeight(heightCm);
+}
+
 // BMI の帯。左端 15・右端 35 の直線で位置（%）を出す。帯の色の境目は 18.5・25・30 の目盛り
 export const BMI_SCALE = { min: 15, max: 35, marks: [18.5, 25, 30] } as const;
 export function bmiPercent(bmi: number): number {

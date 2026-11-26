@@ -1,5 +1,5 @@
 import type { StatsCalendarDay } from '@/lib/api/generated';
-import { formatMetric, minMonthOffset, minWeekOffset, monthGrid, monthRange, monthDayCount, sumRange, tileWindowStart, weekRange, weightEquivalent, weekGrid, yearMonths, minYearOffset } from './stats';
+import { formatMetric, minMonthOffset, minWeekOffset, monthGrid, monthRange, monthDayCount, sumRange, weeklySeries, tileWindowStart, weekRange, weightEquivalent, weekGrid, yearMonths, minYearOffset } from './stats';
 
 // 記録のまとめ（F-22・F-26・F-27。D5）の画面側の関数（docs/testing-design.md 3-14）。今日は 2026-11-12（木曜）。
 
@@ -10,7 +10,7 @@ function calendarEnding(today: string, over: Record<string, Partial<StatsCalenda
     const d = new Date(end);
     d.setUTCDate(end.getUTCDate() - i);
     const date = d.toISOString().slice(0, 10);
-    out.push({ date, status: 'none', weightKg: 0, runM: 0, ...over[date] });
+    out.push({ date, status: 'none', weightKg: 0, runM: 0, workoutCount: 0, runCount: 0, ...over[date] });
   }
   return out;
 }
@@ -39,16 +39,39 @@ describe('weekRange・monthRange（期間のずれ）', () => {
 
 describe('sumRange（期間の数字）', () => {
   const cal = calendarEnding('2026-11-12', {
-    '2026-11-09': { status: 'rec', weightKg: 800.04, runM: 0 },
+    '2026-11-09': { status: 'rec', weightKg: 800.04, runM: 0, workoutCount: 2 },
     '2026-11-10': { status: 'rest' },
-    '2026-11-11': { status: 'rec', weightKg: 400, runM: 5000 },
+    '2026-11-11': { status: 'rec', weightKg: 400, runM: 5000, workoutCount: 1, runCount: 1 },
   });
   it('動いた日・おやすみ・総重量・ランを範囲の中だけ足す', () => {
-    expect(sumRange(cal, '2026-11-09', '2026-11-12')).toEqual({ days: 2, rest: 1, kg: 1200, m: 5000 });
-    expect(sumRange(cal, '2026-11-10', '2026-11-10')).toEqual({ days: 0, rest: 1, kg: 0, m: 0 });
+    expect(sumRange(cal, '2026-11-09', '2026-11-12')).toEqual({ days: 2, rest: 1, kg: 1200, m: 5000, workouts: 3, runs: 1 });
+    expect(sumRange(cal, '2026-11-10', '2026-11-10')).toEqual({ days: 0, rest: 1, kg: 0, m: 0, workouts: 0, runs: 0 });
   });
   it('範囲の外は数えない', () => {
-    expect(sumRange(cal, '2026-11-12', '2026-11-12')).toEqual({ days: 0, rest: 0, kg: 0, m: 0 });
+    expect(sumRange(cal, '2026-11-12', '2026-11-12')).toEqual({ days: 0, rest: 0, kg: 0, m: 0, workouts: 0, runs: 0 });
+  });
+});
+
+describe('weeklySeries（直近12週の週ごとの数字。レポートの棒グラフ）', () => {
+  const cal = calendarEnding('2026-11-12', {
+    '2026-11-09': { status: 'rec', weightKg: 800, workoutCount: 1 },
+    '2026-11-02': { status: 'rec', weightKg: 500, runM: 3000, workoutCount: 1, runCount: 1 },
+  });
+  it('12週ぶんが古い順に並び、最後が今週（月曜始まり）', () => {
+    const s = weeklySeries(cal, '2026-11-12', 12);
+    expect(s).toHaveLength(12);
+    expect(s[11].weekStart).toBe('2026-11-09');
+    expect(s[0].weekStart).toBe('2026-08-24');
+  });
+  it('週ごとに、動いた日・総重量・ラン・回数を足す。記録の無い週は全部 0', () => {
+    const s = weeklySeries(cal, '2026-11-12', 12);
+    expect(s[11]).toMatchObject({ days: 1, kg: 800, m: 0, workouts: 1, runs: 0 });
+    expect(s[10]).toMatchObject({ days: 1, kg: 500, m: 3000, workouts: 1, runs: 1 });
+    expect(s[9]).toMatchObject({ days: 0, kg: 0, m: 0, workouts: 0, runs: 0 });
+  });
+  it('今週の「今日より後」は数えない（今日の分までで止まる）', () => {
+    const later = calendarEnding('2026-11-12', { '2026-11-12': { status: 'rec', weightKg: 100, workoutCount: 1 } });
+    expect(weeklySeries(later, '2026-11-12', 12)[11].kg).toBe(100);
   });
 });
 

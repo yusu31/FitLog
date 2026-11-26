@@ -19,7 +19,7 @@ import {
   type OneRepMaxItem,
 } from '@/lib/api/generated';
 import { messageOf } from '@/lib/api/message';
-import { BMI_SCALE, BODY_MESSAGES, bmiBarLabel, bmiPercent, clampWeight, formatDelta, guessWeight, heightFrom, parseHeightText, rulerPrev } from '@/lib/body/body';
+import { BMI_SCALE, BODY_MESSAGES, bmiBarLabel, bmiPercent, clampWeight, formatDelta, startingWeight, heightFrom, parseHeightText, rulerPrev } from '@/lib/body/body';
 import { formatMonthDay } from '@/lib/format';
 import { toUnit } from '@/lib/unit';
 import { useWeightUnit } from '@/lib/use-preferences';
@@ -104,7 +104,7 @@ function Inputs({ data }: { data: BodyResponse }) {
   // ルーラーは、今日の体重 → 前回の体重 → 60kg の順で始める。動かさず前回の値のまま保存してもよい
   // 記録が無い人は、身長があれば身長から目安（BMI 22）、無ければ 60kg
   const guessed = todayKg === undefined && !last && data.heightCm !== null;
-  const [weight, setWeightValue] = useState(todayKg ?? last?.kg ?? guessWeight(data.heightCm));
+  const [weight, setWeightValue] = useState(startingWeight(todayKg, last?.kg, data.heightCm));
   const unit = useWeightUnit();
   const [touched, setTouched] = useState(false);
   const [heightText, setHeightText] = useState(data.heightCm === null ? '' : String(data.heightCm));

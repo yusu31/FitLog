@@ -12,7 +12,7 @@ export const STATS_VIEWS: ReadonlyArray<{ view: StatsView; label: string }> = [
 ];
 
 // 期間の数字（動いた日・おやすみ・総重量・ラン）。calendar の日ごとの値を足し合わせる。範囲は from〜to（今日まで・calendar の範囲内だけ）
-export type Totals = { days: number; rest: number; kg: number; m: number };
+export type Totals = { days: number; rest: number; kg: number; m: number; workouts: number; runs: number };
 export type Metric = 'days' | 'kg' | 'm';
 export const METRICS: ReadonlyArray<{ key: Metric; label: string }> = [
   { key: 'days', label: '動いた日' },
@@ -21,13 +21,15 @@ export const METRICS: ReadonlyArray<{ key: Metric; label: string }> = [
 ];
 
 export function sumRange(calendar: readonly StatsCalendarDay[], from: string, to: string): Totals {
-  const t: Totals = { days: 0, rest: 0, kg: 0, m: 0 };
+  const t: Totals = { days: 0, rest: 0, kg: 0, m: 0, workouts: 0, runs: 0 };
   for (const c of calendar) {
     if (c.date < from || c.date > to) continue;
     if (c.status === 'rec') t.days += 1;
     if (c.status === 'rest') t.rest += 1;
     t.kg += c.weightKg;
     t.m += c.runM;
+    t.workouts += c.workoutCount;
+    t.runs += c.runCount;
   }
   t.kg = Math.round(t.kg * 10) / 10;
   return t;
@@ -40,6 +42,15 @@ const utc = (date: string): number => Date.parse(`${date}T00:00:00Z`);
 export function weekRange(today: string, off: number): { from: string; to: string } {
   const from = addDays(weekStartOf(today), off * 7);
   return { from, to: addDays(from, 6) };
+}
+
+// 直近 weeks 週の週ごとの数字（古い順・最後が今週。レポートの棒グラフ）。今日より後の日は数えない
+export type WeekPoint = Totals & { weekStart: string };
+export function weeklySeries(calendar: readonly StatsCalendarDay[], today: string, weeks = 12): WeekPoint[] {
+  return Array.from({ length: weeks }, (_, i) => {
+    const r = weekRange(today, i - (weeks - 1));
+    return { weekStart: r.from, ...sumRange(calendar, r.from, r.to > today ? today : r.to) };
+  });
 }
 
 // 月のずれ（0＝今月）の1日〜月末

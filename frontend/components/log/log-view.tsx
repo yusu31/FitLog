@@ -3,6 +3,7 @@
 import { BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { buttonClass } from '@/components/fitlog/thick-button';
+import { WeightBand } from '@/components/log/weight-band';
 import { RecordsList } from '@/components/me/records-list';
 import { TodayView } from '@/components/today/today-view';
 
@@ -13,6 +14,7 @@ export function LogView() {
     <>
       <TodayView />
       <div className="space-y-4 px-4 pb-6">
+        <WeightBand />
         <Link href="/me" className={buttonClass({ variant: 'secondary' })}>
           <BarChart3 aria-hidden />
           レポートを見る
