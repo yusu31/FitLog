@@ -55,6 +55,9 @@ describe('VideoGrid（A14-2 動画のサムネの並び）', () => {
     installFakeApi({ ...ok('v1') });
     const { container } = renderWithQuery(<VideoGrid items={[items[0]!]} layout="grid" />);
     await vi.waitFor(() => expect(container.querySelector('video')).not.toBeNull());
+    // 1回目は URL を取り直す（期限切れの URL のことがある）。2回目も失敗したら案内を出す
+    fireEvent.error(container.querySelector('video')!);
+    await vi.waitFor(() => expect(container.querySelector('video')).not.toBeNull());
     fireEvent.error(container.querySelector('video')!);
     expect(await screen.findByText(VIDEO_GRID_MESSAGES.unavailable)).toBeInTheDocument();
   });

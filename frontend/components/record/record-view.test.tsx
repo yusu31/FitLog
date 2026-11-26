@@ -279,6 +279,20 @@ describe('RecordView（S-12 記録・筋トレ）', () => {
       expect(screen.queryByRole('region', { name: '休憩タイマー' })).not.toBeInTheDocument();
     });
 
+    it('02-9 ⑤: 休憩中は、結果の表示より後ろ（ページの一番下）に帯の高さぶんの空きを置き、閉じたら外す', async () => {
+      const user = userEvent.setup();
+      renderView();
+      await ready();
+      expect(screen.queryByTestId('rest-spacer')).not.toBeInTheDocument();
+      await user.click(doneButton());
+      const spacer = await screen.findByTestId('rest-spacer');
+      const sheet = await screen.findByTestId('result-sheet');
+      // 空きは結果の表示より後ろにある（前にあると、結果が帯の下に隠れたまま）
+      expect(sheet.compareDocumentPosition(spacer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      await user.click(screen.getByRole('button', { name: '休憩をスキップ' }));
+      expect(screen.queryByTestId('rest-spacer')).not.toBeInTheDocument();
+    });
+
     it('端末に控えた長さで始まる', async () => {
       localStorage.setItem('fitlog:rest-seconds', '120');
       const user = userEvent.setup();

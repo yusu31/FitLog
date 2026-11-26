@@ -349,7 +349,7 @@ export function RecordView() {
           </ul>
         </nav>
       )}
-      <div className={`flex flex-1 flex-col items-center gap-4 px-4 pt-4 ${rest ? 'pb-24' : 'pb-6'}`}>
+      <div className={`flex flex-1 flex-col items-center gap-4 px-4 pt-4 pb-6`}>
         <p className="text-sm font-extrabold tracking-widest text-fg-muted">{RECORD_MESSAGES.setNow(setNo)}</p>
         <h1 className="text-center text-page-title leading-tight font-extrabold">{exercise.name}</h1>
 
@@ -467,6 +467,8 @@ export function RecordView() {
       </div>
 
       <ResultSheet sheet={sheet} onDismiss={dismissSheet} />
+      {/* 休憩の帯（画面の下に固定）の高さぶん、ページの一番下を空ける。結果の表示は本文の箱の外（ページの最後）にあるので、ここで空けないと帯の下に隠れる（02-9 ⑤） */}
+      {rest && <div aria-hidden data-testid="rest-spacer" className="h-[calc(6rem+env(safe-area-inset-bottom))] shrink-0" />}
       {more && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-night/50 p-4 sm:items-center" onClick={() => setMore(false)}>
           <div role="dialog" aria-modal="true" aria-label="ほかの操作" className="w-full max-w-sm space-y-2 rounded-2xl bg-surface p-4" onClick={(e) => e.stopPropagation()}>
@@ -510,7 +512,7 @@ export function RecordView() {
         </div>
       )}
       {closing && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-night/50 p-4 sm:items-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-night/50 p-4 sm:items-center">
           <div role="alertdialog" aria-modal="true" aria-labelledby="close-title" aria-describedby="close-desc" className="w-full max-w-sm rounded-2xl bg-surface p-5">
             <h2 id="close-title" className="text-xl font-extrabold">
               {RECORD_CLOSE_MESSAGES.title}

@@ -1,15 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useGetVideoUrl } from '@/lib/api/generated';
+import { usePlayableVideoUrl } from '@/lib/video/use-video-url';
 import { DETAIL_MESSAGES } from '@/lib/messages';
 
 // S-21 の2秒動画（features.md F-13）。短い期限の署名付き URL を API からもらって再生する。
 // 自動再生はしない（音なし・タップで再生・ループ）。仲間に見える期限（その週の日曜 24:00 日本時間）が過ぎたら 403 で、本人だけ見られる。
 // 置けていない動画・再生できない形式（iPhone の Safari で webm など）は、責めずに「再生できませんでした」とだけ出す
 export function VideoPlayer({ videoId }: { videoId: string }) {
-  const { data, isPending } = useGetVideoUrl(videoId);
-  const [failed, setFailed] = useState(false);
+  const { data, isPending, failed, onError } = usePlayableVideoUrl(videoId);
 
   if (isPending) {
     return <div aria-busy="true" aria-label="動画を読み込み中" className="aspect-video w-full animate-pulse rounded-fl bg-canvas" />;
@@ -38,7 +36,7 @@ export function VideoPlayer({ videoId }: { videoId: string }) {
       loop
       playsInline
       preload="metadata"
-      onError={() => setFailed(true)}
+      onError={onError}
       className="aspect-video w-full rounded-fl bg-black object-cover"
     />
   );

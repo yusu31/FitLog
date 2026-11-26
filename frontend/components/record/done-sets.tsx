@@ -84,7 +84,7 @@ export function DoneSets({
       </ol>
 
       {confirming && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-night/50 p-4 sm:items-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-night/50 p-4 sm:items-center">
           <div role="alertdialog" aria-modal="true" aria-labelledby="del-title" aria-describedby="del-desc" className="w-full max-w-sm rounded-2xl bg-surface p-5">
             <h2 id="del-title" className="text-xl font-extrabold">
               このセットを 消しますか？

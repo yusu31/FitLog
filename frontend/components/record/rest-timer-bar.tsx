@@ -84,7 +84,7 @@ export function RestTimerBar({ startedAt, initialSeconds, onClose }: { startedAt
   return (
     <section
       aria-label="休憩タイマー"
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[600px] items-center gap-2 rounded-t-fl border-t-4 border-teal-light bg-canvas px-3 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[600px] items-center gap-2 rounded-t-fl border-t-4 border-teal-light bg-canvas px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
     >
       {status}
       <button

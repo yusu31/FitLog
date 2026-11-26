@@ -1,9 +1,8 @@
 'use client';
 
 import { Lock, Play } from 'lucide-react';
-import { useState } from 'react';
 import { cn } from 'cn';
-import { useGetVideoUrl } from '@/lib/api/generated';
+import { usePlayableVideoUrl } from '@/lib/video/use-video-url';
 import { VIDEO_GRID_MESSAGES } from './messages';
 import { EmptyState } from '@/components/fitlog/empty-state';
 
@@ -65,8 +64,7 @@ function LockedTile({ item }: { item: VideoGridItem }) {
 
 // 見られる動画。短い期限の署名付き URL をもらい、先頭の1コマをサムネにする（音なし・自動再生しない）
 function OpenTile({ item, onSelect }: { item: VideoGridItem; onSelect?: (id: string) => void }) {
-  const { data, isPending } = useGetVideoUrl(item.id);
-  const [failed, setFailed] = useState(false);
+  const { data, isPending, failed, onError } = usePlayableVideoUrl(item.id);
   const src = data?.status === 200 ? data.data.url : undefined;
   const playable = Boolean(src) && !failed;
   return (
@@ -80,7 +78,7 @@ function OpenTile({ item, onSelect }: { item: VideoGridItem; onSelect?: (id: str
           preload="metadata"
           aria-hidden="true"
           tabIndex={-1}
-          onError={() => setFailed(true)}
+          onError={onError}
           className="absolute inset-0 size-full bg-black object-cover"
         />
       ) : null}
