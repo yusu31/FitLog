@@ -46,6 +46,6 @@ test('ラン画面の上に日本縦断への入口があり、押すとレポ�
   await page.getByRole('link', { name: '日本縦断' }).click();
   // 「日本縦断」の入口は ?metric=m#japan-trek へ行く。ラン（日本縦断）が選ばれた状態で、地図まで出る（L6・D4-4）
   await expect(page).toHaveURL(/\/me\/?\?metric=m#japan-trek$/);
-  await expect(page.getByRole('button', { name: 'ラン', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('group', { name: '見る数字' }).getByRole('button', { name: 'ラン', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('img', { name: /鹿児島から北へ進んだ位置/ })).toBeVisible();
 });
