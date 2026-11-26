@@ -56,7 +56,7 @@ export function StatsPage() {
 
   return (
     <>
-      <div className="space-y-4 px-4 pt-3 pb-10">
+      <div className="space-y-4">
         {data ? (
           <>
             <Period data={data} />

@@ -83,6 +83,7 @@ test('控えのある端末で画面を開き直しても、描画のずれ（hy
 test('L3 横向き 844×390 で、今日の主ボタンが最初の画面に入る（始める前・記録中）', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await signUp(page);
+  await page.goto('/log/');
   const check = async (name: string) => {
     const link = page.getByRole('link', { name });
     await expect(link).toBeVisible();
@@ -138,5 +139,6 @@ test('195×422 で、今日の画面が横にはみ出さない', async ({ page 
 // 色の面の上の注記は、面の字の色（白）のまま（text-note が色まで付けて灰色になっていた）
 test('今日のカードの注記は、ティールの面の上で白い字', async ({ page }) => {
   await signUp(page);
+  await page.goto('/log/');
   await expect(page.getByText(/お試しの値です/)).toHaveCSS('color', 'rgb(255, 255, 255)');
 });
