@@ -1,6 +1,6 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { DETAIL_MESSAGES } from '@/lib/messages';
-import { installFakeApi, renderWithQuery } from '@/lib/test/fake-api';
+import { calls, installFakeApi, renderWithQuery } from '@/lib/test/fake-api';
 import { VideoPlayer } from './video-player';
 
 const URL_API = '/api/videos/v1/url';
@@ -39,11 +39,22 @@ describe('VideoPlayer（S-21 の2秒動画）', () => {
     expect(await screen.findByText(DETAIL_MESSAGES.videoUnavailable)).toBeInTheDocument();
   });
 
-  it('再生できない形式・置けていない動画は、再生できなかったと伝える', async () => {
+  it('1回目の再生の失敗では URL を取り直して再生を続ける（期限切れの URL を使い回していた。02-9）', async () => {
     installFakeApi({ [URL_API]: { status: 200, body: { url: 'https://s3.example/v', expiresInSeconds: 300 } } });
     renderWithQuery(<VideoPlayer videoId="v1" />);
     const video = await screen.findByLabelText(DETAIL_MESSAGES.videoLabel);
+    const before = calls.length;
     fireEvent.error(video);
+    await waitFor(() => expect(calls.length).toBeGreaterThan(before));
+    expect(screen.queryByText(DETAIL_MESSAGES.videoUnavailable)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(DETAIL_MESSAGES.videoLabel)).toBeInTheDocument();
+  });
+
+  it('取り直しても再生できない形式・置けていない動画は、再生できなかったと伝える', async () => {
+    installFakeApi({ [URL_API]: { status: 200, body: { url: 'https://s3.example/v', expiresInSeconds: 300 } } });
+    renderWithQuery(<VideoPlayer videoId="v1" />);
+    fireEvent.error(await screen.findByLabelText(DETAIL_MESSAGES.videoLabel));
+    fireEvent.error(await screen.findByLabelText(DETAIL_MESSAGES.videoLabel));
     expect(await screen.findByText(DETAIL_MESSAGES.videoUnavailable)).toBeInTheDocument();
   });
 });

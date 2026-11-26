@@ -6,12 +6,13 @@ import { Avatar } from '@/components/fitlog/avatar';
 import { BodyFigure } from '@/components/me/body-figure';
 import { ShootButton } from '@/components/video-grid/shoot-button';
 import { VIDEO_GRID_MESSAGES } from '@/components/video-grid/messages';
-import { useGetCurrentGroup, useGetVideosThisWeek, useGetVideoUrl, type BodyPart, type FeedItem, type FeedStamp, type FeedTopSet } from '@/lib/api/generated';
+import { useGetCurrentGroup, useGetVideosThisWeek, type BodyPart, type FeedItem, type FeedStamp, type FeedTopSet } from '@/lib/api/generated';
 import { BODY_PART_LABEL } from '@/lib/body-parts';
 import { formatSet } from '@/lib/format';
 import { levelsOf } from '@/lib/heatmap';
 import type { WeightUnit } from '@/lib/unit';
 import { usePreferences, useWeightUnit } from '@/lib/use-preferences';
+import { usePlayableVideoUrl } from '@/lib/video/use-video-url';
 
 // 足跡カードの「写真の面」（BeReal 風。D7-6 PR-2・判断ログ 65）。
 // 動画があるときは縦 3:4 の枠を幅いっぱいに出し、角に記録の数字の札、右下に押した人の顔と数を重ねる。動画が無いときは数字の札と反応の行だけ（MediaBadges を単独で使う）。
@@ -123,8 +124,7 @@ function Faces({ stamps, flat = false }: { stamps: readonly FeedStamp[]; flat?: 
 
 // 見られる動画。短い期限の署名付き URL をもらい、先頭の1コマを見せる。タップで再生・止める（音なし・自動再生しない）
 function OpenVideo({ videoId, label }: { videoId: string; label: string }) {
-  const { data, isPending } = useGetVideoUrl(videoId);
-  const [failed, setFailed] = useState(false);
+  const { data, isPending, failed, onError } = usePlayableVideoUrl(videoId);
   const [playing, setPlaying] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
   const { autoplayVideo } = usePreferences();
@@ -134,7 +134,7 @@ function OpenVideo({ videoId, label }: { videoId: string; label: string }) {
   function toggle() {
     const el = ref.current;
     if (!el) return;
-    if (el.paused) void el.play().catch(() => setFailed(true));
+    if (el.paused) void el.play().catch(onError);
     else el.pause();
   }
 
@@ -156,7 +156,7 @@ function OpenVideo({ videoId, label }: { videoId: string; label: string }) {
         tabIndex={-1}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onError={() => setFailed(true)}
+        onError={onError}
         className="size-full bg-black object-cover"
       />
       {/* 動画だと一目で分かるように、止まっているときはカードの真ん中に大きな再生マーク。左下に「2秒動画」の札（L9） */}
