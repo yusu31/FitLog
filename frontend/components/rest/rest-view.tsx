@@ -19,7 +19,7 @@ export function RestView() {
       footer={
         <div className="flex flex-col gap-2">
           <Link
-            href="/today"
+            href="/log"
             className={buttonClass({ variant: 'primary' })}
           >
             {REST_MESSAGES.back}

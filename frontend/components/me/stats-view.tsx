@@ -5,9 +5,10 @@ import { cn } from 'cn';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import { PageTitle } from '@/components/fitlog/app-shell';
 import { JapanMap } from '@/components/me/japan-map';
 import { StampMedal } from '@/components/me/stamp-medal';
+import { HeatmapSection } from '@/components/me/heatmap-section';
+import { WeekRunSection } from '@/components/me/week-run-section';
 import { useGetStats, type StatsResponse } from '@/lib/api/generated';
 import { formatMonthDay } from '@/lib/format';
 import { locateOnRoute, nextText, trekText } from '@/lib/japan-route';
@@ -46,7 +47,7 @@ const segClass = (on: boolean) =>
     on ? 'border-teal-dark bg-teal-dark text-white' : 'border-teal-light bg-surface text-brand',
   );
 
-// S-35 記録のまとめ（F-22・F-26・F-27・F-29。D5）。下のタブ「まとめ」の画面。タブ付き（page 側で AppShell に包む）にして「＜」は置かない（02-9 N1。全画面だとタブが消え、自分へ戻る作りで迷った）。
+// S-35 レポート（旧「記録のまとめ」。F-22・F-26・F-27・F-29。D5）。自分タブの先頭（/me）。タブ付き（page 側で AppShell と MeFrame に包む）にして「＜」は置かない。
 // 週・月・年の切替＋◀▶／合計4つ／数字のタイルを並べて比べる／スタンプ帳。連続日数・目標線・「あと◯」は出さない。休みは全期間で同じ紫
 export function StatsPage() {
   useRequireSession();
@@ -55,8 +56,7 @@ export function StatsPage() {
 
   return (
     <>
-      <PageTitle>記録のまとめ</PageTitle>
-      <div className="space-y-4 px-4 pt-3 pb-10">
+      <div className="space-y-4">
         {data ? (
           <>
             <Period data={data} />
@@ -208,6 +208,13 @@ function Period({ data }: { data: StatsResponse }) {
           })}
         </ul>
       </section>
+      {/* 週を開いている間、今週の分だけ（今週のラン・今週きたえたところ） */}
+      {view === 'week' && off === 0 && (
+        <>
+          <WeekRunSection />
+          <HeatmapSection />
+        </>
+      )}
       <JapanTrek totalMeters={data.totalRunDistanceM} defaultOpen={requested === 'm'} />
     </>
   );

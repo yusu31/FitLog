@@ -39,7 +39,7 @@ describe('LoginForm（S-01）', () => {
     const user = userEvent.setup();
     render(<LoginForm />);
     await fillLogin(user);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/today'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/home'));
     expect(signInEmail).toHaveBeenCalledWith({ email: 'a@example.com', password: 'password123' });
   });
 
@@ -62,7 +62,7 @@ describe('LoginForm（S-01）', () => {
     const user = userEvent.setup();
     render(<LoginForm />);
     await fillLogin(user);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/today'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/home'));
   });
 
   // T-AUTH-FE-13: 失敗は移動せず、理由を分けずに伝える
@@ -116,7 +116,7 @@ describe('LoginForm（セッションが取れず戻されたとき。L16）', (
     const user = userEvent.setup();
     render(<LoginForm />);
     await fillLogin(user);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/today'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/home'));
     expect(sessionStorage.getItem('fitlog-just-signed-in')).toBe('1');
   });
 
@@ -360,6 +360,6 @@ describe('登録完了の一言（A01-7）', () => {
     await user.click(screen.getByRole('button', { name: '登録する' }));
     expect(await screen.findByRole('status')).toHaveTextContent('登録できたよ');
     expect(replace).not.toHaveBeenCalled();
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/today'), { timeout: 4000 });
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/home'), { timeout: 4000 });
   });
 });

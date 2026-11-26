@@ -45,11 +45,11 @@ describe('PreferencesSection（設定の端末ごとの項目）', () => {
 });
 
 describe('PreferencesSection（表示: 最初のタブ・単位。D6-5）', () => {
-  it('最初に開くタブは「今日」から始まり、「仲間」に変えると端末に保存される', async () => {
+  it('最初に開くタブは「ホーム」から始まり、「仲間」に変えると端末に保存される', async () => {
     const user = userEvent.setup();
     render(<PreferencesSection />);
     const group = screen.getByRole('radiogroup', { name: '最初に開くタブ' });
-    expect(within(group).getByRole('radio', { name: '今日' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(group).getByRole('radio', { name: 'ホーム' })).toHaveAttribute('aria-checked', 'true');
     await user.click(within(group).getByRole('radio', { name: '仲間' }));
     expect(within(group).getByRole('radio', { name: '仲間' })).toHaveAttribute('aria-checked', 'true');
     expect(readPrefs().firstTab).toBe('friends');

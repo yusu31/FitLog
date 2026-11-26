@@ -68,11 +68,10 @@ describe('AppShell（タブのある画面の枠）', () => {
     expect(screen.queryByTestId('sync-banner')).not.toBeInTheDocument();
   });
 
-  // L3: 高さが低い画面では、ベルが詰めた週の帯の中に収まる位置まで上がる
-  it('ベルの位置に、低い画面用の上げ（short:top-0）が付いている', () => {
+  // 02-9 ①: ベルは枠の右上には置かず、ホームの見出しと同じ行に置く（home-view.test.tsx）
+  it('枠にはベル（通知）を置かない', () => {
     session = { data: { user: { id: 'u1' } }, isPending: false };
     render(<AppShell>中身</AppShell>);
-    const bell = screen.getByRole('main').querySelector('div.absolute');
-    expect(bell?.className).toContain('short:top-0');
+    expect(screen.queryByRole('link', { name: '通知' })).not.toBeInTheDocument();
   });
 });

@@ -11,9 +11,10 @@ export const NOTIFY_OPTIONS: readonly { kind: NotifyKind; label: string }[] = [
   { kind: 'friend_joined', label: '仲間が加わったとき' },
 ];
 
-export type FirstTab = 'today' | 'friends';
+export type FirstTab = 'home' | 'log' | 'friends';
 export const FIRST_TAB_OPTIONS: readonly { value: FirstTab; label: string; path: string }[] = [
-  { value: 'today', label: '今日', path: '/today' },
+  { value: 'home', label: 'ホーム', path: '/home' },
+  { value: 'log', label: '記録', path: '/log' },
   { value: 'friends', label: '仲間', path: '/friends' },
 ];
 
@@ -34,13 +35,16 @@ export const REMINDER_DEFAULT_HOUR = 19;
 export const REMINDER_HOURS = Array.from({ length: 17 }, (_, i) => i + 6);
 
 export const DEFAULT_PREFS: Preferences = {
-  firstTab: 'today',
+  firstTab: 'home',
   unit: 'kg',
   autoplayVideo: false,
   notify: { stamp: true, comment: true, friend_record: true, friend_joined: true },
   reminderOn: true,
   reminderHour: REMINDER_DEFAULT_HOUR,
 };
+
+// 保存済みの 'today'（旧「今日」）は「記録」として読む。知らない値は既定（ホーム）
+const parseFirstTab = (v: unknown): FirstTab => (v === 'today' ? 'log' : v === 'log' || v === 'friends' || v === 'home' ? v : DEFAULT_PREFS.firstTab);
 
 // 保存された文字を設定にする。足りない項目・型の違う項目は既定値のまま
 export function parsePrefs(raw: string | null | undefined): Preferences {
@@ -52,7 +56,7 @@ export function parsePrefs(raw: string | null | undefined): Preferences {
     for (const { kind } of NOTIFY_OPTIONS) if (typeof notifyRaw[kind] === 'boolean') notify[kind] = notifyRaw[kind];
     const hour = v.reminderHour;
     return {
-      firstTab: v.firstTab === 'friends' ? 'friends' : DEFAULT_PREFS.firstTab,
+      firstTab: parseFirstTab(v.firstTab),
       unit: v.unit === 'lb' ? 'lb' : DEFAULT_PREFS.unit,
       autoplayVideo: typeof v.autoplayVideo === 'boolean' ? v.autoplayVideo : DEFAULT_PREFS.autoplayVideo,
       notify,
@@ -104,4 +108,4 @@ export function savePrefs(next: Preferences): void {
 export const SERVER_PREFS = DEFAULT_PREFS;
 
 // 起動時（/）の行き先
-export const firstTabPath = (tab: FirstTab): string => FIRST_TAB_OPTIONS.find((o) => o.value === tab)?.path ?? '/today';
+export const firstTabPath = (tab: FirstTab): string => FIRST_TAB_OPTIONS.find((o) => o.value === tab)?.path ?? '/home';

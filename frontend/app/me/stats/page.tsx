@@ -1,18 +1,9 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
-import { AppShell } from '@/components/fitlog/app-shell';
-import { StatsPage } from '@/components/me/stats-view';
+import { LegacyRedirect } from '@/components/fitlog/legacy-redirect';
 
+// 旧「記録のまとめ」。レポートは「自分」（/me）の先頭に移した（02-9 ⑫）。古い URL は新しい場所へ転送する
 export const metadata: Metadata = { title: '記録のまとめ' };
 
-// ?metric=m（日本地図で見る）を useSearchParams で読むので、静的書き出しでは Suspense で包む
-// 下のタブ「まとめ」の画面なので、ほかのタブと同じくタブ付きの枠に入れる（02-9 N1。全画面だとタブが消えて迷った）
 export default function MeStatsPage() {
-  return (
-    <AppShell>
-      <Suspense>
-        <StatsPage />
-      </Suspense>
-    </AppShell>
-  );
+  return <LegacyRedirect to="/me" />;
 }

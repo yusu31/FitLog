@@ -28,8 +28,8 @@ describe('端末の設定', () => {
 });
 
 describe('端末の設定（最初のタブ・単位。D6-5）', () => {
-  it('既定は 今日・kg', () => {
-    expect(DEFAULT_PREFS.firstTab).toBe('today');
+  it('既定は ホーム・kg', () => {
+    expect(DEFAULT_PREFS.firstTab).toBe('home');
     expect(DEFAULT_PREFS.unit).toBe('kg');
   });
 
@@ -38,12 +38,17 @@ describe('端末の設定（最初のタブ・単位。D6-5）', () => {
     expect(p.firstTab).toBe('friends');
     expect(p.unit).toBe('lb');
     const bad = parsePrefs(JSON.stringify({ firstTab: 'me', unit: 'stone' }));
-    expect(bad.firstTab).toBe('today');
+    expect(bad.firstTab).toBe('home');
     expect(bad.unit).toBe('kg');
   });
 
+  it('保存済みの 今日（today）は 記録として読む', () => {
+    expect(parsePrefs(JSON.stringify({ firstTab: 'today' })).firstTab).toBe('log');
+  });
+
   it('最初のタブから行き先を決める', () => {
-    expect(firstTabPath('today')).toBe('/today');
+    expect(firstTabPath('home')).toBe('/home');
+    expect(firstTabPath('log')).toBe('/log');
     expect(firstTabPath('friends')).toBe('/friends');
   });
 });

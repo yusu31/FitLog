@@ -12,7 +12,7 @@ async function signUp(page: Page, email: string): Promise<void> {
   await page.getByLabel(/^パスワード/).fill(PASSWORD);
   await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
-  await expect(page).toHaveURL(/\/today\/?$/);
+  await expect(page).toHaveURL(/\/home\/?$/);
 }
 
 async function logOut(page: Page): Promise<void> {
@@ -81,6 +81,7 @@ test.describe('認証の流れ', () => {
 
 test('T-FIRST-01 登録した直後の人が、今日 → 種目を選ぶ → できた の3画面で最初の1セットを記録できる', async ({ page }) => {
   await signUp(page, newEmail('first'));
+  await page.goto('/log/');
 
   // 画面1: 今日
   await page.getByRole('link', { name: '種目を選ぶ' }).click();
@@ -96,7 +97,7 @@ test('T-FIRST-01 登録した直後の人が、今日 → 種目を選ぶ → �
   await saved;
 
   // 保存された: 今日の画面に戻ると、その種目が「できた」になる
-  await page.goto('/today/');
+  await page.goto('/log/');
   await expect(page.getByText('できた', { exact: true }).first()).toBeVisible();
 });
 
@@ -104,6 +105,7 @@ test('T-FIRST-01 登録した直後の人が、今日 → 種目を選ぶ → �
 // Service Worker は開発サーバーで無効なので、画面を開いたあとに電波を切る（画面のファイルが端末にある状態の再現）
 test('T-OFFLINE-01 電波が無いときに記録しても結果が出て、電波が戻ると API に届く', async ({ page, context }) => {
   await signUp(page, newEmail('offline'));
+  await page.goto('/log/');
   await page.getByRole('link', { name: '種目を選ぶ' }).click();
   await expect(page).toHaveURL(/\/exercises\/?$/);
   await page.locator('a[href^="/record?exercise="]').first().click();

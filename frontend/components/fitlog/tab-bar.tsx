@@ -3,28 +3,25 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Fragment, useState } from 'react';
-import { BarChart3, Dumbbell, Plus, User, Users } from 'lucide-react';
+import { ClipboardList, House, Plus, User, Users } from 'lucide-react';
 import { cn } from 'cn';
 import { useGetFeedUnread } from '@/lib/api/generated';
 import { StartSheet } from './start-sheet';
 
-// 下のタブは4つ＋中央の＋（docs/screen-design.md 1章）。選択中は色だけでなく aria-current と背景で示す。
-// まとめは今の /me/stats を指す（中身の作り直しは D5）。自分（/me）は /me/stats の下では選択中にしない
+// 下のタブは4つ＋中央の＋（docs/screen-design.md 1章）: ホーム・記録・（＋）・仲間・自分。選択中は色だけでなく aria-current と背景で示す。
+// 自分（/me）は /me/posts・/me/profile など、その下の画面でも選択中にする
 const TABS = [
-  { href: '/today', label: '今日', Icon: Dumbbell },
+  { href: '/home', label: 'ホーム', Icon: House },
+  { href: '/log', label: '記録', Icon: ClipboardList },
   { href: '/friends', label: '仲間', Icon: Users },
-  { href: '/me/stats', label: 'まとめ', Icon: BarChart3 },
   { href: '/me', label: '自分', Icon: User },
 ] as const;
 
 // 静的書き出しは trailingSlash: true なので、/friends と /friends/ の両方を同じタブとみなす
-const isActive = (pathname: string, href: string) => {
-  if (href === '/me' && (pathname === '/me/stats' || pathname.startsWith('/me/stats/'))) return false;
-  return pathname === href || pathname.startsWith(`${href}/`);
-};
+const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
-// 新着の印（F4）。ログインしているときだけ GET /feed/unread を見て、「仲間」に点を出す。
-// 仲間タブを開いている間は出さない（見ている最中。足跡が読めたら「見た」を送り、点の元の値も false にする）。
+// 新着の印（F4）。ログインしているときだけ GET /feed/unread を見て、「ホーム」（仲間の足跡が流れる所）に点を出す。
+// ホームを開いている間は出さない（見ている最中。足跡が読めたら「見た」を送り、点の元の値も false にする）。
 // 1分ごとに取り直す（画面に戻ったときも取り直す。TanStack Query の既定）。失敗しても点を出さないだけで、タブは使える
 const UNREAD_REFRESH_MS = 60_000;
 
@@ -42,7 +39,7 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
       <ul className="flex justify-around px-3 pt-1.5 max-[239px]:px-1 pb-[max(10px,env(safe-area-inset-bottom))] short:pt-1 short:pb-[max(4px,env(safe-area-inset-bottom))] lg:flex-col lg:justify-start lg:gap-2 lg:px-2 lg:pt-6">
         {TABS.map(({ href, label, Icon }, index) => {
           const active = isActive(pathname, href);
-          const dot = href === '/friends' && hasNew && !active;
+          const dot = href === '/home' && hasNew && !active;
           return (
             <Fragment key={href}>
             <li className="min-w-0 max-w-16 flex-1 lg:max-w-none lg:flex-none">

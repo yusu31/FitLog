@@ -7,22 +7,20 @@ import { PageTitle } from '@/components/fitlog/app-shell';
 import { MyChara } from '@/components/fitlog/my-chara';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { InvitePanel } from '@/components/settings/invite-panel';
-import { WeekVideoStrip } from '@/components/video-grid/week-video-strip';
 import { GROUP_MESSAGES } from '@/lib/messages';
-import { FeedSection } from './feed-section';
 import { FRIENDS_TEXT } from './friends-text';
 import { GroupBand } from './member-list';
 import { NoGroupGuide } from './no-group-guide';
 
 // S-20 仲間（docs/screen-design.md 4章）。グループがないときは「作る」と「招待リンクで参加する」の2つだけ（NoGroupGuide）。
-// 足跡・週の合計・スタンプ・コメントは FeedSection（feed-section.tsx）。招待・グループを出るは S-32（/settings/group）にある
+// メンバーの一覧と招待だけ（02-9 ⑫）。足跡・週の合計・スタンプ・コメントは、ホームのタイムライン（home-view.tsx → FeedSection）に移した。グループを出るは S-32（/settings/group）にある
 export function FriendsView() {
   const { data, isPending, isError } = useGetCurrentGroup();
   const alone = data?.status === 200 && data.data.members.length <= 1;
 
   return (
     <div className="relative">
-      <PageTitle>なかま</PageTitle>
+      <PageTitle>仲間</PageTitle>
       {/* 自分1人・グループ無しのときは、中央にキャラが出るので右上は隠す（2体並べない） */}
       {!alone && data?.status !== 404 && <MyChara pose="idle" size={72} className="absolute top-0 right-4" />}
       {isPending ? (
@@ -47,8 +45,6 @@ export function FriendsView() {
           ) : (
             <GroupBand group={data.data} />
           )}
-          {!alone && <WeekVideoStrip />}
-          <FeedSection hideEmptyTotals={alone} />
           <Link
             href={withBack('/settings/group', 'friends')}
             className="fl-slab flex min-h-14 items-center gap-3 px-4 py-3 font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40"

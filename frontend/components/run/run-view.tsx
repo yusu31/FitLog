@@ -187,7 +187,7 @@ export function RunView() {
     return (
       <FullScreen
         footer={
-          <ThickButton onClick={() => router.push('/today')} autoFocus>
+          <ThickButton onClick={() => router.push('/log')} autoFocus>
             今日へ
           </ThickButton>
         }
@@ -217,7 +217,7 @@ export function RunView() {
               <p className="text-note font-extrabold tracking-widest text-fg-subtle">日本縦断</p>
               {trek.arrived && <p className="text-lg font-extrabold">{trek.arrived}に着きました！</p>}
               <p className="text-sm font-bold text-fg-muted">{trek.next}</p>
-              <Link href="/me/stats?metric=m#japan-trek" className={buttonClass({ variant: 'link' })}>
+              <Link href="/me?metric=m#japan-trek" className={buttonClass({ variant: 'link' })}>
                 日本地図で見る
               </Link>
             </section>
@@ -239,7 +239,7 @@ export function RunView() {
     >
       <header className="flex items-center gap-1 px-2 pt-3">
         <Link
-          href="/today"
+          href="/log"
           aria-label="とじる"
           className={buttonClass({ variant: 'icon' }, '[&_svg]:size-7')}
         >
@@ -317,7 +317,7 @@ function TrekStrip({ totalRunM }: { totalRunM: number | undefined }) {
   const pos = totalRunM === undefined ? null : locateOnRoute(totalRunM);
   return (
     <Link
-      href="/me/stats?metric=m#japan-trek"
+      href="/me?metric=m#japan-trek"
       data-testid="trek-strip"
       className="fl-slab block space-y-1.5 px-4 py-3 outline-none focus-visible:border-teal"
     >

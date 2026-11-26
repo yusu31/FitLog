@@ -12,7 +12,7 @@ async function signUp(page: Page): Promise<void> {
   await page.getByLabel(/^パスワード/).fill('e2e-password-1234');
   await page.getByRole('checkbox', { name: /同意/ }).check();
   await page.getByRole('button', { name: '登録する' }).click();
-  await expect(page).toHaveURL(/\/today\/?$/);
+  await expect(page).toHaveURL(/\/home\/?$/);
 }
 
 // ページ全体が画面幅より横に広がっていないか（横スクロールが出ていないか）
@@ -22,7 +22,7 @@ async function overflowX(page: Page): Promise<number> {
 
 test('A3 主な画面が 390px で横スクロールしない', async ({ page }) => {
   await signUp(page);
-  for (const path of ['/today/', '/friends/', '/me/', '/settings/', '/exercises/', '/rest/']) {
+  for (const path of ['/home/', '/log/', '/friends/', '/me/', '/me/posts/', '/me/profile/', '/settings/', '/exercises/', '/rest/']) {
     await page.goto(path);
     await page.getByRole('heading', { level: 1 }).first().waitFor({ state: 'attached' });
     expect(await overflowX(page), `${path} の横はみ出し(px)`).toBeLessThanOrEqual(0);
@@ -71,7 +71,7 @@ test('控えのある端末で画面を開き直しても、描画のずれ（hy
     if (/hydrat/i.test(e.message)) warnings.push(e.message.slice(0, 120));
   });
   await signUp(page);
-  for (const path of ['/exercises/', '/today/', '/me/']) {
+  for (const path of ['/exercises/', '/log/', '/home/', '/me/']) {
     await page.goto(path);
     await page.getByRole('heading', { level: 1 }).first().waitFor({ state: 'attached' });
     await page.waitForTimeout(500);
@@ -83,6 +83,7 @@ test('控えのある端末で画面を開き直しても、描画のずれ（hy
 test('L3 横向き 844×390 で、今日の主ボタンが最初の画面に入る（始める前・記録中）', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await signUp(page);
+  await page.goto('/log/');
   const check = async (name: string) => {
     const link = page.getByRole('link', { name });
     await expect(link).toBeVisible();
@@ -107,7 +108,7 @@ test('L3 横向き 844×390 で、今日の主ボタンが最初の画面に入�
   await expect.poll(() => listed).toBeGreaterThan(0);
   await page.waitForTimeout(500);
   await expect(page.getByTestId('result-sheet')).toBeVisible();
-  await page.goto('/today/');
+  await page.goto('/log/');
   await check('続ける');
 });
 
@@ -128,7 +129,7 @@ test('L11 体重のものさしで、今の値の目盛りの数字が針の位�
 test('195×422 で、今日の画面が横にはみ出さない', async ({ page }) => {
   await signUp(page);
   await page.setViewportSize({ width: 195, height: 422 });
-  await page.goto('/today/');
+  await page.goto('/log/');
   await expect(page.getByRole('link', { name: 'ランを記録' })).toBeVisible();
   const box = (await page.getByRole('link', { name: 'ランを記録' }).boundingBox())!;
   expect(box.x + box.width).toBeLessThanOrEqual(195);
@@ -138,5 +139,6 @@ test('195×422 で、今日の画面が横にはみ出さない', async ({ page 
 // 色の面の上の注記は、面の字の色（白）のまま（text-note が色まで付けて灰色になっていた）
 test('今日のカードの注記は、ティールの面の上で白い字', async ({ page }) => {
   await signUp(page);
+  await page.goto('/log/');
   await expect(page.getByText(/お試しの値です/)).toHaveCSS('color', 'rgb(255, 255, 255)');
 });

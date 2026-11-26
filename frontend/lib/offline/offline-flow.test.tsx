@@ -14,7 +14,7 @@ import { AUTH_RETRY_MS, PARENT_MISSING_MAX_RETRIES, RETRY_BACKOFF_MS } from './r
 // 対応表: T-OFF-07〜13（docs/testing-design.md）。各 it の名前に番号を入れた。
 let session: { data: unknown; isPending: boolean } = { data: { user: { id: 'u1' } }, isPending: false };
 vi.mock('@/lib/auth-client', () => ({ authClient: { useSession: () => session } }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => '/today/' }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => '/log/' }));
 
 type Sent = { method: string; url: string; body: { id?: string } };
 type Reply = number | 'network' | 'hang';

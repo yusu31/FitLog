@@ -63,7 +63,7 @@ test('A07-8 日本縦断の地図（待ちを延ばして撮る）', async ({ pa
   });
   page.on('console', (m) => logs.push(`${m.type()}: ${m.text()}`.slice(0, 200)));
   await loginAs(page, 'active');
-  await page.goto('/me/stats/');
+  await page.goto('/me/');
   await settle(page);
   await page.getByRole('button', { name: /^日本縦断/ }).click();
   await waitMap(page);
@@ -92,7 +92,7 @@ test('A07-4 保存前の地図（GPS で走って終了した後）', async ({ p
     w.__emit = (northM: number) => cb?.({ coords: { latitude: northM / ((Math.PI / 180) * 6_371_008.8), longitude: 139.7, accuracy: 5 }, timestamp: Date.now() });
   });
   await loginAs(page, 'active');
-  await page.goto('/today/');
+  await page.goto('/log/');
   await settle(page);
   await page.getByRole('link', { name: /ランを記録/ }).click();
   await settle(page);
@@ -115,10 +115,10 @@ test('A04-7 コメントの時刻と運動の時刻', async ({ page }) => {
   await loginAs(page, 'active');
   const out: string[] = [];
   // 仲間（タカシ）の足跡：ユウスケのコメントがついている
-  await page.goto('/friends/');
+  await page.goto('/home/');
   await settle(page);
   for (const who of ['タカシ', 'ユウスケ']) {
-    await page.goto('/friends/');
+    await page.goto('/home/');
     await settle(page);
     const card = page.locator('li').filter({ hasText: who }).filter({ has: page.getByRole('link', { name: 'くわしく見る' }) }).first();
     await card.getByRole('link', { name: 'くわしく見る' }).click();
@@ -129,7 +129,7 @@ test('A04-7 コメントの時刻と運動の時刻', async ({ page }) => {
     out.push(`--- ${who}\n${await page.evaluate(() => (document.querySelector('main') as HTMLElement).innerText)}`);
   }
   // 自分の最新（コメントあり）
-  await page.goto('/me/');
+  await page.goto('/log/');
   await settle(page);
   await page.getByRole('link', { name: /ベンチプレス ほか1種目/ }).first().click();
   await page.waitForURL(/record-detail/);
@@ -192,7 +192,7 @@ test('A11-4 記録中の画面に壊れた画像が出るか（オンライン�
     if (r.status() >= 400) bad.push(`${r.status()} ${r.url()}`);
   });
   await loginAs(page, 'active');
-  await page.goto('/today/');
+  await page.goto('/log/');
   await settle(page);
   await page.getByRole('button', { name: /を始める$/ }).first().click();
   await page.waitForURL(/\/record/);
@@ -264,7 +264,7 @@ test('A13-8 招待リンクが無効なときの画面', async ({ page }) => {
 
 test('A06-3 カメラ許可に失敗したときの画面', async ({ page }) => {
   await loginAs(page, 'active');
-  await page.goto('/today/');
+  await page.goto('/log/');
   await settle(page);
   await page.getByRole('button', { name: /を始める$/ }).first().click();
   await page.waitForURL(/\/record/);

@@ -10,7 +10,7 @@ import { useAppSession } from '@/lib/use-app-session';
 // 静的書き出しなのでサーバーでは確かめられない。本当の守りは API 側のログイン必須（design.md 2章）
 export function useRequireSession(): { signedIn: boolean } {
   const router = useRouter();
-  const pathname = usePathname() ?? '/today';
+  const pathname = usePathname() ?? '/home';
   const { data: session, isPending } = useAppSession();
   const signedOut = !isPending && !session;
 

@@ -20,6 +20,6 @@ test('新規登録すると、今日の画面が開く', async ({ page }) => {
   const sent = await signUpRequest;
   expect(await sent.headerValue('x-amz-content-sha256')).toMatch(/^[0-9a-f]{64}$/);
 
-  await expect(page).toHaveURL(/\/today\/?$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'きょう' })).toBeAttached();
+  await expect(page).toHaveURL(/\/home\/?$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'ホーム' })).toBeAttached();
 });

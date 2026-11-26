@@ -1,7 +1,7 @@
 // ログイン・登録のあとに戻る先（?next=）を、このサイトの中のパスだけに絞る。
 // 絞らないと、?next=https://悪いサイト で「ログインしたら外のサイトへ飛ばす」罠（オープンリダイレクト）になる。
 // 招待リンク（/invite?token=…）の値は、このパスの中のクエリとして画面をまたいで運ぶ（docs/screen-design.md S-03）。
-export const DEFAULT_NEXT_PATH = '/today';
+export const DEFAULT_NEXT_PATH = '/home';
 
 export function safeNextPath(raw: string | null | undefined): string {
   if (!raw) return DEFAULT_NEXT_PATH;

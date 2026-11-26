@@ -174,18 +174,12 @@ describe('FriendsView（S-20 仲間）', () => {
       expect(screen.getAllByRole('link', { name: /グループの設定/ })).toHaveLength(1);
     });
 
-    // #438: 列は、今週の動画が1本以上あるときだけ出す
-    it('今週の2秒動画の列は、1本以上ある週だけ出す', async () => {
-      const video = { id: 'v1', recordId: 'r1', recordedAt: '2026-11-18T01:00:00.000Z', visibleUntil: '2026-11-22T15:00:00.000Z', mine: false, author: { id: 'u2', name: 'はなこ', avatar: { body: 'A', hair: 1, hairColor: 'brown', shirtColor: 'teal', pantsColor: 'navy' } } };
-      replies['GET /api/videos/week'] = [{ status: 200, body: { weekStart: '2026-11-16', unlocked: false, items: [video] } }];
-      const { unmount } = renderView();
-      expect(await screen.findByRole('heading', { name: '今週の2秒動画' })).toBeInTheDocument();
-      unmount();
-      replies['GET /api/videos/week'] = [{ status: 200, body: { weekStart: '2026-11-16', unlocked: false, items: [] } }];
+    // 02-9 ⑫: 今週の2秒動画の列と足跡は、ホームのタイムラインに移した（home-view.test.tsx）。仲間タブはメンバーと招待だけ
+    it('足跡と今週の2秒動画の列は出さない（ホームに移した）', async () => {
       renderView();
       await screen.findByRole('heading', { name: '朝トレ部' });
-      await vi.waitFor(() => expect(calls.filter((c) => c.url === '/api/videos/week')).toHaveLength(2));
       expect(screen.queryByRole('heading', { name: '今週の2秒動画' })).not.toBeInTheDocument();
+      expect(calls.some((c) => c.url.startsWith('/api/feed') || c.url === '/api/videos/week')).toBe(false);
     });
 
     // T-PEER-06（N6）: 仲間が自分1人の間だけ、仲間タブの上に招待のカードを出す（境界: 1人／2人）

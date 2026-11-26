@@ -57,6 +57,12 @@ export const HOME_MESSAGES = {
   recordedYesterday: '昨日も記録したね。今日も できる分だけ',
   restYesterday: '昨日は お休み。今日は 気が向いたら',
   noRecordYesterday: '今日の 1セットから はじめよう',
+  // ホームの「今日の1行」（02-9 ⑫）
+  todayRecorded: '今日は記録できたよ。おつかれさま',
+  todayRest: '今日はおやすみ。ゆっくり休もう',
+  todayNone: '今日の 1セットから はじめよう',
+  timeline: '仲間のタイムライン',
+  noGroup: '仲間とつながると、ここに足跡が流れます',
 } as const;
 
 // グループまわり（S-20・S-32。features.md 2.1〜2.2）。本人の落ち度ではないこと（満員・期限切れ・すでに所属）は、

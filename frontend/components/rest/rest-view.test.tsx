@@ -27,9 +27,9 @@ describe('RestView（S-14 おやすみ）', () => {
     expect(figure).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('「もどる」は今日（/today）へのリンク', () => {
+  it('「もどる」は今日（/log）へのリンク', () => {
     renderWithQuery(<RestView />);
-    expect(screen.getByRole('link', { name: REST_MESSAGES.back })).toHaveAttribute('href', '/today');
+    expect(screen.getByRole('link', { name: REST_MESSAGES.back })).toHaveAttribute('href', '/log');
   });
 
   it('「やっぱり記録する」は種目選び（/exercises）へのリンクで、「もどる」より先に押しやすい大きさ', () => {

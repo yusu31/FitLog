@@ -56,7 +56,7 @@ export function TodayView() {
   if (week.isPending || workouts.isPending) {
     return (
       <div aria-busy="true" aria-label="読み込み中">
-        <h1 className="sr-only">きょう</h1>
+        <h1 className="sr-only">記録</h1>
         <div className="h-[128px] animate-pulse bg-canvas" />
         <div className="mx-4 mt-4 h-44 animate-pulse rounded-fl bg-canvas" />
         <div className="mx-4 mt-4 h-16 animate-pulse rounded-fl bg-canvas" />
@@ -87,7 +87,7 @@ export function TodayView() {
 
   return (
     <>
-      <h1 className="sr-only">きょう</h1>
+      <h1 className="sr-only">記録</h1>
       {days.length === 7 ? (
         <WeekStrip days={days} today={today} selected={selected} selectable={[today, yesterday]} onSelect={onSelectDate} />
       ) : (

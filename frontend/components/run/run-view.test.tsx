@@ -180,16 +180,16 @@ describe('RunView（S-13 記録（ラン））', () => {
         expect(await screen.findByText('次の熊本まで 5.0km')).toBeInTheDocument();
         expect(screen.queryByText(/に着きました/)).not.toBeInTheDocument();
       });
-      it('入力の画面と保存後の欄の両方から、日本縦断（/me/stats）へ行ける', async () => {
+      it('入力の画面と保存後の欄の両方から、日本縦断（/me）へ行ける', async () => {
         installFakeApi({ [POST]: { status: 201, body: { id: 'x' } }, [STATS_URL]: { status: 200, body: { totalRunDistanceM: 160_000 } } });
         const user = userEvent.setup();
         renderWithQuery(<RunView />);
-        expect(screen.getByRole('link', { name: /日本縦断/ })).toHaveAttribute('href', '/me/stats?metric=m#japan-trek');
+        expect(screen.getByRole('link', { name: /日本縦断/ })).toHaveAttribute('href', '/me?metric=m#japan-trek');
         await waitFor(() => expect(calls).toContain(STATS_URL));
         await fill(user, '5', '30');
         await user.click(save());
         await screen.findByTestId('trek-progress');
-        expect(screen.getByRole('link', { name: '日本地図で見る' })).toHaveAttribute('href', '/me/stats?metric=m#japan-trek');
+        expect(screen.getByRole('link', { name: '日本地図で見る' })).toHaveAttribute('href', '/me?metric=m#japan-trek');
       });
       it('累計が読めていないときは、日本縦断の欄を出さない', async () => {
         installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
@@ -217,7 +217,7 @@ describe('RunView（S-13 記録（ラン））', () => {
     it('「閉じる」は今日へのリンク', () => {
       installFakeApi({});
       renderWithQuery(<RunView />);
-      expect(screen.getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/today');
+      expect(screen.getByRole('link', { name: 'とじる' })).toHaveAttribute('href', '/log');
     });
   });
 
@@ -492,14 +492,14 @@ describe('RunView（S-13 記録（ラン））', () => {
       expect(postBody().run).toEqual({ distanceM: 100, durationS: 60 });
     });
 
-    it('保存後の「今日へ」で今日（/today）へ戻る', async () => {
+    it('保存後の「今日へ」で今日（/log）へ戻る', async () => {
       installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
       const user = userEvent.setup();
       renderWithQuery(<RunView />);
       await fill(user, '5', '25');
       await user.click(save());
       await user.click(await screen.findByRole('button', { name: '今日へ' }));
-      expect(push).toHaveBeenCalledWith('/today');
+      expect(push).toHaveBeenCalledWith('/log');
     });
 
     it('サーバーの不具合（5xx）では、送信待ちに残して結果を出す。内部の事情は出さず、入力画面には戻らない（F-30）', async () => {

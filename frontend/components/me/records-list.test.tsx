@@ -2,33 +2,11 @@ import { onlineManager } from '@tanstack/react-query';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
-import { toLocalDate } from '@/lib/shared/local-date';
 import { calls, installFakeApi as installApi, renderWithQuery, restRecord, runRecord, workout } from '@/lib/test/fake-api';
-import { MeView } from './me-view';
-
-const TODAY = toLocalDate(new Date());
-const statsOf = (weekRunM: number, totalRunM: number) => ({
-  today: TODAY,
-  calendar: [],
-  month: { month: TODAY.slice(0, 7), activeDays: 0, restDays: 0, totalWeightKg: 0, runDistanceM: weekRunM },
-  weekly: Array.from({ length: 12 }, (_, i) => ({ weekStart: TODAY, totalWeightKg: 0, runDistanceM: i === 11 ? weekRunM : 0 })),
-  stamps: [],
-  totalRunDistanceM: totalRunM,
-});
-const STATS = `/api/me/stats?date=${TODAY}`;
-// 画面の並び順（見出しの出る順）。今週のラン→今週きたえたところ
-const headingOrder = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
+import { RecordsList } from './records-list';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }));
-vi.mock('@/lib/auth-client', () => ({
-  authClient: {
-    useSession: () => ({ data: { user: { id: 'u1', name: 'たろう' } }, isPending: false }),
-    signOut: vi.fn(),
-  },
-}));
-
-// 自分の過去の動画（MyVideoGrid）は、この画面のどのテストでも呼ばれる。決めていないテストでは「動画なし」を返す
-const installFakeApi: typeof installApi = (routes) => installApi({ '/api/videos/mine': { status: 200, body: { items: [], nextCursor: null } }, '/api/avatar': { status: 200, body: { body: 'A', hair: 1, hairColor: 'brown', shirtColor: 'teal', pantsColor: 'navy', accessory: 'none' } }, ...routes });
+const installFakeApi = installApi;
 const FIRST = '/api/records?limit=20';
 const ok = (body: unknown) => ({ status: 200, body });
 const page = (items: unknown[], nextCursor: string | null = null) => ok({ items, nextCursor });
@@ -38,11 +16,11 @@ const curl = { id: 'lc', name: 'レッグカール', sets: [[25, 12]] as [number
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('MeView（S-30 自分）', () => {
+describe('RecordsList（記録タブの記録の一覧。旧 自分タブ S-30）', () => {
   describe('記録の一覧', () => {
     it('各行は、記録の詳細（S-21）へのリンク（自分の記録なので from=me つき）', async () => {
       installFakeApi({ [FIRST]: page([workout('r3', '2026-10-22', [squat]), restRecord('r1', '2026-10-19')]) });
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await screen.findByText('おやすみ');
       const rows = within(screen.getByRole('list', { name: '記録' })).getAllByRole('listitem');
       expect(within(rows[0]).getByRole('link')).toHaveAttribute('href', '/record-detail?id=r3&from=me');
@@ -51,7 +29,7 @@ describe('MeView（S-30 自分）', () => {
 
     it('あとから記録（late）の行にだけ「あとから記録」の札が付く（F-21）', async () => {
       installFakeApi({ [FIRST]: page([{ ...workout('r3', '2026-10-22', [squat]), late: true }, workout('r2', '2026-10-21', [curl])]) });
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await screen.findByText('スクワット');
       const rows = within(screen.getByRole('list', { name: '記録' })).getAllByRole('listitem');
       expect(within(rows[0]).getByText('あとから記録')).toBeInTheDocument();
@@ -66,7 +44,7 @@ describe('MeView（S-30 自分）', () => {
           restRecord('r1', '2026-10-19'),
         ]),
       });
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await screen.findByText('おやすみ');
       const list = screen.getByRole('list', { name: '記録' });
       const rows = within(list).getAllByRole('listitem');
@@ -84,7 +62,7 @@ describe('MeView（S-30 自分）', () => {
 
     it('1時間を超えるランは 時:分:秒 で出す', async () => {
       installFakeApi({ [FIRST]: page([runRecord('r2', '2026-10-20', 12000, 3600 + 5 * 60 + 9)]) });
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await screen.findByText(/1:05:09/);
       const row = screen.getAllByRole('listitem')[0];
       expect(row).toHaveTextContent('12.0km');
@@ -93,7 +71,7 @@ describe('MeView（S-30 自分）', () => {
 
     it('種目が1つなら「ほか」を付けない', async () => {
       installFakeApi({ [FIRST]: page([workout('r3', '2026-10-22', [curl])]) });
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await screen.findByText('レッグカール');
       const row = screen.getAllByRole('listitem')[0];
       expect(row).toHaveTextContent('レッグカール');
@@ -102,7 +80,7 @@ describe('MeView（S-30 自分）', () => {
 
     it('記録が1件もないときは「まだ記録がありません」', async () => {
       installFakeApi({ [FIRST]: page([]) });
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       expect(await screen.findByText('まだ記録がありません')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'もっと見る' })).not.toBeInTheDocument();
     });
@@ -113,7 +91,7 @@ describe('MeView（S-30 自分）', () => {
         '/api/records?limit=20&cursor=CUR1': page([restRecord('r1', '2026-10-01')], null),
       });
       const user = userEvent.setup();
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await user.click(await screen.findByRole('button', { name: 'もっと見る' }));
 
       expect(await screen.findByText('おやすみ')).toBeInTheDocument();
@@ -125,7 +103,7 @@ describe('MeView（S-30 自分）', () => {
 
     it('読み込み中は骨組み、失敗したら日本語の文言（内部の事情は出さない）', async () => {
       installFakeApi({ [FIRST]: { status: 500, body: { code: 'INTERNAL', message: 'stack trace' } } });
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       expect(screen.getByLabelText('記録を読み込み中')).toHaveAttribute('aria-busy', 'true');
       const alert = await screen.findByRole('alert');
       expect(alert).toHaveTextContent('読み込めませんでした');
@@ -133,96 +111,7 @@ describe('MeView（S-30 自分）', () => {
     });
   });
 
-  describe('自分の過去の動画（A04-10）', () => {
-    it('過去の2秒動画のグリッドを、記録の一覧の上に出す', async () => {
-      installFakeApi({
-        [FIRST]: page([]),
-        '/api/videos/mine': ok({ items: [{ id: 'v1', recordId: 'r1', recordedAt: '2026-11-02T01:00:00.000Z', localDate: '2026-11-02', visibleUntil: '2026-11-08T15:00:00.000Z' }], nextCursor: null }),
-        '/api/videos/v1/url': ok({ url: 'https://s3.example/v1', expiresInSeconds: 300 }),
-      });
-      renderWithQuery(<MeView />);
-      expect(await screen.findByRole('heading', { name: '自分の過去の2秒動画' })).toBeInTheDocument();
-      expect(await screen.findByLabelText('11/2の動画を開く')).toBeInTheDocument();
-    });
-  });
 
-  describe('並び（N9: ランが多い週だけ、今週のランを筋肉の図の上へ）', () => {
-    const sq = { id: 'sq', name: 'スクワット', sets: [[60, 10]] as [number, number][] };
-    it('今週ランが筋トレより多いと、「今週のラン」が「今週きたえたところ」より上に出る', async () => {
-      installFakeApi({
-        [FIRST]: page([runRecord('r2', TODAY, 5000, 1800), runRecord('r1', TODAY, 3000, 1000), workout('w1', TODAY, [sq])]),
-        [STATS]: ok(statsOf(8000, 28000)),
-      });
-      renderWithQuery(<MeView />);
-      const section = (await screen.findByRole('region', { name: '今週のラン' }));
-      expect(section).toHaveTextContent('8.0km');
-      expect(section).toHaveTextContent(/次の.+まで/);
-      const order = headingOrder();
-      expect(order.indexOf('今週のラン')).toBeLessThan(order.indexOf('今週きたえたところ'));
-    });
-
-    it('筋トレが多い・同数・記録なしの人には「今週のラン」を出さない（今の並びのまま）', async () => {
-      installFakeApi({
-        [FIRST]: page([runRecord('r1', TODAY, 3000, 1000), workout('w1', TODAY, [sq])]),
-        [STATS]: ok(statsOf(3000, 3000)),
-      });
-      renderWithQuery(<MeView />);
-      await screen.findByText('スクワット');
-      expect(screen.queryByRole('region', { name: '今週のラン' })).not.toBeInTheDocument();
-      expect(headingOrder()[0]).toBe('今週きたえたところ');
-    });
-  });
-
-  describe('からだの入口（B14b）', () => {
-    it('名前の下に「からだ」の区画（体重の7日平均）があり、からだ画面へ行ける', async () => {
-      installFakeApi({
-        [FIRST]: page([]),
-        [STATS]: ok(statsOf(0, 0)),
-        'GET /api/body': ok({ heightCm: 170, latest: { date: '2026-11-18', kg: 70.2 }, bmi: 24.3, avg7: 70.4, deltaFromPrevious: -0.5, weights: [] }),
-      });
-      renderWithQuery(<MeView />);
-      expect(await screen.findByText('70.4kg')).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /からだを見る/ })).toHaveAttribute('href', '/me/body');
-    });
-  });
-
-  describe('設定への入口・見た目だけの導線（からだの図・記録のまとめ）', () => {
-    beforeEach(() => installFakeApi({ [FIRST]: page([]) }));
-
-    it('「設定」は /settings へのリンク（画面そのものは別の担当が作る）', async () => {
-      renderWithQuery(<MeView />);
-      await screen.findByText('まだ記録がありません');
-      expect(screen.getByRole('link', { name: /設定/ })).toHaveAttribute('href', '/settings');
-      expect(screen.queryByRole('button', { name: /設定/ })).not.toBeInTheDocument();
-    });
-
-    it('「記録のまとめ」は /me/stats（S-35）へのリンク。からだの図も置いてある', async () => {
-      renderWithQuery(<MeView />);
-      await screen.findByText('まだ記録がありません');
-      expect(screen.getByRole('link', { name: /記録のまとめ/ })).toHaveAttribute('href', '/me/stats');
-      expect(screen.getByText('今週きたえたところ')).toBeInTheDocument();
-    });
-
-    it('A08-1・N-09: 「記録のまとめ」と「設定」の入口は、からだの図・記録の一覧より上（画面の上部）にある', async () => {
-      renderWithQuery(<MeView />);
-      await screen.findByText('まだ記録がありません');
-      const heat = screen.getByText('今週きたえたところ');
-      const records = screen.getByText('まだ記録がありません');
-      for (const name of [/記録のまとめ/, /設定/]) {
-        const link = screen.getByRole('link', { name });
-        expect(link.compareDocumentPosition(heat) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(link.compareDocumentPosition(records) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-      }
-    });
-
-    it('名前は出すが、ログアウトは自分タブに置かない（設定にある。N10: 押し間違いを防ぐ）', async () => {
-      renderWithQuery(<MeView />);
-      expect(await screen.findByText('たろう')).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'ログアウト' })).not.toBeInTheDocument();
-    });
-  });
-
-  // 記録の取り消し（features.md 2.11: 削除は電波があるときだけ）。筋トレの中のセットを消す操作は S-12 にある
   describe('記録の削除', () => {
     const DEL_R3 = 'DELETE /api/records/r3';
     const R3 = workout('r3', '2026-10-22', [squat, curl]);
@@ -243,7 +132,7 @@ describe('MeView（S-30 自分）', () => {
     it('どの記録にも「…」があり、押すと「削除」が出る（筋トレ・ラン・休みのどれも）', async () => {
       installFakeApi({ [FIRST]: page([R3, R2, R1]) });
       const user = userEvent.setup();
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await screen.findByText('おやすみ');
       const rows = within(screen.getByRole('list', { name: '記録' })).getAllByRole('listitem');
       for (const row of rows) expect(within(row).getByRole('button', { name: /メニュー/ })).toBeInTheDocument();
@@ -254,7 +143,7 @@ describe('MeView（S-30 自分）', () => {
 
     it('「削除」を選ぶと確認が出る。ここでは何も送らない', async () => {
       installFakeApi({ [FIRST]: page([R3, R2]) });
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       const dialog = await openDialog(userEvent.setup());
       expect(dialog).toHaveTextContent('この記録を 消しますか？');
       expect(dialog).toHaveTextContent('10/22');
@@ -265,7 +154,7 @@ describe('MeView（S-30 自分）', () => {
     it('「やめる」で閉じる。Esc でも閉じる。どちらも削除しない', async () => {
       installFakeApi({ [FIRST]: page([R3, R2]) });
       const user = userEvent.setup();
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await openDialog(user);
       await user.click(screen.getByRole('button', { name: 'やめる' }));
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
@@ -285,7 +174,7 @@ describe('MeView（S-30 自分）', () => {
         [DEL_R3]: { status: 204 },
       });
       const user = userEvent.setup();
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await openDialog(user);
       await user.click(screen.getByRole('button', { name: '削除する' }));
       await waitFor(() => expect(screen.queryByText('スクワット ほか1種目')).not.toBeInTheDocument());
@@ -301,7 +190,7 @@ describe('MeView（S-30 自分）', () => {
         [DEL_R3]: { status: 204 },
       });
       const user = userEvent.setup();
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await openDialog(user);
       await user.click(screen.getByRole('button', { name: '削除する' }));
       await waitFor(() => expect(deletes()).toEqual([DEL_R3]));
@@ -321,7 +210,7 @@ describe('MeView（S-30 自分）', () => {
         [DEL_R3]: { status: 204 },
       });
       const user = userEvent.setup();
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await openDialog(user);
       await user.click(screen.getByRole('button', { name: '削除する' }));
       await waitFor(() => expect(calls.filter((c) => c === `GET ${FIRST}`)).toHaveLength(2));
@@ -333,7 +222,7 @@ describe('MeView（S-30 自分）', () => {
         [DEL_R3]: { status: 500, body: { code: 'INTERNAL', message: 'stack trace' } },
       });
       const user = userEvent.setup();
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await openDialog(user);
       await user.click(screen.getByRole('button', { name: '削除する' }));
       const alert = await screen.findByRole('alert');
@@ -345,7 +234,7 @@ describe('MeView（S-30 自分）', () => {
     it('電波が無いときは「削除」を押せず、理由を言う（編集・削除は電波があるときだけ）', async () => {
       installFakeApi({ [FIRST]: page([R3]) });
       const user = userEvent.setup();
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await screen.findByText('10/22');
       const row = screen.getAllByRole('listitem').find((li) => li.textContent?.includes('10/22'))!;
       onlineManager.setOnline(false);
@@ -357,7 +246,7 @@ describe('MeView（S-30 自分）', () => {
     it('画面の文言に、責めない言葉の禁止語が出ない（確認・失敗の文言も）', async () => {
       installFakeApi({ [FIRST]: page([R3]), [DEL_R3]: { status: 500, body: {} } });
       const user = userEvent.setup();
-      renderWithQuery(<MeView />);
+      renderWithQuery(<RecordsList />);
       await openDialog(user);
       for (const word of FORBIDDEN_WORDS) expect(document.body.textContent).not.toContain(word);
       await user.click(screen.getByRole('button', { name: '削除する' }));
@@ -366,9 +255,10 @@ describe('MeView（S-30 自分）', () => {
     });
   });
 
+
   it('画面の文言に、責めない言葉の禁止語が出ない', async () => {
     installFakeApi({ [FIRST]: page([restRecord('r1', '2026-10-19')]) });
-    renderWithQuery(<MeView />);
+    renderWithQuery(<RecordsList />);
     await screen.findByText('おやすみ');
     for (const word of FORBIDDEN_WORDS) expect(document.body.textContent).not.toContain(word);
   });
