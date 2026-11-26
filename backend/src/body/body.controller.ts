@@ -3,7 +3,7 @@ import { ApiBadRequestResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOk
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { ErrorResponse } from '../common/error-response.js';
 import { BodyService } from './body.service.js';
-import { BodyResponse, CaloriesResponse, HeightRequest, OneRepMaxResponse, ProfileRequest, ProfileResponse, WeightRequest } from './body.response.js';
+import { BodyResponse, CaloriesResponse, HeightRequest, MaxWeightsResponse, OneRepMaxResponse, ProfileRequest, ProfileResponse, WeightRequest } from './body.response.js';
 
 // からだ（B14a）。ログイン必須（共通のガードが既定で守る）。体重・身長・推定値は本人だけ。プロフィールは同じグループの仲間まで
 @ApiTags('body')
@@ -50,6 +50,14 @@ export class BodyController {
   @ApiOkResponse({ type: OneRepMaxResponse })
   oneRepMax(@Session() session: UserSession): Promise<OneRepMaxResponse> {
     return this.body.oneRepMax(session.user.id);
+  }
+
+  @Get('exercises/:exerciseId/max-weights')
+  @ApiOperation({ operationId: 'getExerciseMaxWeights', summary: '自分の種目1つの「その日の最大重量」の推移（日付の昇順。自重だけの日は点にしない）' })
+  @ApiOkResponse({ type: MaxWeightsResponse })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '種目が無い・他の人の種目・UUID でない（EXERCISE_NOT_FOUND。存在を教えない）' })
+  maxWeights(@Session() session: UserSession, @Param('exerciseId') exerciseId: string): Promise<MaxWeightsResponse> {
+    return this.body.maxWeights(session.user.id, exerciseId);
   }
 
   @Get('calories/:recordId')

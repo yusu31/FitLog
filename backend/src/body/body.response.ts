@@ -78,6 +78,25 @@ export class OneRepMaxResponse {
   items!: OneRepMaxItem[];
 }
 
+export class MaxWeightPoint {
+  @ApiProperty({ example: '2026-11-18', description: 'トレーニングした日（日本時間の日付）' })
+  date!: string;
+
+  @ApiProperty({ example: 62.5, description: 'その日のその種目のセットの最大重量（kg）。0kg（自重）だけの日は点にならない' })
+  kg!: number;
+}
+
+export class MaxWeightsResponse {
+  @ApiProperty({ format: 'uuid' })
+  exerciseId!: string;
+
+  @ApiProperty({ example: 'スクワット' })
+  name!: string;
+
+  @ApiProperty({ type: [MaxWeightPoint], description: '日付の昇順。自分のセットだけ。記録が無ければ空' })
+  points!: MaxWeightPoint[];
+}
+
 export const CALORIE_REASONS = ['NO_WEIGHT', 'NO_DURATION', 'TOO_SLOW', 'REST'] as const;
 
 export class CaloriesResponse {

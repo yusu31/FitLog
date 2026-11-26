@@ -559,6 +559,16 @@ export interface StatsCalendarDay {
      * @minimum 0
      */
   runM: number;
+  /**
+     * その日の筋トレの記録の件数（レポートの回数の帯に使う）
+     * @minimum 0
+     */
+  workoutCount: number;
+  /**
+     * その日のランの記録の件数
+     * @minimum 0
+     */
+  runCount: number;
 }
 
 export interface StatsPeriod {
@@ -887,6 +897,20 @@ export interface OneRepMaxItem {
 export interface OneRepMaxResponse {
   /** 推定1RM が高い順 */
   items: OneRepMaxItem[];
+}
+
+export interface MaxWeightPoint {
+  /** トレーニングした日（日本時間の日付） */
+  date: string;
+  /** その日のその種目のセットの最大重量（kg）。0kg（自重）だけの日は点にならない */
+  kg: number;
+}
+
+export interface MaxWeightsResponse {
+  exerciseId: string;
+  name: string;
+  /** 日付の昇順。自分のセットだけ。記録が無ければ空 */
+  points: MaxWeightPoint[];
 }
 
 /**
@@ -5307,6 +5331,133 @@ export function useGetOneRepMax<TData = Awaited<ReturnType<typeof getOneRepMax>>
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetOneRepMaxQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type getExerciseMaxWeightsResponse200 = {
+  data: MaxWeightsResponse
+  status: 200
+}
+
+export type getExerciseMaxWeightsResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type getExerciseMaxWeightsResponseSuccess = (getExerciseMaxWeightsResponse200) & {
+  headers: Headers;
+};
+export type getExerciseMaxWeightsResponseError = (getExerciseMaxWeightsResponse404) & {
+  headers: Headers;
+};
+
+export type getExerciseMaxWeightsResponse = (getExerciseMaxWeightsResponseSuccess | getExerciseMaxWeightsResponseError)
+
+export const getGetExerciseMaxWeightsUrl = (exerciseId: string,) => {
+
+
+
+
+  return `/api/body/exercises/${exerciseId}/max-weights`
+}
+
+/**
+ * @summary 自分の種目1つの「その日の最大重量」の推移（日付の昇順。自重だけの日は点にしない）
+ */
+export const getExerciseMaxWeights = async (exerciseId: string, options?: RequestInit): Promise<getExerciseMaxWeightsResponse> => {
+
+  const res = await fetch(getGetExerciseMaxWeightsUrl(exerciseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getExerciseMaxWeightsResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as getExerciseMaxWeightsResponse
+}
+
+
+
+
+
+export const getGetExerciseMaxWeightsQueryKey = (exerciseId: string,) => {
+    return [
+    `/api/body/exercises/${exerciseId}/max-weights`
+    ] as const;
+    }
+
+
+export const getGetExerciseMaxWeightsQueryOptions = <TData = Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError = ErrorResponse>(exerciseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetExerciseMaxWeightsQueryKey(exerciseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExerciseMaxWeights>>> = ({ signal }) => getExerciseMaxWeights(exerciseId, { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: exerciseId !== null && exerciseId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetExerciseMaxWeightsQueryResult = NonNullable<Awaited<ReturnType<typeof getExerciseMaxWeights>>>
+export type GetExerciseMaxWeightsQueryError = ErrorResponse
+
+
+/** @summary 自分の種目1つの「その日の最大重量」の推移（日付の昇順。自重だけの日は点にしない） */
+export function useGetExerciseMaxWeights<TData = Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError = ErrorResponse>(
+ exerciseId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExerciseMaxWeights>>,
+          TError,
+          Awaited<ReturnType<typeof getExerciseMaxWeights>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の種目1つの「その日の最大重量」の推移（日付の昇順。自重だけの日は点にしない） */
+export function useGetExerciseMaxWeights<TData = Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError = ErrorResponse>(
+ exerciseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExerciseMaxWeights>>,
+          TError,
+          Awaited<ReturnType<typeof getExerciseMaxWeights>>
+        > , 'initialData'
+      >, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の種目1つの「その日の最大重量」の推移（日付の昇順。自重だけの日は点にしない） */
+export function useGetExerciseMaxWeights<TData = Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError = ErrorResponse>(
+ exerciseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary 自分の種目1つの「その日の最大重量」の推移（日付の昇順。自重だけの日は点にしない） */
+export function useGetExerciseMaxWeights<TData = Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError = ErrorResponse>(
+ exerciseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExerciseMaxWeights>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetExerciseMaxWeightsQueryOptions(exerciseId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

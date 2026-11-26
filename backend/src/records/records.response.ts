@@ -282,6 +282,12 @@ export class StatsCalendarDay {
 
   @ApiProperty({ minimum: 0, description: 'その日のランの合計距離（m）' })
   runM!: number;
+
+  @ApiProperty({ minimum: 0, description: 'その日の筋トレの記録の件数（レポートの回数の帯に使う）' })
+  workoutCount!: number;
+
+  @ApiProperty({ minimum: 0, description: 'その日のランの記録の件数' })
+  runCount!: number;
 }
 
 // 週・月・年の切替に合わせて見せる数字（A08-5）。数える範囲は今日まで（今日より後の日は入らない）

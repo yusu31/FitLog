@@ -101,6 +101,18 @@ describe('記録をくわしく（結合: 本物の PostgreSQL・better-auth）'
     expect([stampAt('first-record'), stampAt('first-run'), stampAt('first-5k'), stampAt('weight-1t'), stampAt('days-10')]).toEqual(['2026-11-11', '2026-11-11', '2026-11-11', '2026-11-12', null]);
   });
 
+  it('calendar に、日ごとの筋トレ・ランの件数が入る（レポートの回数の帯用）', async () => {
+    const cookie = await signUpAs('たろう');
+    await record(cookie, 'workout', JST_NOON('2026-11-12'));
+    await record(cookie, 'workout', '2026-11-12T09:00:00.000Z');
+    await record(cookie, 'run', JST_NOON('2026-11-12'));
+    await record(cookie, 'rest', JST_NOON('2026-11-11'));
+    const res = await stats(cookie, '2026-11-12').expect(200);
+    const at = (d: string) => res.body.calendar.find((c: { date: string }) => c.date === d);
+    expect(at('2026-11-12')).toMatchObject({ workoutCount: 2, runCount: 1 });
+    expect(at('2026-11-11')).toMatchObject({ workoutCount: 0, runCount: 0 });
+  });
+
   it('同じ日に記録と休みがあれば、その日は rec（休みの日として数えない）', async () => {
     const cookie = await signUpAs('たろう');
     await record(cookie, 'workout', JST_NOON('2026-11-10'));
