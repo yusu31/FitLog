@@ -50,6 +50,7 @@ describe('からだ（結合: 本物の PostgreSQL・better-auth）', () => {
     await http().put('/api/body/weights/2026-10-26').send({ kg: 60 }).expect(401);
     await http().delete('/api/body/weights/2026-10-26').expect(401);
     await http().get('/api/body/one-rm').expect(401);
+    await http().get(`/api/body/exercises/${SQUAT_ID}/max-weights`).expect(401);
     await http().get(`/api/body/calories/${randomUUID()}`).expect(401);
     await http().get('/api/body/profile').expect(401);
     await http().put('/api/body/profile').send({}).expect(401);
@@ -190,6 +191,48 @@ describe('からだ（結合: 本物の PostgreSQL・better-auth）', () => {
       const b = await signUp();
       await workout(a.cookie, [[SQUAT_ID, 100, 5]]);
       expect((await http().get('/api/body/one-rm').set('Cookie', b.cookie).expect(200)).body).toEqual({ items: [] });
+    });
+  });
+
+  describe('種目の最大重量の推移', () => {
+    const maxWeights = (cookie: string, id: string) => http().get(`/api/body/exercises/${id}/max-weights`).set('Cookie', cookie);
+
+    it('T-BODY-MAXW-01 日ごとの最大重量を、日付の昇順で返す', async () => {
+      const me = await signUp();
+      await workout(me.cookie, [[SQUAT_ID, 60, 10], [SQUAT_ID, 80, 3]], '2026-10-27T03:00:00.000Z');
+      await workout(me.cookie, [[SQUAT_ID, 70, 5]], '2026-10-26T03:00:00.000Z');
+      const res = await maxWeights(me.cookie, SQUAT_ID).expect(200);
+      expect(res.body).toEqual({ exerciseId: SQUAT_ID, name: expect.any(String), points: [{ date: '2026-10-26', kg: 70 }, { date: '2026-10-27', kg: 80 }] });
+    });
+
+    it('T-BODY-MAXW-02 自重（0kg）だけの日は点にしない。記録が無ければ points は空', async () => {
+      const me = await signUp();
+      await workout(me.cookie, [[SQUAT_ID, 0, 20]]);
+      expect((await maxWeights(me.cookie, SQUAT_ID).expect(200)).body.points).toEqual([]);
+    });
+
+    it('T-BODY-MAXW-03 他人のセットは混ざらない', async () => {
+      const a = await signUp();
+      const b = await signUp();
+      await workout(a.cookie, [[SQUAT_ID, 100, 5]]);
+      expect((await maxWeights(b.cookie, SQUAT_ID).expect(200)).body.points).toEqual([]);
+    });
+
+    it('T-BODY-MAXW-04 UUID でない・無い種目は 404 EXERCISE_NOT_FOUND', async () => {
+      const me = await signUp();
+      for (const id of ['abc', randomUUID()]) {
+        const res = await maxWeights(me.cookie, id).expect(404);
+        expect(res.body.code).toBe('EXERCISE_NOT_FOUND');
+      }
+    });
+
+    it('T-BODY-MAXW-05 他人が足した種目は 404（存在を教えない）', async () => {
+      const a = await signUp();
+      const b = await signUp();
+      const made = await http().post('/api/exercises').set('Cookie', a.cookie).send({ name: '自分だけの種目', bodyPart: 'abs' });
+      expect(made.status).toBe(201);
+      await maxWeights(a.cookie, made.body.id).expect(200);
+      await maxWeights(b.cookie, made.body.id).expect(404);
     });
   });
 

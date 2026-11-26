@@ -25,7 +25,14 @@ function statsOf(over: Partial<StatsResponse> = {}): StatsResponse {
     d.setUTCDate(d.getUTCDate() - (364 - i));
     const date = d.toISOString().slice(0, 10);
     const status = (date === '2026-11-10' ? 'rest' : date === '2026-11-11' || date === '2026-11-03' ? 'rec' : 'none') as 'rec' | 'rest' | 'none';
-    return { date, status, weightKg: date === '2026-11-11' ? 800 : date === '2026-11-03' ? 2700 : 0, runM: date === '2026-11-11' ? 5000 : date === '2026-11-03' ? 7300 : 0 };
+    return {
+      date,
+      status,
+      weightKg: date === '2026-11-11' ? 800 : date === '2026-11-03' ? 2700 : 0,
+      runM: date === '2026-11-11' ? 5000 : date === '2026-11-03' ? 7300 : 0,
+      workoutCount: date === '2026-11-11' || date === '2026-11-03' ? 1 : 0,
+      runCount: date === '2026-11-11' || date === '2026-11-03' ? 1 : 0,
+    };
   });
   return {
     today,
@@ -52,6 +59,9 @@ function stubStats(body: unknown, status = 200) {
 
 afterEach(() => vi.unstubAllGlobals());
 
+// 「見る数字」の切替ボタン（下のグラフの切替チップと名前が重なるので、グループで絞る）
+const numberChip = (name: string) => within(screen.getByRole('group', { name: '見る数字' })).getByRole('button', { name });
+
 describe('StatsPage（S-35 記録のまとめ）', () => {
   it('初期は週。今週の合計4つ（動いた日・おやすみ・総重量・ラン）と、6週のタイル', async () => {
     stubStats(statsOf());
@@ -66,6 +76,19 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     expect(tiles).toHaveLength(6);
     expect(tiles[5]).toHaveAttribute('aria-pressed', 'true'); // 右端が今週
     expect(tiles[5]).toHaveAccessibleName('11/9〜 1日');
+  });
+
+  it('M1: カレンダーの下に、期間の実施回数（筋トレ＋ラン）と内訳の帯。期間を切り替えると変わる', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const user = userEvent.setup();
+    const band = await screen.findByTestId('stats-count');
+    // 今週（11/9〜）は 11/11 の筋トレ1回・ラン1回。休みは 11/10 の1日
+    expect(band).toHaveTextContent('2回');
+    expect(screen.getByTestId('stats-breakdown')).toHaveTextContent('筋トレ 1回・ラン 1回・休み 1日');
+    await user.click(screen.getByRole('button', { name: '月' }));
+    expect(screen.getByTestId('stats-count')).toHaveTextContent('4回'); // 11/3 と 11/11 の2日ぶん
+    expect(screen.getByTestId('stats-breakdown')).toHaveTextContent('筋トレ 2回・ラン 2回・休み 1日');
   });
 
   it('◀で先週へ。押した週のタイルでもその週へ移る。今週より先へは進めない', async () => {
@@ -166,9 +189,9 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     renderWithQuery(<StatsPage />);
     const user = userEvent.setup();
     await screen.findByTestId('stats-title');
-    await user.click(screen.getByRole('button', { name: '総重量' }));
+    await user.click(numberChip('総重量'));
     expect(screen.getByRole('button', { name: '11/9〜 800kg' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'ラン' }));
+    await user.click(numberChip('ラン'));
     expect(screen.getByRole('button', { name: '11/9〜 5.0km' })).toBeInTheDocument();
   });
 
@@ -192,8 +215,8 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     stubStats(statsOf());
     renderWithQuery(<StatsPage />);
     await screen.findByTestId('stats-title');
-    expect(screen.getByRole('button', { name: 'ラン' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: '動いた日' })).toHaveAttribute('aria-pressed', 'false');
+    expect(numberChip('ラン')).toHaveAttribute('aria-pressed', 'true');
+    expect(numberChip('動いた日')).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByText('日本縦断')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /のあたり/ })).toBeInTheDocument();
   });
@@ -204,7 +227,7 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
       stubStats(statsOf());
       const { unmount } = renderWithQuery(<StatsPage />);
       await screen.findByTestId('stats-title');
-      expect(screen.getByRole('button', { name: '動いた日' })).toHaveAttribute('aria-pressed', 'true');
+      expect(numberChip('動いた日')).toHaveAttribute('aria-pressed', 'true');
       expect(screen.queryByRole('img', { name: /のあたり/ })).not.toBeInTheDocument();
       unmount();
     }
@@ -292,7 +315,7 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
   it('記録がまったく無くても、責めずに表示できる（換算は出ない・スタンプはすべてまだ）', async () => {
     stubStats(
       statsOf({
-        calendar: statsOf().calendar.map((c) => ({ ...c, status: 'none' as const, weightKg: 0, runM: 0 })),
+        calendar: statsOf().calendar.map((c) => ({ ...c, status: 'none' as const, weightKg: 0, runM: 0, workoutCount: 0, runCount: 0 })),
         stamps: STAMP_KEYS.map((key) => ({ key, earned: false, earnedAt: null })),
       }),
     );

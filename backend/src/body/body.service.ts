@@ -1,11 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, desc, eq, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, isNull, lte, max, or } from 'drizzle-orm';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
 import { bodyWeights, exercises, groupMembers, records, runDetails, users, workoutSets } from '../db/schema.js';
 import { avg7, bmi, deltaFromPrevious, estimateKcal, metsForRun, METS_WORKOUT, oneRepMax, type WeightPoint } from './body-calc.js';
 import { parseHeightInput, parseMeasuredOn, parseProfileInput, parseWeightInput } from './body-input.js';
-import type { BodyResponse, CaloriesResponse, OneRepMaxResponse, ProfileResponse } from './body.response.js';
+import type { BodyResponse, CaloriesResponse, MaxWeightsResponse, OneRepMaxResponse, ProfileResponse } from './body.response.js';
 
 const HISTORY_LIMIT = 370;
 
@@ -89,6 +89,29 @@ export class BodyService {
       }
     }
     return { items: [...best.values()].sort((a, b) => b.kg - a.kg || a.name.localeCompare(b.name)) };
+  }
+
+  // 種目1つの「その日の最大重量」の推移（レポートの種目のグラフ）。自分のセットだけ。重さ0（自重）だけの日は点にしない。
+  // 種目は一覧の種目か自分で足した種目だけ（他人の種目・無い id・UUID でない値は、どれも同じ 404。存在を教えない）
+  async maxWeights(userId: string, exerciseId: string): Promise<MaxWeightsResponse> {
+    const notFound = () => new NotFoundException({ code: 'EXERCISE_NOT_FOUND', message: '種目が見つかりません', details: null });
+    if (!isUuid(exerciseId)) throw notFound();
+    const id = exerciseId.toLowerCase();
+    const [exercise] = await this.db
+      .select({ id: exercises.id, name: exercises.name })
+      .from(exercises)
+      .where(and(eq(exercises.id, id), or(isNull(exercises.createdBy), eq(exercises.createdBy, userId))));
+    if (!exercise) throw notFound();
+
+    const best = max(workoutSets.weightKg);
+    const rows = await this.db
+      .select({ date: records.localDate, kg: best })
+      .from(workoutSets)
+      .innerJoin(records, eq(records.id, workoutSets.recordId))
+      .where(and(eq(records.userId, userId), eq(workoutSets.exerciseId, id), gt(workoutSets.weightKg, '0')))
+      .groupBy(records.localDate)
+      .orderBy(asc(records.localDate));
+    return { exerciseId: exercise.id, name: exercise.name, points: rows.map((r) => ({ date: r.date, kg: Number(r.kg) })) };
   }
 
   // 1つの記録の推定消費カロリー。自分の記録だけ（他人・存在しない・UUID でない → 404）

@@ -3,7 +3,7 @@ import { buildStats, STAMP_KEYS, type DayAgg } from './stats.js';
 // 記録をくわしく（F-22・F-26・F-27・F-29。docs/testing-design.md 3-14）の集計。画面と API が使う純粋な関数。
 // 2026-11-12 は木曜、2026-11-09 は月曜。
 
-const day = (date: string, over: Partial<DayAgg> = {}): DayAgg => ({ date, status: 'rec', weightKg: 0, runM: 0, maxRunM: 0, ...over });
+const day = (date: string, over: Partial<DayAgg> = {}): DayAgg => ({ date, status: 'rec', weightKg: 0, runM: 0, maxRunM: 0, workoutCount: 0, runCount: 0, ...over });
 const earned = (days: DayAgg[], key: string): boolean => buildStats(days, '2026-11-12').stamps.find((s) => s.key === key)!.earned;
 
 describe('calendar（1年分のマス）', () => {
@@ -22,6 +22,13 @@ describe('calendar（1年分のマス）', () => {
     const { calendar } = buildStats([day('2026-11-10', { weightKg: 1200.04, runM: 5000 })], '2026-11-12');
     expect(calendar.find((c) => c.date === '2026-11-10')).toMatchObject({ weightKg: 1200, runM: 5000 });
     expect(calendar.find((c) => c.date === '2026-11-11')).toMatchObject({ weightKg: 0, runM: 0 });
+  });
+  it('日ごとの筋トレ・ランの件数が入る（レポートの回数の帯用。休みは数えない）', () => {
+    const { calendar } = buildStats([day('2026-11-10', { workoutCount: 2, runCount: 1 }), day('2026-11-11', { status: 'rest' })], '2026-11-12');
+    const at = (d: string) => calendar.find((c) => c.date === d)!;
+    expect(at('2026-11-10')).toMatchObject({ workoutCount: 2, runCount: 1 });
+    expect(at('2026-11-11')).toMatchObject({ workoutCount: 0, runCount: 0 });
+    expect(at('2026-11-12')).toMatchObject({ workoutCount: 0, runCount: 0 });
   });
   it('範囲の外（365日前）の記録は入らない', () => {
     const { calendar } = buildStats([day('2025-11-12')], '2026-11-12');

@@ -1,5 +1,5 @@
 import { FORBIDDEN_WORDS } from '@/lib/forbidden-words';
-import { ACTIVE_OPTIONS, BODY_MESSAGES, chartShape, FAVORITE_OPTIONS, formatDelta, guessWeight, parseHeightText, parseWeightText } from './body';
+import { ACTIVE_OPTIONS, BODY_MESSAGES, chartShape, FAVORITE_OPTIONS, formatDelta, guessWeight, startingWeight, parseHeightText, parseWeightText } from './body';
 
 describe('parseWeightText（体重 20〜300・小数1桁まで）', () => {
   it.each([
@@ -101,5 +101,14 @@ describe('guessWeight（身長からの体重の目安。BMI 22。L11）', () =>
   it('範囲の端（100cm・250cm）でも体重の範囲（20〜300）に収まる', () => {
     expect(guessWeight(100)).toBe(22);
     expect(guessWeight(250)).toBe(137.5);
+  });
+});
+
+describe('startingWeight（ルーラーの始まりの値）', () => {
+  it('今日の体重 → 前回の体重 → 身長からの目安 → 60kg の順', () => {
+    expect(startingWeight(61.2, 62, 170)).toBe(61.2);
+    expect(startingWeight(undefined, 62, 170)).toBe(62);
+    expect(startingWeight(undefined, null, 170)).toBe(guessWeight(170));
+    expect(startingWeight(undefined, undefined, null)).toBe(60);
   });
 });

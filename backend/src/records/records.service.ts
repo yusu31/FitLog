@@ -151,10 +151,15 @@ export class RecordsService {
     const days = new Map<string, DayAgg & { kinds: ('workout' | 'run' | 'rest')[] }>();
     const dayOf = (date: string) => {
       let d = days.get(date);
-      if (!d) days.set(date, (d = { date, status: 'none', weightKg: 0, runM: 0, maxRunM: 0, kinds: [] }));
+      if (!d) days.set(date, (d = { date, status: 'none', weightKg: 0, runM: 0, maxRunM: 0, workoutCount: 0, runCount: 0, kinds: [] }));
       return d;
     };
-    for (const r of kindRows) dayOf(r.localDate).kinds.push(r.kind);
+    for (const r of kindRows) {
+      const d = dayOf(r.localDate);
+      d.kinds.push(r.kind);
+      if (r.kind === 'workout') d.workoutCount += 1;
+      if (r.kind === 'run') d.runCount += 1;
+    }
     for (const r of weightRows) dayOf(r.localDate).weightKg = Number(r.total);
     for (const r of runRows) {
       const d = dayOf(r.localDate);

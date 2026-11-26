@@ -1394,6 +1394,47 @@
         ]
       }
     },
+    "/api/body/exercises/{exerciseId}/max-weights": {
+      "get": {
+        "operationId": "getExerciseMaxWeights",
+        "parameters": [
+          {
+            "name": "exerciseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaxWeightsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "種目が無い・他の人の種目・UUID でない（EXERCISE_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分の種目1つの「その日の最大重量」の推移（日付の昇順。自重だけの日は点にしない）",
+        "tags": [
+          "body"
+        ]
+      }
+    },
     "/api/body/calories/{recordId}": {
       "get": {
         "operationId": "getCalories",
@@ -3305,13 +3346,25 @@
             "type": "number",
             "minimum": 0,
             "description": "その日のランの合計距離（m）"
+          },
+          "workoutCount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "その日の筋トレの記録の件数（レポートの回数の帯に使う）"
+          },
+          "runCount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "その日のランの記録の件数"
           }
         },
         "required": [
           "date",
           "status",
           "weightKg",
-          "runM"
+          "runM",
+          "workoutCount",
+          "runCount"
         ]
       },
       "StatsPeriod": {
@@ -3912,6 +3965,50 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "MaxWeightPoint": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-11-18",
+            "description": "トレーニングした日（日本時間の日付）"
+          },
+          "kg": {
+            "type": "number",
+            "example": 62.5,
+            "description": "その日のその種目のセットの最大重量（kg）。0kg（自重）だけの日は点にならない"
+          }
+        },
+        "required": [
+          "date",
+          "kg"
+        ]
+      },
+      "MaxWeightsResponse": {
+        "type": "object",
+        "properties": {
+          "exerciseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "スクワット"
+          },
+          "points": {
+            "description": "日付の昇順。自分のセットだけ。記録が無ければ空",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaxWeightPoint"
+            }
+          }
+        },
+        "required": [
+          "exerciseId",
+          "name",
+          "points"
         ]
       },
       "CaloriesResponse": {

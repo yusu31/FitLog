@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { JapanMap } from '@/components/me/japan-map';
 import { StampMedal } from '@/components/me/stamp-medal';
 import { HeatmapSection } from '@/components/me/heatmap-section';
+import { ReportCharts } from '@/components/me/report-charts';
 import { WeekRunSection } from '@/components/me/week-run-section';
 import { useGetStats, type StatsResponse } from '@/lib/api/generated';
 import { formatMonthDay } from '@/lib/format';
@@ -156,6 +157,7 @@ function Period({ data }: { data: StatsResponse }) {
         {view === 'week' && <WeekBand cells={weekGrid(calendar, today, off)} today={today} />}
         {view === 'month' && <MonthCalendar cells={monthGrid(calendar, today, off)} today={today} />}
         {view === 'year' && <YearCalendars months={yearMonths(calendar, today, off)} today={today} />}
+        <CountBand totals={totals} />
       </section>
 
       <section aria-labelledby="stats-tiles" className="fl-slab px-4 py-3">
@@ -208,6 +210,7 @@ function Period({ data }: { data: StatsResponse }) {
           })}
         </ul>
       </section>
+      <ReportCharts data={data} />
       {/* 週を開いている間、今週の分だけ（今週のラン・今週きたえたところ） */}
       {view === 'week' && off === 0 && (
         <>
@@ -217,6 +220,23 @@ function Period({ data }: { data: StatsResponse }) {
       )}
       <JapanTrek totalMeters={data.totalRunDistanceM} defaultOpen={requested === 'm'} />
     </>
+  );
+}
+
+// カレンダーの下の回数の帯（M1）。選んでいる期間の実施回数（筋トレ＋ラン）と、その内訳。共有・絞り込みはしない
+function CountBand({ totals }: { totals: ReturnType<typeof sumRange> }) {
+  const count = totals.workouts + totals.runs;
+  return (
+    <div data-testid="stats-count" className="mt-3 rounded-lg bg-canvas px-3 py-2 text-center">
+      <p className="text-note font-extrabold text-fg-muted">この期間にやった回数</p>
+      <p>
+        <span className="fl-num text-3xl">{count}</span>
+        <small className="text-sm font-bold">回</small>
+      </p>
+      <p data-testid="stats-breakdown" className="text-note font-bold text-fg-muted">
+        筋トレ {totals.workouts}回・ラン {totals.runs}回・休み {totals.rest}日
+      </p>
+    </div>
   );
 }
 

@@ -17,11 +17,14 @@ describe('LogView', () => {
       '/api/records?limit=1': { status: 200, body: { items: [], nextCursor: null } },
       '/api/records?limit=20': { status: 200, body: { items: [], nextCursor: null } },
       '/api/routines': { status: 200, body: { items: [] } },
+      '/api/body': { status: 200, body: { heightCm: null, latest: null, bmi: null, avg7: null, deltaFromPrevious: null, weights: [] } },
       '/api/avatar': { status: 404, body: { code: 'NOT_FOUND', message: 'x', details: null } },
     });
     renderWithQuery(<LogView />);
     expect(await screen.findByRole('link', { name: 'レポートを見る' })).toHaveAttribute('href', '/me');
     expect(screen.getByRole('heading', { level: 1, name: '記録' })).toBeInTheDocument();
     expect(await screen.findByText('まだ記録がありません')).toBeInTheDocument();
+    // 体重の帯は、レポートを見るリンクの上に1行で出る
+    expect(await screen.findByRole('button', { name: '今日の体重を入れる' })).toBeInTheDocument();
   });
 });
