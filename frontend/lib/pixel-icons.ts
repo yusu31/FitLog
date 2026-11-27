@@ -24,23 +24,23 @@ export const PIXEL_ICONS = {
     '................',
     '................',
   ],
-  // ラン: ランニングシューズ
+  // ラン: ランニングシューズ（つま先を持ち上げた斜め向き）
   shoe: [
     '................',
     '................',
-    '..kkk...........',
-    '.kaaak..........',
-    '.kaaaakk........',
-    '.kaaaaaakkkk....',
-    '.kaahaaaaaaakk..',
-    '.kaaaaaaaaaaaak.',
-    '.kaaaaaaaaaabbak',
-    'kkkkkkkkkkkkkkkk',
-    'kwwwwwwwwwwwwwwk',
-    '.kkkkkkkkkkkkkk.',
     '................',
     '................',
-    '................',
+    '.kkk............',
+    '.kaa.kkkkk.kk.k.',
+    '.kaakaaaaakaakak',
+    '.kahaaaaaaaaaabk',
+    '.kaaawawaaabbbkk',
+    '.kaaaaaaawbkkkww',
+    'kkaaaaaakkkwwwkk',
+    '.kaaakkkwwwkkk..',
+    '.kkkkwwwkkk.....',
+    'kwwwwkkk........',
+    '.kkkk...........',
     '................',
   ],
   // 撮影: カメラ
@@ -62,7 +62,30 @@ export const PIXEL_ICONS = {
     '................',
     '................',
   ],
-  // おやすみ: 枕（本命）
+  // おやすみ: ベッド（本人が選んだ・11/27）
+  bed: [
+    '................',
+    '................',
+    '................',
+    'kk..............',
+    'kak.............',
+    'kak.....kkkkkkk.',
+    'kak.kkkkkwwwwwk.',
+    'kakkaaaaakkkkkk.',
+    'kaaaaaaaaaaaaak.',
+    'kaaaaaaaaaaaaak.',
+    'kkkkkkkkkkkkkkk.',
+    'kk...........kk.',
+    '................',
+    '................',
+    '................',
+    '................',
+  ],
+} as const;
+
+// おやすみの別案（比較ページで見比べた残り。アプリには使っていない。本人が選んだのはベッド）
+export const REST_ALTERNATIVES = {
+  // 枕
   pillow: [
     '................',
     '................',
@@ -81,10 +104,6 @@ export const PIXEL_ICONS = {
     '................',
     '................',
   ],
-} as const;
-
-// おやすみの別案（比較ページで見比べる用。アプリには使っていない。選ばれたら PIXEL_ICONS.pillow と差し替える）
-export const REST_ALTERNATIVES = {
   // 月と星
   moon: [
     '................',
@@ -100,25 +119,6 @@ export const REST_ALTERNATIVES = {
     '.kaaaaakkkkk....',
     '..kkaaaaaaak....',
     '....kkkkkkk.....',
-    '................',
-    '................',
-    '................',
-  ],
-  // ベッド
-  bed: [
-    '................',
-    '................',
-    '................',
-    'kk..............',
-    'kak.............',
-    'kak.....kkkkkkk.',
-    'kak.kkkkkwwwwwk.',
-    'kakkaaaaakkkkkk.',
-    'kaaaaaaaaaaaaak.',
-    'kaaaaaaaaaaaaak.',
-    'kkkkkkkkkkkkkkk.',
-    'kk...........kk.',
-    '................',
     '................',
     '................',
     '................',
