@@ -1,9 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, between, count, desc, eq, gt, inArray, lt, ne, or, sql } from 'drizzle-orm';
+import { beatsPast, milestoneOf } from '../common/achievements.js';
 import { toLocalDate } from '../common/local-date.js';
+import { buildStats, type StampKey as BookStampKey } from '../common/stats.js';
 import { weekDates, weekStartOf } from '../common/week.js';
 import { DB, type Db } from '../db/db.module.js';
 import { type BodyPart, comments, exercises, reactions, records, runDetails, users, videos, workoutSets } from '../db/schema.js';
+import { loadDayAggs } from '../records/day-aggs.js';
 import { encodeCursor } from '../records/list-input.js';
 import { ownerInMyGroup } from '../records/record-access.js';
 import { FEED_PAGE_SIZE, parseFeedQuery } from './feed-input.js';
@@ -18,6 +21,20 @@ import { summarizeStamps } from './stamps.js';
 export function feedScope(db: Db, userId: string, weekStart: string) {
   const dates = weekDates(weekStart);
   return and(ownerInMyGroup(db, userId), between(records.localDate, dates[0], dates[6]));
+}
+
+type Achievement = { pbExercises: Set<string>; longestRun: boolean; milestoneDay?: number; earnedStamps: BookStampKey[] };
+
+// 達成チップの材料を、API の形（付いていないものは省く）に直す。種目名は足跡の並び（最初にセットを足した順）に合わせる
+function achievementFields(a: Achievement | undefined, names: string[]): Pick<FeedItem, 'personalBestExercises' | 'longestRun' | 'milestoneDay' | 'earnedStamps'> {
+  if (!a) return {};
+  const pb = names.filter((n) => a.pbExercises.has(n));
+  return {
+    ...(pb.length > 0 ? { personalBestExercises: pb } : {}),
+    ...(a.longestRun ? { longestRun: true } : {}),
+    ...(a.milestoneDay ? { milestoneDay: a.milestoneDay } : {}),
+    ...(a.earnedStamps.length > 0 ? { earnedStamps: a.earnedStamps } : {}),
+  };
 }
 
 @Injectable()
@@ -51,7 +68,7 @@ export class FeedService {
     const ids = page.map((r) => r.record.id);
 
     const seenAt = await this.watermark(userId);
-    const [workouts, runs, stamps, commentCounts, totals, reactedMine, withVideo] = await Promise.all([
+    const [workouts, runs, stamps, commentCounts, totals, reactedMine, withVideo, achievements] = await Promise.all([
       this.workoutsOf(ids),
       this.runsOf(ids),
       this.stampsOf(ids, userId),
@@ -59,6 +76,7 @@ export class FeedService {
       this.totals(weekScope),
       this.myRecordsWithNewReactions(userId, seenAt, ids),
       this.recordsWithVideo(ids),
+      this.achievementsOf(page.map((r) => ({ record: r.record, authorId: r.authorId }))),
     ]);
     const isNew = (record: (typeof page)[number]['record'], authorId: string) =>
       authorId === userId ? reactedMine.has(record.id) : record.createdAt > seenAt;
@@ -74,6 +92,7 @@ export class FeedService {
       ...(workouts.has(record.id) ? { topSet: workouts.get(record.id)!.top, bodyParts: workouts.get(record.id)!.parts } : {}),
       ...(runs.has(record.id) ? { run: runs.get(record.id) } : {}),
       ...(record.caption ? { caption: record.caption } : {}),
+      ...achievementFields(achievements.get(record.id), workouts.get(record.id)?.names ?? []),
       stamps: stamps.get(record.id) ?? [],
       commentCount: commentCounts.get(record.id) ?? 0,
       ...(withVideo.has(record.id) ? { hasVideo: true, videoId: withVideo.get(record.id)!.id, videoVisibleUntil: withVideo.get(record.id)!.visibleUntil } : {}),
@@ -138,6 +157,80 @@ export class FeedService {
     if (ids.length === 0) return new Map();
     const rows = await this.db.select({ id: videos.id, recordId: videos.recordId, visibleUntil: videos.visibleUntil }).from(videos).where(inArray(videos.recordId, ids));
     return new Map(rows.map((r) => [r.recordId, { id: r.id, visibleUntil: r.visibleUntil.toISOString() }]));
+  }
+
+  // 達成チップの材料（カードの帯。休み・投稿には付けない）。どれも都度計算で、DB に持たない。
+  //  ・自己ベスト: その記録の最大（重量×回数）が、その人・その種目の、これより前の記録の最大を超えた（初めての種目は除く）。ランは距離が、これより前のランのどれよりも長い
+  //  ・節目・スタンプ: その日に運動した日数が 1・7・30・100 日目になった／スタンプ帳で初めて取った。同じ日に何件あっても、その日の最初の記録にだけ付ける
+  private async achievementsOf(page: { record: typeof records.$inferSelect; authorId: string }[]): Promise<Map<string, Achievement>> {
+    const result = new Map<string, Achievement>();
+    const targets = page.filter((p) => p.record.kind === 'workout' || p.record.kind === 'run');
+    if (targets.length === 0) return result;
+    const authorIds = [...new Set(targets.map((t) => t.authorId))];
+    const dates = [...new Set(targets.map((t) => t.record.localDate))];
+    const targetIds = targets.map((t) => t.record.id);
+    for (const t of targets) result.set(t.record.id, { pbExercises: new Set(), longestRun: false, earnedStamps: [] });
+
+    // 筋トレの自己ベスト
+    const exerciseRows = await this.db.selectDistinct({ exerciseId: workoutSets.exerciseId }).from(workoutSets).where(inArray(workoutSets.recordId, targetIds));
+    if (exerciseRows.length > 0) {
+      const maxes = await this.db
+        .select({
+          recordId: workoutSets.recordId,
+          userId: records.userId,
+          exerciseId: workoutSets.exerciseId,
+          name: exercises.name,
+          recordedAt: records.recordedAt,
+          volume: sql<string>`max(${workoutSets.weightKg} * ${workoutSets.reps})`,
+        })
+        .from(workoutSets)
+        .innerJoin(records, eq(records.id, workoutSets.recordId))
+        .innerJoin(exercises, eq(exercises.id, workoutSets.exerciseId))
+        .where(and(inArray(records.userId, authorIds), inArray(workoutSets.exerciseId, exerciseRows.map((e) => e.exerciseId))))
+        .groupBy(workoutSets.recordId, records.userId, workoutSets.exerciseId, exercises.name, records.recordedAt);
+      for (const row of maxes) {
+        const entry = result.get(row.recordId);
+        if (!entry) continue;
+        const past = maxes.filter((o) => o.userId === row.userId && o.exerciseId === row.exerciseId && o.recordedAt < row.recordedAt).map((o) => Number(o.volume));
+        if (beatsPast(Number(row.volume), past.length > 0 ? Math.max(...past) : null)) entry.pbExercises.add(row.name);
+      }
+    }
+
+    // ランの自己ベスト（一番長い距離）
+    const runRows = await this.db
+      .select({ recordId: runDetails.recordId, userId: records.userId, distanceM: runDetails.distanceM, recordedAt: records.recordedAt })
+      .from(runDetails)
+      .innerJoin(records, eq(records.id, runDetails.recordId))
+      .where(inArray(records.userId, authorIds));
+    for (const row of runRows) {
+      const entry = result.get(row.recordId);
+      if (!entry) continue;
+      const past = runRows.filter((o) => o.userId === row.userId && o.recordedAt < row.recordedAt).map((o) => o.distanceM);
+      if (beatsPast(row.distanceM, past.length > 0 ? Math.max(...past) : null)) entry.longestRun = true;
+    }
+
+    // 節目・スタンプは、その日の最初の記録にだけ
+    const dayRows = await this.db
+      .select({ id: records.id, userId: records.userId, localDate: records.localDate })
+      .from(records)
+      .where(and(inArray(records.userId, authorIds), inArray(records.localDate, dates), inArray(records.kind, ['workout', 'run'])))
+      .orderBy(asc(records.recordedAt), asc(records.id));
+    const firstOfDay = new Map<string, string>();
+    for (const row of dayRows) if (!firstOfDay.has(`${row.userId}|${row.localDate}`)) firstOfDay.set(`${row.userId}|${row.localDate}`, row.id);
+
+    const today = toLocalDate(new Date());
+    for (const authorId of authorIds) {
+      const aggs = await loadDayAggs(this.db, authorId);
+      const recDates = aggs.filter((d) => d.status === 'rec').map((d) => d.date);
+      const stamps = buildStats(aggs, today).stamps;
+      for (const t of targets.filter((x) => x.authorId === authorId)) {
+        if (firstOfDay.get(`${authorId}|${t.record.localDate}`) !== t.record.id) continue;
+        const entry = result.get(t.record.id)!;
+        entry.milestoneDay = milestoneOf(recDates, t.record.localDate);
+        entry.earnedStamps = stamps.filter((st) => st.earnedAt === t.record.localDate).map((st) => st.key);
+      }
+    }
+    return result;
   }
 
   // 筋トレの要約（D7-6）。種目名と部位は重複なし・最初にセットを足した順（記録の詳細と同じ並び）。

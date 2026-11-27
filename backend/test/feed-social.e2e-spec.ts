@@ -166,6 +166,39 @@ describe('足跡・スタンプ・コメント（結合: 本物の PostgreSQL・
       expect(feed.items[0].topSet).toEqual({ exerciseName: 'スクワット', weightKg: 100, reps: 8 });
     });
 
+    // PR 5: 帯の達成チップの材料（自己ベスト・節目・その日に取ったスタンプ）
+    it('達成: 重量×回数がこれまでを超えた記録に自己ベスト。初めての記録には付かない。1日目の節目と初めてのスタンプはその日の最初の記録だけ', async () => {
+      const { a1 } = await world();
+      const mon = await createRecord(a1, 'workout', MON_NOON);
+      await addSet(a1, mon, BENCH_PRESS_ID, 1, 40, 10);
+      const monLater = await createRecord(a1, 'workout', '2026-10-26T09:00:00.000Z');
+      await addSet(a1, monLater, BENCH_PRESS_ID, 1, 40, 10);
+      const tue = await createRecord(a1, 'workout', TUE_NOON);
+      await addSet(a1, tue, BENCH_PRESS_ID, 1, 50, 10);
+      const feed = await getFeed(a1);
+      const byId = new Map(feed.items.map((i: { id: string }) => [i.id, i]));
+      const first = byId.get(mon) as Record<string, unknown>;
+      expect(first.personalBestExercises).toBeUndefined();
+      expect(first.milestoneDay).toBe(1);
+      expect(first.earnedStamps).toContain('first-record');
+      const later = byId.get(monLater) as Record<string, unknown>;
+      expect(later.personalBestExercises).toBeUndefined();
+      expect(later.milestoneDay).toBeUndefined();
+      expect(later.earnedStamps).toBeUndefined();
+      const second = byId.get(tue) as Record<string, unknown>;
+      expect(second.personalBestExercises).toEqual(['ベンチプレス']);
+      expect(second.milestoneDay).toBeUndefined();
+    });
+
+    it('達成: 休みの記録には付かない', async () => {
+      const { a1 } = await world();
+      const id = await createRecord(a1, 'rest', MON_NOON);
+      const feed = await getFeed(a1);
+      const item = feed.items.find((i: { id: string }) => i.id === id) as Record<string, unknown>;
+      expect(item.milestoneDay).toBeUndefined();
+      expect(item.earnedStamps).toBeUndefined();
+    });
+
     // T-GRP/3-7: 最重要。別グループの記録が1件も出ない
     it('別のグループの記録は1件も出ない（A の人の足跡に B の記録も合計も混ざらない）', async () => {
       const { a1, a2, b1, b2 } = await world();

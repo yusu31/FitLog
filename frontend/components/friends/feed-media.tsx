@@ -8,6 +8,7 @@ import { ShootButton } from '@/components/video-grid/shoot-button';
 import { VIDEO_GRID_MESSAGES } from '@/components/video-grid/messages';
 import { useGetCurrentGroup, useGetVideosThisWeek, type BodyPart, type FeedItem, type FeedStamp, type FeedTopSet } from '@/lib/api/generated';
 import { BODY_PART_LABEL } from '@/lib/body-parts';
+import { achievementChips } from '@/lib/feed';
 import { formatSet } from '@/lib/format';
 import { levelsOf } from '@/lib/heatmap';
 import type { WeightUnit } from '@/lib/unit';
@@ -30,7 +31,7 @@ export function mediaState(opts: { isOwn: boolean; visibleUntil: string | undefi
 
 const FACE_MAX = 3;
 
-export function FeedMedia({ item, isOwn, title, detail }: { item: FeedItem; isOwn: boolean; title: string; detail: string }) {
+export function FeedMedia({ item, isOwn, title }: { item: FeedItem; isOwn: boolean; title: string }) {
   const { data } = useGetVideosThisWeek();
   const unlocked = data?.status === 200 ? data.data.unlocked : false;
   const state = mediaState({ isOwn, visibleUntil: item.videoVisibleUntil, unlocked });
@@ -38,9 +39,6 @@ export function FeedMedia({ item, isOwn, title, detail }: { item: FeedItem; isOw
   return (
     <div data-testid="feed-media" className="relative aspect-[3/4] w-full overflow-hidden rounded-fl bg-canvas">
       {state === 'open' && item.videoId ? <OpenVideo videoId={item.videoId} label={label} /> : <ClosedVideo state={state} label={label} />}
-      <div className="absolute top-2 left-2 max-w-[75%]">
-        <NumberBadge title={title} detail={detail} />
-      </div>
       <div className="absolute right-2 bottom-2">
         <Faces stamps={item.stamps} />
       </div>
@@ -48,16 +46,37 @@ export function FeedMedia({ item, isOwn, title, detail }: { item: FeedItem; isOw
   );
 }
 
-// 動画が無いカードの「数字の札」＋反応の顔（同じ部品。写真の面が無いだけ）
-export function MediaBadges({ item, title, detail }: { item: FeedItem; title: string; detail: string }) {
+// カードの帯（PR 5）。動画の上のふちに、種目と数字・達成のチップを出す（動画には重ねない。動画があってもなくても同じ帯）。
+// 達成のチップは筋トレ・ランだけ（自己ベスト・節目・その日に取ったスタンプ）。休み・投稿は名前だけの細い帯
+export function FeedBand({ item, title, detail, thin }: { item: FeedItem; title: string; detail: string; thin: boolean }) {
+  const chips = achievementChips(item);
+  return (
+    <div data-testid="feed-band" className={thin ? 'flex flex-wrap items-center gap-1.5 rounded-xl bg-canvas px-3 py-1.5' : 'flex flex-wrap items-center gap-1.5 rounded-xl bg-canvas px-3 py-2'}>
+      <p data-testid="number-badge" className="flex min-w-0 items-baseline gap-1.5 text-fg">
+        <span className="truncate text-[15px] font-extrabold">{title}</span>
+        {detail ? <span className="fl-num shrink-0 text-sm font-bold">{detail}</span> : null}
+      </p>
+      {chips.map((chip) => (
+        <span key={chip} data-testid="achievement-chip" className="rounded-full bg-teal-light px-2.5 py-0.5 text-note font-extrabold text-brand">
+          {chip}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// 動画が無いカードの面: 反応の顔と、筋トレなら一番重いセット（写真の面が無いだけで、顔は同じ部品）
+export function MediaBadges({ item }: { item: FeedItem }) {
   const unit = useWeightUnit();
   const hasFaces = item.stamps.some((s) => s.by.length > 0);
+  if (!hasFaces && !item.topSet) return null;
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <NumberBadge title={title} detail={detail} flat />
-        {hasFaces ? <Faces stamps={item.stamps} flat /> : null}
-      </div>
+      {hasFaces && (
+        <div className="flex justify-end">
+          <Faces stamps={item.stamps} flat />
+        </div>
+      )}
       {item.topSet && <TopSet set={item.topSet} parts={item.bodyParts ?? []} unit={unit} />}
     </div>
   );
@@ -77,23 +96,6 @@ function TopSet({ set, parts, unit }: { set: FeedTopSet; parts: readonly BodyPar
         <BodyFigure view="back" levels={levels} size={32} decorative />
       </span>
     </div>
-  );
-}
-
-// 記録の数字の札。種目名・距離など。写真の上では半透明の黒に白字、写真が無いときは通常の面
-function NumberBadge({ title, detail, flat = false }: { title: string; detail: string; flat?: boolean }) {
-  return (
-    <p
-      data-testid="number-badge"
-      className={
-        flat
-          ? 'inline-flex max-w-full items-baseline gap-1.5 rounded-full bg-canvas px-3 py-1.5 text-fg'
-          : 'inline-flex max-w-full items-baseline gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-white'
-      }
-    >
-      <span className="truncate text-[15px] font-extrabold">{title}</span>
-      {detail ? <span className="fl-num shrink-0 text-sm font-bold">{detail}</span> : null}
-    </p>
   );
 }
 
