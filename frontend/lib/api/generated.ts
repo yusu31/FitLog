@@ -59,6 +59,19 @@ export interface GroupResponse {
   name: string;
 }
 
+/**
+ * 運動場の背景
+ */
+export type GroupBackground = typeof GroupBackground[keyof typeof GroupBackground];
+
+
+export const GroupBackground = {
+  yard: 'yard',
+  gym: 'gym',
+  park: 'park',
+  city: 'city',
+} as const;
+
 export interface AvatarResponse {
   body: string;
   hair: number;
@@ -69,7 +82,20 @@ export interface AvatarResponse {
   accessory?: string;
 }
 
-export interface MemberResponse {
+/**
+ * 今日（日本時間）のようす。運動場のポーズになる
+ */
+export type MemberToday = typeof MemberToday[keyof typeof MemberToday];
+
+
+export const MemberToday = {
+  workout: 'workout',
+  run: 'run',
+  rest: 'rest',
+  none: 'none',
+} as const;
+
+export interface GroupMemberResponse {
   id: string;
   name: string;
   /**
@@ -79,13 +105,39 @@ export interface MemberResponse {
   bio?: string | null;
   /** キャラの設定。メールアドレスは返さない */
   avatar: AvatarResponse;
+  /** 今日（日本時間）のようす。運動場のポーズになる */
+  today: MemberToday;
 }
 
 export interface GroupDetailResponse {
   id: string;
   name: string;
+  /**
+     * ミッションの説明（100字まで）。無ければ null
+     * @nullable
+     */
+  description: string | null;
+  /** 運動場の背景 */
+  background: GroupBackground;
   /** 参加した順 */
-  members: MemberResponse[];
+  members: GroupMemberResponse[];
+}
+
+export interface UpdateGroupRequest {
+  /**
+     * ミッション名（1〜20字）。送ったものだけ直す
+     * @minLength 1
+     * @maxLength 20
+     */
+  name?: string;
+  /**
+     * ミッションの説明（100字まで）。空文字か null で消す
+     * @maxLength 100
+     * @nullable
+     */
+  description?: string | null;
+  /** 運動場の背景 */
+  background?: GroupBackground;
 }
 
 export interface InvitationCreatedResponse {
@@ -749,6 +801,18 @@ export interface VideoUploadResponse {
 export interface DeleteVideoResponse {
   /** 投稿の動画を消したので、投稿ごと消えた（true）。ほかの種類は動画だけ消えて記録は残る（false） */
   recordDeleted: boolean;
+}
+
+export interface MemberResponse {
+  id: string;
+  name: string;
+  /**
+     * ひとこと（プロフィール）。無ければ null
+     * @nullable
+     */
+  bio?: string | null;
+  /** キャラの設定。メールアドレスは返さない */
+  avatar: AvatarResponse;
 }
 
 export interface VideoWeekItem {
@@ -2005,6 +2069,104 @@ export function useGetCurrentGroup<TData = Awaited<ReturnType<typeof getCurrentG
 
 
 
+
+export type updateCurrentGroupResponse200 = {
+  data: GroupDetailResponse
+  status: 200
+}
+
+export type updateCurrentGroupResponse404 = {
+  data: ErrorResponse
+  status: 404
+}
+
+export type updateCurrentGroupResponseSuccess = (updateCurrentGroupResponse200) & {
+  headers: Headers;
+};
+export type updateCurrentGroupResponseError = (updateCurrentGroupResponse404) & {
+  headers: Headers;
+};
+
+export type updateCurrentGroupResponse = (updateCurrentGroupResponseSuccess | updateCurrentGroupResponseError)
+
+export const getUpdateCurrentGroupUrl = () => {
+
+
+
+
+  return `/api/groups/current`
+}
+
+/**
+ * @summary ミッション（名前・説明・背景）を直す。メンバー全員が直せる
+ */
+export const updateCurrentGroup = async (updateGroupRequest: UpdateGroupRequest, options?: RequestInit): Promise<updateCurrentGroupResponse> => {
+
+  const res = await fetch(getUpdateCurrentGroupUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
+    body: JSON.stringify(updateGroupRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: updateCurrentGroupResponse['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as updateCurrentGroupResponse
+}
+
+
+
+
+
+export const getUpdateCurrentGroupMutationKey = () => ['updateCurrentGroup'] as const;
+
+export const getUpdateCurrentGroupMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCurrentGroup>>, TError,UpdateCurrentGroupMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCurrentGroup>>, TError,UpdateCurrentGroupMutationVariables, TContext> => {
+
+const mutationKey = getUpdateCurrentGroupMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCurrentGroup>>, UpdateCurrentGroupMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateCurrentGroup(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCurrentGroupMutationResult = NonNullable<Awaited<ReturnType<typeof updateCurrentGroup>>>
+    export type UpdateCurrentGroupMutationBody = UpdateGroupRequest
+    export type UpdateCurrentGroupMutationError = ErrorResponse
+    export type UpdateCurrentGroupMutationVariables = {data: UpdateGroupRequest}
+
+    /** @summary ミッション（名前・説明・背景）を直す。メンバー全員が直せる */
+export const useUpdateCurrentGroup = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCurrentGroup>>, TError,UpdateCurrentGroupMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateCurrentGroup>>,
+        TError,
+        UpdateCurrentGroupMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateCurrentGroupMutationOptions(options), queryClient);
+    }
 
 export type createInvitationResponse201 = {
   data: InvitationCreatedResponse

@@ -127,6 +127,46 @@
         "tags": [
           "groups"
         ]
+      },
+      "patch": {
+        "operationId": "updateCurrentGroup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGroupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupDetailResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "グループに入っていない",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "ミッション（名前・説明・背景）を直す。メンバー全員が直せる",
+        "tags": [
+          "groups"
+        ]
       }
     },
     "/api/groups/current/invitations": {
@@ -2387,6 +2427,16 @@
           "name"
         ]
       },
+      "GroupBackground": {
+        "type": "string",
+        "enum": [
+          "yard",
+          "gym",
+          "park",
+          "city"
+        ],
+        "description": "運動場の背景"
+      },
       "AvatarResponse": {
         "type": "object",
         "properties": {
@@ -2424,7 +2474,17 @@
           "pantsColor"
         ]
       },
-      "MemberResponse": {
+      "MemberToday": {
+        "type": "string",
+        "enum": [
+          "workout",
+          "run",
+          "rest",
+          "none"
+        ],
+        "description": "今日（日本時間）のようす。運動場のポーズになる"
+      },
+      "GroupMemberResponse": {
         "type": "object",
         "properties": {
           "id": {
@@ -2447,12 +2507,21 @@
                 "$ref": "#/components/schemas/AvatarResponse"
               }
             ]
+          },
+          "today": {
+            "description": "今日（日本時間）のようす。運動場のポーズになる",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberToday"
+              }
+            ]
           }
         },
         "required": [
           "id",
           "name",
-          "avatar"
+          "avatar",
+          "today"
         ]
       },
       "GroupDetailResponse": {
@@ -2466,19 +2535,60 @@
             "type": "string",
             "example": "朝ランの会"
           },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "朝6時に走って、夜は筋トレ",
+            "description": "ミッションの説明（100字まで）。無ければ null"
+          },
+          "background": {
+            "description": "運動場の背景",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GroupBackground"
+              }
+            ]
+          },
           "members": {
             "description": "参加した順",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MemberResponse"
+              "$ref": "#/components/schemas/GroupMemberResponse"
             }
           }
         },
         "required": [
           "id",
           "name",
+          "description",
+          "background",
           "members"
         ]
+      },
+      "UpdateGroupRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20,
+            "description": "ミッション名（1〜20字）。送ったものだけ直す"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100,
+            "description": "ミッションの説明（100字まで）。空文字か null で消す"
+          },
+          "background": {
+            "description": "運動場の背景",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GroupBackground"
+              }
+            ]
+          }
+        }
       },
       "InvitationCreatedResponse": {
         "type": "object",
@@ -3735,6 +3845,37 @@
         },
         "required": [
           "recordDeleted"
+        ]
+      },
+      "MemberResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "example": "たろう"
+          },
+          "bio": {
+            "type": "string",
+            "example": "朝ランが好きです",
+            "nullable": true,
+            "description": "ひとこと（プロフィール）。無ければ null"
+          },
+          "avatar": {
+            "description": "キャラの設定。メールアドレスは返さない",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "avatar"
         ]
       },
       "VideoWeekItem": {

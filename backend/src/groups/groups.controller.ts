@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
 import {
   ApiConflictResponse,
   ApiCreatedResponse,
@@ -11,7 +11,7 @@ import {
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { ErrorResponse } from '../common/error-response.js';
 import { GroupsService } from './groups.service.js';
-import { CreateGroupRequest, GroupDetailResponse, GroupResponse, InvitationCreatedResponse } from './groups.response.js';
+import { CreateGroupRequest, GroupDetailResponse, GroupResponse, InvitationCreatedResponse, UpdateGroupRequest } from './groups.response.js';
 
 // グループと招待（F-02。docs/design.md 4章）。すべてログイン必須（共通のガードが既定で守る）
 @ApiTags('groups')
@@ -33,6 +33,14 @@ export class GroupsController {
   @ApiNotFoundResponse({ type: ErrorResponse, description: 'グループに入っていない' })
   current(@Session() session: UserSession) {
     return this.groups.getCurrent(session.user.id);
+  }
+
+  @Patch('current')
+  @ApiOperation({ operationId: 'updateCurrentGroup', summary: 'ミッション（名前・説明・背景）を直す。メンバー全員が直せる' })
+  @ApiOkResponse({ type: GroupDetailResponse })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: 'グループに入っていない' })
+  update(@Session() session: UserSession, @Body() body: UpdateGroupRequest) {
+    return this.groups.updateCurrent(session.user.id, body);
   }
 
   @Post('current/invitations')

@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { CreateGroupForm } from '@/components/friends/create-group-form';
 import { GROUP_MEMBER_MAX, GroupBand, MemberList } from '@/components/friends/member-list';
 import { FullScreen } from '@/components/fitlog/full-screen';
+import { MissionForm } from '@/components/friends/mission-form';
 import { useGetCurrentGroup } from '@/lib/api/generated';
 import { backTarget } from '@/lib/back-target';
 import { GROUP_MESSAGES } from '@/lib/messages';
@@ -63,6 +64,7 @@ export function GroupSettingsView() {
               </p>
             )}
             <GroupBand group={group} withInvite={false} />
+            <MissionForm key={`${group.name}|${group.description}|${group.background}`} group={group} />
             <MemberList group={group} />
             <p className="text-note text-fg-muted [word-break:auto-phrase]">{LIMIT_REASON}</p>
             <InvitePanel full={group.members.length >= GROUP_MEMBER_MAX} />
