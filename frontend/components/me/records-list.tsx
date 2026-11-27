@@ -220,7 +220,7 @@ function ConfirmDelete({ record, onCancel, onConfirm }: { record: RecordDetailRe
   );
 }
 
-function summarize(record: RecordDetailResponse): { title: string; detail: string } {
+export function summarize(record: RecordDetailResponse): { title: string; detail: string } {
   if (record.kind === 'rest') return { title: 'おやすみ', detail: '' };
   if (record.kind === 'run') {
     const run = record.run;

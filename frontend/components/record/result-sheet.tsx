@@ -7,6 +7,7 @@ import { StampMedal } from '@/components/me/stamp-medal';
 import { MyChara } from '@/components/fitlog/my-chara';
 import type { BodyPart, StampKey } from '@/lib/api/generated';
 import { BODY_PART_LABEL, BODY_PART_ORDER } from '@/lib/body-parts';
+import { dayLabel, type DayMode } from '@/lib/day-mode';
 import { levelsOf } from '@/lib/heatmap';
 import { STAMP_LABEL } from '@/lib/stats';
 import { formatKcal } from '@/lib/body/body';
@@ -31,7 +32,7 @@ export type SheetData = {
   // 今月の何日目か（F-20）。分からないとき（まだ読み込めていない・電波なし）は出さない
   monthDay?: number;
   // 記録する日（きのうの分のとき、見出しを「きのう」にする。A02-8）。無ければ今日
-  day?: 'today' | 'yesterday';
+  day?: DayMode;
   // 推定消費カロリー（B14b）。体重が無い・時間が測れないときは無い（null も無いのと同じ）。本人だけの数字
   kcal?: number | null;
   // このセットで新しくとったスタンプ（D5 PR-2）。メダルが1回跳ねる。動きを減らす設定では動かさず、出すだけ
@@ -145,7 +146,7 @@ function CheerSprite({ pose }: { pose: 'pb' | 'cheer' }) {
 }
 
 // 今日きたえた部位（F-19）。からだの図（F-12）と同じ体の図で、使った部位だけを一番濃い色にする。色だけに頼らず、部位名も書く
-function TodayParts({ parts, day }: { parts: readonly BodyPart[]; day?: 'today' | 'yesterday' }) {
+function TodayParts({ parts, day }: { parts: readonly BodyPart[]; day?: DayMode }) {
   const levels = levelsOf(parts.map((bodyPart) => ({ bodyPart, sets: 4 })));
   const names = BODY_PART_ORDER.filter((p) => parts.includes(p)).map((p) => BODY_PART_LABEL[p]);
   return (
@@ -154,7 +155,7 @@ function TodayParts({ parts, day }: { parts: readonly BodyPart[]; day?: 'today' 
         <BodyFigure view="front" levels={levels} size={36} />
         <BodyFigure view="back" levels={levels} size={36} />
       </div>
-      <p className="text-sm font-bold">{day === 'yesterday' ? 'きのう' : '今日'}きたえたところ: {names.join('・')}</p>
+      <p className="text-sm font-bold">{day === undefined || day === 'today' ? '今日' : day === 'yesterday' ? 'きのう' : dayLabel(day)}きたえたところ: {names.join('・')}</p>
     </div>
   );
 }

@@ -20,8 +20,8 @@ import {
   useListRecords,
   type WeekDay,
 } from '@/lib/api/generated';
-import { dayDateOf, withDay, type DayMode } from '@/lib/day-mode';
-import { WEEKDAYS, formatSet, formatWeight, weekdayIndex } from '@/lib/format';
+import { dayDateOf, dayLabel, dayModeOfDate, isLateDay, selectableDates, withDay, type DayMode } from '@/lib/day-mode';
+import { formatSet, formatWeight } from '@/lib/format';
 import { HOME_MESSAGES, LATE_MESSAGES, REST_MESSAGES, WORKOUT_END_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { todayPose } from '@/lib/today-pose';
@@ -72,8 +72,8 @@ export function TodayView() {
   const menu = items ? buildMenu(items, dayDateOf(day, new Date())) : null;
   const yesterday = dayDateOf('yesterday', new Date());
   const selected = dayDateOf(day, new Date());
-  // 7マスを押して日を選ぶ（D2-2・D2-7）。押せるのは今日ときのうだけ（あとから記録はきのうまで。F-21）
-  const onSelectDate = (date: string) => setDay(date === yesterday ? 'yesterday' : 'today');
+  // 7マスを押して日を選ぶ（D2-2・D2-7）。押せるのは今週の過ぎた日と今日・きのう（あとから記録は今週まで。F-21・02-9 PR 2）
+  const onSelectDate = (date: string) => setDay(dayModeOfDate(date, new Date()));
   // 月曜は、きのう（日曜）が前の週で7マスに無い。そのときだけ帯の下に小さい入口を置く
   const yesterdayInStrip = days.some((d) => d.date === yesterday);
 
@@ -89,7 +89,7 @@ export function TodayView() {
     <>
       <h1 className="sr-only">記録</h1>
       {days.length === 7 ? (
-        <WeekStrip days={days} today={today} selected={selected} selectable={[today, yesterday]} onSelect={onSelectDate} />
+        <WeekStrip days={days} today={today} selected={selected} selectable={selectableDates(new Date())} onSelect={onSelectDate} />
       ) : (
         <p role="alert" className="m-4 rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
           {LOAD_ERROR}
@@ -112,8 +112,8 @@ export function TodayView() {
           <p role="alert" className="rounded-fl bg-coral-light px-4 py-3 text-sm font-bold text-fg">
             {LOAD_ERROR}
           </p>
-        ) : day === 'yesterday' ? (
-          // きのうの分: つぎにやることと休みは出さず、種目を選んで記録する（きのうの休みは作れない）
+        ) : isLateDay(day) ? (
+          // 過ぎた日（きのう・今週のさかのぼり）の分: つぎにやることと休みは出さず、種目を選んで記録する（きのうの休みは作れない）
           menu.items.length > 0 ? (
             <>
               <Menu items={menu.items} day={day} />
@@ -168,13 +168,23 @@ export function TodayView() {
 // 選んだ日の見出し（A02-7・D2-2）。「今日 11月4日（水）」の1つだけ。きのうは「あとから記録」の札を添える。
 // 日の切り替えは上の7マス（今日・きのうのマスが押せる）
 function DayHeading({ date, day }: { date: string; day: DayMode }) {
-  const label = `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日（${WEEKDAYS[weekdayIndex(date)]}）`;
+  const label = dayLabel(date);
   return (
     <div className="flex items-center gap-2">
       <h2 className="text-lg font-extrabold short:text-base">
-        {day === 'today' ? LATE_MESSAGES.today : LATE_MESSAGES.yesterday} <span className="text-fg-muted">{label}</span>
+        {day === 'today' ? (
+          <>
+            {LATE_MESSAGES.today} <span className="text-fg-muted">{label}</span>
+          </>
+        ) : day === 'yesterday' ? (
+          <>
+            {LATE_MESSAGES.yesterday} <span className="text-fg-muted">{label}</span>
+          </>
+        ) : (
+          <span>{label}</span>
+        )}
       </h2>
-      {day === 'yesterday' && <span className="fl-tag bg-gold-light text-fg">{LATE_MESSAGES.tag}</span>}
+      {isLateDay(day) && <span className="fl-tag bg-gold-light text-fg">{LATE_MESSAGES.tag}</span>}
     </div>
   );
 }

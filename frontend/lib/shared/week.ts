@@ -33,3 +33,10 @@ export function cellStatus(kinds: ReadonlyArray<'workout' | 'run' | 'rest'>): Ce
   if (kinds.some((k) => k === 'workout' || k === 'run')) return 'rec';
   return kinds.includes('rest') ? 'rest' : 'none';
 }
+
+// 記録しなかった、過ぎた日を「休み」として見せるか（02-9 PR 2 ③）。DB に休みは作らず、画面と集計で見せるだけ。
+// 範囲は今週（月曜〜きのう）だけ。「さかのぼって書ける間は休みの色」で、週が変われば記録の無い日は none に戻る。
+// 最初の記録より前の日は対象にしない（登録前の日を休みにしない）。firstDate＝その人の最初の記録の日（無ければ null）
+export function isAutoRestDay(date: string, today: string, firstDate: string | null): boolean {
+  return firstDate !== null && date >= firstDate && date >= weekStartOf(today) && date < today;
+}

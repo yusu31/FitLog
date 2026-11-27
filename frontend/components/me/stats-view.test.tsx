@@ -47,10 +47,19 @@ function statsOf(over: Partial<StatsResponse> = {}): StatsResponse {
   };
 }
 
+// 日付 → その日の記録（⑧ その日のまとめ用）
+let dayRecords: Record<string, unknown[]> = {};
+beforeEach(() => {
+  dayRecords = {};
+});
+
 function stubStats(body: unknown, status = 200) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
+      // その日のまとめ（⑧）が読む、日付で絞った記録の一覧
+      const day = /^\/api\/records\?date=(\d{4}-\d{2}-\d{2})$/.exec(url);
+      if (day) return new Response(JSON.stringify({ items: dayRecords[day[1]] ?? [], nextCursor: null }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       if (!/^\/api\/me\/stats\?date=\d{4}-\d{2}-\d{2}$/.test(url)) throw new Error(`想定外の呼び出し: ${url}`);
       return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
     }),
@@ -89,6 +98,47 @@ describe('StatsPage（S-35 記録のまとめ）', () => {
     await user.click(screen.getByRole('button', { name: '月' }));
     expect(screen.getByTestId('stats-count')).toHaveTextContent('4回'); // 11/3 と 11/11 の2日ぶん
     expect(screen.getByTestId('stats-breakdown')).toHaveTextContent('筋トレ 2回・ラン 2回・休み 1日');
+  });
+
+  // ⑧ その日のまとめ（02-9 PR 2）。今日は 2026-11-12（木）。11/11 は筋トレ（きのう）、11/10 は休み（statsOf の設定）
+  it('⑧ 週のマスを押すと、その日のまとめが開く。その日の記録が並び、詳細へのリンクと、記録を足す入口がある。もう一度押すと閉じる', async () => {
+    dayRecords['2026-11-11'] = [
+      { id: 'r1', kind: 'workout', recordedAt: '2026-11-11T03:00:00.000Z', localDate: '2026-11-11', active: false, late: true, exercises: [{ exerciseId: 'sq', name: 'スクワット', sets: [{ id: 's1', setNo: 1, weightKg: 60, reps: 10 }] }] },
+    ];
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: '11/11 のまとめを開く' }));
+    const summary = await screen.findByTestId('day-summary');
+    expect(within(summary).getByRole('heading', { name: '11月11日（水）のまとめ' })).toBeInTheDocument();
+    expect(await within(summary).findByRole('link', { name: /スクワット/ })).toHaveAttribute('href', '/record-detail?id=r1&from=me');
+    expect(within(summary).getByRole('link', { name: '筋トレを足す' })).toHaveAttribute('href', '/exercises?day=yesterday');
+    expect(within(summary).getByRole('link', { name: 'ランを足す' })).toHaveAttribute('href', '/run?day=yesterday');
+    await user.click(screen.getByRole('button', { name: '11/11 のまとめを開く' }));
+    expect(screen.queryByTestId('day-summary')).not.toBeInTheDocument();
+  });
+
+  it('⑧ 休みの色（記録のない過ぎた日）のまとめは、責めずに「おやすみとして見せています」。今週の別の日は date 付きの入口', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: '11/10 のまとめを開く' }));
+    const summary = await screen.findByTestId('day-summary');
+    expect(await within(summary).findByText('記録のない日は、おやすみとして見せています')).toBeInTheDocument();
+    expect(within(summary).getByRole('link', { name: 'ランを足す' })).toHaveAttribute('href', '/run?day=2026-11-10');
+  });
+
+  it('⑧ 今日より先のマスは押せない。先週のマスは押せるが、記録を足す入口は出さない（さかのぼりは今週まで）', async () => {
+    stubStats(statsOf());
+    renderWithQuery(<StatsPage />);
+    const user = userEvent.setup();
+    await screen.findByTestId('stats-title');
+    expect(screen.queryByRole('button', { name: '11/13 のまとめを開く' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '前へ' }));
+    await user.click(screen.getByRole('button', { name: '11/3 のまとめを開く' }));
+    const summary = await screen.findByTestId('day-summary');
+    await within(summary).findByText(/この日の記録はありません|おやすみとして/);
+    expect(within(summary).queryByRole('link', { name: 'ランを足す' })).not.toBeInTheDocument();
   });
 
   it('◀で先週へ。押した週のタイルでもその週へ移る。今週より先へは進めない', async () => {

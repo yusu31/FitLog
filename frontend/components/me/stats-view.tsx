@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { JapanMap } from '@/components/me/japan-map';
 import { StampMedal } from '@/components/me/stamp-medal';
+import { DaySummary } from '@/components/me/day-summary';
 import { HeatmapSection } from '@/components/me/heatmap-section';
 import { ReportCharts } from '@/components/me/report-charts';
 import { WeekRunSection } from '@/components/me/week-run-section';
@@ -84,6 +85,10 @@ function Period({ data }: { data: StatsResponse }) {
   const requested = useSearchParams()?.get('metric');
   const [metric, setMetric] = useState<Metric>(METRICS.some((m) => m.key === requested) ? (requested as Metric) : 'days');
   const first = calendar[0].date;
+  // カレンダーで押した日（その日のまとめ。⑧）。期間を切り替えたり ◀▶ で動いたら閉じる
+  const [pickedDate, setPickedDate] = useState<string | null>(null);
+  const pickedStatus = calendar.find((c) => c.date === pickedDate)?.status ?? 'none';
+  const togglePick = (d: string) => setPickedDate(d === pickedDate ? null : d);
   const min = view === 'week' ? minWeekOffset(today, first) : view === 'month' ? minMonthOffset(today, first) : minYearOffset(today, first);
 
   const yearFrom = monthRange(today, off - 11);
@@ -133,6 +138,7 @@ function Period({ data }: { data: StatsResponse }) {
               onClick={() => {
                 setView(v.view);
                 setOff(0);
+                setPickedDate(null);
               }}
               className={segClass(view === v.view)}
             >
@@ -141,11 +147,17 @@ function Period({ data }: { data: StatsResponse }) {
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <NavButton label="前へ" disabled={off <= min} onClick={() => setOff(off - 1)} dir="prev" />
+          <NavButton label="前へ" disabled={off <= min} onClick={() => {
+              setOff(off - 1);
+              setPickedDate(null);
+            }} dir="prev" />
           <p data-testid="stats-title" className="min-w-0 flex-1 px-1 text-center font-extrabold">
             {title}
           </p>
-          <NavButton label="次へ" disabled={off >= 0} onClick={() => setOff(off + 1)} dir="next" />
+          <NavButton label="次へ" disabled={off >= 0} onClick={() => {
+              setOff(off + 1);
+              setPickedDate(null);
+            }} dir="next" />
         </div>
         <dl data-testid="stats-totals" className="mt-2 grid grid-cols-2 gap-1 text-center min-[260px]:grid-cols-4">
           <Stat label="動いた日" value={String(totals.days)} unit="日" />
@@ -154,9 +166,10 @@ function Period({ data }: { data: StatsResponse }) {
           <Stat label="ラン" {...formatMetric('m', totals.m)} />
         </dl>
         {equivalent && <p className="mt-2 text-center text-sm font-bold">{equivalent}</p>}
-        {view === 'week' && <WeekBand cells={weekGrid(calendar, today, off)} today={today} />}
-        {view === 'month' && <MonthCalendar cells={monthGrid(calendar, today, off)} today={today} />}
+        {view === 'week' && <WeekBand cells={weekGrid(calendar, today, off)} today={today} picked={pickedDate} onPick={togglePick} />}
+        {view === 'month' && <MonthCalendar cells={monthGrid(calendar, today, off)} today={today} picked={pickedDate} onPick={togglePick} />}
         {view === 'year' && <YearCalendars months={yearMonths(calendar, today, off)} today={today} />}
+        {pickedDate && view !== 'year' && <DaySummary key={pickedDate} date={pickedDate} status={pickedStatus} today={today} />}
         <CountBand totals={totals} />
       </section>
 
@@ -262,8 +275,9 @@ function Stat({ label, value, unit }: { label: string; value: string; unit: stri
 }
 
 // 1日のマス。週・月・年で同じ部品（D5-2）。休みは全期間で同じ紫。年は日付の数字なし（色だけ）
-function DayCell({ cell, today, small = false }: { cell: GridCell; today: string; small?: boolean }) {
+function DayCell({ cell, today, small = false, picked = false, onPick }: { cell: GridCell; today: string; small?: boolean; picked?: boolean; onPick?: (date: string) => void }) {
   const date = cell.date!;
+  const pickable = onPick !== undefined && !small && date <= today;
   return (
     <li
       data-status={cell.status}
@@ -276,7 +290,19 @@ function DayCell({ cell, today, small = false }: { cell: GridCell; today: string
         date === today && (small ? 'ring-1 ring-fg' : 'ring-2 ring-fg'),
       )}
     >
-      {small ? null : Number(date.slice(8))}
+      {small ? null : pickable ? (
+        <button
+          type="button"
+          aria-pressed={picked}
+          aria-label={`${formatMonthDay(date)} のまとめを開く`}
+          onClick={() => onPick(date)}
+          className={cn('flex size-full items-center justify-center rounded-full outline-none focus-visible:ring-4 focus-visible:ring-teal/40', picked && 'ring-2 ring-teal-dark')}
+        >
+          {Number(date.slice(8))}
+        </button>
+      ) : (
+        Number(date.slice(8))
+      )}
     </li>
   );
 }
@@ -293,13 +319,13 @@ function WeekdayHead() {
 }
 
 // 週の帯（7マス）
-function WeekBand({ cells, today }: { cells: GridCell[]; today: string }) {
+function WeekBand({ cells, today, picked, onPick }: { cells: GridCell[]; today: string; picked: string | null; onPick: (date: string) => void }) {
   return (
     <div className="mt-3">
       <WeekdayHead />
       <ol aria-label="週のマス" data-testid="stats-grid" className="mt-1 grid grid-cols-7 gap-1">
         {cells.map((c) => (
-          <DayCell key={c.date} cell={c} today={today} />
+          <DayCell key={c.date} cell={c} today={today} picked={picked === c.date} onPick={onPick} />
         ))}
       </ol>
     </div>
@@ -307,12 +333,12 @@ function WeekBand({ cells, today }: { cells: GridCell[]; today: string }) {
 }
 
 // 月のカレンダー（日付つき・月曜始まり）
-function MonthCalendar({ cells, today }: { cells: GridCell[]; today: string }) {
+function MonthCalendar({ cells, today, picked, onPick }: { cells: GridCell[]; today: string; picked: string | null; onPick: (date: string) => void }) {
   return (
     <div className="mt-3">
       <WeekdayHead />
       <ol aria-label="月のマス" data-testid="stats-grid" className="mt-1 grid grid-cols-7 gap-1">
-        {cells.map((c, i) => (c.date === null ? <li key={`blank-${i}`} aria-hidden /> : <DayCell key={c.date} cell={c} today={today} />))}
+        {cells.map((c, i) => (c.date === null ? <li key={`blank-${i}`} aria-hidden /> : <DayCell key={c.date} cell={c} today={today} picked={picked === c.date} onPick={onPick} />))}
       </ol>
     </div>
   );
