@@ -99,6 +99,9 @@ export const groups = pgTable(
     // ミッションの説明（PR 6）。0〜100字・任意。招待の画面（ログイン前）には出さない
     description: text('description'),
     background: text('background').$type<GroupBackground>().notNull().default('yard'),
+    // ミッションを最後に直した時刻と人（PR 7b。タイムラインの1行に使う。最後の1回だけ残す）。直した人が退会すると null
+    missionChangedAt: timestamp('mission_changed_at', { withTimezone: true }),
+    missionChangedBy: text('mission_changed_by').references(() => users.id, { onDelete: 'set null' }),
   },
   (t) => [
     check('groups_description_ck', sql`${t.description} is null or char_length(${t.description}) between 1 and 100`),

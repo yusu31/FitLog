@@ -5,6 +5,7 @@ import { errorCode } from '../common/error-code.js';
 import { DB, type Db } from '../db/db.module.js';
 import { toLocalDate } from '../common/local-date.js';
 import { GROUP_BACKGROUNDS, groupMembers, groups, invitations, records, users, type GroupBackground } from '../db/schema.js';
+import { buildGroupEvents } from './group-events.js';
 import { GROUP_MEMBER_MAX, judgeInvitation, type InvitationVerdict } from './invitation-judge.js';
 import type { MemberToday } from './groups.response.js';
 
@@ -57,18 +58,27 @@ export class GroupsService {
     if (!groupId) throw this.noGroup();
 
     const [group] = await this.db
-      .select({ id: groups.id, name: groups.name, description: groups.description, background: groups.background })
+      .select({ id: groups.id, name: groups.name, description: groups.description, background: groups.background, createdBy: groups.createdBy, missionChangedAt: groups.missionChangedAt, missionChangedBy: groups.missionChangedBy })
       .from(groups)
       .where(eq(groups.id, groupId));
     // メールアドレスは仲間に見せない（名前とキャラの設定だけ）
     const members = await this.db
-      .select({ id: users.id, name: users.name, bio: users.bio, avatar: users.avatar })
+      .select({ id: users.id, name: users.name, bio: users.bio, avatar: users.avatar, joinedAt: groupMembers.joinedAt })
       .from(groupMembers)
       .innerJoin(users, eq(users.id, groupMembers.userId))
       .where(eq(groupMembers.groupId, groupId))
       .orderBy(asc(groupMembers.joinedAt), asc(users.id));
     const today = await this.todayOf(members.map((m) => m.id));
-    return { ...group, members: members.map((m) => ({ ...m, today: today.get(m.id) ?? ('none' as MemberToday) })) };
+    const { createdBy, missionChangedAt, missionChangedBy, ...detail } = group;
+    // ミッションを直した人の名前（いまのメンバーでなくても、退会していなければ引く）
+    const [changer] = missionChangedBy ? await this.db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, missionChangedBy)) : [];
+    const events = buildGroupEvents({
+      now: new Date(),
+      createdBy,
+      members: members.map((m) => ({ id: m.id, name: m.name, joinedAt: m.joinedAt })),
+      mission: missionChangedAt ? { at: missionChangedAt, by: changer ?? null } : null,
+    });
+    return { ...detail, members: members.map(({ joinedAt: _joinedAt, ...m }) => ({ ...m, today: today.get(m.id) ?? ('none' as MemberToday) })), events };
   }
 
   // ミッションを直す（名前・説明・背景。送ったものだけ）。メンバー全員が直せる（作った人は退会で消えるので、作った人だけにはしない）
@@ -82,7 +92,8 @@ export class GroupsService {
     if (input.description !== undefined) patch.description = this.validDescription(input.description);
     if (input.background !== undefined) patch.background = this.validBackground(input.background);
     if (Object.keys(patch).length === 0) this.invalid('name・description・background のどれかを送ってください');
-    await this.db.update(groups).set(patch).where(eq(groups.id, groupId));
+    // 直した時刻と人を残す（タイムラインの「◯◯さんがミッションを変えました」の1行に使う）
+    await this.db.update(groups).set({ ...patch, missionChangedAt: new Date(), missionChangedBy: userId }).where(eq(groups.id, groupId));
     return this.getCurrent(userId);
   }
 

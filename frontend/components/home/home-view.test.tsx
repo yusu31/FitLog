@@ -95,6 +95,15 @@ describe('HomeView（ホーム）', () => {
     expect(band.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('グループの出来事（加わった・ミッションを変えた）が、今日の帯と2秒動画の列のあいだに出る', async () => {
+    routes['/api/groups/current'] = {
+      status: 200,
+      body: { ...GROUP, events: [{ kind: 'joined', at: '2026-11-26T03:00:00.000Z', actorId: 'u2', actorName: 'はなこ' }] },
+    };
+    renderView();
+    expect(await screen.findByText('はなこさんが仲間に加わりました')).toBeInTheDocument();
+  });
+
   it('グループが無いときは、足跡を読みに行かず、仲間タブへ案内する', async () => {
     routes['/api/groups/current'] = { status: 404, body: { code: 'NOT_FOUND', message: 'x', details: null } };
     renderView();

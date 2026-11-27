@@ -7,6 +7,7 @@ import { PageTitle } from '@/components/fitlog/app-shell';
 import { MyChara } from '@/components/fitlog/my-chara';
 import { buttonClass } from '@/components/fitlog/thick-button';
 import { FeedSection } from '@/components/friends/feed-section';
+import { GroupEvents } from '@/components/home/group-events';
 import { TodayBand } from '@/components/home/today-band';
 import { WeekVideoStrip } from '@/components/video-grid/week-video-strip';
 import { useGetCurrentGroup, useGetWeek } from '@/lib/api/generated';
@@ -71,6 +72,7 @@ function Timeline() {
       ) : (
         <div className="space-y-4">
           {group.data?.status === 200 && <TodayBand group={group.data.data} meId={session?.user.id} />}
+          {group.data?.status === 200 && <GroupEvents events={group.data.data.events} meId={session?.user.id} />}
           {!alone && <WeekVideoStrip />}
           <FeedSection hideEmptyTotals={alone} />
         </div>

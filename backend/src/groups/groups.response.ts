@@ -57,6 +57,23 @@ export class GroupMemberResponse extends MemberResponse {
   today!: MemberToday;
 }
 
+// タイムラインの上に出す出来事の1行。joined＝仲間が加わった・mission＝ミッションが直された
+export const GROUP_EVENT_KINDS = ['joined', 'mission'] as const;
+
+export class GroupEventResponse {
+  @ApiProperty({ enum: GROUP_EVENT_KINDS, enumName: 'GroupEventKind' })
+  kind!: (typeof GROUP_EVENT_KINDS)[number];
+
+  @ApiProperty({ format: 'date-time' })
+  at!: Date;
+
+  @ApiProperty({ type: String, nullable: true, description: '加わった人・直した人の ID。退会していれば null' })
+  actorId!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: '加わった人・直した人の名前。退会していれば null' })
+  actorName!: string | null;
+}
+
 export class GroupDetailResponse extends GroupResponse {
   @ApiProperty({ type: String, nullable: true, example: '朝6時に走って、夜は筋トレ', description: 'ミッションの説明（100字まで）。無ければ null' })
   description!: string | null;
@@ -66,6 +83,9 @@ export class GroupDetailResponse extends GroupResponse {
 
   @ApiProperty({ type: [GroupMemberResponse], description: '参加した順' })
   members!: GroupMemberResponse[];
+
+  @ApiProperty({ type: [GroupEventResponse], description: '直近14日の出来事（仲間が加わった・ミッションが直された）。新しい順・最大5件' })
+  events!: GroupEventResponse[];
 }
 
 export class UpdateGroupRequest {

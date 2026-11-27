@@ -8,6 +8,7 @@ const group = (todays: GroupDetailResponse['members'][number]['today'][]): Group
   name: '朝トレ部',
   description: null,
   background: 'yard',
+  events: [],
   members: todays.map((today, i) => ({ id: `u${i + 1}`, name: `なまえ${i + 1}`, avatar: AVATAR, today })),
 });
 

@@ -2524,6 +2524,45 @@
           "today"
         ]
       },
+      "GroupEventKind": {
+        "type": "string",
+        "enum": [
+          "joined",
+          "mission"
+        ]
+      },
+      "GroupEventResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GroupEventKind"
+              }
+            ]
+          },
+          "at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "actorId": {
+            "type": "string",
+            "nullable": true,
+            "description": "加わった人・直した人の ID。退会していれば null"
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "加わった人・直した人の名前。退会していれば null"
+          }
+        },
+        "required": [
+          "kind",
+          "at",
+          "actorId",
+          "actorName"
+        ]
+      },
       "GroupDetailResponse": {
         "type": "object",
         "properties": {
@@ -2555,6 +2594,13 @@
             "items": {
               "$ref": "#/components/schemas/GroupMemberResponse"
             }
+          },
+          "events": {
+            "description": "直近14日の出来事（仲間が加わった・ミッションが直された）。新しい順・最大5件",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupEventResponse"
+            }
           }
         },
         "required": [
@@ -2562,7 +2608,8 @@
           "name",
           "description",
           "background",
-          "members"
+          "members",
+          "events"
         ]
       },
       "UpdateGroupRequest": {

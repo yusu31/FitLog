@@ -70,8 +70,8 @@ better-auth（Drizzle アダプター）＋ Cookie セッション。
 | メソッド | パス | 説明 | 備考 |
 |----------|------|------|------|
 | POST | `/groups` | グループを作る | すでにグループにいると 409 |
-| GET | `/groups/current` | 今のグループとメンバー（名前・キャラの設定・今日のようす）を返す。ミッションの説明と運動場の背景も入る | グループにいなければ 404。`members[].today` は workout・run・rest・none（今日の日本時間の記録から。両方ある日は workout） |
-| PATCH | `/groups/current` | ミッション（名前・説明・背景）を直す。メンバー全員が直せる | 送った項目だけ直る。説明は空文字か null で消える。名前 1〜20字・説明 100字まで・背景は yard/gym/park/city。入っていなければ 404 |
+| GET | `/groups/current` | 今のグループとメンバー（名前・キャラの設定・今日のようす）を返す。ミッションの説明と運動場の背景も入る | グループにいなければ 404。`members[].today` は workout・run・rest・none（今日の日本時間の記録から。両方ある日は workout）。`events`（02-9 PR 7b）は直近14日の出来事で、`kind`（joined＝仲間が加わった・mission＝ミッションが直された）・`at`・`actorId`・`actorName`（退会していれば null）。新しい順・最大5件・グループを作った人の参加は入らない。`groups.mission_changed_at/by`（0023）に最後に直した時刻と人を持つ |
+| PATCH | `/groups/current` | ミッション（名前・説明・背景）を直す。メンバー全員が直せる | 送った項目だけ直る（直した時刻と人を `groups.mission_changed_at/by` に残す）。説明は空文字か null で消える。名前 1〜20字・説明 100字まで・背景は yard/gym/park/city。入っていなければ 404 |
 | POST | `/groups/current/invitations` | 招待リンクを作る | リンクの値は**このレスポンスの1回だけ**返す |
 | GET | `/invitations/{token}` | 招待の内容（グループ名・今の人数）を見る | **ログイン不要**（2章）。期限切れ 410・取り消し済み 404 |
 | POST | `/invitations/{token}/accept` | 参加する | 満員 409・すでに別のグループ 409・期限切れ 410 |
