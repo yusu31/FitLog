@@ -81,6 +81,20 @@ describe('HomeView（ホーム）', () => {
     expect(await screen.findByRole('heading', { name: '今週の2秒動画' })).toBeInTheDocument();
   });
 
+  it('仲間がいれば、タイムラインの一番上に「今日の記録」の帯が出る（記録した人の顔だけ）', async () => {
+    routes['/api/groups/current'] = {
+      status: 200,
+      body: { ...GROUP, members: [{ ...GROUP.members[0], today: 'workout' }, { ...GROUP.members[1], today: 'none' }] },
+    };
+    renderView();
+    const band = await screen.findByTestId('today-band');
+    expect(band).toHaveAttribute('data-complete', 'false');
+    expect(screen.getAllByTestId('today-band-face')).toHaveLength(1);
+    // 帯は、2秒動画の列より上（タイムラインの一番上）
+    const strip = await screen.findByRole('heading', { name: '今週の2秒動画' });
+    expect(band.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('グループが無いときは、足跡を読みに行かず、仲間タブへ案内する', async () => {
     routes['/api/groups/current'] = { status: 404, body: { code: 'NOT_FOUND', message: 'x', details: null } };
     renderView();

@@ -62,6 +62,10 @@ export const HOME_MESSAGES = {
   todayRest: '今日はおやすみ。ゆっくり休もう',
   todayNone: '今日の 1セットから はじめよう',
   timeline: '仲間のタイムライン',
+  // 今日の記録の帯（02-9 PR 7a）。分母は出さない
+  todayBand: '今日の記録',
+  todayBandComplete: '今日は全員そろった！',
+  todayBandMePending: 'まだ',
   noGroup: '仲間とつながると、ここに足跡が流れます',
 } as const;
 
