@@ -4873,12 +4873,54 @@
           "totals"
         ]
       },
+      "FeedLatestFriendRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "workout",
+              "run",
+              "rest",
+              "post"
+            ],
+            "description": "記録の種類"
+          },
+          "authorName": {
+            "type": "string",
+            "description": "記録した仲間の名前"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "記録が作られた時刻"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "authorName",
+          "createdAt"
+        ]
+      },
       "FeedUnreadResponse": {
         "type": "object",
         "properties": {
           "hasNew": {
             "type": "boolean",
             "description": "最後に仲間タブを見たあとに、仲間の新しい記録か、自分の記録への仲間の新しいスタンプ・コメントがあれば true（週は区切らない）。一度も見ていなければ登録した時刻から数える"
+          },
+          "latestFriendRecord": {
+            "description": "同じグループの自分以外の人の、いちばん新しい記録（右下の知らせに使う。見たかどうかとは関係なく、新しい順の先頭）。仲間の記録がまだ無ければ付かない",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeedLatestFriendRecord"
+              }
+            ]
           }
         },
         "required": [

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MemberResponse } from '../groups/groups.response.js';
 import { BODY_PARTS, RECORD_KINDS, type BodyPart, type RecordKind } from '../db/schema.js';
 import { RunDetail } from '../records/records.response.js';
@@ -104,9 +104,26 @@ export class FeedItem {
   isNew?: boolean;
 }
 
+export class FeedLatestFriendRecord {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ enum: RECORD_KINDS, description: '記録の種類' })
+  kind!: RecordKind;
+
+  @ApiProperty({ description: '記録した仲間の名前' })
+  authorName!: string;
+
+  @ApiProperty({ type: String, format: 'date-time', description: '記録が作られた時刻' })
+  createdAt!: string;
+}
+
 export class FeedUnreadResponse {
   @ApiProperty({ description: '最後に仲間タブを見たあとに、仲間の新しい記録か、自分の記録への仲間の新しいスタンプ・コメントがあれば true（週は区切らない）。一度も見ていなければ登録した時刻から数える' })
   hasNew!: boolean;
+
+  @ApiPropertyOptional({ type: FeedLatestFriendRecord, description: '同じグループの自分以外の人の、いちばん新しい記録（右下の知らせに使う。見たかどうかとは関係なく、新しい順の先頭）。仲間の記録がまだ無ければ付かない' })
+  latestFriendRecord?: FeedLatestFriendRecord;
 }
 
 export class FeedTotals {

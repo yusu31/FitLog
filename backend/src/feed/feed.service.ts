@@ -108,13 +108,17 @@ export class FeedService {
   // 週は区切らない（前の週の日付であとから記録したものも知らせる）。足跡を読んだだけでは基準は進まない（markSeen だけが進める）
   async unread(userId: string): Promise<FeedUnreadResponse> {
     const seenAt = await this.watermark(userId);
-    const [others] = await this.db
-      .select({ one: sql`1` })
+    // 仲間のいちばん新しい記録（右下の知らせの材料）。新着の判定にも使う（基準より後に作られていれば新着）
+    const [latest] = await this.db
+      .select({ id: records.id, kind: records.kind, createdAt: records.createdAt, authorName: users.name })
       .from(records)
-      .where(and(ownerInMyGroup(this.db, userId), ne(records.userId, userId), gt(records.createdAt, seenAt)))
+      .innerJoin(users, eq(users.id, records.userId))
+      .where(and(ownerInMyGroup(this.db, userId), ne(records.userId, userId)))
+      .orderBy(desc(records.createdAt), desc(records.id))
       .limit(1);
-    if (others) return { hasNew: true };
-    return { hasNew: (await this.myRecordsWithNewReactions(userId, seenAt)).size > 0 };
+    const latestFriendRecord = latest ? { id: latest.id, kind: latest.kind, authorName: latest.authorName, createdAt: latest.createdAt.toISOString() } : undefined;
+    const hasNew = (latest !== undefined && latest.createdAt > seenAt) || (await this.myRecordsWithNewReactions(userId, seenAt)).size > 0;
+    return { hasNew, ...(latestFriendRecord ? { latestFriendRecord } : {}) };
   }
 
   // 仲間タブを見た。基準を今にする。グループに入っていない人も呼べる（何も起きないのと同じ）
