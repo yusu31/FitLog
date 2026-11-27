@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText, unwrap } from '@/lib/api/api-error';
 import { createRecord, deleteRecord, issueVideoUpload, listRecords, updateRecordMemo } from '@/lib/api/generated';
@@ -68,7 +68,6 @@ export function VideoRecorder({ recordId, onClose }: { recordId?: string; onClos
   const [attempt, setAttempt] = useState(0);
   // 撮れた動画（見直しと送信に使う）・見直し用の URL・ひとこと・付け先
   const [clip, setClip] = useState<Blob | null>(null);
-  const [clipUrl, setClipUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [target, setTarget] = useState<Target | null>(recordId ? { recordId, kind: 'fixed' } : null);
 
@@ -121,15 +120,10 @@ export function VideoRecorder({ recordId, onClose }: { recordId?: string; onClos
   }
 
   // 見直し用の URL は、撮り直し・閉じるときに手放す
-  useEffect(() => {
-    if (!clip || typeof URL.createObjectURL !== 'function') return;
-    const url = URL.createObjectURL(clip);
-    setClipUrl(url);
-    return () => {
-      URL.revokeObjectURL?.(url);
-      setClipUrl(null);
-    };
-  }, [clip]);
+  const clipUrl = useMemo(() => (clip && typeof URL.createObjectURL === 'function' ? URL.createObjectURL(clip) : null), [clip]);
+  useEffect(() => () => {
+    if (clipUrl) URL.revokeObjectURL?.(clipUrl);
+  }, [clipUrl]);
 
   async function onShoot() {
     const stream = streamRef.current;
