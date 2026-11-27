@@ -93,6 +93,25 @@ describe('仲間タブの新着の印（結合: 本物の PostgreSQL・better-au
     expect(await hasNew(a2)).toBe(true);
   });
 
+  it('T-UNREAD-LATEST: 仲間のいちばん新しい記録が latestFriendRecord に入る（自分の記録・見たかどうかは関係ない）。仲間の記録が無ければ付かない', async () => {
+    const [a1, a2] = await groupWith(2, 'L');
+    const latestOf = async (cookie: string) => ((await http().get('/api/feed/unread').set('Cookie', cookie).expect(200)).body as { latestFriendRecord?: { id: string; kind: string; authorName: string; createdAt: string } }).latestFriendRecord;
+    expect(await latestOf(a2)).toBeUndefined();
+
+    await createRecord(a2); // 自分の記録は入らない
+    expect(await latestOf(a2)).toBeUndefined();
+
+    const first = await createRecord(a1);
+    expect((await latestOf(a2))?.id).toBe(first);
+    await markSeen(a2); // 見ても消えない（新着の印とは別）
+    const second = await createRecord(a1);
+    const latest = await latestOf(a2);
+    expect(latest?.id).toBe(second);
+    expect(latest?.kind).toBe('workout');
+    expect(latest?.authorName).toBe('L1');
+    expect(Number.isNaN(Date.parse(latest!.createdAt))).toBe(false);
+  });
+
   it('T-UNREAD-02: 自分の記録・別のグループの人の記録は、新着にならない', async () => {
     const [a1, a2] = await groupWith(2, 'A');
     const [b1] = await groupWith(2, 'B');

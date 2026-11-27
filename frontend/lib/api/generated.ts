@@ -1353,9 +1353,34 @@ export interface FeedResponse {
   totals: FeedTotals;
 }
 
+/**
+ * 記録の種類
+ */
+export type FeedLatestFriendRecordKind = typeof FeedLatestFriendRecordKind[keyof typeof FeedLatestFriendRecordKind];
+
+
+export const FeedLatestFriendRecordKind = {
+  workout: 'workout',
+  run: 'run',
+  rest: 'rest',
+  post: 'post',
+} as const;
+
+export interface FeedLatestFriendRecord {
+  id: string;
+  /** 記録の種類 */
+  kind: FeedLatestFriendRecordKind;
+  /** 記録した仲間の名前 */
+  authorName: string;
+  /** 記録が作られた時刻 */
+  createdAt: string;
+}
+
 export interface FeedUnreadResponse {
   /** 最後に仲間タブを見たあとに、仲間の新しい記録か、自分の記録への仲間の新しいスタンプ・コメントがあれば true（週は区切らない）。一度も見ていなければ登録した時刻から数える */
   hasNew: boolean;
+  /** 同じグループの自分以外の人の、いちばん新しい記録（右下の知らせに使う。見たかどうかとは関係なく、新しい順の先頭）。仲間の記録がまだ無ければ付かない */
+  latestFriendRecord?: FeedLatestFriendRecord;
 }
 
 export interface CommentResponse {

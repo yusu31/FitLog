@@ -6,6 +6,7 @@ import { Fragment } from 'react';
 import { ClipboardList, House, User, Users } from 'lucide-react';
 import { cn } from 'cn';
 import { useGetFeedUnread } from '@/lib/api/generated';
+import { FriendToast } from './friend-toast';
 import { StartFan } from './start-fan';
 
 // 下のタブは4つ＋中央の＋（docs/screen-design.md 1章）: ホーム・記録・（＋）・仲間・自分。選択中は色だけでなく aria-current と背景で示す。
@@ -77,6 +78,7 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
         })}
       </ul>
     </nav>
+    {signedIn && <FriendToast latest={unread.data?.status === 200 ? unread.data.data.latestFriendRecord : undefined} loaded={unread.data?.status === 200} />}
     </>
   );
 }
