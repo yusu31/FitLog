@@ -12,6 +12,7 @@ export const STAMP_KEYS: Record<FeedItemKind, readonly StampKey[]> = {
   workout: ['nice', 'fire', 'clap', 'smile'],
   run: ['nice', 'fire', 'clap', 'smile'],
   rest: ['rest_slow', 'rest_again'],
+  post: ['nice', 'fire', 'clap', 'smile'],
 };
 
 export const STAMP_LABELS: Record<StampKey, string> = {
@@ -28,6 +29,7 @@ export const QUICK_COMMENTS: Record<FeedItemKind, readonly string[]> = {
   workout: ['ナイス！', 'いい調子！', 'おつかれさま', '今度いっしょにやろう'],
   run: ['ナイス！', 'いい調子！', 'おつかれさま', '今度いっしょにやろう'],
   rest: ['ゆっくり休んでね', 'また一緒にやろう'],
+  post: ['ナイス！', 'いい調子！', 'おつかれさま', '今度いっしょにやろう'],
 };
 
 export const COMMENT_MAX = 50;
@@ -70,6 +72,7 @@ function describeRun(run: FeedItem['run']): string {
 // 足跡の1行目（何をしたか）。筋トレは最初の種目名＋「ほかN種目」
 export function describeItem(item: Pick<FeedItem, 'kind' | 'exerciseNames' | 'run'>): { title: string; detail: string } {
   if (item.kind === 'rest') return { title: 'おやすみ', detail: '' };
+  if (item.kind === 'post') return { title: '投稿', detail: '' };
   if (item.kind === 'run') return { title: 'ラン', detail: describeRun(item.run) };
   const [first, ...rest] = item.exerciseNames;
   if (!first) return { title: '筋トレ', detail: '' };

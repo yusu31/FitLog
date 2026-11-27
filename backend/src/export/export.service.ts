@@ -4,7 +4,7 @@ import { DB, type Db } from '../db/db.module.js';
 import { exercises, records, runDetails, workoutSets } from '../db/schema.js';
 import { type CsvValue, toCsv } from './csv.js';
 
-const KIND_LABEL = { workout: '筋トレ', run: 'ラン', rest: '休み' } as const;
+const KIND_LABEL = { workout: '筋トレ', run: 'ラン', rest: '休み', post: '投稿' } as const;
 const BODY_PART_LABEL = { chest: '胸', back: '背中', shoulders: '肩', arms: '腕', abs: '腹', glutes: '尻', legs: '脚' } as const;
 
 export const EXPORT_HEADER = ['日付', '種類', '種目', '部位', 'セット', '重さ(kg)', '回数', '距離(m)', '時間(秒)', 'きつさ(1-10)', 'メモ'];

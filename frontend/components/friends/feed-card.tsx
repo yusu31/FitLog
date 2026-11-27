@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Dumbbell, Footprints, MessageCircle, Moon } from 'lucide-react';
+import { Dumbbell, Footprints, MessageCircle, Moon, Video } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { cn } from 'cn';
@@ -97,7 +97,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
 
   const who = stampWhoLines(item.stamps, session?.user.id);
   const hasMine = !isOwn && STAMP_KEYS[item.kind].some((key) => stampState(item.stamps, key).mine !== null);
-  const KindIcon = item.kind === 'run' ? Footprints : item.kind === 'rest' ? Moon : Dumbbell;
+  const KindIcon = item.kind === 'run' ? Footprints : item.kind === 'rest' ? Moon : item.kind === 'post' ? Video : Dumbbell;
   return (
     <li ref={cardRef} className="fl-slab space-y-3 px-4 py-4" onClickCapture={() => setSeen(true)}>
       <div className="flex items-center gap-3">
@@ -118,6 +118,9 @@ export function FeedCard({ item }: { item: FeedItem }) {
 
       {/* BeReal 風（D7-6）: 動画があれば縦の写真の面に数字の札と押した人の顔を重ねる。無ければ数字の札と顔の行だけ */}
       {item.hasVideo ? <FeedMedia item={item} isOwn={isOwn} title={title} detail={detail} /> : <MediaBadges item={item} title={title} detail={detail} />}
+
+      {/* ひとこと（PR 4）。仲間にも見える。動画の下に出す */}
+      {item.caption && <p className="text-base font-bold">{item.caption}</p>}
 
       <ul aria-label={`${item.author.name}の${title}へのスタンプ`} className="flex flex-wrap gap-1.5">
         {STAMP_KEYS[item.kind].map((key) => {

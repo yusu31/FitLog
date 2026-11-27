@@ -13,7 +13,7 @@ const ok = (body: unknown) => ({ status: 200, body });
 const avatar = { body: 'a', hair: 1, hairColor: '#000', shirtColor: '#0a0', pantsColor: '#00a' };
 const member = (id: string, name: string) => ({ id, name, avatar });
 const group = (...members: ReturnType<typeof member>[]) => ({ id: 'g1', name: 'ジム仲間', members });
-const item = (id: string, authorId: string, name: string, localDate: string, kind: 'workout' | 'run' | 'rest' = 'workout') => ({
+const item = (id: string, authorId: string, name: string, localDate: string, kind: 'workout' | 'run' | 'rest' | 'post' = 'workout') => ({
   id,
   kind,
   recordedAt: `${localDate}T03:00:00.000Z`,
@@ -34,6 +34,10 @@ describe('summarizeFriendsToday（仲間の今日の足跡の集計）', () => {
   it('同じ人は1回だけ。記録とおやすみの両方があれば記録を優先する', () => {
     const items = [item('1', 'u2', '田中', TODAY, 'rest'), item('2', 'u2', '田中', TODAY, 'run'), item('3', 'u3', '佐藤', TODAY, 'rest'), item('4', 'u3', '佐藤', TODAY, 'rest')];
     expect(summarizeFriendsToday(items, me, TODAY)).toEqual({ recorded: ['田中'], rested: ['佐藤'] });
+  });
+  it('投稿（動画とひとことだけ）は運動として数えない。投稿だけの人は記録にもおやすみにも入らない', () => {
+    const items = [item('1', 'u2', '田中', TODAY, 'post'), item('2', 'u3', '佐藤', TODAY, 'post'), item('3', 'u3', '佐藤', TODAY, 'rest')];
+    expect(summarizeFriendsToday(items, me, TODAY)).toEqual({ recorded: [], rested: ['佐藤'] });
   });
   it('足跡が0件なら両方空', () => {
     expect(summarizeFriendsToday([], me, TODAY)).toEqual({ recorded: [], rested: [] });

@@ -2,7 +2,7 @@
 import type { NotificationItem } from '@/lib/api/generated';
 import { STAMP_LABELS } from '@/lib/feed';
 
-const RECORD_KIND_LABEL = { workout: '筋トレ', run: 'ラン', rest: 'おやすみ' } as const;
+const RECORD_KIND_LABEL = { workout: '筋トレ', run: 'ラン', rest: 'おやすみ', post: '投稿' } as const;
 
 // 1件の文。した人の名前から始める（「はなこさんが 〜」）
 export function describeNotification(n: Pick<NotificationItem, 'kind' | 'actor' | 'recordKind' | 'stampKey'>): string {

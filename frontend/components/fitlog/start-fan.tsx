@@ -3,19 +3,19 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from 'react';
 import { Plus } from 'lucide-react';
+import { AutoVideoRecorder } from '@/components/record/auto-video-recorder';
 import { canRecordVideo } from '@/components/record/video-recorder';
-import { setFilmFirst } from '@/lib/film-first';
 import { PixelIcon, type PixelAccent } from './pixel-icon';
 import type { PixelIconName } from '@/lib/pixel-icons';
 
 const noSubscribe = () => () => {};
 
-// 扇の4つ（左から）。角度は 155°・115°・65°・25°（cx＝cos・cy＝sin）。撮影は「最初の1セットのあとに撮る」の予約つきで筋トレへ（カメラの専用画面は PR 4）
-const ITEMS: ReadonlyArray<{ id: string; label: string; href: string; icon: PixelIconName; accent: PixelAccent; film: boolean; needsVideo: boolean; cx: number; cy: number }> = [
-  { id: 'strength', label: '筋トレ', href: '/exercises', icon: 'dumbbell', accent: 'teal', film: false, needsVideo: false, cx: -0.906, cy: 0.423 },
-  { id: 'run', label: 'ラン', href: '/run', icon: 'shoe', accent: 'coral', film: false, needsVideo: false, cx: -0.423, cy: 0.906 },
-  { id: 'camera', label: '撮影', href: '/exercises', icon: 'camera', accent: 'gold', film: true, needsVideo: true, cx: 0.423, cy: 0.906 },
-  { id: 'rest', label: 'おやすみ', href: '/rest', icon: 'bed', accent: 'grape', film: false, needsVideo: false, cx: 0.906, cy: 0.423 },
+// 扇の4つ（左から）。角度は 155°・115°・65°・25°（cx＝cos・cy＝sin）。href が null の丸（撮影）は、画面を移らずその場で撮影を開く（付け先は自動。PR 4）
+const ITEMS: ReadonlyArray<{ id: string; label: string; href: string | null; icon: PixelIconName; accent: PixelAccent; needsVideo: boolean; cx: number; cy: number }> = [
+  { id: 'strength', label: '筋トレ', href: '/exercises', icon: 'dumbbell', accent: 'teal', needsVideo: false, cx: -0.906, cy: 0.423 },
+  { id: 'run', label: 'ラン', href: '/run', icon: 'shoe', accent: 'coral', needsVideo: false, cx: -0.423, cy: 0.906 },
+  { id: 'camera', label: '撮影', href: null, icon: 'camera', accent: 'gold', needsVideo: true, cx: 0.423, cy: 0.906 },
+  { id: 'rest', label: 'おやすみ', href: '/rest', icon: 'bed', accent: 'grape', needsVideo: false, cx: 0.906, cy: 0.423 },
 ];
 
 const MOVE_PX = 12; // これ以上動いたら「タップ」でなく「なぞり」
@@ -28,6 +28,8 @@ export function StartFan() {
   const [open, setOpen] = useState(false);
   const [sticky, setSticky] = useState(false);
   const [hot, setHot] = useState<string | null>(null);
+  // 撮影（付け先は自動）を開いているか。扇を閉じても撮影の画面は残る
+  const [filming, setFilming] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const press = useRef<{ x: number; y: number; moved: boolean; wasSticky: boolean } | null>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,9 +51,9 @@ export function StartFan() {
     return () => document.removeEventListener('keydown', onKey);
   }, [open, close]);
 
-  const itemAt = (x: number, y: number): HTMLAnchorElement | null => {
+  const itemAt = (x: number, y: number): HTMLElement | null => {
     const el = typeof document.elementFromPoint === 'function' ? document.elementFromPoint(x, y) : null;
-    return (el?.closest('[data-fan-item]') as HTMLAnchorElement | null) ?? null;
+    return (el?.closest('[data-fan-item]') as HTMLElement | null) ?? null;
   };
 
   function onPointerDown(e: ReactPointerEvent<HTMLButtonElement>) {
@@ -72,7 +74,7 @@ export function StartFan() {
     press.current = null;
     const target = itemAt(e.clientX, e.clientY);
     if (target) {
-      target.click(); // 離したところの丸を選ぶ（リンクの移動と、撮影の予約は丸の onClick が行う）
+      target.click(); // 離したところの丸を選ぶ（リンクの移動と、撮影を開くのは丸の onClick が行う）
       close();
     } else if (!p.moved && !p.wasSticky) {
       setSticky(true); // タップ: 開いたままにする
@@ -137,27 +139,42 @@ export function StartFan() {
         </span>
       </button>
       <div id={groupId} role="group" aria-label="記録のメニュー" onPointerEnter={cancelLeave}>
-        {items.map((it, i) => (
-          <Link
-            key={it.id}
-            href={it.href}
-            data-fan-item={it.id}
-            data-hot={hot === it.id}
-            tabIndex={open ? 0 : -1}
-            onClick={() => {
-              setFilmFirst(it.film && videoCapable);
-              close();
-            }}
-            className="fan-item rounded-fl text-center outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
-            style={{ ['--cx' as string]: it.cx, ['--cy' as string]: it.cy, ['--i' as string]: i }}
-          >
-            <span className="fan-tile flex size-13 items-center justify-center rounded-2xl border-2 border-line-dark bg-surface shadow-md max-[239px]:size-10">
-              <PixelIcon name={it.icon} accent={it.accent} size={34} className="max-[239px]:size-6" />
-            </span>
-            <span className="rounded-full bg-surface px-2 text-note font-extrabold text-fg shadow-sm max-[239px]:px-1 lg:rounded-none lg:bg-transparent lg:text-sm lg:shadow-none">{it.label}</span>
-          </Link>
-        ))}
+        {items.map((it, i) => {
+          const common = {
+            'data-fan-item': it.id,
+            'data-hot': hot === it.id,
+            tabIndex: open ? 0 : -1,
+            className: 'fan-item rounded-fl text-center outline-none focus-visible:ring-4 focus-visible:ring-teal/40',
+            style: { ['--cx' as string]: it.cx, ['--cy' as string]: it.cy, ['--i' as string]: i },
+          };
+          const face = (
+            <>
+              <span className="fan-tile flex size-13 items-center justify-center rounded-2xl border-2 border-line-dark bg-surface shadow-md max-[239px]:size-10">
+                <PixelIcon name={it.icon} accent={it.accent} size={34} className="max-[239px]:size-6" />
+              </span>
+              <span className="rounded-full bg-surface px-2 text-note font-extrabold text-fg shadow-sm max-[239px]:px-1 lg:rounded-none lg:bg-transparent lg:text-sm lg:shadow-none">{it.label}</span>
+            </>
+          );
+          return it.href ? (
+            <Link key={it.id} href={it.href} {...common} onClick={() => close()}>
+              {face}
+            </Link>
+          ) : (
+            <button
+              key={it.id}
+              type="button"
+              {...common}
+              onClick={() => {
+                setFilming(true);
+                close();
+              }}
+            >
+              {face}
+            </button>
+          );
+        })}
       </div>
+      {filming && <AutoVideoRecorder onClose={() => setFilming(false)} />}
     </li>
   );
 }

@@ -13,7 +13,7 @@ const RAW_BUTTONS: Record<string, [count: number, role: Role]> = {
   'components/chara/chara-editor.tsx': [3, '切り替え'],
   'components/exercises/exercises-view.tsx': [4, '切り替え'],
   'components/fitlog/info-tip.tsx': [1, '開閉'],
-  'components/fitlog/start-fan.tsx': [1, '開始'],
+  'components/fitlog/start-fan.tsx': [2, '開始'],
   'components/fitlog/thick-button.tsx': [1, '部品'],
   'components/friends/feed-media.tsx': [1, 'タイル'],
   'components/friends/stamp-button.tsx': [1, '切り替え'],

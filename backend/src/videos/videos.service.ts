@@ -36,9 +36,7 @@ export class VideosService {
 
     const [record] = await this.db.select({ userId: records.userId, kind: records.kind, recordedAt: records.recordedAt, late: records.late }).from(records).where(eq(records.id, id));
     if (!record || record.userId !== userId) throw recordNotFound();
-    if (record.kind !== 'workout') {
-      throw new ConflictException({ code: 'RECORD_KIND_MISMATCH', message: '筋トレの記録にだけ動画を付けられます', details: null });
-    }
+    // どの種類の記録にも動画を付けられる（筋トレ・ラン・休み・投稿。PR 4）
     // あとから記録（late）は日付をさかのぼって登録するので、公開期限（記録の週の日曜まで）が過ぎていることがある。動画は付けない（F-21）
     if (record.late) {
       throw new ConflictException({ code: 'RECORD_LATE', message: 'あとから記録した分には動画を付けられません', details: null });
@@ -57,6 +55,35 @@ export class VideosService {
     // 署名付き URL・フォームの中身はログに出さない（docs/design.md 6章）
     this.logger.log(`動画の署名付き POST を発行: ${row!.id}`);
     return { created: !existing, video: { id: row!.id, upload, expiresInSeconds: VIDEO_URL_EXPIRES_SECONDS, visibleUntil: row!.visibleUntil.toISOString() } };
+  }
+
+  // 動画だけ消す（PR 4）。自分の記録の動画だけ（他人の記録・動画の無い記録は 404）。
+  // 投稿（post）は動画がなければ中身が無いので、動画を消したら投稿ごと消す（recordDeleted=true）。ほかの種類は動画だけ消して記録は残す。
+  // S3 の削除に失敗しても成功にする（置き場の不具合で消せなくなるのを避ける。記録の削除と同じ。失敗はログに残す）
+  async deleteVideo(userId: string, recordId: string): Promise<{ recordDeleted: boolean }> {
+    if (!isUuid(recordId)) throw recordNotFound();
+    const id = recordId.toLowerCase();
+    const [row] = await this.db
+      .select({ videoId: videos.id, s3Key: videos.s3Key, kind: records.kind })
+      .from(videos)
+      .innerJoin(records, eq(records.id, videos.recordId))
+      .where(and(eq(records.id, id), eq(records.userId, userId)));
+    if (!row) {
+      const [record] = await this.db.select({ userId: records.userId }).from(records).where(eq(records.id, id));
+      if (!record || record.userId !== userId) throw recordNotFound();
+      throw videoNotFound();
+    }
+    const recordDeleted = row.kind === 'post';
+    // 投稿は記録ごと消す（動画の行は ON DELETE CASCADE で一緒に消える）
+    if (recordDeleted) await this.db.delete(records).where(and(eq(records.id, id), eq(records.userId, userId)));
+    else await this.db.delete(videos).where(eq(videos.id, row.videoId));
+    this.logger.log(`動画を削除: ${row.videoId}${recordDeleted ? '（投稿ごと）' : ''}`);
+    try {
+      await this.storage.deleteMany([row.s3Key]);
+    } catch (err) {
+      this.logger.warn(`動画ファイルを消せなかった。削除は成功にする: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    return { recordDeleted };
   }
 
   // 見るための署名付き URL を発行する。本人はいつでも。仲間は visible_until の前だけ（以後は 403）。

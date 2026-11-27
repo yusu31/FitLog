@@ -121,7 +121,8 @@ export class BodyService {
     if (!record || record.userId !== userId) throw recordNotFound();
 
     const out = (p: Partial<CaloriesResponse>): CaloriesResponse => ({ recordId, kcal: null, mets: null, durationSec: null, weightKg: null, reason: null, ...p });
-    if (record.kind === 'rest') return out({ reason: 'REST' });
+    // 休みと投稿（動画とひとことだけ）は運動ではないので、消費カロリーは出さない
+    if (record.kind === 'rest' || record.kind === 'post') return out({ reason: 'REST' });
 
     // 記録の日以前でいちばん新しい体重
     const [w] = await this.db

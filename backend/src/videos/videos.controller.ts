@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Res } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -14,7 +14,7 @@ import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { ErrorResponse } from '../common/error-response.js';
 import { VideosService } from './videos.service.js';
-import { CreateVideoUploadRequest, MyVideosResponse, VideoUploadResponse, VideoUrlResponse, VideoWeekResponse } from './videos.response.js';
+import { CreateVideoUploadRequest, DeleteVideoResponse, MyVideosResponse, VideoUploadResponse, VideoUrlResponse, VideoWeekResponse } from './videos.response.js';
 
 // 動画（F-13。docs/design.md 4章）。すべてログイン必須（共通のガードが既定で守る）
 @ApiTags('videos')
@@ -23,12 +23,12 @@ export class VideosController {
   constructor(private readonly videos: VideosService) {}
 
   @Post('records/:id/video')
-  @ApiOperation({ operationId: 'issueVideoUpload', summary: '筋トレの記録に付ける動画を置く署名付き POST を発行する。やり直しは同じ記録にもう一度呼ぶ' })
+  @ApiOperation({ operationId: 'issueVideoUpload', summary: '記録（どの種類でも）に付ける動画を置く署名付き POST を発行する。やり直しは同じ記録にもう一度呼ぶ' })
   @ApiCreatedResponse({ type: VideoUploadResponse, description: '新しく発行した（動画の行を作った）' })
   @ApiOkResponse({ type: VideoUploadResponse, description: 'すでに行がある記録への再発行（置くのに失敗したやり直し）。行は申告どおりに更新し、同じキーで署名し直した' })
   @ApiBadRequestResponse({ type: ErrorResponse, description: 'contentType が video/mp4・video/webm でない・sizeBytes が 1〜10,485,760 の整数でない（VALIDATION_ERROR）' })
   @ApiNotFoundResponse({ type: ErrorResponse, description: '記録が無い・他の人の記録（RECORD_NOT_FOUND。存在を教えない）' })
-  @ApiConflictResponse({ type: ErrorResponse, description: '筋トレでない記録（RECORD_KIND_MISMATCH）' })
+  @ApiConflictResponse({ type: ErrorResponse, description: 'あとから記録した分（RECORD_LATE）' })
   async issueUpload(
     @Session() session: UserSession,
     @Param('id') recordId: string,
@@ -38,6 +38,14 @@ export class VideosController {
     const { created, video } = await this.videos.issueUpload(session.user.id, recordId, body);
     if (!created) res.status(200);
     return video;
+  }
+
+  @Delete('records/:id/video')
+  @ApiOperation({ operationId: 'deleteRecordVideo', summary: '記録の動画だけ消す（S3 のファイルも）。投稿の動画を消したら投稿ごと消える（recordDeleted=true）' })
+  @ApiOkResponse({ type: DeleteVideoResponse })
+  @ApiNotFoundResponse({ type: ErrorResponse, description: '記録が無い・他の人の記録（RECORD_NOT_FOUND）／動画の無い記録（VIDEO_NOT_FOUND）' })
+  deleteVideo(@Session() session: UserSession, @Param('id') recordId: string): Promise<DeleteVideoResponse> {
+    return this.videos.deleteVideo(session.user.id, recordId);
   }
 
   @Get('videos/week')

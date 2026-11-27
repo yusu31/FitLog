@@ -1,16 +1,18 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { hasFilmFirst, setFilmFirst } from '@/lib/film-first';
 import { StartFan } from './start-fan';
 
 let videoCapable = true;
 vi.mock('@/components/record/video-recorder', () => ({ canRecordVideo: () => videoCapable }));
+// 撮影の画面そのものは video-recorder・auto-video-recorder のテストで見る。ここでは「開く」ことだけ
+vi.mock('@/components/record/auto-video-recorder', () => ({
+  AutoVideoRecorder: ({ onClose }: { onClose: () => void }) => <button type="button" onClick={onClose}>撮影の画面</button>,
+}));
 
 // 中央ボタンの扇（02-9 PR 3）。スマホ＝押している間に出て、なぞって離したところを選ぶ／PC＝重ねると出る／キーボード＝Enter で開き Tab で届く。
 // 丸の動きと見た目（位置・はみ出し）は jsdom では測れないので、ここでは「何が出る・選べる・閉じる」を見る
 beforeEach(() => {
   videoCapable = true;
-  setFilmFirst(false);
 });
 afterEach(() => {
   vi.restoreAllMocks();
@@ -18,7 +20,8 @@ afterEach(() => {
 
 const renderFan = () => render(<ul><StartFan /></ul>);
 const plus = () => screen.getByRole('button', { name: 'START 記録を始める' });
-const item = (name: string) => screen.getByRole('link', { name, hidden: true });
+// 丸は、行き先のあるものはリンク・撮影はボタン（その場で撮影を開く）。どちらも data-fan-item を持つ
+const item = (name: string) => screen.getByText(name).closest('[data-fan-item]') as HTMLElement;
 const touch = (type: 'pointerDown' | 'pointerMove' | 'pointerUp', x = 0, y = 0) =>
   fireEvent[type](plus(), { pointerType: 'touch', pointerId: 1, clientX: x, clientY: y });
 // 指の下にある要素（jsdom は座標から要素を引けないので差し替える）
@@ -84,17 +87,30 @@ describe('StartFan（中央の ● の扇）', () => {
     expect(plus()).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('スマホ: 撮影を選ぶと「最初の1セットのあとに撮る」の予約が入る。筋トレでは入らない', () => {
+  it('スマホ: 撮影を選ぶと、画面を移らずその場で撮影の画面が開く（付け先は自動）。筋トレを選んでも開かない', () => {
     renderFan();
-    for (const [label, expected] of [['撮影', true], ['筋トレ', false]] as const) {
-      const el = item(label);
-      el.addEventListener('click', (e) => e.preventDefault());
-      touch('pointerDown');
-      fingerOn(el);
-      touch('pointerMove', 50, 50);
-      touch('pointerUp', 50, 50);
-      expect(hasFilmFirst()).toBe(expected);
-    }
+    const strength = item('筋トレ');
+    strength.addEventListener('click', (e) => e.preventDefault());
+    touch('pointerDown');
+    fingerOn(strength);
+    touch('pointerMove', 50, 50);
+    touch('pointerUp', 50, 50);
+    expect(screen.queryByRole('button', { name: '撮影の画面' })).not.toBeInTheDocument();
+
+    touch('pointerDown');
+    fingerOn(item('撮影'));
+    touch('pointerMove', 50, 50);
+    touch('pointerUp', 50, 50);
+    expect(screen.getByRole('button', { name: '撮影の画面' })).toBeInTheDocument();
+    expect(plus()).toHaveAttribute('aria-expanded', 'false'); // 扇は閉じる
+  });
+
+  it('PC・キーボード: 撮影の丸を押すと撮影の画面が開き、閉じると消える', async () => {
+    renderFan();
+    await userEvent.click(plus());
+    await userEvent.click(screen.getByRole('button', { name: '撮影' }));
+    await userEvent.click(screen.getByRole('button', { name: '撮影の画面' }));
+    expect(screen.queryByRole('button', { name: '撮影の画面' })).not.toBeInTheDocument();
   });
 
   it('スマホ: 何も無いところで離すと、選ばずに閉じる', () => {
@@ -140,7 +156,7 @@ describe('StartFan（中央の ● の扇）', () => {
     videoCapable = false;
     renderFan();
     expect(screen.queryByText('撮影')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('link', { hidden: true })).toHaveLength(3);
+    expect(screen.getAllByRole('link', { hidden: true })).toHaveLength(3); // 筋トレ・ラン・おやすみ
   });
 
   it('長押しの右クリックメニュー（contextmenu）は出さない', () => {

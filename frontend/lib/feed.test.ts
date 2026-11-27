@@ -54,6 +54,9 @@ describe('describeTotals（週の合計）', () => {
 });
 
 describe('describeItem（足跡の1行目）', () => {
+  it('投稿（動画とひとことだけ）は「投稿」', () => {
+    expect(describeItem({ kind: 'post', exerciseNames: [] })).toEqual({ title: '投稿', detail: '' });
+  });
   it('休みは「おやすみ」', () => {
     expect(describeItem({ kind: 'rest', exerciseNames: [] })).toEqual({ title: 'おやすみ', detail: '' });
   });
