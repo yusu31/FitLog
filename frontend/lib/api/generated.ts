@@ -498,7 +498,7 @@ export interface RecordDetailResponse {
   exercises?: RecordedExercise[];
   /** 筋トレの「いま記録中」か（N1・N2）。終了（endedAt）を押しておらず、最後のセットから3時間たっていなければ true。サーバーが読み出すときに判定する（定期実行はしない）。筋トレ以外には付かない。端末が楽観的更新で作る仮の行には無い */
   active?: boolean;
-  /** 動画があるときだけ（詳細 GET /records/{id} のみ）。見るときの GET /videos/{id}/url に使う */
+  /** 動画があるときだけ（詳細・一覧）。見るときの GET /videos/{id}/url に使う。撮影の付け先を選ぶときは、これが無い記録を探す */
   videoId?: string;
   /** 地図ゴースト（F-17）。ルート付きのランの詳細を持ち主本人が開いたときだけ、本人の「ひとつ前のルート付きラン」を返す（手入力のランは飛ばす）。前回が無い・仲間が見たときは付かない */
   previousRun?: PreviousRun;

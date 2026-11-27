@@ -3273,7 +3273,7 @@
           "videoId": {
             "type": "string",
             "format": "uuid",
-            "description": "動画があるときだけ（詳細 GET /records/{id} のみ）。見るときの GET /videos/{id}/url に使う"
+            "description": "動画があるときだけ（詳細・一覧）。見るときの GET /videos/{id}/url に使う。撮影の付け先を選ぶときは、これが無い記録を探す"
           },
           "previousRun": {
             "description": "地図ゴースト（F-17）。ルート付きのランの詳細を持ち主本人が開いたときだけ、本人の「ひとつ前のルート付きラン」を返す（手入力のランは飛ばす）。前回が無い・仲間が見たときは付かない",
