@@ -45,7 +45,7 @@ describe('記録のメモ・きつさ（結合: 本物の PostgreSQL・better-au
     const id = await createRecord(me);
     expect(await detail(me, id)).not.toHaveProperty('note');
 
-    await patch(me, id, { note: '肩が重かった', rpe: 8 }).expect(200, { note: '肩が重かった', rpe: 8 });
+    await patch(me, id, { note: '肩が重かった', rpe: 8 }).expect(200, { note: '肩が重かった', rpe: 8, caption: null });
     expect(await detail(me, id)).toMatchObject({ note: '肩が重かった', rpe: 8 });
 
     await patch(me, id, { rpe: 6 }).expect(200);
