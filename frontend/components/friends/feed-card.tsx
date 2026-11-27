@@ -33,7 +33,7 @@ import { useOnline } from '@/lib/use-browser-state';
 import { useAppSession } from '@/lib/use-app-session';
 import { FRIENDS_TEXT, LIGHT_QUICK_COMMENTS } from './friends-text';
 import { Avatar } from '@/components/fitlog/avatar';
-import { FeedMedia, MediaBadges } from './feed-media';
+import { FeedBand, FeedMedia, MediaBadges } from './feed-media';
 import { StampButton, StampChip } from './stamp-button';
 
 // 「新着」の札を外すまでの時間。カードが画面に見えてから、この時間そのまま見えていたら「読んだ」とみなす（通り過ぎただけでは外さない。A04-8）
@@ -96,7 +96,8 @@ export function FeedCard({ item }: { item: FeedItem }) {
   }
 
   const who = stampWhoLines(item.stamps, session?.user.id);
-  const hasMine = !isOwn && STAMP_KEYS[item.kind].some((key) => stampState(item.stamps, key).mine !== null);
+  const stampKeys = STAMP_KEYS[item.kind];
+  const hasMine = !isOwn && stampKeys.some((key) => stampState(item.stamps, key).mine !== null);
   const KindIcon = item.kind === 'run' ? Footprints : item.kind === 'rest' ? Moon : item.kind === 'post' ? Video : Dumbbell;
   return (
     <li ref={cardRef} className="fl-slab space-y-3 px-4 py-4" onClickCapture={() => setSeen(true)}>
@@ -116,16 +117,17 @@ export function FeedCard({ item }: { item: FeedItem }) {
         </div>
       </div>
 
-      {/* BeReal 風（D7-6）: 動画があれば縦の写真の面に数字の札と押した人の顔を重ねる。無ければ数字の札と顔の行だけ */}
-      {item.hasVideo ? <FeedMedia item={item} isOwn={isOwn} title={title} detail={detail} /> : <MediaBadges item={item} title={title} detail={detail} />}
+      {/* PR 5: 動画の上のふちに帯（種目と数字・達成のチップ）。動画には重ねない。動画があれば縦の写真の面に押した人の顔だけ重ねる */}
+      <FeedBand item={item} title={title} detail={detail} thin={!item.hasVideo} />
+      {item.hasVideo ? <FeedMedia item={item} isOwn={isOwn} title={title} /> : <MediaBadges item={item} />}
 
       {/* ひとこと（PR 4）。仲間にも見える。動画の下に出す */}
       {item.caption && <p className="text-base font-bold">{item.caption}</p>}
 
-      <ul aria-label={`${item.author.name}の${title}へのスタンプ`} className="flex flex-wrap gap-1.5">
-        {STAMP_KEYS[item.kind].map((key) => {
+      {/* スタンプは横いっぱいに均等（押し損ねを減らす）。自分の記録は、もらった分だけ見せる（U11） */}
+      <ul aria-label={`${item.author.name}の${title}へのスタンプ`} className={isOwn ? 'flex flex-wrap gap-1.5' : cn('grid gap-1.5', stampKeys.length === 2 ? 'grid-cols-2' : 'grid-cols-4')}>
+        {stampKeys.map((key) => {
           const { count, mine } = stampStateWithPending(item.stamps, key, pending);
-          // 自分の足跡には自分でスタンプを付けない（U11）。もらった分だけ見せる
           if (isOwn) {
             return count > 0 ? (
               <li key={key}>
@@ -134,31 +136,31 @@ export function FeedCard({ item }: { item: FeedItem }) {
             ) : null;
           }
           return (
-            <li key={key}>
-              <StampButton compact stampKey={key} count={count} pressed={mine !== null} disabled={!online || busy} onClick={() => void toggle(key)} />
+            <li key={key} className="flex">
+              <StampButton compact fill stampKey={key} count={count} pressed={mine !== null} disabled={!online || busy} onClick={() => void toggle(key)} />
             </li>
           );
         })}
-        {item.kind !== 'rest' && (
-          <li>
+      </ul>
+
+      {/* 「くわしく見る」「コメント」は下の行。仲間の投稿には「くわしく見る」を出さない（見る先が無い）。自分の投稿は消す入口なので残す */}
+      <ul aria-label={`${item.author.name}の${title}の操作`} className="flex gap-1.5">
+        {item.kind !== 'rest' && (item.kind !== 'post' || isOwn) && (
+          <li className="flex-1">
             <Link
               href={
                 isOwn
                   ? `/record-detail?id=${encodeURIComponent(item.id)}&from=me&back=friends`
                   : `/record-detail?id=${encodeURIComponent(item.id)}&by=${encodeURIComponent(item.author.id)}`
               }
-              className={buttonClass({ variant: 'secondary', size: 'sm' })}
+              className={cn(buttonClass({ variant: 'secondary', size: 'sm' }), 'w-full')}
             >
               {FRIEND_MESSAGES.open}
             </Link>
           </li>
         )}
-        <li>
-          <ThickButton
-            variant="secondary" size="sm"
-            aria-expanded={openComments}
-            onClick={() => setOpenComments((v) => !v)}
-          >
+        <li className="flex-1">
+          <ThickButton variant="secondary" size="sm" className="w-full" aria-expanded={openComments} onClick={() => setOpenComments((v) => !v)}>
             <MessageCircle aria-hidden className="size-4" />
             {FEED_MESSAGES.commentsOpen(item.commentCount)}
           </ThickButton>

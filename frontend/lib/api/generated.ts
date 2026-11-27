@@ -1210,6 +1210,19 @@ export const FeedItemKind = {
   post: 'post',
 } as const;
 
+/**
+ * 運動した日数の節目（1・7・30・100日目）になった日の、その日の最初の記録だけ。休み・投稿は入らない。無ければ省く
+ */
+export type FeedItemMilestoneDay = typeof FeedItemMilestoneDay[keyof typeof FeedItemMilestoneDay];
+
+
+export const FeedItemMilestoneDay = {
+  NUMBER_1: 1,
+  NUMBER_7: 7,
+  NUMBER_30: 30,
+  NUMBER_100: 100,
+} as const;
+
 export interface FeedItem {
   id: string;
   kind: FeedItemKind;
@@ -1231,6 +1244,14 @@ export interface FeedItem {
   run?: RunDetail;
   /** ひとこと（1〜50字）。無ければ付かない */
   caption?: string;
+  /** その記録で自己ベストを出した種目名（筋トレ。その種目の過去の最大の重量×回数を超えた。初めての種目は入らない）。無ければ省く。カードの帯の達成チップ */
+  personalBestExercises?: string[];
+  /** ランで、その人のこれまでで一番長い距離になった記録だけ true（初めてのランは入らない）。無ければ省く */
+  longestRun?: boolean;
+  /** 運動した日数の節目（1・7・30・100日目）になった日の、その日の最初の記録だけ。休み・投稿は入らない。無ければ省く */
+  milestoneDay?: FeedItemMilestoneDay;
+  /** その日にスタンプ帳で初めて取ったスタンプ（その日の最初の記録だけ）。無ければ省く */
+  earnedStamps?: StampKey[];
   /** 付いているスタンプ（付いたものだけ。スタンプの一覧の順） */
   stamps: FeedStamp[];
   /** コメントの数 */

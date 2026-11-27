@@ -192,8 +192,8 @@ describe('スタンプ', () => {
     ];
     renderFeed();
     const lists = await screen.findAllByRole('list', { name: /へのスタンプ$/ });
-    expect(within(lists[0]).getAllByRole('button').map((b) => b.textContent)).toEqual(['👍ナイス', '🔥すごい', '👏おつかれ', '❤️いいね', 'コメント']);
-    expect(within(lists[1]).getAllByRole('button').map((b) => b.textContent)).toEqual(['😌ゆっくりね', '👋またあした', 'コメント']);
+    expect(within(lists[0]).getAllByRole('button').map((b) => b.textContent)).toEqual(['👍ナイス', '🔥すごい', '👏おつかれ', '❤️いいね']);
+    expect(within(lists[1]).getAllByRole('button').map((b) => b.textContent)).toEqual(['😌ゆっくりね', '👋またあした']);
   });
 
   it('付いた数を出し、自分が付けたものは押された状態で表す', async () => {
@@ -668,7 +668,9 @@ describe('足跡カードの動画（BeReal 風。D7-6 PR-2）', () => {
     replies['GET /api/videos/v1/url'] = [{ status: 200, body: { url: 'https://s3.example/videos/v1?sig=x', expiresInSeconds: 300 } }];
     renderFeed();
     const media = await screen.findByTestId('feed-media');
-    expect(within(media).getByTestId('number-badge')).toHaveTextContent('スクワット');
+    // PR 5: 種目と数字は動画の上の帯へ移した（動画には重ねない）
+    expect(within(media).queryByTestId('number-badge')).not.toBeInTheDocument();
+    expect(screen.getByTestId('feed-band')).toHaveTextContent('スクワット');
     expect(await within(media).findByRole('button', { name: 'はなこのスクワットの動画を再生する' })).toBeInTheDocument();
   });
 
@@ -746,6 +748,30 @@ describe('足跡カードの動画（BeReal 風。D7-6 PR-2）', () => {
     expect(screen.queryByTestId('feed-media')).not.toBeInTheDocument();
     expect(screen.getByTestId('number-badge')).toHaveTextContent('ほか1種目');
     expect(calls.some((c) => c.url === '/api/videos/week')).toBe(false);
+  });
+
+  // PR 5: 達成のチップ（自己ベスト・節目・スタンプ）は帯に出る。休み・投稿には出さない
+  it('達成チップ: 自己ベスト・節目・その日に取ったスタンプが帯に出る', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ personalBestExercises: ['スクワット'], milestoneDay: 30, earnedStamps: ['days-30'] })] }) }];
+    renderFeed();
+    const band = await screen.findByTestId('feed-band');
+    const chips = within(band).getAllByTestId('achievement-chip').map((c) => c.textContent);
+    expect(chips).toEqual(['自己ベスト スクワット', '30回目', '記録30日']);
+  });
+
+  it('達成が無い日の帯には、チップを出さない', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed() }];
+    renderFeed();
+    await screen.findByTestId('feed-band');
+    expect(screen.queryByTestId('achievement-chip')).not.toBeInTheDocument();
+  });
+
+  it('仲間の投稿には「くわしく見る」を出さない。同じ4つのスタンプは出る', async () => {
+    replies['GET /api/feed'] = [{ status: 200, body: feed({ items: [item({ kind: 'post', exerciseNames: [], caption: 'ジム着いた' })] }) }];
+    renderFeed();
+    await screen.findByText('ジム着いた');
+    expect(screen.queryByRole('link', { name: 'くわしく見る' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ナイス' })).toBeInTheDocument();
   });
 
   it('押した人の顔と人数が出る（同じ人が複数のスタンプを押しても1人）', async () => {

@@ -3,6 +3,7 @@
 import { formatDistance, formatDuration, formatPace } from '@/lib/format';
 import { FEED_MESSAGES } from '@/lib/messages';
 import { addDays, weekStartOf } from '@/lib/shared/week';
+import { STAMP_LABEL } from '@/lib/stats';
 import type { FeedItem, FeedItemKind, FeedStamp, FeedTotals } from '@/lib/api/generated';
 
 export type StampKey = FeedStamp['stampKey'];
@@ -67,6 +68,20 @@ function describeRun(run: FeedItem['run']): string {
     if (pace) parts.push(pace);
   }
   return parts.join('・');
+}
+
+// 足跡の帯に出す達成チップの文言（自己ベスト・節目・その日に取ったスタンプ）。休み・投稿には出さない。
+// 節目の1回目は「初めての記録」のスタンプと同じ日なので、重ねて出さない
+export function achievementChips(item: Pick<FeedItem, 'kind' | 'personalBestExercises' | 'longestRun' | 'milestoneDay' | 'earnedStamps'>): string[] {
+  if (item.kind !== 'workout' && item.kind !== 'run') return [];
+  const chips: string[] = [];
+  const pb = item.personalBestExercises ?? [];
+  if (pb.length > 0) chips.push(`自己ベスト ${pb[0]}${pb.length > 1 ? ` ほか${pb.length - 1}` : ''}`);
+  if (item.longestRun) chips.push('自己ベスト 最長ラン');
+  const stamps = item.earnedStamps ?? [];
+  if (item.milestoneDay && !(item.milestoneDay === 1 && stamps.includes('first-record'))) chips.push(`${item.milestoneDay}回目`);
+  for (const key of stamps) chips.push(STAMP_LABEL[key]);
+  return chips;
 }
 
 // 足跡の1行目（何をしたか）。筋トレは最初の種目名＋「ほかN種目」

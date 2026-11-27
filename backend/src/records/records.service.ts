@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { and, asc, between, count, desc, eq, inArray, isNull, lt, min, ne, or, sql } from 'drizzle-orm';
 import { compareSet, isPersonalBest } from '../common/ghost.js';
-import { buildStats, type DayAgg } from '../common/stats.js';
+import { buildStats } from '../common/stats.js';
 import { cellStatus, isAutoRestDay, weekDates, weekStartOf } from '../common/week.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isWorkoutActive } from '../common/workout-session.js';
@@ -9,6 +9,7 @@ import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
 import { VideoStorage } from '../videos/video-storage.js';
 import { BODY_PARTS, exercises, records, runDetails, videos, workoutSets } from '../db/schema.js';
+import { loadDayAggs } from './day-aggs.js';
 import { findPrevious, pastMaxVolume } from './ghost-queries.js';
 import { encodeCursor, parseListQuery } from './list-input.js';
 import { findGroupMates, visibleToMe } from './record-access.js';
@@ -146,40 +147,7 @@ export class RecordsService {
   // 1年分のマス・今月の数字・直近12週・スタンプを共通の関数 buildStats で出す。他の人の記録は入らない
   async stats(userId: string, dateRaw: unknown): Promise<StatsResponse> {
     const today = parseWeekDate(dateRaw);
-
-    // 投稿（post）は運動として数えない: 投稿だけの日を「記録のある日」にすると、自動の休みの判定や最初の記録の日がずれる
-    const kindRows = await this.db.select({ localDate: records.localDate, kind: records.kind }).from(records).where(and(eq(records.userId, userId), ne(records.kind, 'post')));
-    const weightRows = await this.db
-      .select({ localDate: records.localDate, total: sql<string>`sum(${workoutSets.weightKg} * ${workoutSets.reps})` })
-      .from(workoutSets)
-      .innerJoin(records, eq(records.id, workoutSets.recordId))
-      .where(eq(records.userId, userId))
-      .groupBy(records.localDate);
-    const runRows = await this.db
-      .select({ localDate: records.localDate, distanceM: runDetails.distanceM })
-      .from(runDetails)
-      .innerJoin(records, eq(records.id, runDetails.recordId))
-      .where(eq(records.userId, userId));
-
-    const days = new Map<string, DayAgg & { kinds: ('workout' | 'run' | 'rest' | 'post')[] }>();
-    const dayOf = (date: string) => {
-      let d = days.get(date);
-      if (!d) days.set(date, (d = { date, status: 'none', weightKg: 0, runM: 0, maxRunM: 0, workoutCount: 0, runCount: 0, kinds: [] }));
-      return d;
-    };
-    for (const r of kindRows) {
-      const d = dayOf(r.localDate);
-      d.kinds.push(r.kind);
-      if (r.kind === 'workout') d.workoutCount += 1;
-      if (r.kind === 'run') d.runCount += 1;
-    }
-    for (const r of weightRows) dayOf(r.localDate).weightKg = Number(r.total);
-    for (const r of runRows) {
-      const d = dayOf(r.localDate);
-      d.runM += r.distanceM;
-      d.maxRunM = Math.max(d.maxRunM, r.distanceM);
-    }
-    return buildStats([...days.values()].map((d) => ({ ...d, status: cellStatus(d.kinds) })), today);
+    return buildStats(await loadDayAggs(this.db, userId), today);
   }
 
   // 自分の記録の一覧（新しい順）。運動した時刻の降順、同じ時刻は id の降順で並べ、cursor は「最後に読んだ1件」の（時刻, id）。

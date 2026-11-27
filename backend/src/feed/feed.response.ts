@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { MemberResponse } from '../groups/groups.response.js';
 import { BODY_PARTS, RECORD_KINDS, type BodyPart, type RecordKind } from '../db/schema.js';
 import { RunDetail } from '../records/records.response.js';
+import { STAMP_KEYS as BOOK_STAMP_KEYS, type StampKey as BookStampKey } from '../common/stats.js';
 import { STAMP_KEYS, type StampKey } from './stamps.js';
 import { COMMENT_BODY_MAX, FEED_PAGE_SIZE } from './feed-input.js';
 
@@ -71,6 +72,18 @@ export class FeedItem {
 
   @ApiProperty({ required: false, description: 'ひとこと（1〜50字）。無ければ付かない' })
   caption?: string;
+
+  @ApiProperty({ type: [String], required: false, description: 'その記録で自己ベストを出した種目名（筋トレ。その種目の過去の最大の重量×回数を超えた。初めての種目は入らない）。無ければ省く。カードの帯の達成チップ' })
+  personalBestExercises?: string[];
+
+  @ApiProperty({ required: false, description: 'ランで、その人のこれまでで一番長い距離になった記録だけ true（初めてのランは入らない）。無ければ省く' })
+  longestRun?: boolean;
+
+  @ApiProperty({ required: false, enum: [1, 7, 30, 100], description: '運動した日数の節目（1・7・30・100日目）になった日の、その日の最初の記録だけ。休み・投稿は入らない。無ければ省く' })
+  milestoneDay?: number;
+
+  @ApiProperty({ enum: BOOK_STAMP_KEYS, enumName: 'StampKey', isArray: true, required: false, description: 'その日にスタンプ帳で初めて取ったスタンプ（その日の最初の記録だけ）。無ければ省く' })
+  earnedStamps?: BookStampKey[];
 
   @ApiProperty({ type: [FeedStamp], description: '付いているスタンプ（付いたものだけ。スタンプの一覧の順）' })
   stamps!: FeedStamp[];

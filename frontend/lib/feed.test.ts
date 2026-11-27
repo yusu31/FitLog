@@ -1,4 +1,4 @@
-import { COMMENT_MAX, QUICK_COMMENTS, STAMP_KEYS, STAMP_LABELS, describeItem, describeTotals, formatVolumeKg, weekDividerLabel, normalizeComment, stampState, stampWhoLines } from './feed';
+import { COMMENT_MAX, achievementChips, QUICK_COMMENTS, STAMP_KEYS, STAMP_LABELS, describeItem, describeTotals, formatVolumeKg, weekDividerLabel, normalizeComment, stampState, stampWhoLines } from './feed';
 
 describe('スタンプと定型コメントの決まり（F-10）', () => {
   it('筋トレ・ランは4種、休みは2種。休みに筋トレ用のスタンプは付かない', () => {
@@ -130,4 +130,22 @@ describe('weekDividerLabel（足跡の流れの週の区切り）', () => {
     expect(weekDividerLabel('2026-11-12', '2026-11-05', TODAY)).toBe('11/2の週');
     expect(weekDividerLabel('2026-11-05', '2026-11-03', TODAY)).toBeNull();
   });
+});
+
+describe('achievementChips（帯の達成チップ）', () => {
+  const base = { kind: 'workout' as const };
+  it('自己ベスト・節目・スタンプの順で文言にする', () => {
+    expect(achievementChips({ ...base, personalBestExercises: ['ベンチプレス', 'スクワット'], milestoneDay: 7, earnedStamps: ['weight-1t'] })).toEqual([
+      '自己ベスト ベンチプレス ほか1',
+      '7回目',
+      '総重量1t',
+    ]);
+  });
+  it('ランの最長', () => expect(achievementChips({ kind: 'run', longestRun: true })).toEqual(['自己ベスト 最長ラン']));
+  it('1回目は「初めての記録」と重ねない', () => expect(achievementChips({ ...base, milestoneDay: 1, earnedStamps: ['first-record'] })).toEqual(['初めての記録']));
+  it('休み・投稿には出さない', () => {
+    expect(achievementChips({ kind: 'rest', milestoneDay: 7 })).toEqual([]);
+    expect(achievementChips({ kind: 'post', earnedStamps: ['first-record'] })).toEqual([]);
+  });
+  it('何も無ければ空', () => expect(achievementChips(base)).toEqual([]));
 });

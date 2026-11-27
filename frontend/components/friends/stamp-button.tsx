@@ -21,6 +21,7 @@ export function StampButton({
   disabled,
   onClick,
   compact = false,
+  fill = false,
 }: {
   stampKey: StampKey;
   count: number;
@@ -29,6 +30,8 @@ export function StampButton({
   onClick: () => void;
   // 足跡カード用。少し小さくする。絵の下の短いことばは、どちらでも見せる（絵だけでは意味が分からない。A04-1）
   compact?: boolean;
+  // 足跡カード用。置かれた枠の幅いっぱいに広げる（横に均等に並べる）
+  fill?: boolean;
 }) {
   const label = STAMP_LABELS[stampKey];
   return (
@@ -40,6 +43,7 @@ export function StampButton({
       onClick={onClick}
       className={cn(
         'flex items-center justify-center rounded-2xl border-2 outline-none focus-visible:ring-4 focus-visible:ring-teal/40 disabled:opacity-60',
+        fill && 'w-full',
         compact ? 'min-h-14 min-w-14 flex-col gap-0.5 px-2 py-1' : 'min-h-14 min-w-16 flex-col gap-0.5 px-2.5 py-1.5',
         pressed ? 'border-teal-dark bg-teal-light text-brand' : 'border-line bg-surface text-fg-muted',
       )}
