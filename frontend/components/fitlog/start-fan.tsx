@@ -15,7 +15,7 @@ const ITEMS: ReadonlyArray<{ id: string; label: string; href: string; icon: Pixe
   { id: 'strength', label: '筋トレ', href: '/exercises', icon: 'dumbbell', accent: 'teal', film: false, needsVideo: false, cx: -0.906, cy: 0.423 },
   { id: 'run', label: 'ラン', href: '/run', icon: 'shoe', accent: 'coral', film: false, needsVideo: false, cx: -0.423, cy: 0.906 },
   { id: 'camera', label: '撮影', href: '/exercises', icon: 'camera', accent: 'gold', film: true, needsVideo: true, cx: 0.423, cy: 0.906 },
-  { id: 'rest', label: 'おやすみ', href: '/rest', icon: 'pillow', accent: 'grape', film: false, needsVideo: false, cx: 0.906, cy: 0.423 },
+  { id: 'rest', label: 'おやすみ', href: '/rest', icon: 'bed', accent: 'grape', film: false, needsVideo: false, cx: 0.906, cy: 0.423 },
 ];
 
 const MOVE_PX = 12; // これ以上動いたら「タップ」でなく「なぞり」
