@@ -13,7 +13,7 @@ const RAW_BUTTONS: Record<string, [count: number, role: Role]> = {
   'components/chara/chara-editor.tsx': [3, '切り替え'],
   'components/exercises/exercises-view.tsx': [4, '切り替え'],
   'components/fitlog/info-tip.tsx': [1, '開閉'],
-  'components/fitlog/tab-bar.tsx': [1, '開始'],
+  'components/fitlog/start-fan.tsx': [1, '開始'],
   'components/fitlog/thick-button.tsx': [1, '部品'],
   'components/friends/feed-media.tsx': [1, 'タイル'],
   'components/friends/stamp-button.tsx': [1, '切り替え'],
@@ -36,7 +36,7 @@ const RAW_BUTTONS: Record<string, [count: number, role: Role]> = {
   'components/video-grid/video-grid.tsx': [1, 'タイル'],
 };
 // 厚みのある面（fl-thick）を直に書いてよい所。ほかは ThickButton・buttonClass から受け取る
-const RAW_THICK = ['components/fitlog/tab-bar.tsx', 'components/fitlog/thick-button.tsx'];
+const RAW_THICK = ['components/fitlog/start-fan.tsx', 'components/fitlog/thick-button.tsx'];
 
 function sources(dir: string): string[] {
   return readdirSync(join(ROOT, dir), { withFileTypes: true, recursive: true })

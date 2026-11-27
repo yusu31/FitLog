@@ -315,3 +315,64 @@ body {
     }
   }
 }
+
+/* 中央ボタンの扇（02-9 PR 3。components/fitlog/start-fan.tsx）。丸い4つが ● から弧を描いて出る。動かすのは transform と opacity だけ。
+   半径 --r は狭い画面で縮む（195px 幅でも端から出ない）。PC（lg）は左のメニューなので、扇でなく下へ縦に並べる */
+.fan-item {
+  --r: min(96px, calc((100vw - 72px) / 2.2));
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 0) scale(0.3);
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1),
+    opacity 0.18s,
+    visibility 0s linear 0.3s;
+}
+.fan[data-open='true'] .fan-item {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(calc(-50% + var(--r) * var(--cx)), calc(var(--r) * var(--cy) * -1 - 4px)) scale(1);
+  transition-delay: calc(var(--i) * 40ms), calc(var(--i) * 40ms), 0s;
+}
+.fan-item[data-hot='true'] {
+  z-index: 1;
+}
+.fan-item[data-hot='true'] .fan-tile {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 4px var(--color-gold);
+}
+.fan-tile {
+  transition: transform 0.12s;
+}
+@media (min-width: 1024px) {
+  .fan-item {
+    left: 0;
+    right: auto;
+    bottom: auto;
+    top: calc(100% + 8px + var(--i) * 56px);
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+    transform: translateY(-8px) scale(0.9);
+  }
+  .fan[data-open='true'] .fan-item {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fan-item,
+  .fan[data-open='true'] .fan-item,
+  .fan-tile {
+    transition: none;
+  }
+}

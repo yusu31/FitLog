@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fragment, useState } from 'react';
-import { ClipboardList, House, Plus, User, Users } from 'lucide-react';
+import { Fragment } from 'react';
+import { ClipboardList, House, User, Users } from 'lucide-react';
 import { cn } from 'cn';
 import { useGetFeedUnread } from '@/lib/api/generated';
-import { StartSheet } from './start-sheet';
+import { StartFan } from './start-fan';
 
 // 下のタブは4つ＋中央の＋（docs/screen-design.md 1章）: ホーム・記録・（＋）・仲間・自分。選択中は色だけでなく aria-current と背景で示す。
 // 自分（/me）は /me/posts・/me/profile など、その下の画面でも選択中にする
@@ -27,7 +27,6 @@ const UNREAD_REFRESH_MS = 60_000;
 
 export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
   const pathname = usePathname() ?? '';
-  const [starting, setStarting] = useState(false);
   const unread = useGetFeedUnread({ query: { enabled: signedIn, staleTime: UNREAD_REFRESH_MS, refetchInterval: UNREAD_REFRESH_MS, retry: false } });
   const hasNew = unread.data?.status === 200 && unread.data.data.hasNew;
   // 件数（A04-9）。API が newCount を返すようになったらその数字を出す。返さない間は「新」の字（無印の赤い点にしない）
@@ -72,27 +71,12 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
                 {dot && <span className="sr-only">{newCount === undefined ? '（新着あり）' : `（新着${newCount}件）`}</span>}
               </Link>
             </li>
-            {index === 1 && (
-              <li className="flex min-w-0 max-w-14 flex-1 items-center lg:order-first lg:mb-2 lg:block lg:max-w-none lg:flex-none">
-                <button
-                  type="button"
-                  aria-label="START 記録を始める"
-                  aria-haspopup="dialog"
-                  onClick={() => setStarting(true)}
-                  className="fl-thick flex aspect-square w-full max-w-14 short:max-w-11 short:lg:max-w-none items-center justify-center gap-2 rounded-full bg-teal-dark text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40 lg:aspect-auto lg:h-12 lg:max-w-none lg:w-full lg:rounded-fl lg:text-lg lg:font-extrabold lg:tracking-wider"
-                >
-                  <Plus aria-hidden className="size-7 lg:size-5" strokeWidth={3} />
-                  <span aria-hidden className="hidden lg:inline">START</span>
-                </button>
-              </li>
-            )}
+            {index === 1 && <StartFan />}
             </Fragment>
           );
         })}
       </ul>
     </nav>
-      {/* nav の transform の中に置くと fixed が効かないので、外に置く */}
-      <StartSheet open={starting} onClose={() => setStarting(false)} />
     </>
   );
 }
