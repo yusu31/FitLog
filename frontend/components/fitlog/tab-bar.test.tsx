@@ -23,10 +23,11 @@ describe('TabBar（下のタブ）', () => {
   it('4つのタブがホーム・記録・仲間・自分の順で、それぞれの画面を指す（＋はタブではなくボタン）', () => {
     pathname = '/log/';
     render(<TabBar />);
-    const links = screen.getAllByRole('link');
+    // 扇の丸（筋トレ・ラン…）もリンクなので、タブだけに絞る
+    const links = screen.getAllByRole('link').filter((l) => !l.closest('[role="group"]'));
     expect(links.map((l) => l.textContent)).toEqual(['ホーム', '記録', '仲間', '自分']);
     expect(links.map((l) => l.getAttribute('href'))).toEqual(['/home', '/log', '/friends', '/me']);
-    expect(screen.getByRole('button', { name: 'START 記録を始める' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '記録を始める' })).toBeInTheDocument();
   });
 
   it('/me/posts など自分の下の画面でも「自分」が選択中。/log では「記録」だけが選択中', () => {
@@ -40,17 +41,17 @@ describe('TabBar（下のタブ）', () => {
     expect(screen.getByRole('link', { name: '自分' })).not.toHaveAttribute('aria-current');
   });
 
-  it('＋を押すとシートが開き、行き先は筋トレ・ラン・おやすみ。CLOSE で閉じる', async () => {
+  it('中央の ● を押すと扇が開き、行き先は筋トレ・ラン・おやすみ（撮影も）。もう一度押すと閉じる（動きは start-fan.test.tsx）', async () => {
     pathname = '/log/';
     const user = userEvent.setup();
     render(<TabBar />);
-    await user.click(screen.getByRole('button', { name: 'START 記録を始める' }));
-    const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByRole('link', { name: 'STRENGTH 筋トレを記録' })).toHaveAttribute('href', '/exercises');
-    expect(within(dialog).getByRole('link', { name: 'RUN ランを記録' })).toHaveAttribute('href', '/run');
-    expect(within(dialog).getByRole('link', { name: 'REST おやすみにする' })).toHaveAttribute('href', '/rest');
-    await user.click(within(dialog).getByRole('button', { name: 'CLOSE 閉じる' }));
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '記録を始める' }));
+    const menu = screen.getByRole('group', { name: '記録のメニュー' });
+    expect(within(menu).getByRole('link', { name: '筋トレ' })).toHaveAttribute('href', '/exercises');
+    expect(within(menu).getByRole('link', { name: 'ラン' })).toHaveAttribute('href', '/run');
+    expect(within(menu).getByRole('link', { name: 'おやすみ' })).toHaveAttribute('href', '/rest');
+    await user.click(screen.getByRole('button', { name: '記録を始める' }));
+    expect(screen.getByRole('button', { name: '記録を始める' })).toHaveAttribute('aria-expanded', 'false');
   });
 });
 
@@ -121,7 +122,7 @@ describe('TabBar（狭い画面。L2）', () => {
       expect(li).toHaveClass('min-w-0', 'flex-1', 'max-w-16');
       expect(screen.getByRole('link', { name })).toHaveClass('w-full');
     }
-    const start = screen.getByRole('button', { name: 'START 記録を始める' });
+    const start = screen.getByRole('button', { name: '記録を始める' });
     expect(start.closest('li')).toHaveClass('min-w-0', 'flex-1', 'max-w-14');
     expect(start).toHaveClass('aspect-square', 'w-full', 'max-w-14');
   });
