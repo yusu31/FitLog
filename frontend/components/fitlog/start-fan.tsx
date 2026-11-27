@@ -109,7 +109,7 @@ export function StartFan() {
       <button
         ref={button}
         type="button"
-        aria-label="記録を始める"
+        aria-label="START 記録を始める"
         aria-haspopup="true"
         aria-expanded={open}
         aria-controls={groupId}

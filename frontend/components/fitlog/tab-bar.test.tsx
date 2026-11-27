@@ -27,7 +27,7 @@ describe('TabBar（下のタブ）', () => {
     const links = screen.getAllByRole('link').filter((l) => !l.closest('[role="group"]'));
     expect(links.map((l) => l.textContent)).toEqual(['ホーム', '記録', '仲間', '自分']);
     expect(links.map((l) => l.getAttribute('href'))).toEqual(['/home', '/log', '/friends', '/me']);
-    expect(screen.getByRole('button', { name: '記録を始める' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'START 記録を始める' })).toBeInTheDocument();
   });
 
   it('/me/posts など自分の下の画面でも「自分」が選択中。/log では「記録」だけが選択中', () => {
@@ -45,13 +45,13 @@ describe('TabBar（下のタブ）', () => {
     pathname = '/log/';
     const user = userEvent.setup();
     render(<TabBar />);
-    await user.click(screen.getByRole('button', { name: '記録を始める' }));
+    await user.click(screen.getByRole('button', { name: 'START 記録を始める' }));
     const menu = screen.getByRole('group', { name: '記録のメニュー' });
     expect(within(menu).getByRole('link', { name: '筋トレ' })).toHaveAttribute('href', '/exercises');
     expect(within(menu).getByRole('link', { name: 'ラン' })).toHaveAttribute('href', '/run');
     expect(within(menu).getByRole('link', { name: 'おやすみ' })).toHaveAttribute('href', '/rest');
-    await user.click(screen.getByRole('button', { name: '記録を始める' }));
-    expect(screen.getByRole('button', { name: '記録を始める' })).toHaveAttribute('aria-expanded', 'false');
+    await user.click(screen.getByRole('button', { name: 'START 記録を始める' }));
+    expect(screen.getByRole('button', { name: 'START 記録を始める' })).toHaveAttribute('aria-expanded', 'false');
   });
 });
 
@@ -122,7 +122,7 @@ describe('TabBar（狭い画面。L2）', () => {
       expect(li).toHaveClass('min-w-0', 'flex-1', 'max-w-16');
       expect(screen.getByRole('link', { name })).toHaveClass('w-full');
     }
-    const start = screen.getByRole('button', { name: '記録を始める' });
+    const start = screen.getByRole('button', { name: 'START 記録を始める' });
     expect(start.closest('li')).toHaveClass('min-w-0', 'flex-1', 'max-w-14');
     expect(start).toHaveClass('aspect-square', 'w-full', 'max-w-14');
   });

@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 const renderFan = () => render(<ul><StartFan /></ul>);
-const plus = () => screen.getByRole('button', { name: '記録を始める' });
+const plus = () => screen.getByRole('button', { name: 'START 記録を始める' });
 const item = (name: string) => screen.getByRole('link', { name, hidden: true });
 const touch = (type: 'pointerDown' | 'pointerMove' | 'pointerUp', x = 0, y = 0) =>
   fireEvent[type](plus(), { pointerType: 'touch', pointerId: 1, clientX: x, clientY: y });
