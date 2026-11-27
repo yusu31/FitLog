@@ -237,6 +237,7 @@ export const DETAIL_MESSAGES = {
   kindWorkout: '筋トレ',
   kindRun: 'ラン',
   kindRest: 'おやすみ',
+  kindPost: '投稿',
   restBody: '休むのも 記録のひとつ。ちゃんと数えたよ。',
   mapLabel: 'ランのルートの地図',
   mapLabelWithGhost: 'ランのルートの地図。点線は前回のルート',
@@ -361,6 +362,28 @@ export const DELETE_ACCOUNT_MESSAGES = {
 } as const;
 
 // 記録のメモ・きつさ（F5）。持ち主だけが見る。落ち度を責めない
+// ひとこと（records.caption。PR 4）。仲間にも見える
+export const CAPTION_MESSAGES = {
+  heading: 'ひとこと',
+  placeholder: '仲間に見える一言（50字まで・なくてもOK）',
+  everyone: '仲間にも見えます',
+  save: '保存する',
+  saved: '保存しました',
+  saveFailed: '保存できませんでした。電波の良い所でもう一度ためしてください',
+  offline: '電波があるときに保存できます',
+} as const;
+
+// 動画だけ消す（PR 4）
+export const VIDEO_DELETE_MESSAGES = {
+  button: '動画だけ 消す',
+  title: 'この動画を 消しますか？',
+  noteOther: '動画だけ消えます。記録は残ります。',
+  notePost: '投稿は動画が無いと中身が無くなるので、投稿ごと消えます。',
+  confirm: '消す',
+  pending: '消しています',
+  error: '消せませんでした。電波の良い所でもう一度ためしてください',
+} as const;
+
 export const MEMO_MESSAGES = {
   heading: 'メモときつさ',
   rpeLabel: 'きつさ（1 らく 〜 10 限界）',

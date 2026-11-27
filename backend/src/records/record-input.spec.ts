@@ -81,6 +81,30 @@ describe('parseRecordInput（記録の入力検査）', () => {
     });
   });
 
+  describe('投稿（kind=post）とひとこと（caption。PR 4）', () => {
+    it('投稿は run なしで通る。休みと違い late: true も付けられる', () => {
+      expect(parse({ ...valid, kind: 'post' }).kind).toBe('post');
+      expect(parse({ ...valid, kind: 'post', late: true }).late).toBe(true);
+    });
+
+    it('投稿に run を付けると 400（run は kind=run のときだけ）', () => {
+      expect(() => parse({ ...valid, kind: 'post', run: { distanceM: 5000, durationS: 1800 } })).toThrow(BadRequestException);
+    });
+
+    it('caption: 付けなければ入らない。前後の空白は除く。空白だけ・null は付けない扱い', () => {
+      expect(parse(valid)).not.toHaveProperty('caption');
+      expect(parse({ ...valid, caption: '  いい汗  ' }).caption).toBe('いい汗');
+      expect(parse({ ...valid, caption: '   ' })).not.toHaveProperty('caption');
+      expect(parse({ ...valid, caption: null })).not.toHaveProperty('caption');
+    });
+
+    it('caption: 50字（コードポイント）まで。51字・文字列でない値は 400', () => {
+      expect(parse({ ...valid, caption: '😀'.repeat(50) }).caption).toBe('😀'.repeat(50));
+      expect(() => parse({ ...valid, caption: 'あ'.repeat(51) })).toThrow(BadRequestException);
+      expect(() => parse({ ...valid, caption: 5 })).toThrow(BadRequestException);
+    });
+  });
+
   describe('ラン（kind=run。F-04）', () => {
     const run = { distanceM: 5000, durationS: 1800 };
     const parseRun = (override: Record<string, unknown> = {}) => parse({ ...valid, kind: 'run', run: { ...run, ...override } });

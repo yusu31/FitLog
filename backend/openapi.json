@@ -590,7 +590,8 @@
               "enum": [
                 "workout",
                 "run",
-                "rest"
+                "rest",
+                "post"
               ],
               "type": "string"
             }
@@ -1068,6 +1069,241 @@
         "summary": "1年分のマス・今月の数字・直近12週・スタンプを、自分の記録から返す",
         "tags": [
           "records"
+        ]
+      }
+    },
+    "/api/records/{id}/video": {
+      "post": {
+        "operationId": "issueVideoUpload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVideoUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "すでに行がある記録への再発行（置くのに失敗したやり直し）。行は申告どおりに更新し、同じキーで署名し直した",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoUploadResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "新しく発行した（動画の行を作った）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "contentType が video/mp4・video/webm でない・sizeBytes が 1〜10,485,760 の整数でない（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・他の人の記録（RECORD_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "あとから記録した分（RECORD_LATE）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録（どの種類でも）に付ける動画を置く署名付き POST を発行する。やり直しは同じ記録にもう一度呼ぶ",
+        "tags": [
+          "videos"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteRecordVideo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteVideoResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記録が無い・他の人の記録（RECORD_NOT_FOUND）／動画の無い記録（VIDEO_NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "記録の動画だけ消す（S3 のファイルも）。投稿の動画を消したら投稿ごと消える（recordDeleted=true）",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/api/videos/week": {
+      "get": {
+        "operationId": "getVideosThisWeek",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoWeekResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "今週の動画の一覧（仲間タブのサムネ列）。自分が今週撮っていなければ unlocked=false（仲間の分は見られない）",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/api/videos/mine": {
+      "get": {
+        "operationId": "getMyVideos",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "前の応答の nextCursor をそのまま渡す（続きを読む）",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyVideosResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "cursor が壊れている（VALIDATION_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "自分の過去の動画の一覧（「自分」タブのグリッド）。自分の分は条件なし・新しい順・20件ずつ",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/api/videos/{id}/url": {
+      "get": {
+        "operationId": "getVideoUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoUrlResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "仲間が、見られる期限（記録の週の日曜 24:00 日本時間）を過ぎてから見ようとした（FORBIDDEN）／期限前でも、今週まだ自分の動画を撮っていない（VIDEO_LOCKED。「あなたも2秒撮ると見られます」）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "無い・別のグループの人の動画・グループに入っていない人から見た他人の動画（VIDEO_NOT_FOUND。存在を教えない）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ",
+        "tags": [
+          "videos"
         ]
       }
     },
@@ -2050,202 +2286,6 @@
           "notifications"
         ]
       }
-    },
-    "/api/records/{id}/video": {
-      "post": {
-        "operationId": "issueVideoUpload",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateVideoUploadRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "すでに行がある記録への再発行（置くのに失敗したやり直し）。行は申告どおりに更新し、同じキーで署名し直した",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VideoUploadResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "新しく発行した（動画の行を作った）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VideoUploadResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "contentType が video/mp4・video/webm でない・sizeBytes が 1〜10,485,760 の整数でない（VALIDATION_ERROR）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "記録が無い・他の人の記録（RECORD_NOT_FOUND。存在を教えない）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "筋トレでない記録（RECORD_KIND_MISMATCH）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "筋トレの記録に付ける動画を置く署名付き POST を発行する。やり直しは同じ記録にもう一度呼ぶ",
-        "tags": [
-          "videos"
-        ]
-      }
-    },
-    "/api/videos/week": {
-      "get": {
-        "operationId": "getVideosThisWeek",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VideoWeekResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "今週の動画の一覧（仲間タブのサムネ列）。自分が今週撮っていなければ unlocked=false（仲間の分は見られない）",
-        "tags": [
-          "videos"
-        ]
-      }
-    },
-    "/api/videos/mine": {
-      "get": {
-        "operationId": "getMyVideos",
-        "parameters": [
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "前の応答の nextCursor をそのまま渡す（続きを読む）",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MyVideosResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "cursor が壊れている（VALIDATION_ERROR）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "自分の過去の動画の一覧（「自分」タブのグリッド）。自分の分は条件なし・新しい順・20件ずつ",
-        "tags": [
-          "videos"
-        ]
-      }
-    },
-    "/api/videos/{id}/url": {
-      "get": {
-        "operationId": "getVideoUrl",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VideoUrlResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "仲間が、見られる期限（記録の週の日曜 24:00 日本時間）を過ぎてから見ようとした（FORBIDDEN）／期限前でも、今週まだ自分の動画を撮っていない（VIDEO_LOCKED。「あなたも2秒撮ると見られます」）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "無い・別のグループの人の動画・グループに入っていない人から見た他人の動画（VIDEO_NOT_FOUND。存在を教えない）",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "動画を見る署名付き URL を発行する。本人はいつでも・仲間は見られる期限の前だけ",
-        "tags": [
-          "videos"
-        ]
-      }
     }
   },
   "info": {
@@ -2785,9 +2825,10 @@
             "enum": [
               "workout",
               "run",
-              "rest"
+              "rest",
+              "post"
             ],
-            "description": "筋トレ（workout）・ラン（run）・休み（rest）"
+            "description": "筋トレ（workout）・ラン（run）・休み（rest）・投稿（post。動画とひとことだけの記録。運動として数えない）"
           },
           "run": {
             "description": "kind が run のときだけ必須（距離と時間）。ほかの kind に付けると 400",
@@ -2806,6 +2847,11 @@
           "late": {
             "type": "boolean",
             "description": "あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。休みには付けられない（400）"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "ひとこと（1〜50字）。仲間にも見える。付けなくてもよい"
           },
           "copiedFromUserId": {
             "type": "string",
@@ -2844,7 +2890,8 @@
             "enum": [
               "workout",
               "run",
-              "rest"
+              "rest",
+              "post"
             ]
           },
           "recordedAt": {
@@ -2860,6 +2907,10 @@
           "late": {
             "type": "boolean",
             "description": "あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない"
+          },
+          "caption": {
+            "type": "string",
+            "description": "ひとこと（1〜50字）。仲間にも見える（note は本人だけ）。無ければ付かない"
           },
           "copiedFrom": {
             "description": "メニューをコピーして始めた記録だけ（「◯◯さんから」の札。F-24）。コピー元が今も見る人と同じグループなら name、抜けていれば name が null（画面は「仲間から」）",
@@ -3002,6 +3053,12 @@
             "minimum": 1,
             "maximum": 10,
             "description": "きつさ（RPE。1〜10 の整数）。null で消す。項目を送らなければ変えない"
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50,
+            "description": "ひとこと（50字まで。仲間にも見える）。null か空白だけで消す。項目を送らなければ変えない"
           }
         }
       },
@@ -3017,11 +3074,17 @@
             "type": "number",
             "nullable": true,
             "description": "保存後のきつさ。無ければ null"
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true,
+            "description": "保存後のひとこと。無ければ null"
           }
         },
         "required": [
           "note",
-          "rpe"
+          "rpe",
+          "caption"
         ]
       },
       "RecordedSet": {
@@ -3143,7 +3206,8 @@
             "enum": [
               "workout",
               "run",
-              "rest"
+              "rest",
+              "post"
             ]
           },
           "recordedAt": {
@@ -3159,6 +3223,10 @@
           "late": {
             "type": "boolean",
             "description": "あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない"
+          },
+          "caption": {
+            "type": "string",
+            "description": "ひとこと（1〜50字）。仲間にも見える（note は本人だけ）。無ければ付かない"
           },
           "copiedFrom": {
             "description": "メニューをコピーして始めた記録だけ（「◯◯さんから」の札。F-24）。コピー元が今も見る人と同じグループなら name、抜けていれば name が null（画面は「仲間から」）",
@@ -3581,6 +3649,238 @@
           "weekly",
           "stamps",
           "totalRunDistanceM"
+        ]
+      },
+      "CreateVideoUploadRequest": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "video/mp4",
+              "video/webm"
+            ],
+            "example": "video/mp4",
+            "description": "撮影できた形式。\";codecs=...\" は付けない基本の形式だけ"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10485760,
+            "example": 1500000,
+            "description": "動画の大きさ（バイト）。署名の条件に「ちょうどこの大きさ」として入る。上限 10MB（10,485,760）"
+          }
+        },
+        "required": [
+          "contentType",
+          "sizeBytes"
+        ]
+      },
+      "PresignedPostResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://fitlog-bucket.s3.ap-northeast-1.amazonaws.com/"
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "フォームに入れる項目（key・Content-Type・Policy・署名など）。順序と中身を変えない"
+          }
+        },
+        "required": [
+          "url",
+          "fields"
+        ]
+      },
+      "VideoUploadResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "動画の id。見るときの GET /videos/{id}/url に使う"
+          },
+          "upload": {
+            "$ref": "#/components/schemas/PresignedPostResponse"
+          },
+          "expiresInSeconds": {
+            "type": "number",
+            "example": 300,
+            "description": "署名付き POST の有効期限（秒）"
+          },
+          "visibleUntil": {
+            "type": "string",
+            "example": "2026-11-01T15:00:00.000Z",
+            "description": "仲間に見える期限（記録の週の日曜 24:00 日本時間）。本人はこれを過ぎても見られる"
+          }
+        },
+        "required": [
+          "id",
+          "upload",
+          "expiresInSeconds",
+          "visibleUntil"
+        ]
+      },
+      "DeleteVideoResponse": {
+        "type": "object",
+        "properties": {
+          "recordDeleted": {
+            "type": "boolean",
+            "description": "投稿の動画を消したので、投稿ごと消えた（true）。ほかの種類は動画だけ消えて記録は残る（false）"
+          }
+        },
+        "required": [
+          "recordDeleted"
+        ]
+      },
+      "VideoWeekItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "動画の id。見るときの GET /videos/{id}/url に使う（locked のときは 403 VIDEO_LOCKED になる）"
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "動画を付けた記録の id"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "運動した時刻（UTC）"
+          },
+          "visibleUntil": {
+            "type": "string",
+            "format": "date-time",
+            "description": "仲間に見える期限（今週の日曜 24:00 日本時間）"
+          },
+          "mine": {
+            "type": "boolean",
+            "description": "自分の動画なら true（条件なしで見られる）"
+          },
+          "author": {
+            "description": "撮った人",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "recordId",
+          "recordedAt",
+          "visibleUntil",
+          "mine",
+          "author"
+        ]
+      },
+      "VideoWeekResponse": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "example": "2026-11-16",
+            "description": "今週の月曜の日付（日本時間）"
+          },
+          "unlocked": {
+            "type": "boolean",
+            "description": "自分が今週1本以上撮っていれば true。false のとき、mine=false の動画は見られない（ぼかして「1本撮ると見られる」を出す。URL を取ると 403 VIDEO_LOCKED）。mine=true の動画は条件なし"
+          },
+          "items": {
+            "description": "今週の同じグループの人（自分を含む）の動画。新しい順（運動した時刻の降順）。最大 100 件。グループに入っていなければ自分の分だけ",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VideoWeekItem"
+            }
+          }
+        },
+        "required": [
+          "weekStart",
+          "unlocked",
+          "items"
+        ]
+      },
+      "MyVideoItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "動画を付けた記録の id"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "運動した時刻（UTC）"
+          },
+          "localDate": {
+            "type": "string",
+            "example": "2026-11-02",
+            "description": "日本時間の日付（YYYY-MM-DD）"
+          },
+          "visibleUntil": {
+            "type": "string",
+            "format": "date-time",
+            "description": "仲間に見える期限。本人はこれを過ぎても見られる"
+          }
+        },
+        "required": [
+          "id",
+          "recordId",
+          "recordedAt",
+          "localDate",
+          "visibleUntil"
+        ]
+      },
+      "MyVideosResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "新しい順（運動した時刻の降順。同じ時刻は記録 id の降順）。1回に 20 件",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyVideoItem"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "続きがあるときの印。次の呼び出しの cursor にそのまま渡す。最後のページは null"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "VideoUrlResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "動画を見る署名付き URL（短い期限）。ログに出さない"
+          },
+          "expiresInSeconds": {
+            "type": "number",
+            "example": 300,
+            "description": "URL の有効期限（秒）"
+          }
+        },
+        "required": [
+          "url",
+          "expiresInSeconds"
         ]
       },
       "RoutineSet": {
@@ -4238,7 +4538,8 @@
             "enum": [
               "workout",
               "run",
-              "rest"
+              "rest",
+              "post"
             ]
           },
           "recordedAt": {
@@ -4296,6 +4597,10 @@
                 "$ref": "#/components/schemas/RunDetail"
               }
             ]
+          },
+          "caption": {
+            "type": "string",
+            "description": "ひとこと（1〜50字）。無ければ付かない"
           },
           "stamps": {
             "description": "付いているスタンプ（付いたものだけ。スタンプの一覧の順）",
@@ -4600,7 +4905,8 @@
             "enum": [
               "workout",
               "run",
-              "rest"
+              "rest",
+              "post"
             ],
             "nullable": true,
             "description": "関係する記録の種類（friend_joined は null）"
@@ -4649,226 +4955,6 @@
         "required": [
           "unreadCount",
           "items"
-        ]
-      },
-      "CreateVideoUploadRequest": {
-        "type": "object",
-        "properties": {
-          "contentType": {
-            "type": "string",
-            "enum": [
-              "video/mp4",
-              "video/webm"
-            ],
-            "example": "video/mp4",
-            "description": "撮影できた形式。\";codecs=...\" は付けない基本の形式だけ"
-          },
-          "sizeBytes": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 10485760,
-            "example": 1500000,
-            "description": "動画の大きさ（バイト）。署名の条件に「ちょうどこの大きさ」として入る。上限 10MB（10,485,760）"
-          }
-        },
-        "required": [
-          "contentType",
-          "sizeBytes"
-        ]
-      },
-      "PresignedPostResponse": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "example": "https://fitlog-bucket.s3.ap-northeast-1.amazonaws.com/"
-          },
-          "fields": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "フォームに入れる項目（key・Content-Type・Policy・署名など）。順序と中身を変えない"
-          }
-        },
-        "required": [
-          "url",
-          "fields"
-        ]
-      },
-      "VideoUploadResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "動画の id。見るときの GET /videos/{id}/url に使う"
-          },
-          "upload": {
-            "$ref": "#/components/schemas/PresignedPostResponse"
-          },
-          "expiresInSeconds": {
-            "type": "number",
-            "example": 300,
-            "description": "署名付き POST の有効期限（秒）"
-          },
-          "visibleUntil": {
-            "type": "string",
-            "example": "2026-11-01T15:00:00.000Z",
-            "description": "仲間に見える期限（記録の週の日曜 24:00 日本時間）。本人はこれを過ぎても見られる"
-          }
-        },
-        "required": [
-          "id",
-          "upload",
-          "expiresInSeconds",
-          "visibleUntil"
-        ]
-      },
-      "VideoWeekItem": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "動画の id。見るときの GET /videos/{id}/url に使う（locked のときは 403 VIDEO_LOCKED になる）"
-          },
-          "recordId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "動画を付けた記録の id"
-          },
-          "recordedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "運動した時刻（UTC）"
-          },
-          "visibleUntil": {
-            "type": "string",
-            "format": "date-time",
-            "description": "仲間に見える期限（今週の日曜 24:00 日本時間）"
-          },
-          "mine": {
-            "type": "boolean",
-            "description": "自分の動画なら true（条件なしで見られる）"
-          },
-          "author": {
-            "description": "撮った人",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MemberResponse"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "recordId",
-          "recordedAt",
-          "visibleUntil",
-          "mine",
-          "author"
-        ]
-      },
-      "VideoWeekResponse": {
-        "type": "object",
-        "properties": {
-          "weekStart": {
-            "type": "string",
-            "example": "2026-11-16",
-            "description": "今週の月曜の日付（日本時間）"
-          },
-          "unlocked": {
-            "type": "boolean",
-            "description": "自分が今週1本以上撮っていれば true。false のとき、mine=false の動画は見られない（ぼかして「1本撮ると見られる」を出す。URL を取ると 403 VIDEO_LOCKED）。mine=true の動画は条件なし"
-          },
-          "items": {
-            "description": "今週の同じグループの人（自分を含む）の動画。新しい順（運動した時刻の降順）。最大 100 件。グループに入っていなければ自分の分だけ",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/VideoWeekItem"
-            }
-          }
-        },
-        "required": [
-          "weekStart",
-          "unlocked",
-          "items"
-        ]
-      },
-      "MyVideoItem": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "recordId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "動画を付けた記録の id"
-          },
-          "recordedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "運動した時刻（UTC）"
-          },
-          "localDate": {
-            "type": "string",
-            "example": "2026-11-02",
-            "description": "日本時間の日付（YYYY-MM-DD）"
-          },
-          "visibleUntil": {
-            "type": "string",
-            "format": "date-time",
-            "description": "仲間に見える期限。本人はこれを過ぎても見られる"
-          }
-        },
-        "required": [
-          "id",
-          "recordId",
-          "recordedAt",
-          "localDate",
-          "visibleUntil"
-        ]
-      },
-      "MyVideosResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "description": "新しい順（運動した時刻の降順。同じ時刻は記録 id の降順）。1回に 20 件",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MyVideoItem"
-            }
-          },
-          "nextCursor": {
-            "type": "string",
-            "nullable": true,
-            "description": "続きがあるときの印。次の呼び出しの cursor にそのまま渡す。最後のページは null"
-          }
-        },
-        "required": [
-          "items",
-          "nextCursor"
-        ]
-      },
-      "VideoUrlResponse": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "description": "動画を見る署名付き URL（短い期限）。ログに出さない"
-          },
-          "expiresInSeconds": {
-            "type": "number",
-            "example": 300,
-            "description": "URL の有効期限（秒）"
-          }
-        },
-        "required": [
-          "url",
-          "expiresInSeconds"
         ]
       }
     }

@@ -44,6 +44,23 @@ describe('parseMemoInput（メモ・きつさの入力検査）', () => {
 
   it('メモは文字列だけ', () => rejects({ note: 5 }));
 
+  // ひとこと（caption。PR 4）。仲間にも見える。1〜50字・コードポイントで数える・空白だけなら消す（null）
+  it('ひとこと: 前後の空白を除いて通る。null と空白だけは「消す」（null）', () => {
+    expect(parseMemoInput({ caption: '  いい汗  ' })).toEqual({ caption: 'いい汗' });
+    expect(parseMemoInput({ caption: null })).toEqual({ caption: null });
+    expect(parseMemoInput({ caption: '   ' })).toEqual({ caption: null });
+  });
+
+  it('ひとこと: 50字（絵文字もコードポイントで1字）まで。51字・文字列でない値は拒否', () => {
+    expect(parseMemoInput({ caption: '😀'.repeat(50) })).toEqual({ caption: '😀'.repeat(50) });
+    rejects({ caption: '😀'.repeat(51) });
+    rejects({ caption: 5 });
+  });
+
+  it('ひとことだけ送っても通る（note・rpe は触らない）', () => {
+    expect(parseMemoInput({ caption: 'x' })).not.toHaveProperty('note');
+  });
+
   it('何も変えない入力（空のオブジェクト・オブジェクトでない）は拒否', () => {
     rejects({});
     rejects(null);

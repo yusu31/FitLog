@@ -16,6 +16,8 @@ import { sendErrorText } from '@/lib/api/api-error';
 import { useCreateExercise, useGetCalories, useGetCurrentGroup, useGetPrevious, useGetRecord, useListExercises, type RecordDetailResponse, type RecordedExercise } from '@/lib/api/generated';
 import { SaveRoutine } from '@/components/routine/save-routine';
 import { RecordMemo } from './record-memo';
+import { RecordCaption } from './record-caption';
+import { RecordVideoDelete } from './record-video-delete';
 import { setCopyPlan } from '@/lib/copy-plan';
 import {
   formatDistance,
@@ -147,6 +149,7 @@ export function RecordDetailView() {
         {record.kind === 'workout' && !mine && by !== '' && (record.exercises?.length ?? 0) > 0 && <CopyButton record={record} fromUserId={by} />}
         {record.kind === 'workout' && mine && (record.exercises?.length ?? 0) > 0 && <SaveRoutine recordId={record.id} />}
         {record.videoId && <VideoPlayer videoId={record.videoId} />}
+        <RecordCaption recordId={record.id} caption={record.caption} mine={mine} />
         {record.kind === 'run' && record.run && <Run distanceM={record.run.distanceM} durationS={record.run.durationS} />}
         {record.kind === 'run' && record.run?.route && <RouteMap route={record.run.route} ghost={record.previousRun?.route} distanceM={record.run.distanceM} durationS={record.run.durationS} />}
         {record.kind === 'run' && record.run?.route && record.previousRun && (
@@ -155,8 +158,9 @@ export function RecordDetailView() {
         {record.kind === 'rest' && (
           <p className="fl-slab px-4 py-5 text-center text-sm font-bold text-fg-muted">{DETAIL_MESSAGES.restBody}</p>
         )}
-        {mine && record.kind !== 'rest' && <RecordKcal recordId={record.id} />}
-        {mine && <RecordMemo recordId={record.id} note={record.note} rpe={record.rpe} />}
+        {mine && record.kind !== 'rest' && record.kind !== 'post' && <RecordKcal recordId={record.id} />}
+        {mine && record.kind !== 'post' && <RecordMemo recordId={record.id} note={record.note} rpe={record.rpe} />}
+        {mine && record.videoId && <RecordVideoDelete recordId={record.id} isPost={record.kind === 'post'} />}
         <SocialSection recordId={record.id} kind={record.kind} mine={mine} />
         {mine && (
           <section aria-label={DETAIL_MESSAGES.deleteRegion} className="mt-10 border-t-2 border-line pt-6">
@@ -171,7 +175,7 @@ export function RecordDetailView() {
       <ConfirmDialog
         open={confirming}
         title={ME_MESSAGES.deleteTitle}
-        description={<>{record.kind === 'workout' ? ME_MESSAGES.deleteNote : 'この記録を取り消します。'}</>}
+        description={<>{record.kind === 'workout' ? ME_MESSAGES.deleteNote : record.kind === 'post' ? '投稿を取り消します。動画も消えます。' : 'この記録を取り消します。'}</>}
         confirmLabel="削除する"
         onConfirm={onDelete}
         onCancel={() => setConfirming(false)}
@@ -184,6 +188,7 @@ const KIND_LABEL = {
   workout: DETAIL_MESSAGES.kindWorkout,
   run: DETAIL_MESSAGES.kindRun,
   rest: DETAIL_MESSAGES.kindRest,
+  post: DETAIL_MESSAGES.kindPost,
 } as const;
 
 // 種類（見出し）と、日本時間の日付・曜日・時刻

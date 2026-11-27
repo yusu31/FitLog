@@ -1,8 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
 import { isUuid } from '../common/uuid.js';
 
-// 作れる種類（筋トレ・ラン・休み）
-export const CREATABLE_KINDS = ['workout', 'run', 'rest'] as const;
+// 作れる種類（筋トレ・ラン・休み・投稿）。投稿は動画とひとことだけの記録で、運動として数えない
+export const CREATABLE_KINDS = ['workout', 'run', 'rest', 'post'] as const;
 export type CreatableKind = (typeof CREATABLE_KINDS)[number];
 
 // 端末の時計は少しずれるので、未来は5分先まで受け付ける（docs/testing-design.md T-DATE-07。5分1秒は 400）
@@ -18,6 +18,9 @@ export const DURATION_S_MAX = 86_400;
 export const ROUTE_POINTS_MIN = 2;
 export const ROUTE_POINTS_MAX = 3000;
 export type RouteInput = { type: 'LineString'; coordinates: [number, number][] };
+
+// ひとこと（caption）は 1〜50字。数え方はコードポイント（DB の char_length・コメントと同じ）
+export const CAPTION_MAX = 50;
 
 export type RunInput = { distanceM: number; durationS: number; route?: RouteInput };
 
@@ -51,7 +54,7 @@ export function parseIso(text: string): Date | undefined {
 }
 
 // 記録を作るときの入力検査（docs/design.md 4章 POST /records）。理由は項目ごとに集めて、1回で直せるようにする
-export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: string; kind: CreatableKind; recordedAt: Date; run?: RunInput; late?: true; copiedFromUserId?: string } {
+export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: string; kind: CreatableKind; recordedAt: Date; run?: RunInput; late?: true; copiedFromUserId?: string; caption?: string } {
   const body = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
   const details: string[] = [];
 
@@ -99,8 +102,19 @@ export function parseRecordInput(raw: unknown, now: Date = new Date()): { id: st
     else copiedFromUserId = body.copiedFromUserId;
   }
 
+  // caption（ひとこと）は付けても付けなくてもよい。空白だけなら付けない扱い
+  let caption: string | undefined;
+  if (body.caption !== undefined && body.caption !== null) {
+    if (typeof body.caption !== 'string') details.push('caption: 文字列で指定してください');
+    else {
+      const text = body.caption.trim();
+      if (Array.from(text).length > CAPTION_MAX) details.push(`caption: ${CAPTION_MAX}字までで入れてください`);
+      else if (text !== '') caption = text;
+    }
+  }
+
   if (!id || !kind || !recordedAt || details.length > 0) {
     throw new BadRequestException({ code: 'VALIDATION_ERROR', message: '入力が正しくありません', details });
   }
-  return { id, kind, recordedAt, ...(run ? { run } : {}), ...(late ? { late: true as const } : {}), ...(copiedFromUserId ? { copiedFromUserId } : {}) };
+  return { id, kind, recordedAt, ...(run ? { run } : {}), ...(late ? { late: true as const } : {}), ...(copiedFromUserId ? { copiedFromUserId } : {}), ...(caption ? { caption } : {}) };
 }

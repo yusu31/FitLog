@@ -97,7 +97,9 @@ function refreshLists(client: QueryClient): void {
 
 // 記録を作った日を、週の帯（今日の画面の7マス）に先に反映する。サーバーの応答が正で、書き込みの後に取り直す（refreshLists）。
 // 休みは「何もない日」のときだけ休みにし、記録（rec）がある日は rec のまま
-function markWeekDay(client: QueryClient, localDate: string, kind: 'workout' | 'run' | 'rest'): void {
+function markWeekDay(client: QueryClient, localDate: string, kind: 'workout' | 'run' | 'rest' | 'post'): void {
+  // 投稿（動画とひとことだけ）は運動として数えないので、7マスは変えない
+  if (kind === 'post') return;
   client.setQueriesData<getWeekResponseSuccess>({ queryKey: getGetWeekQueryKey() }, (old) => {
     if (!old || old.status !== 200) return old;
     const next = kind === 'rest' ? 'rest' : 'rec';

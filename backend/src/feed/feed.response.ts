@@ -69,6 +69,9 @@ export class FeedItem {
   @ApiProperty({ type: RunDetail, required: false, description: 'ランの記録だけ。距離と時間' })
   run?: RunDetail;
 
+  @ApiProperty({ required: false, description: 'ひとこと（1〜50字）。無ければ付かない' })
+  caption?: string;
+
   @ApiProperty({ type: [FeedStamp], description: '付いているスタンプ（付いたものだけ。スタンプの一覧の順）' })
   stamps!: FeedStamp[];
 

@@ -101,3 +101,8 @@ export class MyVideosResponse {
   @ApiProperty({ type: String, nullable: true, description: '続きがあるときの印。次の呼び出しの cursor にそのまま渡す。最後のページは null' })
   nextCursor!: string | null;
 }
+
+export class DeleteVideoResponse {
+  @ApiProperty({ description: '投稿の動画を消したので、投稿ごと消えた（true）。ほかの種類は動画だけ消えて記録は残る（false）' })
+  recordDeleted!: boolean;
+}

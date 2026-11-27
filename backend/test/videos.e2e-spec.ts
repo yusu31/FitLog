@@ -39,7 +39,7 @@ describe('動画の署名付き URL（結合: 本物の PostgreSQL・better-auth
   const signUpAs = async (name: string): Promise<string> =>
     cookieOf(await http().post('/api/auth/sign-up/email').set('Origin', TEST_ORIGIN).send({ email: `user${++userSeq}@example.com`, password: 'correct-horse-battery', name }).expect(200));
 
-  const createRecord = async (cookie: string, kind: 'workout' | 'run' | 'rest' = 'workout', recordedAt = RECORDED_AT): Promise<string> => {
+  const createRecord = async (cookie: string, kind: 'workout' | 'run' | 'rest' | 'post' = 'workout', recordedAt = RECORDED_AT): Promise<string> => {
     const id = randomUUID();
     const extra = kind === 'run' ? { run: { distanceM: 5000, durationS: 1800 } } : {};
     await http().post('/api/records').set('Cookie', cookie).send({ id, kind, recordedAt, ...extra }).expect(201);
@@ -109,12 +109,12 @@ describe('動画の署名付き URL（結合: 本物の PostgreSQL・better-auth
       expect(await videoRows()).toHaveLength(0);
     });
 
-    it('筋トレでない記録（ラン・休み）には 409 RECORD_KIND_MISMATCH', async () => {
+    it('どの種類の記録（ラン・休み・投稿）にも動画を付けられる（PR 4）', async () => {
       const cookie = await signUpAs('me');
-      for (const kind of ['run', 'rest'] as const) {
-        const res = await issue(cookie, await createRecord(cookie, kind)).expect(409);
-        expect((res.body as { code: string }).code).toBe('RECORD_KIND_MISMATCH');
+      for (const kind of ['run', 'rest', 'post'] as const) {
+        await issue(cookie, await createRecord(cookie, kind)).expect(201);
       }
+      expect(await videoRows()).toHaveLength(3);
     });
 
     it('あとから記録（late）の筋トレには 409 RECORD_LATE。行はできない（公開期限が登録の週とずれるため。F-21）', async () => {

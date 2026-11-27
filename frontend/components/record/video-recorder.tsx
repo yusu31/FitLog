@@ -3,12 +3,31 @@
 import { useEffect, useRef, useState } from 'react';
 import { ThickButton } from '@/components/fitlog/thick-button';
 import { sendErrorText, unwrap } from '@/lib/api/api-error';
-import { issueVideoUpload } from '@/lib/api/generated';
+import { createRecord, deleteRecord, issueVideoUpload, listRecords, updateRecordMemo } from '@/lib/api/generated';
 import { isNativeApp } from '@/lib/gps/source';
+import { toLocalDate } from '@/lib/shared/local-date';
 import { recordClip } from '@/lib/video/record-video';
 import { baseContentType, pickMimeType, uploadToS3 } from '@/lib/video/video-upload';
 
-type Phase = 'starting' | 'ready' | 'recording' | 'sending' | 'done' | 'error';
+// review＝撮ったあとの見直し（ひとこと・撮り直す・送る）
+type Phase = 'starting' | 'ready' | 'recording' | 'review' | 'sending' | 'done' | 'error';
+
+// ひとこと（records.caption）の上限。API・DB と同じ（コードポイントで数える）
+export const CAPTION_MAX = 50;
+const countChars = (text: string): number => Array.from(text).length;
+const KIND_TARGET_LABEL: Record<string, string> = { workout: '筋トレ', run: 'ラン', rest: 'おやすみ', post: '投稿' };
+
+// 動画の付け先（PR 4）。recordId が null なら、送るときに「投稿」を新しく作る
+type Target = { recordId: string | null; kind: string };
+
+// 付け先を自動で決める。優先順位: ①いま記録している最中の筋トレ → ②今日の記録のうち、いちばん新しい「動画がまだ無い」もの → ③どれも無ければ投稿。
+// 動画が付いている記録はとばす（前の動画を消さない）。あとから記録（late）には動画を付けられないので除く。一覧は新しい順
+async function resolveTarget(): Promise<Target> {
+  const res = unwrap(await listRecords({ date: toLocalDate(new Date()), limit: '50' }));
+  const open = res.data.items.filter((r) => !r.late && !r.videoId);
+  const pick = open.find((r) => r.kind === 'workout' && r.active) ?? open[0];
+  return pick ? { recordId: pick.id, kind: pick.kind } : { recordId: null, kind: 'post' };
+}
 
 const SEND_ERROR = '送れませんでした。電波の良い所でもう一度ためしてください';
 const CAMERA_ERROR = 'カメラを使えませんでした';
@@ -36,9 +55,10 @@ export function canRecordVideo(): boolean {
 }
 
 // 「2秒ラストレップを撮る」（features.md F-13・screen-design.md 4章）。
-// 全画面でカメラを見せ、「撮る」で2秒だけ撮影 → API で署名付き POST をもらい → S3 へ直接送る。
-// 失敗しても記録（セット）は消えない。やり直しはもう一度「撮る」（同じ記録への再 POST は動画が差し替わる）
-export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose: () => void }) {
+// 全画面でカメラを見せ、「撮る」で2秒だけ撮影 → 全画面で見直す（ひとこと・撮り直す・送る）→ 「送る」で API から署名付き POST をもらい、S3 へ直接送る。
+// recordId を渡すと、その記録に付ける。渡さない（undefined）と、付け先は自動（resolveTarget。無ければ「投稿」を作る）。
+// 失敗しても記録（セット）は消えない。送れなかったら見直しの画面にもどるので、そのまま「送る」でやり直せる
+export function VideoRecorder({ recordId, onClose }: { recordId?: string; onClose: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [phase, setPhase] = useState<Phase>('starting');
@@ -46,6 +66,11 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
   const [waitedS, setWaitedS] = useState(0);
   // 「もう一度ためす」を押した回数。変わるとカメラを取り直す
   const [attempt, setAttempt] = useState(0);
+  // 撮れた動画（見直しと送信に使う）・見直し用の URL・ひとこと・付け先
+  const [clip, setClip] = useState<Blob | null>(null);
+  const [clipUrl, setClipUrl] = useState<string | null>(null);
+  const [caption, setCaption] = useState('');
+  const [target, setTarget] = useState<Target | null>(recordId ? { recordId, kind: 'fixed' } : null);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +120,17 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
     setAttempt((n) => n + 1);
   }
 
+  // 見直し用の URL は、撮り直し・閉じるときに手放す
+  useEffect(() => {
+    if (!clip || typeof URL.createObjectURL !== 'function') return;
+    const url = URL.createObjectURL(clip);
+    setClipUrl(url);
+    return () => {
+      URL.revokeObjectURL?.(url);
+      setClipUrl(null);
+    };
+  }, [clip]);
+
   async function onShoot() {
     const stream = streamRef.current;
     const mime = pickMimeType((m) => MediaRecorder.isTypeSupported(m));
@@ -102,24 +138,64 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
     setError(null);
     setPhase('recording');
     try {
-      const clip = await recordClip(stream, mime);
-      const contentType = baseContentType(clip.type || mime);
-      if (!contentType) throw new Error('この形式の動画は送れません');
-      setPhase('sending');
-      const res = unwrap(await issueVideoUpload(recordId, { contentType, sizeBytes: clip.size }));
-      await uploadToS3(res.data.upload, clip);
-      setPhase('done');
+      const blob = await recordClip(stream, mime);
+      if (!baseContentType(blob.type || mime)) throw new Error('この形式の動画は送れません');
+      setClip(blob);
+      setPhase('review');
+      // 付け先は、見直しの間に決めておく（「◯◯に付けます」と見せるため）。決められなくても、送るときにもう一度決める
+      if (!recordId) resolveTarget().then(setTarget, () => setTarget(null));
     } catch (e) {
       setError(sendErrorText(e, SEND_ERROR));
       setPhase('ready');
     }
   }
 
+  function onRetake() {
+    setClip(null);
+    setError(null);
+    setPhase('ready');
+  }
+
+  async function onSend() {
+    if (!clip) return;
+    const contentType = baseContentType(clip.type || pickMimeType((m) => MediaRecorder.isTypeSupported(m)) || '');
+    if (!contentType) return;
+    setError(null);
+    setPhase('sending');
+    let createdPostId: string | null = null;
+    try {
+      const to = target ?? (await resolveTarget());
+      const text = caption.trim();
+      let id = to.recordId;
+      if (!id) {
+        // 付け先が無いとき: 動画とひとことだけの「投稿」を新しく作る（運動としては数えない）
+        id = crypto.randomUUID();
+        createdPostId = id;
+        unwrap(await createRecord({ id, kind: 'post', recordedAt: new Date().toISOString(), ...(text ? { caption: text } : {}) }));
+      } else if (text) {
+        unwrap(await updateRecordMemo(id, { caption: text }));
+      }
+      const res = unwrap(await issueVideoUpload(id, { contentType, sizeBytes: clip.size }));
+      await uploadToS3(res.data.upload, clip);
+      setPhase('done');
+    } catch (e) {
+      // 投稿だけ作って動画が置けなかったときは、中身の無い投稿を残さない（次の「送る」で作り直す）
+      if (createdPostId) void deleteRecord(createdPostId).catch(() => {});
+      setError(sendErrorText(e, SEND_ERROR));
+      setPhase('review');
+    }
+  }
+
   const busy = phase === 'recording' || phase === 'sending';
+  const reviewing = phase === 'review' || phase === 'sending';
+  const targetText = target ? (target.recordId ? (target.kind === 'fixed' ? 'この記録に付けます' : `${KIND_TARGET_LABEL[target.kind] ?? '記録'}に付けます`) : '投稿として送ります') : '付け先を決めています…';
   // 休憩の帯（rest-timer-bar の z-40）より前に出す。後ろだと「撮る」「あとで撮る」が隠れる
   return (
     <div role="dialog" aria-modal="true" aria-label="2秒ラストレップを撮る" className="fixed inset-0 z-50 flex flex-col bg-night text-white">
-      <video ref={videoRef} playsInline muted className={`min-h-0 w-full flex-1 bg-black object-cover ${phase === 'error' ? 'hidden' : ''}`} />
+      <video ref={videoRef} playsInline muted className={`min-h-0 w-full flex-1 bg-black object-cover ${phase === 'error' || reviewing || phase === 'done' ? 'hidden' : ''}`} />
+      {(reviewing || phase === 'done') && clipUrl && (
+        <video aria-label="撮った動画（見直し）" src={clipUrl} autoPlay loop muted playsInline className="min-h-0 w-full flex-1 bg-black object-cover" />
+      )}
       {phase === 'error' && (
         <div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-y-auto px-6 py-4">
           <p role="alert" className="text-lg font-extrabold">
@@ -150,6 +226,7 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
           {phase === 'starting' && `カメラを準備しています（${waitedS}秒）`}
           {phase === 'ready' && !error && '「撮る」を押すと2秒だけ撮ります'}
           {phase === 'recording' && '撮影中…（2秒）'}
+          {phase === 'review' && !error && targetText}
           {phase === 'sending' && '送っています…'}
           {phase === 'done' && '保存しました。仲間にはその週の終わりまで見えます'}
         </p>
@@ -158,7 +235,35 @@ export function VideoRecorder({ recordId, onClose }: { recordId: string; onClose
             {error}
           </p>
         )}
-        {phase !== 'done' && phase !== 'error' && (
+        {reviewing && (
+          <div className="space-y-1">
+            <label htmlFor="clip-caption" className="text-sm font-extrabold">
+              ひとこと（{CAPTION_MAX}字まで・なくてもOK）
+            </label>
+            <input
+              id="clip-caption"
+              type="text"
+              value={caption}
+              disabled={phase === 'sending'}
+              onChange={(e) => setCaption(Array.from(e.target.value).slice(0, CAPTION_MAX).join(''))}
+              className="h-11 w-full rounded-fl border-2 border-line bg-white px-3 text-base font-bold text-fg outline-none focus-visible:ring-4 focus-visible:ring-teal/40"
+            />
+            <p className="text-right text-note font-bold text-white/80">
+              {countChars(caption)}/{CAPTION_MAX}
+            </p>
+          </div>
+        )}
+        {reviewing && (
+          <ThickButton tone="gold" disabled={phase === 'sending' || !clip} onClick={onSend}>
+            {phase === 'sending' ? '…' : '送る'}
+          </ThickButton>
+        )}
+        {reviewing && (
+          <ThickButton tone="white" size="sm" className="w-full" onClick={onRetake} disabled={phase === 'sending'}>
+            撮り直す
+          </ThickButton>
+        )}
+        {phase !== 'done' && phase !== 'error' && !reviewing && (
           <ThickButton tone="gold" disabled={phase !== 'ready'} onClick={onShoot}>
             {busy ? '…' : error ? 'もう一度撮る' : '撮る'}
           </ThickButton>

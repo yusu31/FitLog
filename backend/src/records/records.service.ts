@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, asc, between, count, desc, eq, inArray, isNull, lt, min, or, sql } from 'drizzle-orm';
+import { and, asc, between, count, desc, eq, inArray, isNull, lt, min, ne, or, sql } from 'drizzle-orm';
 import { compareSet, isPersonalBest } from '../common/ghost.js';
 import { buildStats, type DayAgg } from '../common/stats.js';
 import { cellStatus, isAutoRestDay, weekDates, weekStartOf } from '../common/week.js';
@@ -7,6 +7,7 @@ import { toLocalDate } from '../common/local-date.js';
 import { isWorkoutActive } from '../common/workout-session.js';
 import { isUuid } from '../common/uuid.js';
 import { DB, type Db } from '../db/db.module.js';
+import { VideoStorage } from '../videos/video-storage.js';
 import { BODY_PARTS, exercises, records, runDetails, videos, workoutSets } from '../db/schema.js';
 import { findPrevious, pastMaxVolume } from './ghost-queries.js';
 import { encodeCursor, parseListQuery } from './list-input.js';
@@ -27,6 +28,7 @@ const toResponse = (row: Row, run?: RunInput, copiedFrom?: CopiedFrom): RecordRe
   recordedAt: row.recordedAt.toISOString(),
   localDate: row.localDate,
   ...(row.late ? { late: true } : {}),
+  ...(row.caption ? { caption: row.caption } : {}),
   ...(row.endedAt ? { endedAt: row.endedAt.toISOString() } : {}),
   ...(copiedFrom ? { copiedFrom } : {}),
   ...(run ? { run: { distanceM: run.distanceM, durationS: run.durationS } } : {}),
@@ -40,7 +42,10 @@ const recordNotFound = () => new NotFoundException({ code: 'RECORD_NOT_FOUND', m
 export class RecordsService {
   private readonly logger = new Logger(RecordsService.name);
 
-  constructor(@Inject(DB) private readonly db: Db) {}
+  constructor(
+    @Inject(DB) private readonly db: Db,
+    private readonly storage: VideoStorage,
+  ) {}
 
   // 記録を作る。冪等（同じリクエストを2回送っても結果が1回分と同じ。F-30 の再送のため）。
   // created=true なら新しく作った（201）。false なら、すでにある記録を返した（200）:
@@ -48,7 +53,7 @@ export class RecordsService {
   //  ・同じ id が他の人の記録にある → 404（存在を教えない。T-OFF-04）
   //  ・休みを、同じ日に別の id で送った → すでにある休みを返す（休みは1日1件）
   async create(userId: string, raw: unknown): Promise<{ created: boolean; record: RecordResponse }> {
-    const { id, kind, recordedAt, run, late, copiedFromUserId } = parseRecordInput(raw);
+    const { id, kind, recordedAt, run, late, copiedFromUserId, caption } = parseRecordInput(raw);
     const localDate = toLocalDate(recordedAt);
 
     // メニューのコピー（F-24）: 筋トレだけ（409）、コピー元は今も同じグループの仲間だけ（404。グループ外・自分自身・無い id は同じ）。
@@ -65,11 +70,12 @@ export class RecordsService {
     // 同時に2つ届いても、後から来た方は先の方の確定を待って「何もしない」になるので、どちらも成功する（T-OFF-06・T-REST-06）
     // ランは、記録と詳細（距離・時間）を同じトランザクションで入れる（片方だけ残らないように）。記録が「何もしない」になったときは詳細も入れない
     const inserted = await this.db.transaction(async (tx) => {
-      const [row] = await tx.insert(records).values({ id, userId, kind, recordedAt, localDate, late: late ?? false, copiedFromUserId: copiedFromUserId ?? null }).onConflictDoNothing().returning();
+      const [row] = await tx.insert(records).values({ id, userId, kind, recordedAt, localDate, late: late ?? false, copiedFromUserId: copiedFromUserId ?? null, caption: caption ?? null }).onConflictDoNothing().returning();
       if (row && run) await tx.insert(runDetails).values({ recordId: row.id, distanceM: run.distanceM, durationS: run.durationS, route: run.route ?? null });
       // 筋トレ・ランを記録した日は「動いた日」なので、同じ日の休みを消す（D2-6。休みと記録が並ばないように）。
       // 休みに付いた反応・コメントは外部キーの連鎖で一緒に消える。再送（何もしなかった）のときは消さない
-      if (row && kind !== 'rest') {
+      // 投稿（動画とひとことだけ）は運動ではないので、休みを消さない
+      if (row && (kind === 'workout' || kind === 'run')) {
         await tx.delete(records).where(and(eq(records.userId, userId), eq(records.localDate, localDate), eq(records.kind, 'rest')));
       }
       return row;
@@ -107,7 +113,7 @@ export class RecordsService {
       .where(and(eq(records.userId, userId), between(records.localDate, dates[0], dates[6])));
 
     // 記録しなかった過ぎた日（今週だけ）は休みとして見せる（DB には作らない。common/week.ts isAutoRestDay）
-    const [first] = await this.db.select({ firstDate: min(records.localDate) }).from(records).where(eq(records.userId, userId));
+    const [first] = await this.db.select({ firstDate: min(records.localDate) }).from(records).where(and(eq(records.userId, userId), ne(records.kind, 'post')));
     const today = toLocalDate(new Date());
     return {
       weekStart,
@@ -141,7 +147,8 @@ export class RecordsService {
   async stats(userId: string, dateRaw: unknown): Promise<StatsResponse> {
     const today = parseWeekDate(dateRaw);
 
-    const kindRows = await this.db.select({ localDate: records.localDate, kind: records.kind }).from(records).where(eq(records.userId, userId));
+    // 投稿（post）は運動として数えない: 投稿だけの日を「記録のある日」にすると、自動の休みの判定や最初の記録の日がずれる
+    const kindRows = await this.db.select({ localDate: records.localDate, kind: records.kind }).from(records).where(and(eq(records.userId, userId), ne(records.kind, 'post')));
     const weightRows = await this.db
       .select({ localDate: records.localDate, total: sql<string>`sum(${workoutSets.weightKg} * ${workoutSets.reps})` })
       .from(workoutSets)
@@ -154,7 +161,7 @@ export class RecordsService {
       .innerJoin(records, eq(records.id, runDetails.recordId))
       .where(eq(records.userId, userId));
 
-    const days = new Map<string, DayAgg & { kinds: ('workout' | 'run' | 'rest')[] }>();
+    const days = new Map<string, DayAgg & { kinds: ('workout' | 'run' | 'rest' | 'post')[] }>();
     const dayOf = (date: string) => {
       let d = days.get(date);
       if (!d) days.set(date, (d = { date, status: 'none', weightKg: 0, runM: 0, maxRunM: 0, workoutCount: 0, runCount: 0, kinds: [] }));
@@ -245,26 +252,42 @@ export class RecordsService {
   // 記録を消す（取り消し）。自分のだけ。セット・ランの詳細は DB の ON DELETE CASCADE で一緒に消える。
   // 持ち主の確認と削除を1つの文で行う（確認と削除の間に割り込まれない）。
   // 消えた行は持ち主が分からないので、二重削除も他人の記録も無い id も、同じ 404
+  // 動画の S3 ファイルも消す（PR 4）。置き場所（s3_key）は videos の行にしか無いので、行を消す前に読む。
+  // S3 の削除に失敗しても記録の削除は成功にする（置き場の不具合で消せなくなるのを避ける。退会と同じ。失敗はログに残す）
   async deleteRecord(userId: string, recordId: string): Promise<void> {
     if (!isUuid(recordId)) throw recordNotFound();
+    const keys = (
+      await this.db
+        .select({ s3Key: videos.s3Key })
+        .from(videos)
+        .innerJoin(records, eq(records.id, videos.recordId))
+        .where(and(eq(records.id, recordId.toLowerCase()), eq(records.userId, userId)))
+    ).map((v) => v.s3Key);
     const deleted = await this.db
       .delete(records)
       .where(and(eq(records.id, recordId.toLowerCase()), eq(records.userId, userId)))
       .returning({ id: records.id });
     if (deleted.length === 0) throw recordNotFound();
     this.logger.log(`記録を削除: ${deleted[0].id}`);
+    if (keys.length > 0) {
+      try {
+        await this.storage.deleteMany(keys);
+      } catch (err) {
+        this.logger.warn(`動画ファイルを消せなかった（${keys.length}件）。記録の削除は成功にする: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
   }
 
   // メモ・きつさを書く（F5）。自分の記録だけ（他人の記録・無い id は同じ 404）。種類は問わない。
   // 持ち主の確認と更新を1つの文で行う。送った項目だけ変える（無い項目は触らない・null は消す）
-  async updateMemo(userId: string, recordId: string, raw: unknown): Promise<{ note: string | null; rpe: number | null }> {
+  async updateMemo(userId: string, recordId: string, raw: unknown): Promise<{ note: string | null; rpe: number | null; caption: string | null }> {
     const input = parseMemoInput(raw);
     if (!isUuid(recordId)) throw recordNotFound();
     const [updated] = await this.db
       .update(records)
       .set(input)
       .where(and(eq(records.id, recordId.toLowerCase()), eq(records.userId, userId)))
-      .returning({ note: records.note, rpe: records.rpe });
+      .returning({ note: records.note, rpe: records.rpe, caption: records.caption });
     if (!updated) throw recordNotFound();
     return updated;
   }
@@ -352,12 +375,10 @@ export class RecordsService {
       if (!lastSetAtByRecord.get(s.recordId) || s.createdAt > lastSetAtByRecord.get(s.recordId)!) lastSetAtByRecord.set(s.recordId, s.createdAt);
     }
 
-    // 動画の id は詳細だけ付ける（一覧には付けない。1記録に1本）
+    // 動画の id（1記録に1本）。一覧にも付ける: 撮影の付け先を決めるとき「動画がまだ無い記録」を一覧から選ぶため（PR 4）
     const videoByRecord = new Map<string, string>();
-    if (withRoute) {
-      const videoRows = await this.db.select({ id: videos.id, recordId: videos.recordId }).from(videos).where(inArray(videos.recordId, ids));
-      for (const v of videoRows) videoByRecord.set(v.recordId, v.id);
-    }
+    const videoRows = await this.db.select({ id: videos.id, recordId: videos.recordId }).from(videos).where(inArray(videos.recordId, ids));
+    for (const v of videoRows) videoByRecord.set(v.recordId, v.id);
 
     return rows.map((row) => {
       const run = runById.get(row.id);

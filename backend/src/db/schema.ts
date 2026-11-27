@@ -157,8 +157,8 @@ export const exercises = pgTable(
 );
 
 // ── 記録（docs/database-design.md records） ──────────────────────────────────
-// 筋トレ・ラン・休みの3種類を kind で分ける「1回の記録の入れ物」。種類ごとの中身は workout_sets・run_details が持つ。
-export const RECORD_KINDS = ['workout', 'run', 'rest'] as const;
+// 筋トレ・ラン・休み・投稿（動画とひとことだけの記録。運動として数えない）の4種類を kind で分ける「1回の記録の入れ物」。種類ごとの中身は workout_sets・run_details が持つ。
+export const RECORD_KINDS = ['workout', 'run', 'rest', 'post'] as const;
 export type RecordKind = (typeof RECORD_KINDS)[number];
 export const recordKind = pgEnum('record_kind', RECORD_KINDS);
 
@@ -183,10 +183,13 @@ export const records = pgTable(
     // メモときつさ（F5）。記録ごとに1つ。持ち主だけが見る（仲間には返さない）。どちらも未入力は null
     note: text('note'),
     rpe: smallint('rpe'),
+    // ひとこと（PR 4）。仲間にも見える（note は本人だけ）。1〜50字。数え方はコメントと同じコードポイント。未入力は null
+    caption: text('caption'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     check('records_note_ck', sql`${t.note} is null or char_length(${t.note}) between 1 and 200`),
+    check('records_caption_ck', sql`${t.caption} is null or char_length(${t.caption}) between 1 and 50`),
     check('records_rpe_ck', sql`${t.rpe} is null or ${t.rpe} between 1 and 10`),
     index('records_user_local_date_idx').on(t.userId, t.localDate.desc()),
     index('records_user_recorded_at_idx').on(t.userId, t.recordedAt.desc()),

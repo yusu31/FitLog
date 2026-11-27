@@ -29,7 +29,8 @@ export function weekDates(weekStart: string): string[] {
 }
 
 // 1日分のマス。筋トレ・ランがあれば rec（休みと同じ日でも rec が優先。features.md UC-13）、休みだけなら rest、何もなければ none
-export function cellStatus(kinds: ReadonlyArray<'workout' | 'run' | 'rest'>): CellStatus {
+// 投稿（post）は運動として数えない（rec にも rest にもならない）
+export function cellStatus(kinds: ReadonlyArray<'workout' | 'run' | 'rest' | 'post'>): CellStatus {
   if (kinds.some((k) => k === 'workout' || k === 'run')) return 'rec';
   return kinds.includes('rest') ? 'rest' : 'none';
 }

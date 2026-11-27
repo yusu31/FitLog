@@ -11,7 +11,7 @@ export type StampKey = (typeof STAMP_KEYS)[number];
 export const isStampKey = (value: unknown): value is StampKey => (STAMP_KEYS as readonly unknown[]).includes(value);
 
 // そのスタンプを付けられる記録の種類。休みの記録には休み用だけ、筋トレ・ランには通常のスタンプだけ（testing-design.md T-STP-06）
-export const stampFitsKind = (stampKey: StampKey, kind: 'workout' | 'run' | 'rest'): boolean =>
+export const stampFitsKind = (stampKey: StampKey, kind: 'workout' | 'run' | 'rest' | 'post'): boolean =>
   (REST_STAMPS as readonly string[]).includes(stampKey) === (kind === 'rest');
 
 // 1つの記録に付いたスタンプの行を「スタンプごとの数」にまとめる。付いたものだけ、スタンプの一覧の順に並べる。

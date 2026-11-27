@@ -54,7 +54,7 @@ export class CreateRecordRequest {
   @ApiProperty({ format: 'uuid', description: '端末で作る ID。同じ ID を送り直しても、記録は1件のまま（冪等）' })
   id!: string;
 
-  @ApiProperty({ enum: CREATABLE_KINDS, description: '筋トレ（workout）・ラン（run）・休み（rest）' })
+  @ApiProperty({ enum: CREATABLE_KINDS, description: '筋トレ（workout）・ラン（run）・休み（rest）・投稿（post。動画とひとことだけの記録。運動として数えない）' })
   kind!: CreatableKind;
 
   @ApiProperty({ type: RunDetail, required: false, description: 'kind が run のときだけ必須（距離と時間）。ほかの kind に付けると 400' })
@@ -65,6 +65,9 @@ export class CreateRecordRequest {
 
   @ApiProperty({ required: false, description: 'あとから記録（F-21）。端末で保存を押した日より前の日の記録なら true。休みには付けられない（400）' })
   late?: boolean;
+
+  @ApiProperty({ required: false, maxLength: 50, description: 'ひとこと（1〜50字）。仲間にも見える。付けなくてもよい' })
+  caption?: string;
 
   @ApiProperty({ required: false, description: 'メニューのコピー（F-24）。仲間の記録をコピーして始めた筋トレだけに付ける、コピー元の人の userId。筋トレ以外は 409、同じグループの仲間でなければ 404' })
   copiedFromUserId?: string;
@@ -90,6 +93,9 @@ export class RecordResponse {
 
   @ApiProperty({ required: false, description: 'あとから記録した記録だけ true（「あとから記録」の札。F-21）。いつもの記録には付かない' })
   late?: boolean;
+
+  @ApiProperty({ required: false, description: 'ひとこと（1〜50字）。仲間にも見える（note は本人だけ）。無ければ付かない' })
+  caption?: string;
 
   @ApiProperty({ type: CopiedFrom, required: false, description: 'メニューをコピーして始めた記録だけ（「◯◯さんから」の札。F-24）。コピー元が今も見る人と同じグループなら name、抜けていれば name が null（画面は「仲間から」）' })
   copiedFrom?: CopiedFrom;
@@ -159,7 +165,7 @@ export class RecordDetailResponse extends RecordResponse {
     type: String,
     format: 'uuid',
     required: false,
-    description: '動画があるときだけ（詳細 GET /records/{id} のみ）。見るときの GET /videos/{id}/url に使う',
+    description: '動画があるときだけ（詳細・一覧）。見るときの GET /videos/{id}/url に使う。撮影の付け先を選ぶときは、これが無い記録を探す',
   })
   videoId?: string;
 
@@ -203,6 +209,9 @@ export class MemoRequest {
 
   @ApiProperty({ type: Number, nullable: true, required: false, minimum: 1, maximum: 10, description: 'きつさ（RPE。1〜10 の整数）。null で消す。項目を送らなければ変えない' })
   rpe?: number | null;
+
+  @ApiProperty({ type: String, nullable: true, required: false, maxLength: 50, description: 'ひとこと（50字まで。仲間にも見える）。null か空白だけで消す。項目を送らなければ変えない' })
+  caption?: string | null;
 }
 
 export class MemoResponse {
@@ -211,6 +220,9 @@ export class MemoResponse {
 
   @ApiProperty({ type: Number, nullable: true, description: '保存後のきつさ。無ければ null' })
   rpe!: number | null;
+
+  @ApiProperty({ type: String, nullable: true, description: '保存後のひとこと。無ければ null' })
+  caption!: string | null;
 }
 
 export class SetResponse {

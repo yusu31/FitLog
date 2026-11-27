@@ -18,9 +18,9 @@ export function readLastKind(): LastKind {
 
 const listeners = new Set<() => void>();
 
-// 記録を作ったときに呼ぶ。休み（rest）は種類として覚えない。保存できない環境（プライベートモードなど）では何もしない
-export function rememberLastKind(kind: 'workout' | 'run' | 'rest'): void {
-  if (kind === 'rest') return;
+// 記録を作ったときに呼ぶ。休み（rest）・投稿（post）は運動の種類として覚えない。保存できない環境（プライベートモードなど）では何もしない
+export function rememberLastKind(kind: 'workout' | 'run' | 'rest' | 'post'): void {
+  if (kind === 'rest' || kind === 'post') return;
   try {
     localStorage.setItem(LAST_KIND_KEY, kind === 'run' ? 'run' : 'lift');
   } catch {

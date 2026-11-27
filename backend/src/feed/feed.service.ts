@@ -73,6 +73,7 @@ export class FeedService {
       exerciseNames: workouts.get(record.id)?.names ?? [],
       ...(workouts.has(record.id) ? { topSet: workouts.get(record.id)!.top, bodyParts: workouts.get(record.id)!.parts } : {}),
       ...(runs.has(record.id) ? { run: runs.get(record.id) } : {}),
+      ...(record.caption ? { caption: record.caption } : {}),
       stamps: stamps.get(record.id) ?? [],
       commentCount: commentCounts.get(record.id) ?? 0,
       ...(withVideo.has(record.id) ? { hasVideo: true, videoId: withVideo.get(record.id)!.id, videoVisibleUntil: withVideo.get(record.id)!.visibleUntil } : {}),

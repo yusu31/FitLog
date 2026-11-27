@@ -222,6 +222,7 @@ function ConfirmDelete({ record, onCancel, onConfirm }: { record: RecordDetailRe
 
 export function summarize(record: RecordDetailResponse): { title: string; detail: string } {
   if (record.kind === 'rest') return { title: 'おやすみ', detail: '' };
+  if (record.kind === 'post') return { title: '投稿', detail: record.caption ?? '' };
   if (record.kind === 'run') {
     const run = record.run;
     return { title: 'ラン', detail: run ? `${formatDistance(run.distanceM)} ・ ${formatDuration(run.durationS)}` : '' };

@@ -22,7 +22,8 @@ export function summarizeFriendsToday(
   const recorded = new Map<string, string>();
   const rested = new Map<string, string>();
   for (const it of items) {
-    if (it.localDate !== today || it.author.id === selfId) continue;
+    // 投稿（動画とひとことだけ）は運動として数えない
+    if (it.localDate !== today || it.author.id === selfId || it.kind === 'post') continue;
     (it.kind === 'rest' ? rested : recorded).set(it.author.id, it.author.name);
   }
   for (const id of recorded.keys()) rested.delete(id);
