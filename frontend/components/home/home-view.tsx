@@ -7,10 +7,12 @@ import { PageTitle } from '@/components/fitlog/app-shell';
 import { MyChara } from '@/components/fitlog/my-chara';
 import { buttonClass } from '@/components/fitlog/thick-button';
 import { FeedSection } from '@/components/friends/feed-section';
+import { TodayBand } from '@/components/home/today-band';
 import { WeekVideoStrip } from '@/components/video-grid/week-video-strip';
 import { useGetCurrentGroup, useGetWeek } from '@/lib/api/generated';
 import { HOME_MESSAGES } from '@/lib/messages';
 import { toLocalDate } from '@/lib/shared/local-date';
+import { useAppSession } from '@/lib/use-app-session';
 
 // S-05 ホーム（02-9 ⑫）。上＝自分のキャラと今日の1行、下＝仲間のタイムライン（畳める）。
 // ベルは見出しと同じ行の右端（①）。タイムラインは仲間タブから移した（足跡の既読もここで付く）
@@ -49,6 +51,7 @@ function TodayLine() {
 function Timeline() {
   const group = useGetCurrentGroup();
   const noGroup = group.data?.status === 404;
+  const { data: session } = useAppSession();
   const alone = group.data?.status === 200 && group.data.data.members.length <= 1;
   return (
     <details open className="group space-y-3">
@@ -67,6 +70,7 @@ function Timeline() {
         </div>
       ) : (
         <div className="space-y-4">
+          {group.data?.status === 200 && <TodayBand group={group.data.data} meId={session?.user.id} />}
           {!alone && <WeekVideoStrip />}
           <FeedSection hideEmptyTotals={alone} />
         </div>
