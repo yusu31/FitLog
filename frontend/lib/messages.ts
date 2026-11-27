@@ -128,6 +128,9 @@ export const LATE_MESSAGES = {
   toYesterday: 'きのうの分を記録する',
   toToday: '今日にもどる',
   banner: 'きのうの分を 記録しています',
+  bannerOn: (label: string): string => `${label}の分を 記録しています`,
+  pastRunHint: '過ぎた日のランは、距離と時間を入れるか、GPX で記録します（GPS は今のランだけ）',
+  gpxOtherDay: (gpxDay: string, picked: string): string => `この GPX は ${gpxDay} のものですが、選んだ日（${picked}）で保存します`,
   tag: 'あとから記録',
   noVideo: '動画は、その日のうちの記録にだけ付けられます',
 } as const;

@@ -1404,6 +1404,8 @@ export type ListRecordsParams = {
   cursor?: string;
   /** 種類で絞る */
   kind?: ListRecordsKind;
+  /** その日（日本時間の日付 YYYY-MM-DD）の記録だけに絞る。日のまとめ用 */
+  date?: string;
 };
 
 export type ListRecordsKind = typeof ListRecordsKind[keyof typeof ListRecordsKind];

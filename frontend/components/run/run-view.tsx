@@ -11,7 +11,7 @@ import { sendErrorText } from '@/lib/api/api-error';
 import { RouteMap } from '@/components/record-detail/route-map';
 import { GpsTracker } from '@/components/run/gps-tracker';
 import { useGetStats } from '@/lib/api/generated';
-import { parseDayMode, recordedAtFor } from '@/lib/day-mode';
+import { dayDateOf, dayLabel, isLateDay, lateBannerText, parseDayMode, recordedAtFor } from '@/lib/day-mode';
 import { locateOnRoute, nextText, TOTAL_KM, trekProgress } from '@/lib/japan-route';
 import { parseGpx, type GpxRun, type RouteLineString } from '@/lib/gpx/parse-gpx';
 import { GPS_MESSAGES, GPX_MESSAGES, LATE_MESSAGES, RUN_MESSAGES, runSavedMessage } from '@/lib/messages';
@@ -130,7 +130,14 @@ export function RunView() {
       setSecText(String(gpxDurationS % 60));
     }
     setGpx({ name: file.name, route, startedAt });
-    setGpxMessage(gpxDurationS === null ? { text: GPX_MESSAGES.noTime, kind: 'info' } : null);
+    // 過ぎた日を選んでいるときは、GPX の開始日と食い違っても選んだ日で保存する（知らせる。02-9 PR 2 ④）
+    const gpxDay = startedAt ? toLocalDate(new Date(startedAt)) : null;
+    const pickedDay = dayDateOf(day, new Date());
+    if (isLateDay(day) && gpxDay !== null && gpxDay !== pickedDay) {
+      setGpxMessage({ text: LATE_MESSAGES.gpxOtherDay(dayLabel(gpxDay), dayLabel(pickedDay)), kind: 'info' });
+    } else {
+      setGpxMessage(gpxDurationS === null ? { text: GPX_MESSAGES.noTime, kind: 'info' } : null);
+    }
   }
 
   // 記録の日時: GPX に開始時刻があればそれ（昔の走りも、その日の記録になる）。無い・未来（5分より先）なら今（きのうの分はきのうの12:00）。
@@ -138,10 +145,12 @@ export function RunView() {
   function recordedAtOf(source: Gpx | null): { recordedAt: string; late: boolean } {
     const now = new Date();
     const started = source?.startedAt ? new Date(source.startedAt) : null;
+    // 過ぎた日を選んでいるときは、GPX の開始時刻より選んだ日を優先する（その日の12:00）
+    if (isLateDay(day)) return { recordedAt: recordedAtFor(day, now), late: true };
     if (started && started.getTime() <= now.getTime() + FUTURE_LIMIT_MS) {
       return { recordedAt: started.toISOString(), late: toLocalDate(started) < toLocalDate(now) };
     }
-    return { recordedAt: recordedAtFor(day, now), late: day === 'yesterday' };
+    return { recordedAt: recordedAtFor(day, now), late: false };
   }
 
   function onSave() {
@@ -249,11 +258,12 @@ export function RunView() {
 
       <div className={cn('flex flex-1 flex-col gap-5 px-4 pt-2', entryOpen ? 'pb-24' : 'pb-8')}>
         <h1 className="text-page-title leading-tight font-extrabold">ラン</h1>
-        {day === 'yesterday' && (
-          <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-fg">{LATE_MESSAGES.banner}</p>
+        {isLateDay(day) && (
+          <p className="rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-fg">{lateBannerText(day, new Date())}</p>
         )}
 
-        <GpsTracker onFinish={onGpsFinish} onActiveChange={setTracking} />
+        {/* GPS は今のランだけ。過ぎた日は手入力か GPX（02-9 PR 2 ④） */}
+        {isLateDay(day) ? <p className="text-note font-bold text-fg-muted">{LATE_MESSAGES.pastRunHint}</p> : <GpsTracker onFinish={onGpsFinish} onActiveChange={setTracking} />}
         {!tracking && <TrekStrip totalRunM={totalRunM} />}
         {!tracking && (
           <GpxPicker

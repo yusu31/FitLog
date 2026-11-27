@@ -32,7 +32,28 @@ describe('calendar（1年分のマス）', () => {
   });
   it('範囲の外（365日前）の記録は入らない', () => {
     const { calendar } = buildStats([day('2025-11-12')], '2026-11-12');
-    expect(calendar.every((c) => c.status === 'none')).toBe(true);
+    expect(calendar.every((c) => c.status !== 'rec')).toBe(true);
+  });
+});
+
+describe('記録しなかった過ぎた日を休みとして見せる（02-9 PR 2 ③。今週だけ・DB には作らない）', () => {
+  const at = (cal: { date: string; status: string }[], d: string) => cal.find((c) => c.date === d)!.status;
+  it('今週の記録の無い過ぎた日は rest・今日と先の日は none。先週以前の記録の無い日は none のまま', () => {
+    const { calendar } = buildStats([day('2026-11-02'), day('2026-11-09')], '2026-11-12');
+    expect([at(calendar, '2026-11-10'), at(calendar, '2026-11-11'), at(calendar, '2026-11-12')]).toEqual(['rest', 'rest', 'none']);
+    expect(at(calendar, '2026-11-05')).toBe('none');
+  });
+  it('記録した日は rec のまま（休みで上書きしない）。週の休み日数に数える', () => {
+    const { week, calendar } = buildStats([day('2026-11-01'), day('2026-11-10')], '2026-11-12');
+    expect(at(calendar, '2026-11-10')).toBe('rec');
+    expect(week.restDays).toBe(2); // 11-09 と 11-11
+  });
+  it('記録が1つも無い人は、休みにしない', () => {
+    expect(buildStats([], '2026-11-12').calendar.every((c) => c.status === 'none')).toBe(true);
+  });
+  it('スタンプの数（記録日数）は増えない', () => {
+    const r = buildStats([day('2026-11-01')], '2026-11-12');
+    expect(r.stamps.find((s) => s.key === 'days-10')!.earned).toBe(false);
   });
 });
 
@@ -47,7 +68,7 @@ describe('month（今月の数字。F-26）', () => {
       ],
       '2026-11-12',
     );
-    expect(month).toEqual({ month: '2026-11', activeDays: 3, restDays: 1, totalWeightKg: 1500, runDistanceM: 5000 });
+    expect(month).toEqual({ month: '2026-11', activeDays: 3, restDays: 3, totalWeightKg: 1500, runDistanceM: 5000 }); // 休み＝11-06 と、記録の無い過ぎた日（今週の 11-10・11-11）
   });
   it('先月の記録は入らない（境界: 10-31 は先月・11-01 は今月）', () => {
     const { month } = buildStats([day('2026-10-31', { weightKg: 100 }), day('2026-11-01', { weightKg: 10 })], '2026-11-12');

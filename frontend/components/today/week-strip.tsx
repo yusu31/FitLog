@@ -2,6 +2,7 @@ import { Check, Moon } from 'lucide-react';
 import { cn } from 'cn';
 import type { WeekDay } from '@/lib/api/generated';
 import { WEEKDAYS, formatMonthDay, weekdayIndex } from '@/lib/format';
+import { addDays } from '@/lib/shared/week';
 
 const STATUS_TEXT = { rec: '記録あり', rest: 'おやすみ', none: '' } as const;
 
@@ -37,8 +38,8 @@ export function WeekStrip({
           // 未来の日は、状態が何であっても薄い丸（まだ記録できない日）
           const status = day.date > today ? 'none' : day.status;
           const canSelect = onSelect !== undefined && selectable.includes(day.date);
-          // 押せる日のうち今日でない方は、きのう（読み上げでも分かるように名前に入れる）
-          const dayWord = isToday ? '今日' : canSelect ? 'きのう' : '';
+          // きのうは、読み上げでも分かるように名前に入れる（今週のそれ以前の日は日付と曜日だけ）
+          const dayWord = isToday ? '今日' : canSelect && day.date === addDays(today, -1) ? 'きのう' : '';
           const name = [`${formatMonthDay(day.date)} ${label}曜`, dayWord, STATUS_TEXT[status]].filter(Boolean).join(' ');
           const body = <DayCell label={label} date={day.date} status={status} isToday={isToday} />;
           const cellClass = cn(

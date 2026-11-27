@@ -1,8 +1,8 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, asc, between, count, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, between, count, desc, eq, inArray, isNull, lt, min, or, sql } from 'drizzle-orm';
 import { compareSet, isPersonalBest } from '../common/ghost.js';
 import { buildStats, type DayAgg } from '../common/stats.js';
-import { cellStatus, weekDates, weekStartOf } from '../common/week.js';
+import { cellStatus, isAutoRestDay, weekDates, weekStartOf } from '../common/week.js';
 import { toLocalDate } from '../common/local-date.js';
 import { isWorkoutActive } from '../common/workout-session.js';
 import { isUuid } from '../common/uuid.js';
@@ -106,9 +106,15 @@ export class RecordsService {
       .from(records)
       .where(and(eq(records.userId, userId), between(records.localDate, dates[0], dates[6])));
 
+    // 記録しなかった過ぎた日（今週だけ）は休みとして見せる（DB には作らない。common/week.ts isAutoRestDay）
+    const [first] = await this.db.select({ firstDate: min(records.localDate) }).from(records).where(eq(records.userId, userId));
+    const today = toLocalDate(new Date());
     return {
       weekStart,
-      days: dates.map((date) => ({ date, status: cellStatus(rows.filter((r) => r.localDate === date).map((r) => r.kind)) })),
+      days: dates.map((date) => {
+        const status = cellStatus(rows.filter((r) => r.localDate === date).map((r) => r.kind));
+        return { date, status: status === 'none' && isAutoRestDay(date, today, first?.firstDate ?? null) ? ('rest' as const) : status };
+      }),
     };
   }
 
@@ -171,8 +177,8 @@ export class RecordsService {
 
   // 自分の記録の一覧（新しい順）。運動した時刻の降順、同じ時刻は id の降順で並べ、cursor は「最後に読んだ1件」の（時刻, id）。
   // limit+1 件読み、余った1件があれば続きがある（ちょうど割り切れるときに空のページを返さない）
-  async list(userId: string, rawQuery: { limit?: unknown; cursor?: unknown; kind?: unknown }): Promise<RecordListResponse> {
-    const { limit, cursor, kind } = parseListQuery(rawQuery);
+  async list(userId: string, rawQuery: { limit?: unknown; cursor?: unknown; kind?: unknown; date?: unknown }): Promise<RecordListResponse> {
+    const { limit, cursor, kind, date } = parseListQuery(rawQuery);
     const rows = await this.db
       .select()
       .from(records)
@@ -180,6 +186,7 @@ export class RecordsService {
         and(
           eq(records.userId, userId),
           kind ? eq(records.kind, kind) : undefined,
+          date ? eq(records.localDate, date) : undefined,
           cursor ? or(lt(records.recordedAt, cursor.recordedAt), and(eq(records.recordedAt, cursor.recordedAt), lt(records.id, cursor.id))) : undefined,
         ),
       )

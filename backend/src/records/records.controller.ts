@@ -78,10 +78,11 @@ export class RecordsController {
   @ApiQuery({ name: 'limit', required: false, example: 20, description: '1ページの件数。1〜100。既定 20' })
   @ApiQuery({ name: 'cursor', required: false, description: '前の応答の nextCursor をそのまま渡す（続きを読む）' })
   @ApiQuery({ name: 'kind', required: false, enum: RECORD_KINDS, description: '種類で絞る' })
+  @ApiQuery({ name: 'date', required: false, example: '2026-11-12', description: 'その日（日本時間の日付 YYYY-MM-DD）の記録だけに絞る。日のまとめ用' })
   @ApiOkResponse({ type: RecordListResponse })
-  @ApiBadRequestResponse({ type: ErrorResponse, description: 'limit が 1〜100 の整数でない・kind が workout/run/rest でない・cursor が壊れている（VALIDATION_ERROR）' })
-  list(@Session() session: UserSession, @Query('limit') limit?: string, @Query('cursor') cursor?: string, @Query('kind') kind?: string) {
-    return this.records.list(session.user.id, { limit, cursor, kind });
+  @ApiBadRequestResponse({ type: ErrorResponse, description: 'date が実在する日付でない・limit が 1〜100 の整数でない・kind が workout/run/rest でない・cursor が壊れている（VALIDATION_ERROR）' })
+  list(@Session() session: UserSession, @Query('limit') limit?: string, @Query('cursor') cursor?: string, @Query('kind') kind?: string, @Query('date') date?: string) {
+    return this.records.list(session.user.id, { limit, cursor, kind, date });
   }
 
   @Get(':id')

@@ -1,6 +1,6 @@
 // 記録をくわしく（F-22 週・月・年／F-26 今月の数字／F-27 グラフ／F-29 スタンプ帳。docs/testing-design.md 3-14）の集計。
 // 画面と API が同じ結果を出す「共通の関数」。純粋な関数だけを置く（DB・Nest に依存しない）。日付は日本時間の日付（YYYY-MM-DD）の文字列。
-import { addDays, weekStartOf, type CellStatus } from './week.js';
+import { addDays, isAutoRestDay, weekStartOf, type CellStatus } from './week.js';
 
 // 1日分の集計（DB の行を日付ごとにまとめたもの）。maxRunM はその日のランのうち一番長い1回の距離
 export type DayAgg = { date: string; status: CellStatus; weightKg: number; runM: number; maxRunM: number; workoutCount: number; runCount: number };
@@ -33,7 +33,15 @@ export type StatsResult = {
 
 const round1 = (n: number): number => Math.round(n * 10) / 10;
 
-export function buildStats(days: readonly DayAgg[], today: string): StatsResult {
+export function buildStats(recorded: readonly DayAgg[], today: string): StatsResult {
+  // 記録しなかった過ぎた日（今週だけ）は、休みとして見せる（DB には作らない。week.ts isAutoRestDay）。スタンプは rec だけ数えるので影響しない
+  const firstDate = recorded.length === 0 ? null : recorded.reduce((min, d) => (d.date < min ? d.date : min), recorded[0].date);
+  const have = new Set(recorded.map((d) => d.date));
+  const auto: DayAgg[] = [];
+  for (let d = weekStartOf(today); d < today; d = addDays(d, 1)) {
+    if (!have.has(d) && isAutoRestDay(d, today, firstDate)) auto.push({ date: d, status: 'rest', weightKg: 0, runM: 0, maxRunM: 0, workoutCount: 0, runCount: 0 });
+  }
+  const days = [...recorded, ...auto];
   const byDate = new Map(days.map((d) => [d.date, d]));
 
   const calendar = Array.from({ length: CALENDAR_DAYS }, (_, i) => {

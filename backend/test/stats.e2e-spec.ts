@@ -118,7 +118,7 @@ describe('記録をくわしく（結合: 本物の PostgreSQL・better-auth）'
     await record(cookie, 'workout', JST_NOON('2026-11-10'));
     await record(cookie, 'rest', JST_NOON('2026-11-10'));
     const res = await stats(cookie, '2026-11-12').expect(200);
-    expect(res.body.month).toMatchObject({ activeDays: 1, restDays: 0 });
+    expect(res.body.month).toMatchObject({ activeDays: 1, restDays: 1 }); // 休みは 11-11（記録の無い過ぎた日。今週だけ休みとして見せる）。11-10 は rec のまま
   });
 
   it('月の境目は日本時間で決める（10-31 23:59:59 は先月・11-01 0:00:00 は今月）', async () => {

@@ -584,6 +584,19 @@ describe('TodayView（S-10 今日）', () => {
       expect(screen.getByRole('link', { name: /ランを記録/ })).toHaveAttribute('href', '/run?day=yesterday');
     });
 
+    // 02-9 PR 2 ③: 今週（月曜 11/2〜）の過ぎた日も選べる
+    it('今週の過ぎた日（月曜 11/2）も押せて、リンクに day=2026-11-02 が付く。見出しは日付・「あとから記録」の札', async () => {
+      renderWithQuery(<TodayView />);
+      await findTodayCell();
+      await userEvent.click(screen.getByRole('button', { name: /^11\/2 月曜/ }));
+      expect(screen.getByRole('button', { name: /^11\/2 月曜/ })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('heading', { level: 2, name: '11月2日（月）' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /ランを記録/ })).toHaveAttribute('href', '/run?day=2026-11-02');
+      expect(screen.getByRole('link', { name: /種目を足す/ })).toHaveAttribute('href', '/exercises?day=2026-11-02');
+      expect(screen.getByText(LATE_MESSAGES.tag)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /今日は休む/ })).not.toBeInTheDocument();
+    });
+
     it('きのうでは、「つぎにやること」と「今日は休む」を出さない（きのうの休みは作れない）', async () => {
       renderWithQuery(<TodayView />);
       expect(await screen.findByRole('region', { name: 'つぎにやること' })).toBeInTheDocument();
@@ -804,11 +817,11 @@ describe('TodayView（B03 今日画面の直し）', () => {
       expect(dots[2].querySelector('svg')).toBeNull();
     });
 
-    it('押せるのは今日ときのうのマスだけ（ほかの日はボタンにしない）。丸には影（厚み）を付けない', async () => {
+    it('押せるのは今週の過ぎた日と今日のマスだけ（先の日はボタンにしない）。丸には影（厚み）を付けない', async () => {
       base({}, { '2026-11-02': 'rec', '2026-11-03': 'rest' });
       renderWithQuery(<TodayView />);
       const strip = await screen.findByRole('list', { name: '今週の7日' });
-      expect(within(strip).getAllByRole('button').map((b) => b.querySelector('[data-testid="week-name"]')?.textContent)).toEqual(['11/3 火曜 きのう おやすみ', '11/4 水曜 今日']);
+      expect(within(strip).getAllByRole('button').map((b) => b.querySelector('[data-testid="week-name"]')?.textContent)).toEqual(['11/2 月曜 記録あり', '11/3 火曜 きのう おやすみ', '11/4 水曜 今日']);
       expect(within(strip).queryAllByRole('link')).toHaveLength(0);
       for (const dot of within(strip).getAllByTestId('week-dot')) expect(dot.className).not.toContain('shadow');
     });

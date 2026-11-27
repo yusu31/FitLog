@@ -6,7 +6,7 @@ import { shouldStartNewRecord } from './record-flow';
 // きのうの分（F-21）は今日の記録とは別に持つ（きのうを入力している間に、今日の記録へセットが継ぎ足されないように）。
 // きのうの分には、サーバーの記録中を使わない（今日の記録に混ざらないように）
 type Current = { recordId: string; lastSetAtMs: number };
-const slots: Record<DayMode, Current | null> = { today: null, yesterday: null };
+const slots: Record<string, Current | null> = { today: null, yesterday: null };
 
 // 記録ごとの自己ベストの回数（終了のまとめ用。メモリだけ。読み直すと 0 に戻り、まとめには出さない）
 const bests = new Map<string, number>();
@@ -73,7 +73,7 @@ export function bestCountOf(recordId: string): number {
 // テスト用
 export function resetCurrentWorkout(): void {
   slots.today = null;
-  slots.yesterday = null;
+  for (const key of Object.keys(slots)) slots[key] = null;
   bests.clear();
   bestNames.clear();
 }

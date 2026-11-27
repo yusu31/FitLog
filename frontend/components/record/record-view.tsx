@@ -15,10 +15,10 @@ import { messageOf } from '@/lib/api/message';
 import { formatResumeProgress, formatSetProgress, formatSetWithReps } from '@/lib/format';
 import { activeRecordId, noteBest, recordForNextSet } from '@/lib/current-workout';
 import { getCopyPlan, markCopyPlanUsed, planGhostLabel, planHeading, planSetsFor } from '@/lib/copy-plan';
-import { dayDateOf, parseDayMode, recordedAtFor, withDay } from '@/lib/day-mode';
+import { dayDateOf, isLateDay, lateBannerText, parseDayMode, recordedAtFor, withDay } from '@/lib/day-mode';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { daysBetween } from '@/lib/welcome-back';
-import { LATE_MESSAGES, RECORD_CLOSE_MESSAGES, RECORD_MESSAGES, SYNC_MESSAGES } from '@/lib/messages';
+import { RECORD_CLOSE_MESSAGES, RECORD_MESSAGES, SYNC_MESSAGES } from '@/lib/messages';
 import { monthDayCount } from '@/lib/stats';
 import { buildMenu } from '@/lib/today-menu';
 import { useRecordMutations } from '@/lib/mutations';
@@ -207,7 +207,7 @@ export function RecordView() {
           id: rid,
           kind: 'workout',
           recordedAt: recordedAtFor(day, new Date(now)),
-          ...(day === 'yesterday' ? { late: true } : {}),
+          ...(isLateDay(day) ? { late: true } : {}),
           ...(copiedFromUserId ? { copiedFromUserId } : {}),
         },
       });
@@ -326,9 +326,9 @@ export function RecordView() {
       </p>
       {rest && <RestTimerBar key={rest.startedAt} startedAt={rest.startedAt} initialSeconds={rest.seconds} onClose={() => setRest(null)} />}
 
-      {day === 'yesterday' && (
+      {isLateDay(day) && (
         <p role="status" className="mx-4 mt-2 rounded-fl bg-gold-light px-4 py-2 text-center text-sm font-extrabold text-fg">
-          {LATE_MESSAGES.banner}
+          {lateBannerText(day, new Date())}
         </p>
       )}
       {plan && (

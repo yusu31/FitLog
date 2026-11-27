@@ -98,6 +98,44 @@ describe('RunView（S-13 記録（ラン））', () => {
       expect(postBody()).toMatchObject({ kind: 'run', recordedAt: '2026-11-03T03:00:00.000Z', late: true });
     });
 
+    // 02-9 PR 2 ③④: 今週の過ぎた日（今日は 11/4（水）。月曜 11/2 まで）
+    it('今週の過ぎた日（?day=2026-11-02）: 日付つきの帯・GPS は出さず案内・手入力はその日の12:00（日本時間）と late:true', async () => {
+      search = 'day=2026-11-02';
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      expect(screen.getByText(LATE_MESSAGES.bannerOn('11月2日（月）'))).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /GPS を終える/ })).not.toBeInTheDocument();
+      expect(screen.getByText(LATE_MESSAGES.pastRunHint)).toBeInTheDocument();
+      await fill(user, '5', '30');
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody()).toMatchObject({ kind: 'run', recordedAt: '2026-11-02T03:00:00.000Z', late: true });
+    });
+
+    it('過ぎた日で GPX の開始日が違うとき: 選んだ日で保存し、食い違いを知らせる（④）', async () => {
+      search = 'day=2026-11-02';
+      installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
+      const user = userEvent.setup();
+      renderWithQuery(<RunView />);
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const gpx = `<?xml version="1.0"?><gpx version="1.1" creator="t" xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg><trkpt lat="0" lon="0"><time>2026-11-03T06:00:00Z</time></trkpt><trkpt lat="0.044966" lon="0"><time>2026-11-03T06:30:00Z</time></trkpt></trkseg></trk></gpx>`;
+      await user.upload(input, new File([gpx], 'run.gpx', { type: 'application/gpx+xml' }));
+      await waitFor(() => expect(km()).toHaveValue('5'));
+      expect(screen.getByText(LATE_MESSAGES.gpxOtherDay('11月3日（火）', '11月2日（月）'))).toBeInTheDocument();
+      await user.click(save());
+      await screen.findByText(RUN_MESSAGES.saved);
+      expect(postBody()).toMatchObject({ recordedAt: '2026-11-02T03:00:00.000Z', late: true });
+    });
+
+    it('範囲の外（先週・今日・先の日）の ?day= は今日として扱う（帯なし・GPS あり）', () => {
+      search = 'day=2026-10-30';
+      installFakeApi({});
+      renderWithQuery(<RunView />);
+      expect(screen.queryByText(/の分を 記録しています/)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /GPS を終える/ })).toBeInTheDocument();
+    });
+
     it('今日のとき（day なし）は late を付けず、帯も出さない', async () => {
       installFakeApi({ [POST]: { status: 201, body: { id: 'x' } } });
       const user = userEvent.setup();
