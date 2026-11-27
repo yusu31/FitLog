@@ -1,12 +1,15 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { BadRequestException, ConflictException, GoneException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, asc, count, eq, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 import { errorCode } from '../common/error-code.js';
 import { DB, type Db } from '../db/db.module.js';
-import { groupMembers, groups, invitations, users } from '../db/schema.js';
+import { toLocalDate } from '../common/local-date.js';
+import { GROUP_BACKGROUNDS, groupMembers, groups, invitations, records, users, type GroupBackground } from '../db/schema.js';
 import { GROUP_MEMBER_MAX, judgeInvitation, type InvitationVerdict } from './invitation-judge.js';
+import type { MemberToday } from './groups.response.js';
 
 const GROUP_NAME_MAX = 20;
+const GROUP_DESCRIPTION_MAX = 100;
 // 招待リンクの有効期限は作ってから7日（docs/design.md 7章）
 const INVITATION_DAYS = 7;
 // 24バイト＝192ビットの乱数（128ビット以上。docs/design.md 6章）。URL に載せられる文字（base64url）にする
@@ -53,7 +56,10 @@ export class GroupsService {
     const groupId = await this.groupIdOf(userId);
     if (!groupId) throw this.noGroup();
 
-    const [group] = await this.db.select({ id: groups.id, name: groups.name }).from(groups).where(eq(groups.id, groupId));
+    const [group] = await this.db
+      .select({ id: groups.id, name: groups.name, description: groups.description, background: groups.background })
+      .from(groups)
+      .where(eq(groups.id, groupId));
     // メールアドレスは仲間に見せない（名前とキャラの設定だけ）
     const members = await this.db
       .select({ id: users.id, name: users.name, bio: users.bio, avatar: users.avatar })
@@ -61,7 +67,38 @@ export class GroupsService {
       .innerJoin(users, eq(users.id, groupMembers.userId))
       .where(eq(groupMembers.groupId, groupId))
       .orderBy(asc(groupMembers.joinedAt), asc(users.id));
-    return { ...group, members };
+    const today = await this.todayOf(members.map((m) => m.id));
+    return { ...group, members: members.map((m) => ({ ...m, today: today.get(m.id) ?? ('none' as MemberToday) })) };
+  }
+
+  // ミッションを直す（名前・説明・背景。送ったものだけ）。メンバー全員が直せる（作った人は退会で消えるので、作った人だけにはしない）
+  async updateCurrent(userId: string, body: { name?: unknown; description?: unknown; background?: unknown } | undefined) {
+    const groupId = await this.groupIdOf(userId);
+    if (!groupId) throw this.noGroup();
+
+    const patch: Partial<{ name: string; description: string | null; background: GroupBackground }> = {};
+    const input = body ?? {};
+    if (input.name !== undefined) patch.name = this.validName(input.name);
+    if (input.description !== undefined) patch.description = this.validDescription(input.description);
+    if (input.background !== undefined) patch.background = this.validBackground(input.background);
+    if (Object.keys(patch).length === 0) this.invalid('name・description・background のどれかを送ってください');
+    await this.db.update(groups).set(patch).where(eq(groups.id, groupId));
+    return this.getCurrent(userId);
+  }
+
+  // 今日（日本時間）の記録から、メンバーごとのようすを決める。筋トレ・ランは1日に何件でもあるので、種類を集めて優先順（workout > run > rest）で選ぶ。投稿だけの日は「まだ」
+  private async todayOf(userIds: string[]): Promise<Map<string, MemberToday>> {
+    const result = new Map<string, MemberToday>();
+    if (userIds.length === 0) return result;
+    const rows = await this.db
+      .selectDistinct({ userId: records.userId, kind: records.kind })
+      .from(records)
+      .where(and(inArray(records.userId, userIds), eq(records.localDate, toLocalDate(new Date()))));
+    for (const userId of userIds) {
+      const kinds = new Set(rows.filter((r) => r.userId === userId).map((r) => r.kind));
+      result.set(userId, kinds.has('workout') ? 'workout' : kinds.has('run') ? 'run' : kinds.has('rest') ? 'rest' : 'none');
+    }
+    return result;
   }
 
   async createInvitation(userId: string): Promise<{ id: string; token: string; expiresAt: Date }> {
@@ -196,6 +233,27 @@ export class GroupsService {
       });
     }
     return name;
+  }
+
+  // 説明は任意。空文字・空白だけ・null は「消す」（null）。100字まで（コードポイントで数える）
+  private validDescription(raw: unknown): string | null {
+    if (raw === null) return null;
+    if (typeof raw !== 'string') this.invalid('description: 文字で入力してください');
+    const text = (raw as string).trim();
+    if (text === '') return null;
+    if (Array.from(text).length > GROUP_DESCRIPTION_MAX) this.invalid(`description: ${GROUP_DESCRIPTION_MAX}字までで入力してください`);
+    return text;
+  }
+
+  private validBackground(raw: unknown): GroupBackground {
+    if (typeof raw !== 'string' || !(GROUP_BACKGROUNDS as readonly string[]).includes(raw)) {
+      this.invalid(`background: ${GROUP_BACKGROUNDS.join('・')} のどれかを選んでください`);
+    }
+    return raw as GroupBackground;
+  }
+
+  private invalid(detail: string): never {
+    throw new BadRequestException({ code: 'VALIDATION_ERROR', message: '入力が正しくありません', details: [detail] });
   }
 
   private alreadyInGroup() {

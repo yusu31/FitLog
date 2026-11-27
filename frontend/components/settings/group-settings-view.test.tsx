@@ -19,8 +19,8 @@ const GROUP = {
   id: 'g1',
   name: '朝トレ部',
   members: [
-    { id: 'u1', name: 'たろう', avatar: AVATAR },
-    { id: 'u2', name: 'はなこ', avatar: { ...AVATAR, shirtColor: 'coral' } },
+    { id: 'u1', name: 'たろう', avatar: AVATAR, today: 'none' as const },
+    { id: 'u2', name: 'はなこ', avatar: { ...AVATAR, shirtColor: 'coral' }, today: 'none' as const },
   ],
 };
 const NOT_IN_GROUP = { status: 404, body: { code: 'GROUP_NOT_FOUND', message: 'グループに入っていません' } };
@@ -188,7 +188,7 @@ describe('GroupSettingsView（S-32 グループの設定）', () => {
     });
 
     it('4人なら招待リンクを作れる（5人目の枠が残っている）', async () => {
-      const members = Array.from({ length: 4 }, (_, i) => ({ id: `u${i + 1}`, name: `人${i + 1}`, avatar: AVATAR }));
+      const members = Array.from({ length: 4 }, (_, i) => ({ id: `u${i + 1}`, name: `人${i + 1}`, avatar: AVATAR, today: 'none' as const }));
       replies['GET /api/groups/current'] = [{ status: 200, body: { ...GROUP, members } }];
       renderView();
       expect(await screen.findByRole('button', { name: '招待リンクを作る' })).toBeInTheDocument();
@@ -196,7 +196,7 @@ describe('GroupSettingsView（S-32 グループの設定）', () => {
     });
 
     it('5人なら招待リンクを作れず、満員と出す', async () => {
-      const members = Array.from({ length: 5 }, (_, i) => ({ id: `u${i + 1}`, name: `人${i + 1}`, avatar: AVATAR }));
+      const members = Array.from({ length: 5 }, (_, i) => ({ id: `u${i + 1}`, name: `人${i + 1}`, avatar: AVATAR, today: 'none' as const }));
       replies['GET /api/groups/current'] = [{ status: 200, body: { ...GROUP, members } }];
       renderView();
       expect(await screen.findByText('満員です（5人まで）')).toBeInTheDocument();

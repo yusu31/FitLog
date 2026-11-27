@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { GROUP_BACKGROUNDS, type GroupBackground } from '../db/schema.js';
 
 export class CreateGroupRequest {
   @ApiProperty({ example: '朝ランの会', minLength: 1, maxLength: 20, description: 'グループ名（1〜20字）' })
@@ -47,9 +48,35 @@ export class MemberResponse {
   avatar!: AvatarResponse;
 }
 
+// 今日のようす（運動場のポーズに使う）。workout＝筋トレ済み・run＝ラン済み（両方ある日は workout）・rest＝休み・none＝まだ（投稿だけの日も none）
+export const MEMBER_TODAY = ['workout', 'run', 'rest', 'none'] as const;
+export type MemberToday = (typeof MEMBER_TODAY)[number];
+
+export class GroupMemberResponse extends MemberResponse {
+  @ApiProperty({ enum: MEMBER_TODAY, enumName: 'MemberToday', description: '今日（日本時間）のようす。運動場のポーズになる' })
+  today!: MemberToday;
+}
+
 export class GroupDetailResponse extends GroupResponse {
-  @ApiProperty({ type: [MemberResponse], description: '参加した順' })
-  members!: MemberResponse[];
+  @ApiProperty({ type: String, nullable: true, example: '朝6時に走って、夜は筋トレ', description: 'ミッションの説明（100字まで）。無ければ null' })
+  description!: string | null;
+
+  @ApiProperty({ enum: GROUP_BACKGROUNDS, enumName: 'GroupBackground', description: '運動場の背景' })
+  background!: GroupBackground;
+
+  @ApiProperty({ type: [GroupMemberResponse], description: '参加した順' })
+  members!: GroupMemberResponse[];
+}
+
+export class UpdateGroupRequest {
+  @ApiProperty({ required: false, minLength: 1, maxLength: 20, description: 'ミッション名（1〜20字）。送ったものだけ直す' })
+  name?: string;
+
+  @ApiProperty({ required: false, type: String, nullable: true, maxLength: 100, description: 'ミッションの説明（100字まで）。空文字か null で消す' })
+  description?: string | null;
+
+  @ApiProperty({ required: false, enum: GROUP_BACKGROUNDS, enumName: 'GroupBackground', description: '運動場の背景' })
+  background?: GroupBackground;
 }
 
 export class InvitationCreatedResponse {

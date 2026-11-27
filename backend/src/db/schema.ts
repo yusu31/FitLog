@@ -85,12 +85,26 @@ export const verifications = pgTable('verifications', {
 });
 
 // ── グループと招待（docs/database-design.md 3章） ─────────────────────────────
-export const groups = pgTable('groups', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+// 運動場の背景（仲間タブ）。画像は frontend/public/ground/{名前}.png。名前で持つので、絵だけ後から差し替えられる
+export const GROUP_BACKGROUNDS = ['yard', 'gym', 'park', 'city'] as const;
+export type GroupBackground = (typeof GROUP_BACKGROUNDS)[number];
+
+export const groups = pgTable(
+  'groups',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    // ミッションの説明（PR 6）。0〜100字・任意。招待の画面（ログイン前）には出さない
+    description: text('description'),
+    background: text('background').$type<GroupBackground>().notNull().default('yard'),
+  },
+  (t) => [
+    check('groups_description_ck', sql`${t.description} is null or char_length(${t.description}) between 1 and 100`),
+    check('groups_background_ck', sql`${t.background} in ('yard', 'gym', 'park', 'city')`),
+  ],
+);
 
 // user_id の UNIQUE が「1人が入れるグループは1つ」を守る。人数の上限（5人）は制約では守れないので、参加の処理で数え直す
 export const groupMembers = pgTable(

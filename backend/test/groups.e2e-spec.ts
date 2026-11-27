@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { createApp, migrateDb, resetDb, TEST_ORIGIN, withPool } from './helpers/app.js';
@@ -197,6 +197,110 @@ describe('グループと招待を作る（結合: 本物の PostgreSQL・better
     it('グループに入っていない人は 404', async () => {
       const cookie = await signUpAs('たろう');
       await revoke(cookie, '00000000-0000-4000-8000-000000000000').expect(404);
+    });
+  });
+
+  // 02-9 PR 6: ミッション（名前・説明・背景）と、メンバーの今日のようす
+  describe('PATCH /groups/current（ミッションを直す）', () => {
+    const patch = (cookie: string, body: object) => request(app.getHttpServer()).patch('/api/groups/current').set('Cookie', cookie).send(body);
+    const join = async (owner: string, name: string): Promise<string> => {
+      const inv = await createInvitation(owner).expect(201);
+      const cookie = await signUpAs(name);
+      await request(app.getHttpServer()).post(`/api/invitations/${inv.body.token}/accept`).set('Cookie', cookie).expect(200);
+      return cookie;
+    };
+
+    it('ログインしていないと 401', async () => {
+      await request(app.getHttpServer()).patch('/api/groups/current').send({ name: 'x' }).expect(401);
+    });
+
+    it('初めは説明なし・背景は運動場（yard）', async () => {
+      const cookie = await signUpAs('たろう');
+      await createGroup(cookie).expect(201);
+      const current = await request(app.getHttpServer()).get('/api/groups/current').set('Cookie', cookie).expect(200);
+      expect(current.body).toMatchObject({ description: null, background: 'yard' });
+    });
+
+    it('名前・説明・背景を直せて、送らなかった項目は変わらない', async () => {
+      const cookie = await signUpAs('たろう');
+      await createGroup(cookie).expect(201);
+      const res = await patch(cookie, { description: '朝6時に走る', background: 'park' }).expect(200);
+      expect(res.body).toMatchObject({ name: '朝ランの会', description: '朝6時に走る', background: 'park' });
+      const res2 = await patch(cookie, { name: '夜ラン部' }).expect(200);
+      expect(res2.body).toMatchObject({ name: '夜ラン部', description: '朝6時に走る', background: 'park' });
+    });
+
+    it('説明は空文字か null で消せる', async () => {
+      const cookie = await signUpAs('たろう');
+      await createGroup(cookie).expect(201);
+      await patch(cookie, { description: 'あ' }).expect(200);
+      expect((await patch(cookie, { description: '  ' }).expect(200)).body.description).toBeNull();
+      await patch(cookie, { description: 'い' }).expect(200);
+      expect((await patch(cookie, { description: null }).expect(200)).body.description).toBeNull();
+    });
+
+    it('メンバーなら誰でも直せる（作った人でなくてもよい）', async () => {
+      const owner = await signUpAs('たろう');
+      await createGroup(owner).expect(201);
+      const other = await join(owner, 'はなこ');
+      const res = await patch(other, { background: 'city' }).expect(200);
+      expect(res.body.background).toBe('city');
+    });
+
+    it('100字ちょうどは通り、101字は 400。名前は21字で 400。背景は4種以外が 400。何も送らないと 400', async () => {
+      const cookie = await signUpAs('たろう');
+      await createGroup(cookie).expect(201);
+      await patch(cookie, { description: 'あ'.repeat(100) }).expect(200);
+      await patch(cookie, { description: 'あ'.repeat(101) }).expect(400);
+      await patch(cookie, { name: 'あ'.repeat(21) }).expect(400);
+      await patch(cookie, { background: 'space' }).expect(400);
+      await patch(cookie, { description: 123 }).expect(400);
+      await patch(cookie, {}).expect(400);
+    });
+
+    it('グループに入っていない人は 404', async () => {
+      const cookie = await signUpAs('たろう');
+      await patch(cookie, { name: 'x' }).expect(404);
+    });
+  });
+
+  describe('GET /groups/current の members[].today（今日のようす）', () => {
+    const record = (cookie: string, kind: 'workout' | 'run' | 'rest' | 'post') =>
+      request(app.getHttpServer())
+        .post('/api/records')
+        .set('Cookie', cookie)
+        .send({ id: randomUUID(), kind, recordedAt: new Date().toISOString(), ...(kind === 'run' ? { run: { distanceM: 5000, durationS: 1800 } } : {}) });
+
+    it('記録の種類から workout・run・rest・none になり、投稿だけの日は none', async () => {
+      const a = await signUpAs('あ');
+      await createGroup(a).expect(201);
+      const join = async (name: string): Promise<string> => {
+        const inv = await createInvitation(a).expect(201);
+        const c = await signUpAs(name);
+        await request(app.getHttpServer()).post(`/api/invitations/${inv.body.token}/accept`).set('Cookie', c).expect(200);
+        return c;
+      };
+      const b = await join('い');
+      const c = await join('う');
+      const d = await join('え');
+      await record(a, 'workout').expect(201);
+      await record(b, 'run').expect(201);
+      await record(c, 'rest').expect(201);
+      await record(d, 'post').expect(201);
+      const res = await request(app.getHttpServer()).get('/api/groups/current').set('Cookie', a).expect(200);
+      const todayOf = (name: string) => res.body.members.find((m: { name: string }) => m.name === name).today;
+      expect([todayOf('あ'), todayOf('い'), todayOf('う'), todayOf('え')]).toEqual(['workout', 'run', 'rest', 'none']);
+    });
+
+    it('筋トレとランの両方がある日は workout。記録が無ければ none', async () => {
+      const a = await signUpAs('あ');
+      await createGroup(a).expect(201);
+      const before = await request(app.getHttpServer()).get('/api/groups/current').set('Cookie', a).expect(200);
+      expect(before.body.members[0].today).toBe('none');
+      await record(a, 'run').expect(201);
+      await record(a, 'workout').expect(201);
+      const after = await request(app.getHttpServer()).get('/api/groups/current').set('Cookie', a).expect(200);
+      expect(after.body.members[0].today).toBe('workout');
     });
   });
 });

@@ -150,6 +150,8 @@ erDiagram
 | name | text | NOT NULL | 1〜20字 |
 | created_by | text | FK → users.id | 作った人 |
 | created_at | timestamptz | NOT NULL | |
+| description | text | CHECK 1〜100字（null 可） | ミッションの説明（02-9 PR 6。招待の画面には出さない） |
+| background | text | NOT NULL・既定 yard・CHECK yard/gym/park/city | 運動場の背景（画像は frontend/public/ground/{名前}.png。0022） |
 
 ### group_members（グループのメンバー）
 

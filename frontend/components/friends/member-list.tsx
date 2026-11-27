@@ -7,6 +7,7 @@ import { withBack } from '@/lib/back-target';
 import { Avatar, AVATAR_BG } from '@/components/fitlog/avatar';
 import { useAppSession } from '@/lib/use-app-session';
 import type { GroupDetailResponse } from '@/lib/api/generated';
+import { TODAY_LABEL } from './friends-text';
 
 export const GROUP_MEMBER_MAX = 5;
 
@@ -58,6 +59,7 @@ export function MemberList({ group }: { group: GroupDetailResponse }) {
               <p className="truncate text-base font-extrabold">{m.name}</p>
               {m.bio && <p className="truncate text-sm text-fg-muted">{m.bio}</p>}
             </div>
+            <span className="fl-tag bg-canvas text-fg">{TODAY_LABEL[m.today]}</span>
             {m.id === me && <span className="fl-tag bg-gold text-fg">あなた</span>}
           </li>
         ))}

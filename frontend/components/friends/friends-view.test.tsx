@@ -15,8 +15,8 @@ const GROUP = {
   id: 'g1',
   name: '朝トレ部',
   members: [
-    { id: 'u1', name: 'たろう', avatar: AVATAR },
-    { id: 'u2', name: 'はなこ', avatar: { ...AVATAR, shirtColor: 'coral' } },
+    { id: 'u1', name: 'たろう', avatar: AVATAR, today: 'none' as const },
+    { id: 'u2', name: 'はなこ', avatar: { ...AVATAR, shirtColor: 'coral' }, today: 'none' as const },
   ],
 };
 
@@ -165,12 +165,13 @@ describe('FriendsView（S-20 仲間）', () => {
       replies['GET /api/groups/current'] = [{ status: 200, body: GROUP }];
     });
 
-    // A09-6: メンバー一覧は設定のグループ画面に任せ、仲間タブには人数・名前と設定への入口1つだけ
-    it('人数とグループ名を出し、メンバー一覧は置かず、設定への入口は1つだけ', async () => {
+    // A09-6 は PR 6（02-9）で改めた: 運動場（今日のポーズ）と、インスタ風のメンバー一覧を仲間タブに置く。設定への入口は1つだけのまま
+    it('運動場と人数・グループ名・メンバーの一覧を出し、設定への入口は1つだけ', async () => {
       renderView();
       expect(await screen.findByRole('heading', { name: '朝トレ部' })).toBeInTheDocument();
       expect(screen.getByLabelText('いまの人数')).toHaveTextContent('2');
-      expect(screen.queryByRole('list', { name: 'メンバー' })).not.toBeInTheDocument();
+      expect(screen.getByTestId('ground')).toBeInTheDocument();
+      expect(screen.getByRole('list', { name: 'メンバー' })).toBeInTheDocument();
       expect(screen.getAllByRole('link', { name: /グループの設定/ })).toHaveLength(1);
     });
 

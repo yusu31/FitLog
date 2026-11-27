@@ -9,7 +9,8 @@ import { useGetCurrentGroup } from '@/lib/api/generated';
 import { InvitePanel } from '@/components/settings/invite-panel';
 import { GROUP_MESSAGES } from '@/lib/messages';
 import { FRIENDS_TEXT } from './friends-text';
-import { GroupBand } from './member-list';
+import { Ground } from './ground';
+import { GroupBand, MemberList } from './member-list';
 import { NoGroupGuide } from './no-group-guide';
 
 // S-20 仲間（docs/screen-design.md 4章）。グループがないときは「作る」と「招待リンクで参加する」の2つだけ（NoGroupGuide）。
@@ -43,7 +44,12 @@ export function FriendsView() {
               </div>
             </section>
           ) : (
-            <GroupBand group={data.data} />
+            <>
+              <Ground group={data.data} />
+              <GroupBand group={data.data} />
+              {data.data.description && <p className="px-1 text-sm text-fg-muted [word-break:auto-phrase]">{data.data.description}</p>}
+              <MemberList group={data.data} />
+            </>
           )}
           <Link
             href={withBack('/settings/group', 'friends')}
