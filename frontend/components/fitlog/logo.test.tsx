@@ -4,14 +4,14 @@ import { render, screen } from '@testing-library/react';
 import { Logo } from './logo';
 
 describe('Logo', () => {
-  it('印だけのときは img として「フィットログ」と読み上げる', () => {
+  it('印だけのときは img として「FitLog」と読み上げる', () => {
     render(<Logo />);
-    expect(screen.getByRole('img', { name: 'フィットログ' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'FitLog' })).toBeInTheDocument();
   });
 
   it('名前つきのときは字を出し、印は読み上げから外す（二重に読まない）', () => {
     render(<Logo withName />);
-    expect(screen.getByText('フィットログ')).toBeInTheDocument();
+    expect(screen.getByText('FitLog')).toBeInTheDocument();
     expect(screen.queryByRole('img')).toBeNull();
   });
 
@@ -22,7 +22,7 @@ describe('Logo', () => {
 
   it('public/logo.svg が存在し、日本語の名前（title）と濃ティールの地を持つ', () => {
     const svg = readFileSync(join(__dirname, '../../public/logo.svg'), 'utf8');
-    expect(svg).toContain('<title>フィットログ</title>');
+    expect(svg).toContain('<title>FitLog</title>');
     expect(svg).toContain('#0e7f83');
   });
 });
