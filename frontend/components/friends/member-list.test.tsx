@@ -11,6 +11,7 @@ const GROUP: GroupDetailResponse = {
   name: '朝トレ部',
   description: null,
   background: 'yard',
+  events: [],
   members: [
     { id: 'u1', name: 'たろう', bio: '朝ランが好きです', avatar: AVATAR, today: 'none' as const },
     { id: 'u2', name: 'はなこ', bio: null, avatar: AVATAR, today: 'none' as const },

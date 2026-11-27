@@ -109,6 +109,29 @@ export interface GroupMemberResponse {
   today: MemberToday;
 }
 
+export type GroupEventKind = typeof GroupEventKind[keyof typeof GroupEventKind];
+
+
+export const GroupEventKind = {
+  joined: 'joined',
+  mission: 'mission',
+} as const;
+
+export interface GroupEventResponse {
+  kind: GroupEventKind;
+  at: string;
+  /**
+     * 加わった人・直した人の ID。退会していれば null
+     * @nullable
+     */
+  actorId: string | null;
+  /**
+     * 加わった人・直した人の名前。退会していれば null
+     * @nullable
+     */
+  actorName: string | null;
+}
+
 export interface GroupDetailResponse {
   id: string;
   name: string;
@@ -121,6 +144,8 @@ export interface GroupDetailResponse {
   background: GroupBackground;
   /** 参加した順 */
   members: GroupMemberResponse[];
+  /** 直近14日の出来事（仲間が加わった・ミッションが直された）。新しい順・最大5件 */
+  events: GroupEventResponse[];
 }
 
 export interface UpdateGroupRequest {

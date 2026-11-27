@@ -39,6 +39,10 @@ erDiagram
     groups {
         uuid id PK
         text name
+        text description
+        text background
+        timestamptz mission_changed_at
+        text mission_changed_by FK
     }
     group_members {
         uuid group_id PK

@@ -230,6 +230,20 @@ describe('グループと招待を作る（結合: 本物の PostgreSQL・better
       expect(res2.body).toMatchObject({ name: '夜ラン部', description: '朝6時に走る', background: 'park' });
     });
 
+    it('出来事: 仲間が加わると「加わった」、ミッションを直すと「ミッション」が events に出る（作った人の参加は出ない）', async () => {
+      const owner = await signUpAs('たろう');
+      await createGroup(owner).expect(201);
+      const first = await request(app.getHttpServer()).get('/api/groups/current').set('Cookie', owner).expect(200);
+      expect(first.body.events).toEqual([]);
+
+      const friend = await join(owner, 'はなこ');
+      const joined = await request(app.getHttpServer()).get('/api/groups/current').set('Cookie', owner).expect(200);
+      expect(joined.body.events.map((e: { kind: string; actorName: string }) => [e.kind, e.actorName])).toEqual([['joined', 'はなこ']]);
+
+      const res = await patch(friend, { background: 'gym' }).expect(200);
+      expect(res.body.events.map((e: { kind: string; actorName: string }) => [e.kind, e.actorName])).toEqual([['mission', 'はなこ'], ['joined', 'はなこ']]);
+    });
+
     it('説明は空文字か null で消せる', async () => {
       const cookie = await signUpAs('たろう');
       await createGroup(cookie).expect(201);

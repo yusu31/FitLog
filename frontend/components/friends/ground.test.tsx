@@ -8,6 +8,7 @@ const GROUP: GroupDetailResponse = {
   name: '朝トレ部',
   description: null,
   background: 'park',
+  events: [],
   members: [
     { id: 'u1', name: 'たろう', avatar: AVATAR, today: 'workout' },
     { id: 'u2', name: 'はなこ', avatar: AVATAR, today: 'run' },

@@ -10,6 +10,7 @@ const GROUP: GroupDetailResponse = {
   name: '朝トレ部',
   description: '朝6時に走る',
   background: 'yard',
+  events: [],
   members: [{ id: 'u1', name: 'たろう', avatar: AVATAR, today: 'none' }],
 };
 
