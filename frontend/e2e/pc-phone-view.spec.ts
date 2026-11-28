@@ -20,7 +20,7 @@ const mainWidth = async (page: Page) => (await page.locator('main').first().boun
 test('PC 幅でスマホと同じ画面に切り替えられ、リロードしても覚えていて、戻せる', async ({ page }) => {
   await signUp(page);
   const side = page.getByRole('complementary', { name: '仲間の今日' });
-  const toPhone = page.getByRole('button', { name: /スマホと同じ画面に切り替える/ });
+  const toPhone = page.getByRole('button', { name: /スマホ表示に切り替える/ });
   const toPc = page.getByRole('button', { name: /PC 表示に切り替える/ });
 
   // 既定は PC 表示（右の列があり、中央は430pxより広い）
@@ -45,5 +45,5 @@ test('PC 幅でスマホと同じ画面に切り替えられ、リロードし�
 test('1024px 未満では切替ボタンが出ない', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signUp(page);
-  await expect(page.getByRole('button', { name: /スマホと同じ画面に切り替える|PC 表示に切り替える/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /スマホ表示に切り替える|PC 表示に切り替える/ })).toHaveCount(0);
 });

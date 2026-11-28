@@ -85,7 +85,7 @@ export const DEMO_FRIENDS_MESSAGES = {
 export const PHONE_VIEW_MESSAGES = {
   toPhone: 'スマホ表示',
   toPc: 'PC 表示',
-  ariaLabel: (phone: boolean) => (phone ? 'PC 表示に切り替える（今はスマホと同じ画面）' : 'スマホと同じ画面に切り替える（今は PC 表示）'),
+  ariaLabel: (phone: boolean) => (phone ? 'PC 表示に切り替える（今はスマホと同じ画面）' : 'スマホ表示に切り替える（今は PC 表示。スマホと同じ画面になる）'),
 } as const;
 
 // グループまわり（S-20・S-32。features.md 2.1〜2.2）。本人の落ち度ではないこと（満員・期限切れ・すでに所属）は、
