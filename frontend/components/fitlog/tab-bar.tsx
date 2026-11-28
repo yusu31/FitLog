@@ -35,24 +35,24 @@ export function TabBar({ signedIn = false }: { signedIn?: boolean }) {
   const newCount = typeof body?.newCount === 'number' && body.newCount > 0 ? body.newCount : undefined;
   return (
     <>
-    <nav aria-label="メイン" className="fixed bottom-0 left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 border-t-2 border-line bg-surface lg:sticky lg:top-0 lg:bottom-auto lg:left-auto lg:order-first lg:h-dvh lg:w-56 lg:shrink-0 lg:translate-x-0 lg:self-start lg:border-t-0 lg:bg-transparent">
-      <ul className="flex justify-around px-3 pt-1.5 max-[239px]:px-1 pb-[max(10px,env(safe-area-inset-bottom))] short:pt-1 short:pb-[max(4px,env(safe-area-inset-bottom))] lg:flex-col lg:justify-start lg:gap-2 lg:px-2 lg:pt-6">
+    <nav aria-label="メイン" className="fixed bottom-0 left-1/2 z-10 w-full max-w-[430px] -translate-x-1/2 border-t-2 border-line bg-surface pc:sticky pc:top-0 pc:bottom-auto pc:left-auto pc:order-first pc:h-dvh pc:w-56 pc:shrink-0 pc:translate-x-0 pc:self-start pc:border-t-0 pc:bg-transparent">
+      <ul className="flex justify-around px-3 pt-1.5 max-[239px]:px-1 pb-[max(10px,env(safe-area-inset-bottom))] short:pt-1 short:pb-[max(4px,env(safe-area-inset-bottom))] pc:flex-col pc:justify-start pc:gap-2 pc:px-2 pc:pt-6">
         {TABS.map(({ href, label, Icon }, index) => {
           const active = isActive(pathname, href);
           const dot = href === '/home' && hasNew && !active;
           return (
             <Fragment key={href}>
-            <li className="min-w-0 max-w-16 flex-1 lg:max-w-none lg:flex-none">
+            <li className="min-w-0 max-w-16 flex-1 pc:max-w-none pc:flex-none">
               <Link
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex h-13 short:h-11 w-full flex-col items-center justify-center gap-0.5 rounded-fl text-note font-bold outline-none',
-                  'lg:h-12 lg:w-full lg:flex-row lg:justify-start lg:gap-3 lg:px-4 lg:text-sm',
+                  'pc:h-12 pc:w-full pc:flex-row pc:justify-start pc:gap-3 pc:px-4 pc:text-sm',
                   'focus-visible:ring-4 focus-visible:ring-teal/40',
                   // 選択中の文字は濃いティール（ティール10%の背景の上で 4.5 以上）
                   // PC（lg）のメニューは灰色の地の上なので、選択中は白い面・ほかは濃いめの文字にして 4.5:1 を保つ
-                  active ? 'bg-teal/10 text-brand lg:bg-surface' : 'text-fg-subtle lg:text-fg-muted',
+                  active ? 'bg-teal/10 text-brand pc:bg-surface' : 'text-fg-subtle pc:text-fg-muted',
                 )}
               >
                 <span className="relative">

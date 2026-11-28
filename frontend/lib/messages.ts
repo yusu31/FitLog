@@ -81,6 +81,13 @@ export const DEMO_FRIENDS_MESSAGES = {
   listLabel: '見本の仲間の足跡',
 } as const;
 
+// PC で、スマホと同じ画面に切り替えるボタン（02-9 ⑪。PC 幅のときだけ出る）
+export const PHONE_VIEW_MESSAGES = {
+  toPhone: 'スマホ表示',
+  toPc: 'PC 表示',
+  ariaLabel: (phone: boolean) => (phone ? 'PC 表示に切り替える（今はスマホと同じ画面）' : 'スマホ表示に切り替える（今は PC 表示。スマホと同じ画面になる）'),
+} as const;
+
 // グループまわり（S-20・S-32。features.md 2.1〜2.2）。本人の落ち度ではないこと（満員・期限切れ・すでに所属）は、
 // 事実と次にできることだけを短く書く。「失敗」は禁止語（forbidden-words.ts）なので使わない
 export const GROUP_MESSAGES = {
