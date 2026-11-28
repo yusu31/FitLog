@@ -5,7 +5,7 @@ import "@fontsource/barlow-condensed/800-italic.css";
 import { Providers } from "./providers";
 import { SwRegister } from "@/components/fitlog/sw-register";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
-import { PHONE_VIEW_BOOT_SCRIPT } from "@/lib/phone-view";
+import { PHONE_VIEW_BOOT_SCRIPT } from "@/lib/phone-view-boot";
 
 export const metadata: Metadata = {
   title: { default: "FitLog", template: "%s | FitLog" },

@@ -1,11 +1,10 @@
 import { useSyncExternalStore } from 'react';
+import { PHONE_VIEW_KEY } from './phone-view-boot';
 
 // 「PC 画面／スマホと同じ画面」の切替（02-9 ⑪・Issue #477）。提出・ポートフォリオで PC から見る人向け。
 // PC 幅（1024px 以上）だけ、今の3列とスマホと全く同じ画面（中央に幅430pxの枠）を切り替える。既定は PC 表示。
 // 端末に覚え、<html data-view="phone"> を付け外しする。CSS の pc: は「PC 幅かつ phone でない」ときだけ効く（globals.css）。
 // 読み込み直後のちらつきを防ぐため、同じ判定を app/layout.tsx の先読みスクリプト（PHONE_VIEW_BOOT_SCRIPT）でも行う
-export const PHONE_VIEW_KEY = 'fitlog.phoneView';
-
 let memory = false; // 保存できない端末のための手元の値
 const listeners = new Set<() => void>();
 
@@ -43,6 +42,3 @@ function subscribe(notify: () => void): () => void {
 export function usePhoneView(): boolean {
   return useSyncExternalStore(subscribe, readPhoneView, () => false);
 }
-
-// <head> に置く小さなスクリプト。壊れても画面を止めない（try/catch）
-export const PHONE_VIEW_BOOT_SCRIPT = `try{if(localStorage.getItem('${PHONE_VIEW_KEY}')==='1')document.documentElement.dataset.view='phone'}catch(e){}`;

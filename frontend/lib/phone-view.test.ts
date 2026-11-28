@@ -1,4 +1,5 @@
-import { PHONE_VIEW_BOOT_SCRIPT, PHONE_VIEW_KEY, readPhoneView, setPhoneView } from './phone-view';
+import { readPhoneView, setPhoneView } from './phone-view';
+import { PHONE_VIEW_BOOT_SCRIPT, PHONE_VIEW_KEY } from './phone-view-boot';
 
 describe('phone-view', () => {
   beforeEach(() => {
