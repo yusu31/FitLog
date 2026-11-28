@@ -246,32 +246,32 @@ describe('アプリの紹介（F8 → D1 で3行をやめた）', () => {
   });
 });
 
-// D1: ログインの上半分は、この端末で最後に保存した運動の種類で切り替わる（初回は筋トレ版）
-describe('ログインの上半分（D1）', () => {
-  afterEach(() => localStorage.clear());
-
-  it('覚えていないときは筋トレ版（トレーニング中のキャラと前回の重さ）', () => {
+// 案 R（Issue #473）: ログインの上半分は、白い印と FitLog・大見出し・仲間の頭文字の丸。背景の絵は差し替え式
+describe('ログインの上半分（案 R）', () => {
+  it('大見出しは「今日の1回を、動画に。」で、「動画に」だけが色付き', () => {
     render(<LoginForm />);
-    const hero = screen.getByTestId('login-hero');
-    expect(hero).toHaveAttribute('data-kind', 'lift');
-    expect(hero).toHaveTextContent('60kg × 8');
-    expect(within(hero).getByTestId('sprite')).toHaveAttribute('data-pose', 'train');
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1).toHaveTextContent('今日の1回を、動画に。');
+    expect(within(h1).getByText('動画に')).toHaveClass('text-gold');
   });
 
-  it('最後に保存したのがランなら、ラン版（走るキャラと薄い前回の自分・前回の距離）', () => {
-    localStorage.setItem('fitlog-last-kind', 'run');
+  it('筋トレ版・ラン版の見本やキャラは出さない。「見せ合う」の文言も使わない', () => {
     render(<LoginForm />);
-    const hero = screen.getByTestId('login-hero');
-    expect(hero).toHaveAttribute('data-kind', 'run');
-    expect(hero).toHaveTextContent('5.0km');
-    expect(within(hero).getAllByTestId('sprite').map((e) => e.getAttribute('data-pose'))).toEqual(['run', 'run']);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('前回の自分と並んで走る');
+    expect(screen.queryByTestId('sprite')).not.toBeInTheDocument();
+    expect(screen.getByTestId('login-hero')).not.toHaveTextContent('見せ合');
   });
 
-  it('登録画面は入力欄が上。上の帯はロゴと一言だけ（キャラ・見本の枠は出さない）', () => {
+  it('背景の絵が無くても、暗いグラデーションは重なる（文字の読みやすさ）。絵は出ない', () => {
+    render(<LoginForm />);
+    expect(screen.getByTestId('login-backdrop')).toHaveAttribute('data-shown', '');
+  });
+
+  it('登録画面は明るい地に実画面3枚（飾り）と大見出し。キャラや見本の枠は出さない', () => {
     render(<SignupForm />);
     expect(screen.queryByTestId('login-hero')).not.toBeInTheDocument();
     expect(screen.queryByTestId('sprite')).not.toBeInTheDocument();
+    const hero = screen.getByTestId('signup-hero');
+    expect(hero.querySelectorAll('img[alt=""]')).toHaveLength(3);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('前回の自分と並べて記録');
   });
 });
@@ -279,11 +279,11 @@ describe('ログインの上半分（D1）', () => {
 // A01-1: 最初の画面で「何ができるか」が大見出しになる（下の見本画像は 2026-11-23 に本人判断で消した）
 describe('入口の見出し（A01-1）', () => {
   it.each([
-    ['ログイン', <LoginForm key="l" />],
-    ['新規登録', <SignupForm key="s" />],
-  ])('%s: 大見出しは何ができるかの一文で、古い見本画像は出さない', (_name, ui) => {
+    ['ログイン', <LoginForm key="l" />, '今日の1回を、動画に。'],
+    ['新規登録', <SignupForm key="s" />, '前回の自分と並べて記録'],
+  ])('%s: 大見出しは何ができるかの一文で、古い見本画像は出さない', (_name, ui, h1) => {
     render(ui);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('前回の自分と並べて記録');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(h1);
     expect(screen.queryByRole('img', { name: /画面の見本/ })).not.toBeInTheDocument();
   });
 

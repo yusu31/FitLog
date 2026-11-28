@@ -49,7 +49,7 @@ export function LoginForm() {
   }
 
   return (
-    <AuthLayout title="ログイン" hero={<LoginHero />}>
+    <AuthLayout title="ログイン" tone="photo" hero={<LoginHero />}>
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <Label className="font-extrabold" htmlFor="email">メールアドレス</Label>
