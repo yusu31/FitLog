@@ -69,6 +69,18 @@ export const HOME_MESSAGES = {
   noGroup: '仲間とつながると、ここに足跡が流れます',
 } as const;
 
+// 仲間がいない人に見せる見本（02-9 ⑭）。本物の仲間ではないことを、見出しと札で伝える。順位・連続日数・目標未達の言葉は使わない
+export const DEMO_FRIENDS_MESSAGES = {
+  label: '仲間の見本',
+  title: '仲間がいると、こう見えます（見本）',
+  lead: 'この4人は見本です。招待すると、本物の仲間の足跡がここに流れます',
+  toggleLabel: 'デモ仲間',
+  toggleOn: '有り',
+  toggleOff: '無し',
+  tag: '見本',
+  listLabel: '見本の仲間の足跡',
+} as const;
+
 // グループまわり（S-20・S-32。features.md 2.1〜2.2）。本人の落ち度ではないこと（満員・期限切れ・すでに所属）は、
 // 事実と次にできることだけを短く書く。「失敗」は禁止語（forbidden-words.ts）なので使わない
 export const GROUP_MESSAGES = {

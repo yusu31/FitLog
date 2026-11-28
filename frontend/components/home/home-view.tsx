@@ -5,13 +5,15 @@ import { ChevronDown } from 'lucide-react';
 import { NotificationBell } from '@/components/fitlog/notification-bell';
 import { PageTitle } from '@/components/fitlog/app-shell';
 import { MyChara } from '@/components/fitlog/my-chara';
-import { buttonClass } from '@/components/fitlog/thick-button';
+import { buttonClass, ThickButton } from '@/components/fitlog/thick-button';
 import { FeedSection } from '@/components/friends/feed-section';
+import { DemoFriends } from '@/components/home/demo-friends';
 import { GroupEvents } from '@/components/home/group-events';
 import { TodayBand } from '@/components/home/today-band';
 import { WeekVideoStrip } from '@/components/video-grid/week-video-strip';
 import { useGetCurrentGroup, useGetWeek } from '@/lib/api/generated';
-import { HOME_MESSAGES } from '@/lib/messages';
+import { DEMO_FRIENDS_MESSAGES, HOME_MESSAGES } from '@/lib/messages';
+import { setDemoFriends, useDemoFriends } from '@/lib/demo-mode';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { useAppSession } from '@/lib/use-app-session';
 
@@ -54,12 +56,26 @@ function Timeline() {
   const noGroup = group.data?.status === 404;
   const { data: session } = useAppSession();
   const alone = group.data?.status === 200 && group.data.data.members.length <= 1;
+  const demo = useDemoFriends();
   return (
+    <div className="relative">
+      {/* 02-9 ⑭: 講師・転職先に見せるための「デモ仲間 有り／無し」。見出しの横。見出しの開閉（details）の外に置く */}
+      <ThickButton
+        tone="white"
+        size="sm"
+        aria-pressed={demo}
+        aria-label={`${DEMO_FRIENDS_MESSAGES.toggleLabel} ${demo ? DEMO_FRIENDS_MESSAGES.toggleOn : DEMO_FRIENDS_MESSAGES.toggleOff}`}
+        className="absolute top-1 right-9 z-10"
+        onClick={() => setDemoFriends(!demo)}
+      >
+        {DEMO_FRIENDS_MESSAGES.toggleLabel} {demo ? DEMO_FRIENDS_MESSAGES.toggleOn : DEMO_FRIENDS_MESSAGES.toggleOff}
+      </ThickButton>
     <details open className="group space-y-3">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-fl px-1 text-lg font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40 [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-fl px-1 text-lg font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-teal/40 pr-44 [&::-webkit-details-marker]:hidden">
         {HOME_MESSAGES.timeline}
         <ChevronDown aria-hidden className="size-5 text-fg-muted transition-transform group-open:rotate-180" />
       </summary>
+      {demo && <DemoFriends />}
       {group.isPending ? (
         <div aria-busy="true" aria-label="読み込み中" className="h-40 animate-pulse rounded-fl bg-canvas" />
       ) : noGroup ? (
@@ -78,5 +94,6 @@ function Timeline() {
         </div>
       )}
     </details>
+    </div>
   );
 }
