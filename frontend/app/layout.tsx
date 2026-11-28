@@ -5,6 +5,7 @@ import "@fontsource/barlow-condensed/800-italic.css";
 import { Providers } from "./providers";
 import { SwRegister } from "@/components/fitlog/sw-register";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
+import { PHONE_VIEW_BOOT_SCRIPT } from "@/lib/phone-view";
 
 export const metadata: Metadata = {
   title: { default: "FitLog", template: "%s | FitLog" },
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ja" className="h-full antialiased" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: PHONE_VIEW_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
         <SwRegister>

@@ -155,7 +155,7 @@ export function TodayView() {
         {/* 招待の入口は主ボタンより下（P5 N1。上に置くと、6日ぶりの日に主ボタンが最初の画面の外に出る） */}
         {/* PC は右の列（SideFriends）にも同じ招待が出るので、中央はスマホだけ（02-9 ②：2か所に出ていた） */}
         {day === 'today' && (
-          <div className="empty:hidden lg:hidden">
+          <div className="empty:hidden pc:hidden">
             <FriendsToday today={today} part="invite" />
           </div>
         )}

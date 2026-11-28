@@ -59,7 +59,7 @@ export function FriendToast({ latest, loaded }: { latest: FeedLatestFriendRecord
       aria-live="polite"
       data-testid="friend-toast"
       data-visible={visible ? 'true' : 'false'}
-      className="pointer-events-none fixed right-3 bottom-24 z-20 max-w-[min(18rem,calc(100vw-1.5rem))] motion-safe:transition-opacity motion-safe:duration-500 data-[visible=false]:opacity-0 lg:bottom-6"
+      className="pointer-events-none fixed right-3 bottom-24 z-20 max-w-[min(18rem,calc(100vw-1.5rem))] motion-safe:transition-opacity motion-safe:duration-500 data-[visible=false]:opacity-0 pc:bottom-6"
     >
       {text && (
         <p className="fl-slab bg-night px-4 py-2.5 text-sm font-extrabold text-white">

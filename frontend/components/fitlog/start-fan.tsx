@@ -94,7 +94,7 @@ export function StartFan() {
 
   return (
     <li
-      className="fan relative flex min-w-0 max-w-14 flex-1 items-center lg:order-first lg:mb-2 lg:block lg:max-w-none lg:flex-none"
+      className="fan relative flex min-w-0 max-w-14 flex-1 items-center pc:order-first pc:mb-2 pc:block pc:max-w-none pc:flex-none"
       data-open={open}
       onPointerEnter={(e) => {
         if (e.pointerType !== 'mouse') return;
@@ -131,10 +131,10 @@ export function StartFan() {
         onPointerCancel={onPointerCancel}
         onContextMenu={(e) => e.preventDefault()}
         style={{ touchAction: 'none', WebkitTouchCallout: 'none', userSelect: 'none' }}
-        className="fl-thick flex aspect-square w-full max-w-14 short:max-w-11 short:lg:max-w-none items-center justify-center gap-2 rounded-full bg-teal-dark text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40 lg:aspect-auto lg:h-12 lg:max-w-none lg:w-full lg:rounded-fl lg:text-lg lg:font-extrabold lg:tracking-wider"
+        className="fl-thick flex aspect-square w-full max-w-14 short:max-w-11 short:pc:max-w-none items-center justify-center gap-2 rounded-full bg-teal-dark text-white outline-none [--thick:var(--color-teal-deep)] focus-visible:ring-4 focus-visible:ring-teal/40 pc:aspect-auto pc:h-12 pc:max-w-none pc:w-full pc:rounded-fl pc:text-lg pc:font-extrabold pc:tracking-wider"
       >
-        <Plus aria-hidden className={`size-7 transition-transform lg:size-5 ${open ? 'rotate-45' : ''} motion-reduce:transition-none`} strokeWidth={3} />
-        <span aria-hidden className="hidden lg:inline">
+        <Plus aria-hidden className={`size-7 transition-transform pc:size-5 ${open ? 'rotate-45' : ''} motion-reduce:transition-none`} strokeWidth={3} />
+        <span aria-hidden className="hidden pc:inline">
           START
         </span>
       </button>
@@ -152,7 +152,7 @@ export function StartFan() {
               <span className="fan-tile flex size-13 items-center justify-center rounded-2xl border-2 border-line-dark bg-surface shadow-md max-[239px]:size-10">
                 <PixelIcon name={it.icon} accent={it.accent} size={34} className="max-[239px]:size-6" />
               </span>
-              <span className="rounded-full bg-surface px-2 text-note font-extrabold text-fg shadow-sm max-[239px]:px-1 lg:rounded-none lg:bg-transparent lg:text-sm lg:shadow-none">{it.label}</span>
+              <span className="rounded-full bg-surface px-2 text-note font-extrabold text-fg shadow-sm max-[239px]:px-1 pc:rounded-none pc:bg-transparent pc:text-sm pc:shadow-none">{it.label}</span>
             </>
           );
           return it.href ? (
