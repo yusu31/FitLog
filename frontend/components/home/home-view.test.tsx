@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { weekOf } from '@/lib/test/fake-api';
 import { toLocalDate } from '@/lib/shared/local-date';
 import { HomeView } from './home-view';
@@ -44,7 +45,10 @@ beforeEach(() => {
     }),
   );
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  localStorage.clear();
+});
 
 const renderView = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -109,5 +113,40 @@ describe('HomeView（ホーム）', () => {
     renderView();
     expect(await screen.findByRole('link', { name: '仲間を探す' })).toHaveAttribute('href', '/friends');
     expect(calls).not.toContain('/api/feed');
+  });
+});
+
+// 02-9 ⑭: 講師・転職先に見せるための「デモ仲間 有り／無し」。既定は無し。有りにすると見本の4人（見本の札つき）が入り、API は呼ばない
+describe('デモ仲間の切替（⑭）', () => {
+  it('既定は無し。ボタンで有りにすると見本の4人が出て、無しに戻すと消える。端末に覚える', async () => {
+    const user = userEvent.setup();
+    renderView();
+    const toggle = await screen.findByRole('button', { name: 'デモ仲間 無し' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByTestId('demo-friends')).not.toBeInTheDocument();
+
+    await user.click(toggle);
+    const demo = await screen.findByTestId('demo-friends');
+    const cards = within(demo).getAllByRole('listitem').filter((li) => within(li).queryByText('見本', { selector: 'span' }));
+    expect(cards).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'デモ仲間 有り' })).toHaveAttribute('aria-pressed', 'true');
+    expect(localStorage.getItem('fitlog.demoFriends')).toBe('1');
+    // 見本は触れない（スタンプのボタン・コメント・詳細へのリンクを置かない）。順位・連続日数の言葉も出さない
+    expect(within(demo).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(demo).queryByRole('link')).not.toBeInTheDocument();
+    expect(demo).not.toHaveTextContent(/順位|連続|位/);
+
+    await user.click(screen.getByRole('button', { name: 'デモ仲間 有り' }));
+    expect(screen.queryByTestId('demo-friends')).not.toBeInTheDocument();
+    expect(localStorage.getItem('fitlog.demoFriends')).toBeNull();
+  });
+
+  it('見本は本物の仲間として API に送らない（見本の id が通信に出ない）', async () => {
+    const user = userEvent.setup();
+    renderView();
+    await user.click(await screen.findByRole('button', { name: 'デモ仲間 無し' }));
+    await screen.findByTestId('demo-friends');
+    // 見本の id（demo-…）は、どの呼び出しの宛先にも中身にも出ない
+    expect(JSON.stringify(vi.mocked(fetch).mock.calls)).not.toContain('demo-');
   });
 });
